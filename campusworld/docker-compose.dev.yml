@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Development
+  postgres_dev:
+    image: postgres:15-alpine
+    container_name: campusworld_postgres_dev
+    environment:
+      POSTGRES_DB: campusworld_dev
+      POSTGRES_USER: campusworld_dev_user
+      POSTGRES_PASSWORD: campusworld_dev_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - campusworld_dev_network
+    restart: unless-stopped
+
+  # Redis Cache for Development
+  redis_dev:
+    image: redis:7-alpine
+    container_name: campusworld_redis_dev
+    ports:
+      - "6380:6379"
+    networks:
+      - campusworld_dev_network
+    restart: unless-stopped
+
+  # Adminer for Database Management
+  adminer:
+    image: adminer:latest
+    container_name: campusworld_adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - campusworld_dev_network
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  campusworld_dev_network:
+    driver: bridge

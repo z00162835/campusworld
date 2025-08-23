@@ -1,0 +1,25 @@
+-r base.txt
+
+# Development tools
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Code quality
+pre-commit==3.5.0
+bandit==1.7.5
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.4.8
+
+# Database tools
+pgcli==4.0.1
+
+# Monitoring
+sentry-sdk[fastapi]==1.38.0

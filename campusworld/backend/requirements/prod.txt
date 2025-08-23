@@ -1,0 +1,9 @@
+-r base.txt
+
+# Production specific
+gunicorn==21.2.0
+uvicorn[standard]==0.24.0
+
+# Monitoring and logging
+sentry-sdk[fastapi]==1.38.0
+prometheus-client==0.19.0
