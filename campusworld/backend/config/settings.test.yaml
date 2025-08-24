@@ -1,0 +1,56 @@
+# CampusWorld 测试环境配置
+# 继承自 settings.yaml，覆盖测试环境特定配置
+
+# 应用基础配置
+app:
+  debug: false
+  environment: "testing"
+
+# 服务器配置
+server:
+  reload: false
+  workers: 1
+
+# 数据库配置
+database:
+  host: "localhost"
+  port: 5434  # 测试环境使用不同端口
+  name: "campusworld_test"
+  user: "campusworld_test_user"
+  password: "campusworld_test_password"
+  echo: false
+
+# Redis配置
+redis:
+  host: "localhost"
+  port: 6381  # 测试环境使用不同端口
+  db: 1  # 使用不同的数据库
+
+# 日志配置
+logging:
+  level: "ERROR"
+  console_output: false
+  file_output: false
+
+# CORS配置
+cors:
+  allowed_origins:
+    - "http://localhost:3000"
+    - "http://127.0.0.1:3000"
+
+# 开发配置
+development:
+  enable_debug_toolbar: false
+  enable_profiling: false
+  mock_external_services: true
+  seed_data: false
+
+# 监控配置
+monitoring:
+  enable_metrics: false
+  enable_tracing: false
+
+# 安全配置
+security:
+  secret_key: "test-secret-key-for-testing-only"
+  access_token_expire_minutes: 60  # 测试环境使用短token有效期

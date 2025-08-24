@@ -8,6 +8,9 @@
 - [项目概述](./overview.md)
 - [环境搭建](./setup.md)
 - [快速启动](./quickstart.md)
+- [Conda 环境设置](./conda-setup.md)
+- [配置系统](./configuration.md)
+- [配置迁移指南](./config-migration.md)
 
 ### 🏗️ 架构设计
 - [系统架构](./architecture/README.md)

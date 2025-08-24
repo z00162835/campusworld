@@ -22,7 +22,7 @@ cd campusworld
 ```bash
 # 启动后端服务
 cd backend
-source venv/bin/activate
+conda activate campusworld
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # 新开终端，启动前端服务
@@ -44,7 +44,7 @@ npm run dev
 ### 1. 环境要求检查
 
 确保您的系统已安装：
-- Python 3.9+
+- Miniconda (Python 3.9+)
 - Node.js 18+
 - Docker & Docker Compose
 - Git
@@ -61,11 +61,9 @@ docker-compose -f docker-compose.dev.yml up -d
 ```bash
 cd backend
 
-# 创建虚拟环境
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate     # Windows
+# 创建 conda 环境
+conda env create -f environment.yml
+conda activate campusworld
 
 # 安装依赖
 pip install -r requirements/dev.txt
@@ -78,6 +76,7 @@ cp .env.example .env
 python -c "from app.core.database import init_db; init_db()"
 
 # 启动服务
+conda activate campusworld
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -183,9 +182,9 @@ docker-compose -f docker-compose.dev.yml restart postgres_dev
 ```bash
 # 清理并重新安装后端依赖
 cd backend
-rm -rf venv
-python3 -m venv venv
-source venv/bin/activate
+conda env remove -n campusworld -y
+conda env create -f environment.yml
+conda activate campusworld
 pip install --upgrade pip
 pip install -r requirements/dev.txt
 

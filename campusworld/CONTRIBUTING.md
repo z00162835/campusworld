@@ -139,11 +139,9 @@ docs(readme): update installation instructions
 ```bash
 cd backend
 
-# 创建虚拟环境
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate  # Windows
+# 创建 conda 环境
+conda env create -f environment.yml
+conda activate campusworld
 
 # 安装依赖
 pip install -r requirements/dev.txt

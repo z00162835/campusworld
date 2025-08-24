@@ -1,0 +1,171 @@
+# CampusWorld 应用配置文件
+# 按领域组织的配置项
+
+# 应用基础配置
+app:
+  name: "CampusWorld"
+  version: "0.1.0"
+  description: "A modern campus world application"
+  debug: false
+  environment: "development"  # development, testing, staging, production
+
+# API配置
+api:
+  v1_prefix: "/api/v1"
+  title: "CampusWorld API"
+  description: "CampusWorld REST API Documentation"
+  docs_url: "/docs"
+  redoc_url: "/redoc"
+  openapi_url: "/openapi.json"
+
+# 服务器配置
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: true
+  access_log: true
+
+# 安全配置
+security:
+  secret_key: "your-secret-key-here-change-in-production"
+  algorithm: "HS256"
+  access_token_expire_minutes: 11520  # 8 days
+  refresh_token_expire_days: 30
+  password_min_length: 8
+  bcrypt_rounds: 12
+
+# 数据库配置
+database:
+  engine: "postgresql"
+  host: "localhost"
+  port: 5433
+  name: "campusworld_dev"
+  user: "campusworld_dev_user"
+  password: "campusworld_dev_password"
+  pool_size: 20
+  max_overflow: 30
+  pool_pre_ping: true
+  pool_recycle: 300
+  echo: false
+
+# Redis配置
+redis:
+  host: "localhost"
+  port: 6380
+  db: 0
+  password: ""
+  max_connections: 10
+  socket_timeout: 5
+  socket_connect_timeout: 5
+
+# 缓存配置
+cache:
+  default_ttl: 3600  # 1 hour
+  max_size: 1000
+  enable_compression: true
+
+# 日志配置
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  file_path: "logs/campusworld.log"
+  max_file_size: "10MB"
+  backup_count: 5
+  console_output: true
+  file_output: true
+
+# CORS配置
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+    - "OPTIONS"
+  allowed_headers:
+    - "*"
+  allow_credentials: true
+  max_age: 86400
+
+# 邮件配置
+email:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_user: ""
+  smtp_password: ""
+  use_tls: true
+  from_email: "noreply@campusworld.com"
+  from_name: "CampusWorld"
+
+# 文件存储配置
+storage:
+  type: "local"  # local, s3, azure, gcs
+  local_path: "uploads/"
+  max_file_size: "10MB"
+  allowed_extensions:
+    - "jpg"
+    - "jpeg"
+    - "png"
+    - "gif"
+    - "pdf"
+    - "doc"
+    - "docx"
+
+# 监控配置
+monitoring:
+  enable_metrics: true
+  metrics_port: 9090
+  health_check_interval: 30
+  enable_tracing: false
+  tracing_host: "localhost"
+  tracing_port: 6831
+
+# 第三方服务配置
+external_services:
+  # 支付服务
+  payment:
+    provider: "stripe"
+    api_key: ""
+    webhook_secret: ""
+  
+  # 短信服务
+  sms:
+    provider: "twilio"
+    account_sid: ""
+    auth_token: ""
+    from_number: ""
+  
+  # 地图服务
+  maps:
+    provider: "google"
+    api_key: ""
+
+# 业务配置
+business:
+  # 用户配置
+  user:
+    default_avatar: "default-avatar.png"
+    max_login_attempts: 5
+    lockout_duration: 900  # 15 minutes
+  
+  # 校园配置
+  campus:
+    max_members: 1000
+    max_activities: 100
+  
+  # 世界配置
+  world:
+    max_players: 10000
+    save_interval: 300  # 5 minutes
+
+# 开发配置
+development:
+  enable_debug_toolbar: false
+  enable_profiling: false
+  mock_external_services: true
+  seed_data: true

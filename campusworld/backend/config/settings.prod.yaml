@@ -1,0 +1,59 @@
+# CampusWorld 生产环境配置
+# 继承自 settings.yaml，覆盖生产环境特定配置
+
+# 应用基础配置
+app:
+  debug: false
+  environment: "production"
+
+# 服务器配置
+server:
+  reload: false
+  workers: 4  # 生产环境使用多个worker
+
+# 数据库配置
+database:
+  host: "postgres"  # Docker容器服务名
+  port: 5432
+  name: "campusworld"
+  user: "campusworld_user"
+  password: "campusworld_password"
+  pool_size: 50
+  max_overflow: 100
+  echo: false
+
+# Redis配置
+redis:
+  host: "redis"  # Docker容器服务名
+  port: 6379
+  password: ""  # 生产环境应设置密码
+
+# 日志配置
+logging:
+  level: "WARNING"
+  console_output: false
+  file_output: true
+  file_path: "/var/log/campusworld/app.log"
+
+# CORS配置
+cors:
+  allowed_origins:
+    - "https://yourdomain.com"
+    - "https://www.yourdomain.com"
+
+# 监控配置
+monitoring:
+  enable_metrics: true
+  enable_tracing: true
+
+# 安全配置
+security:
+  secret_key: "${SECRET_KEY}"  # 从环境变量读取
+  access_token_expire_minutes: 1440  # 生产环境缩短token有效期
+
+# 开发配置
+development:
+  enable_debug_toolbar: false
+  enable_profiling: false
+  mock_external_services: false
+  seed_data: false
