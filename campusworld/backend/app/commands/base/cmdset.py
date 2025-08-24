@@ -625,3 +625,97 @@ class CmdSet(DefaultObject):
             self.set_node_attribute('cmdset_commands', {key: cmd_class.__name__ for key, cmd_class in self.commands.items()})
             self._schedule_node_sync()
         return result
+    
+    def load_from_database(self, force_reload: bool = False) -> bool:
+        """
+        从数据库加载命令集合配置
+        
+        Args:
+            force_reload: 是否强制重新加载
+            
+        Returns:
+            是否加载成功
+        """
+        try:
+            from app.commands.loaders import cmdset_loader
+            
+            config = cmdset_loader.load_cmdset_config(self.key, force_reload)
+            if not config:
+                return False
+            
+            # 更新命令集合属性
+            attributes = config.get('attributes', {})
+            
+            # 更新基本属性
+            if 'cmdset_mergetype' in attributes:
+                self.mergetype = attributes['cmdset_mergetype']
+            if 'cmdset_priority' in attributes:
+                self.priority = attributes['cmdset_priority']
+            
+            # 更新节点属性
+            self.set_node_attribute('cmdset_mergetype', self.mergetype)
+            self.set_node_attribute('cmdset_priority', self.priority)
+            
+            # 加载命令集合包含的命令
+            commands = cmdset_loader.load_cmdset_commands(self.key, force_reload)
+            if commands:
+                # 清空现有命令
+                self.commands.clear()
+                
+                # 添加从数据库加载的命令
+                for cmd_info in commands:
+                    cmd_key = cmd_info['key']
+                    cmd_class_name = cmd_info['relationship'].get('command_class', '')
+                    
+                    # 尝试动态导入命令类
+                    try:
+                        # 这里可以根据需要实现动态命令类加载
+                        # 暂时跳过，因为需要更复杂的类加载机制
+                        self.set_node_attribute(f'command_{cmd_key}', cmd_info)
+                    except Exception as e:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"无法加载命令 {cmd_key}: {e}")
+            
+            # 标记配置已加载
+            self.set_node_attribute('config_loaded_at', datetime.now().isoformat())
+            self.set_node_attribute('config_source', 'database')
+            
+            # 同步到节点
+            self._schedule_node_sync()
+            
+            return True
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"从数据库加载命令集合配置失败 {self.key}: {e}")
+            return False
+    
+    def reload_config(self) -> bool:
+        """
+        重新加载命令集合配置
+        
+        Returns:
+            是否重新加载成功
+        """
+        return self.load_from_database(force_reload=True)
+    
+    def get_config_status(self) -> Dict[str, Any]:
+        """
+        获取命令集合配置状态
+        
+        Returns:
+            配置状态字典
+        """
+        return {
+            'key': self.key,
+            'mergetype': self.mergetype,
+            'priority': self.priority,
+            'commands_count': len(self.commands),
+            'config_loaded_at': self.get_node_attribute('config_loaded_at'),
+            'config_source': self.get_node_attribute('config_source', 'code'),
+            'node_uuid': self._node_uuid,
+            'node_type': self.get_node_type(),
+            'node_typeclass': self.get_node_typeclass()
+        }

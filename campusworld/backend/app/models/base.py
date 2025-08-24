@@ -161,8 +161,12 @@ class DefaultObject(GraphNodeInterface):
         self._schedule_node_sync()
     
     def get_node_attributes(self) -> Dict[str, Any]:
-        """获取节点属性（不包含name）"""
+        """获取节点属性"""
         return self._node_attributes.copy()
+    
+    def get_node_attribute(self, key: str, default: Any = None) -> Any:
+        """获取节点属性值"""
+        return self._node_attributes.get(key, default)
     
     def set_node_attribute(self, key: str, value: Any) -> None:
         """设置节点属性"""

@@ -115,7 +115,7 @@ class Command(DefaultObject):
         self.parsed_args = self.parse_args(args)
         
         # 设置时间戳
-        if not hasattr(self, 'created_at') or not self.created_at:
+        if not hasattr(self, '_created_at') or not self._created_at:
             self._created_at = datetime.now()
         self._updated_at = datetime.now()
         
@@ -534,4 +534,100 @@ class Command(DefaultObject):
             'node_uuid': self._node_uuid,
             'last_sync': getattr(self, '_last_sync', None),
             'sync_status': getattr(self, '_sync_status', 'unknown')
+        }
+    
+    def load_from_database(self, force_reload: bool = False) -> bool:
+        """
+        从数据库加载命令配置
+        
+        Args:
+            force_reload: 是否强制重新加载
+            
+        Returns:
+            是否加载成功
+        """
+        try:
+            from app.commands.loaders import command_loader
+            
+            config = command_loader.load_command_config(self.key, force_reload)
+            if not config:
+                return False
+            
+            # 更新命令属性
+            attributes = config.get('attributes', {})
+            
+            # 更新基本属性
+            if 'command_aliases' in attributes:
+                self.aliases = attributes['command_aliases']
+            if 'command_locks' in attributes:
+                self.locks = attributes['command_locks']
+            if 'help_category' in attributes:
+                self.help_category = attributes['help_category']
+            if 'help_entry' in attributes:
+                self.help_entry = attributes['help_entry']
+            if 'auto_help' in attributes:
+                self.auto_help = attributes['auto_help']
+            if 'arg_regex' in attributes:
+                self.arg_regex = attributes['arg_regex']
+            if 'is_exit' in attributes:
+                self.is_exit = attributes['is_exit']
+            if 'is_channel' in attributes:
+                self.is_channel = attributes['is_channel']
+            
+            # 更新节点属性
+            self.set_node_attribute('command_aliases', self.aliases)
+            self.set_node_attribute('command_locks', self.locks)
+            self.set_node_attribute('help_category', self.help_category)
+            self.set_node_attribute('help_entry', self.help_entry)
+            self.set_node_attribute('auto_help', self.auto_help)
+            self.set_node_attribute('arg_regex', self.arg_regex)
+            self.set_node_attribute('is_exit', self.is_exit)
+            self.set_node_attribute('is_channel', self.is_channel)
+            
+            # 标记配置已加载
+            self.set_node_attribute('config_loaded_at', datetime.now().isoformat())
+            self.set_node_attribute('config_source', 'database')
+            
+            # 同步到节点
+            self._schedule_node_sync()
+            
+            return True
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"从数据库加载命令配置失败 {self.key}: {e}")
+            return False
+    
+    def reload_config(self) -> bool:
+        """
+        重新加载命令配置
+        
+        Returns:
+            是否重新加载成功
+        """
+        return self.load_from_database(force_reload=True)
+    
+    def get_config_status(self) -> Dict[str, Any]:
+        """
+        获取命令配置状态
+        
+        Returns:
+            配置状态字典
+        """
+        return {
+            'key': self.key,
+            'aliases': self.aliases,
+            'locks': self.locks,
+            'help_category': self.help_category,
+            'help_entry': self.help_entry,
+            'auto_help': self.auto_help,
+            'arg_regex': self.arg_regex,
+            'is_exit': self.is_exit,
+            'is_channel': self.is_channel,
+            'config_loaded_at': self.get_node_attribute('config_loaded_at'),
+            'config_source': self.get_node_attribute('config_source', 'code'),
+            'node_uuid': self._node_uuid,
+            'node_type': self.get_node_type(),
+            'node_typeclass': self.get_node_typeclass()
         }

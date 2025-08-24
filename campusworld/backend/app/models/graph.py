@@ -9,9 +9,9 @@
 """
 
 from typing import Dict, Any, List, Optional, Type, Union, TYPE_CHECKING
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index, UniqueConstraint, or_, and_
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship, declarative_base, Session
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declared_attr
 import json
@@ -101,22 +101,17 @@ class Node(Base):
     所有持久化对象都存储在此表中，通过type和typeclass区分
     """
     
-    __abstract__ = True
+    __tablename__ = "nodes"
     
     # 基础标识
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String(36), unique=True, nullable=False, index=True)  # 全局唯一标识
     
     # 类型元数据 - 用于区分不同的对象类型
-    type = Column(String(100), nullable=False, index=True)  # 对象类型: 'campus', 'user', 'world'
-    typeclass = Column(String(500), nullable=False, index=True)  # 完整类路径: 'app.models.campus.Campus'
-    classname = Column(String(100), nullable=False, index=True)  # 类名
-    module_path = Column(String(300), nullable=False, index=True)  # 模块路径
-    
-    # 节点属性
+    type_id = Column(Integer, ForeignKey("node_types.id"), nullable=False)
+    type_code = Column(String(100), nullable=False, index=True)  # 对象类型: 'campus', 'user', 'world'
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
-    attributes = Column(JSONB, default=dict)  # 动态属性，使用JSONB提高性能
     
     # 节点状态
     is_active = Column(Boolean, default=True, index=True)
@@ -127,6 +122,9 @@ class Node(Base):
     location_id = Column(Integer, ForeignKey("nodes.id"), nullable=True)
     home_id = Column(Integer, ForeignKey("nodes.id"), nullable=True)
     
+    # 节点属性
+    attributes = Column(JSONB, default=dict)  # 动态属性，使用JSONB提高性能
+    
     # 标签系统
     tags = Column(JSONB, default=list)
     
@@ -134,17 +132,53 @@ class Node(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # 关系映射
+    # 作为源节点的关系
+    source_relationships = relationship(
+        "Relationship",
+        foreign_keys="Relationship.source_id",
+        back_populates="source_node",
+        cascade="all, delete-orphan"
+    )
+    
+    # 作为目标节点的关系
+    target_relationships = relationship(
+        "Relationship",
+        foreign_keys="Relationship.target_id",
+        back_populates="target_node",
+        cascade="all, delete-orphan"
+    )
+    
+    # 位置关系
+    location = relationship(
+        "Node",
+        foreign_keys=[location_id],
+        remote_side=[id],
+        backref="located_objects"
+    )
+    
+    # 家关系
+    home = relationship(
+        "Node",
+        foreign_keys=[home_id],
+        remote_side=[id],
+        backref="home_objects"
+    )
+    
     # 图结构索引
     __table_args__ = (
-        Index('idx_node_type', 'type'),
-        Index('idx_node_typeclass', 'typeclass'),
+        Index('idx_node_type_code', 'type_code'),
+        Index('idx_node_name', 'name'),
         Index('idx_node_attributes', 'attributes', postgresql_using='gin'),
         Index('idx_node_tags', 'tags', postgresql_using='gin'),
         Index('idx_node_uuid', 'uuid'),
+        Index('idx_node_active', 'is_active'),
+        Index('idx_node_public', 'is_public'),
+        Index('idx_node_access', 'access_level'),
     )
     
     def __repr__(self):
-        return f"<{self.__class__.__name__}(id={self.id}, uuid='{self.uuid}', name='{self.name}', type='{self.type}')>"
+        return f"<{self.__class__.__name__}(id={self.id}, uuid='{self.uuid}', name='{self.name}', type='{self.type_code}')>"
     
     # 实现BaseNode接口
     def get_uuid(self) -> str:
@@ -154,10 +188,10 @@ class Node(Base):
         return self.name
     
     def get_type(self) -> str:
-        return self.type
+        return self.type_code
     
     def get_typeclass(self) -> str:
-        return self.typeclass
+        return self.attributes.get('typeclass', '') if self.attributes else ''
     
     def is_node_active(self) -> bool:
         return self.is_active
@@ -189,26 +223,11 @@ class Node(Base):
             self.attributes = {}
         self.attributes[key] = value
     
-    def has_attribute(self, key: str) -> bool:
-        """检查是否有指定属性"""
-        return self.attributes and key in self.attributes
-    
-    def remove_attribute(self, key: str) -> bool:
-        """移除属性"""
-        if self.attributes and key in self.attributes:
-            del self.attributes[key]
-            return True
-        return False
-    
-    def get_all_attributes(self) -> Dict[str, Any]:
-        """获取所有属性"""
-        return self.attributes or {}
-    
-    def update_attributes(self, attributes: Dict[str, Any]) -> None:
-        """批量更新属性"""
-        if not self.attributes:
-            self.attributes = {}
-        self.attributes.update(attributes)
+    def get_tag(self, tag: str) -> bool:
+        """检查是否包含指定标签"""
+        if not self.tags:
+            return False
+        return tag in self.tags
     
     def add_tag(self, tag: str) -> None:
         """添加标签"""
@@ -222,9 +241,78 @@ class Node(Base):
         if self.tags and tag in self.tags:
             self.tags.remove(tag)
     
-    def has_tag(self, tag: str) -> bool:
-        """检查是否有指定标签"""
-        return self.tags and tag in self.tags
+    # ORM查询方法
+    @classmethod
+    def get_by_uuid(cls, session: Session, uuid: str) -> Optional['Node']:
+        """根据UUID获取节点"""
+        return session.query(cls).filter(cls.uuid == uuid).first()
+    
+    @classmethod
+    def get_by_name(cls, session: Session, name: str) -> Optional['Node']:
+        """根据名称获取节点"""
+        return session.query(cls).filter(cls.name == name).first()
+    
+    @classmethod
+    def get_by_type(cls, session: Session, type_code: str) -> List['Node']:
+        """根据类型获取节点列表"""
+        return session.query(cls).filter(cls.type_code == type_code).all()
+    
+    @classmethod
+    def get_active_nodes(cls, session: Session, type_code: str = None) -> List['Node']:
+        """获取活跃节点"""
+        query = session.query(cls).filter(cls.is_active == True)
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    @classmethod
+    def search_by_attribute(cls, session: Session, key: str, value: Any, type_code: str = None) -> List['Node']:
+        """根据属性搜索节点"""
+        query = session.query(cls).filter(cls.attributes.contains({key: value}))
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    @classmethod
+    def search_by_tag(cls, session: Session, tag: str, type_code: str = None) -> List['Node']:
+        """根据标签搜索节点"""
+        query = session.query(cls).filter(cls.tags.contains([tag]))
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    @classmethod
+    def get_related_nodes(cls, session: Session, node_id: int, relationship_type: str = None) -> List['Node']:
+        """获取相关节点"""
+        query = session.query(cls).join(
+            Relationship, 
+            or_(
+                and_(Relationship.source_id == node_id, Relationship.target_id == cls.id),
+                and_(Relationship.target_id == node_id, Relationship.source_id == cls.id)
+            )
+        )
+        if relationship_type:
+            query = query.filter(Relationship.type_code == relationship_type)
+        return query.all()
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'uuid': self.uuid,
+            'type_code': self.type_code,
+            'name': self.name,
+            'description': self.description,
+            'is_active': self.is_active,
+            'is_public': self.is_public,
+            'access_level': self.access_level,
+            'location_id': self.location_id,
+            'home_id': self.home_id,
+            'attributes': self.attributes,
+            'tags': self.tags,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
 
 
 class Relationship(Base):
@@ -241,8 +329,8 @@ class Relationship(Base):
     uuid = Column(String(36), unique=True, nullable=False, index=True)
     
     # 关系类型
-    type = Column(String(100), nullable=False, index=True)  # 关系类型
-    typeclass = Column(String(500), nullable=False, index=True)  # 关系类的完整路径
+    type_id = Column(Integer, ForeignKey("relationship_types.id"), nullable=False)
+    type_code = Column(String(100), nullable=False, index=True)  # 关系类型
     
     # 节点引用
     source_id = Column(Integer, ForeignKey("nodes.id"), nullable=False, index=True)
@@ -259,28 +347,28 @@ class Relationship(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # 关系定义
+    source_node = relationship("Node", foreign_keys=[source_id], back_populates="source_relationships")
+    target_node = relationship("Node", foreign_keys=[target_id], back_populates="target_relationships")
+    
     # 约束和索引
     __table_args__ = (
-        UniqueConstraint('source_id', 'target_id', 'type', name='uq_relationship_unique'),
-        Index('idx_relationship_type', 'type'),
+        UniqueConstraint('source_id', 'target_id', 'type_code', name='uq_relationship_unique'),
+        Index('idx_relationship_type', 'type_code'),
         Index('idx_relationship_source', 'source_id'),
         Index('idx_relationship_target', 'target_id'),
         Index('idx_relationship_attributes', 'attributes', postgresql_using='gin'),
     )
     
-    # 关系定义
-    source = relationship("GraphNode", foreign_keys=[source_id], backref="outgoing_relationships")
-    target = relationship("GraphNode", foreign_keys=[target_id], backref="incoming_relationships")
-    
     def __repr__(self):
-        return f"<Relationship(id={self.id}, type='{self.type}', source={self.source_id}->{self.target_id})>"
+        return f"<Relationship(id={self.id}, type='{self.type_code}', source={self.source_id}->{self.target_id})>"
     
     # 实现BaseRelationship接口
     def get_uuid(self) -> str:
         return self.uuid
     
     def get_type(self) -> str:
-        return self.type
+        return self.type_code
     
     def get_source_id(self) -> int:
         return self.source_id
@@ -288,8 +376,17 @@ class Relationship(Base):
     def get_target_id(self) -> int:
         return self.target_id
     
-    def is_relationship_active(self) -> bool:
-        return self.is_active
+    def get_weight(self) -> int:
+        return self.weight
+    
+    def get_attributes(self) -> Dict[str, Any]:
+        return self.attributes or {}
+    
+    def set_attribute(self, key: str, value: Any) -> None:
+        """设置关系属性"""
+        if not self.attributes:
+            self.attributes = {}
+        self.attributes[key] = value
     
     def get_attribute(self, key: str, default: Any = None) -> Any:
         """获取关系属性"""
@@ -297,11 +394,80 @@ class Relationship(Base):
             return default
         return self.attributes.get(key, default)
     
-    def set_attribute(self, key: str, value: Any) -> None:
-        """设置关系属性"""
-        if not self.attributes:
-            self.attributes = {}
-        self.attributes[key] = value
+    def is_relationship_active(self) -> bool:
+        """检查关系是否活跃"""
+        return self.is_active
+    
+    # ORM查询方法
+    @classmethod
+    def get_by_uuid(cls, session: Session, uuid: str) -> Optional['Relationship']:
+        """根据UUID获取关系"""
+        return session.query(cls).filter(cls.uuid == uuid).first()
+    
+    @classmethod
+    def get_by_type(cls, session: Session, type_code: str) -> List['Relationship']:
+        """根据类型获取关系列表"""
+        return session.query(cls).filter(cls.type_code == type_code).all()
+    
+    @classmethod
+    def get_by_source(cls, session: Session, source_id: int, type_code: str = None) -> List['Relationship']:
+        """根据源节点获取关系"""
+        query = session.query(cls).filter(cls.source_id == source_id)
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    @classmethod
+    def get_by_target(cls, session: Session, target_id: int, type_code: str = None) -> List['Relationship']:
+        """根据目标节点获取关系"""
+        query = session.query(cls).filter(cls.target_id == target_id)
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    @classmethod
+    def get_between_nodes(cls, session: Session, source_id: int, target_id: int, type_code: str = None) -> List['Relationship']:
+        """获取两个节点之间的关系"""
+        query = session.query(cls).filter(
+            or_(
+                and_(cls.source_id == source_id, cls.target_id == target_id),
+                and_(cls.source_id == target_id, cls.target_id == source_id)
+            )
+        )
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    @classmethod
+    def get_active_relationships(cls, session: Session, type_code: str = None) -> List['Relationship']:
+        """获取活跃关系"""
+        query = session.query(cls).filter(cls.is_active == True)
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    @classmethod
+    def search_by_attribute(cls, session: Session, key: str, value: Any, type_code: str = None) -> List['Relationship']:
+        """根据属性搜索关系"""
+        query = session.query(cls).filter(cls.attributes.contains({key: value}))
+        if type_code:
+            query = query.filter(cls.type_code == type_code)
+        return query.all()
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'uuid': self.uuid,
+            'type_code': self.type_code,
+            'source_id': self.source_id,
+            'target_id': self.target_id,
+            'is_active': self.is_active,
+            'weight': self.weight,
+            'attributes': self.attributes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
 
 
 # ==================== 具体节点类型 ====================
@@ -367,3 +533,120 @@ class GraphNode(Node):
 
 
 # 移除装饰器，使用GraphSynchronizer进行同步
+
+# ==================== 节点类型和关系类型模型 ====================
+
+class NodeType(Base):
+    """节点类型定义表"""
+    
+    __tablename__ = "node_types"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    type_code = Column(String(100), unique=True, nullable=False, index=True)
+    type_name = Column(String(255), nullable=False)
+    typeclass = Column(String(500), nullable=False)
+    classname = Column(String(100), nullable=False)
+    module_path = Column(String(300), nullable=False)
+    description = Column(Text, nullable=True)
+    schema_definition = Column(JSONB, default=dict)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # 关系映射
+    nodes = relationship("Node", backref="node_type_info", cascade="all, delete-orphan")
+    
+    # 索引
+    __table_args__ = (
+        Index('idx_node_type_code', 'type_code'),
+        Index('idx_node_type_active', 'is_active'),
+        Index('idx_node_type_schema', 'schema_definition', postgresql_using='gin'),
+    )
+    
+    def __repr__(self):
+        return f"<NodeType(id={self.id}, type_code='{self.type_code}', type_name='{self.type_name}')>"
+    
+    @classmethod
+    def get_by_type_code(cls, session: Session, type_code: str) -> Optional['NodeType']:
+        """根据类型代码获取节点类型"""
+        return session.query(cls).filter(cls.type_code == type_code).first()
+    
+    @classmethod
+    def get_active_types(cls, session: Session) -> List['NodeType']:
+        """获取所有活跃的节点类型"""
+        return session.query(cls).filter(cls.is_active == True).all()
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'type_code': self.type_code,
+            'type_name': self.type_name,
+            'typeclass': self.typeclass,
+            'classname': self.classname,
+            'module_path': self.module_path,
+            'description': self.description,
+            'schema_definition': self.schema_definition,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class RelationshipType(Base):
+    """关系类型定义表"""
+    
+    __tablename__ = "relationship_types"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    type_code = Column(String(100), unique=True, nullable=False, index=True)
+    type_name = Column(String(255), nullable=False)
+    typeclass = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    schema_definition = Column(JSONB, default=dict)
+    is_directed = Column(Boolean, default=True)
+    is_symmetric = Column(Boolean, default=False)
+    is_transitive = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # 关系映射
+    relationships = relationship("Relationship", backref="relationship_type_info", cascade="all, delete-orphan")
+    
+    # 索引
+    __table_args__ = (
+        Index('idx_relationship_type_code', 'type_code'),
+        Index('idx_relationship_type_active', 'is_active'),
+        Index('idx_relationship_type_schema', 'schema_definition', postgresql_using='gin'),
+    )
+    
+    def __repr__(self):
+        return f"<RelationshipType(id={self.id}, type_code='{self.type_code}', type_name='{self.type_name}')>"
+    
+    @classmethod
+    def get_by_type_code(cls, session: Session, type_code: str) -> Optional['RelationshipType']:
+        """根据类型代码获取关系类型"""
+        return session.query(cls).filter(cls.type_code == type_code).first()
+    
+    @classmethod
+    def get_active_types(cls, session: Session) -> List['RelationshipType']:
+        """获取所有活跃的关系类型"""
+        return session.query(cls).filter(cls.is_active == True).all()
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'type_code': self.type_code,
+            'type_name': self.type_name,
+            'typeclass': self.typeclass,
+            'description': self.description,
+            'schema_definition': self.schema_definition,
+            'is_directed': self.is_directed,
+            'is_symmetric': self.is_symmetric,
+            'is_transitive': self.is_transitive,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
