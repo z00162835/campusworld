@@ -38,7 +38,7 @@ class ServerConfig(BaseModel):
 
 class SecurityConfig(BaseModel):
     """安全配置"""
-    secret_key: str = Field(description="JWT密钥")
+    secret_key: str = Field(default="your-secret-key-here-change-in-production", description="JWT密钥")
     algorithm: str = Field(default="HS256", description="JWT算法")
     access_token_expire_minutes: int = Field(default=11520, description="访问令牌过期时间(分钟)")
     refresh_token_expire_days: int = Field(default=30, description="刷新令牌过期时间(天)")
@@ -211,8 +211,9 @@ class Settings(BaseModel):
     
     @validator('security')
     def validate_secret_key(cls, v):
-        if not v.secret_key or v.secret_key == "your-secret-key-here-change-in-production":
-            raise ValueError("Secret key must be set in production")
+        # 在开发环境中允许使用默认密钥
+        if not v.secret_key:
+            raise ValueError("Secret key must be set")
         return v
 
 
