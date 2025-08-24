@@ -623,6 +623,7 @@ class DefaultAccount(DefaultObject):
     继承自DefaultObject，提供用户账户相关功能
     所有数据都存储在Node中，type为'account'
     集成命令系统，支持用户命令执行
+    集成权限系统，支持角色和权限管理
     """
     
     def __init__(self, username: str, email: str, **kwargs):
@@ -635,12 +636,21 @@ class DefaultAccount(DefaultObject):
             'email': email,
             'is_verified': False,
             'is_locked': False,
+            'is_suspended': False,
             'login_count': 0,
+            'failed_login_attempts': 0,
+            'max_failed_attempts': 5,
             'roles': ['user'],
             'permissions': [],
             'hashed_password': kwargs.get('hashed_password', ''),
             'last_login': None,
+            'last_activity': None,
             'lock_reason': None,
+            'suspension_reason': None,
+            'suspension_until': None,
+            'created_by': kwargs.get('created_by', 'system'),
+            'created_at': datetime.now(),
+            'updated_at': datetime.now(),
             **kwargs
         }
         
@@ -703,28 +713,58 @@ class DefaultAccount(DefaultObject):
     
     @property
     def is_locked(self) -> bool:
-        """获取是否被锁定"""
+        """获取是否已锁定"""
         return self._node_attributes.get('is_locked', False)
     
     @is_locked.setter
     def is_locked(self, value: bool):
-        """设置是否被锁定"""
+        """设置是否已锁定"""
         self.set_node_attribute('is_locked', value)
     
     @property
-    def last_login(self):
-        """获取最后登录时间"""
-        return self._node_attributes.get('last_login')
+    def is_suspended(self) -> bool:
+        """获取是否已暂停"""
+        return self._node_attributes.get('is_suspended', False)
     
-    @last_login.setter
-    def last_login(self, value):
-        """设置最后登录时间"""
-        self.set_node_attribute('last_login', value)
+    @is_suspended.setter
+    def is_suspended(self, value: bool):
+        """设置是否已暂停"""
+        self.set_node_attribute('is_suspended', value)
+    
+    @property
+    def login_count(self) -> int:
+        """获取登录次数"""
+        return self._node_attributes.get('login_count', 0)
+    
+    @login_count.setter
+    def login_count(self, value: int):
+        """设置登录次数"""
+        self.set_node_attribute('login_count', value)
+    
+    @property
+    def failed_login_attempts(self) -> int:
+        """获取失败登录次数"""
+        return self._node_attributes.get('failed_login_attempts', 0)
+    
+    @failed_login_attempts.setter
+    def failed_login_attempts(self, value: int):
+        """设置失败登录次数"""
+        self.set_node_attribute('failed_login_attempts', value)
+    
+    @property
+    def max_failed_attempts(self) -> int:
+        """获取最大失败登录次数"""
+        return self._node_attributes.get('max_failed_attempts', 5)
+    
+    @max_failed_attempts.setter
+    def max_failed_attempts(self, value: int):
+        """设置最大失败登录次数"""
+        self.set_node_attribute('max_failed_attempts', value)
     
     @property
     def roles(self) -> List[str]:
         """获取角色列表"""
-        return self._node_attributes.get('roles', [])
+        return self._node_attributes.get('roles', ['user'])
     
     @roles.setter
     def roles(self, value: List[str]):
@@ -741,6 +781,83 @@ class DefaultAccount(DefaultObject):
         """设置权限列表"""
         self.set_node_attribute('permissions', value)
     
+    @property
+    def last_login(self) -> Optional[datetime]:
+        """获取最后登录时间"""
+        last_login = self._node_attributes.get('last_login')
+        if isinstance(last_login, str):
+            try:
+                return datetime.fromisoformat(last_login)
+            except ValueError:
+                return None
+        return last_login
+    
+    @last_login.setter
+    def last_login(self, value: Optional[datetime]):
+        """设置最后登录时间"""
+        if value is None:
+            self.set_node_attribute('last_login', None)
+        else:
+            self.set_node_attribute('last_login', value.isoformat())
+    
+    @property
+    def last_activity(self) -> Optional[datetime]:
+        """获取最后活动时间"""
+        last_activity = self._node_attributes.get('last_activity')
+        if isinstance(last_activity, str):
+            try:
+                return datetime.fromisoformat(last_activity)
+            except ValueError:
+                return None
+        return last_activity
+    
+    @last_activity.setter
+    def last_activity(self, value: Optional[datetime]):
+        """设置最后活动时间"""
+        if value is None:
+            self.set_node_attribute('last_activity', None)
+        else:
+            self.set_node_attribute('last_activity', value.isoformat())
+    
+    @property
+    def lock_reason(self) -> Optional[str]:
+        """获取锁定原因"""
+        return self._node_attributes.get('lock_reason')
+    
+    @lock_reason.setter
+    def lock_reason(self, value: Optional[str]):
+        """设置锁定原因"""
+        self.set_node_attribute('lock_reason', value)
+    
+    @property
+    def suspension_reason(self) -> Optional[str]:
+        """获取暂停原因"""
+        return self._node_attributes.get('suspension_reason')
+    
+    @suspension_reason.setter
+    def suspension_reason(self, value: Optional[str]):
+        """设置暂停原因"""
+        self.set_node_attribute('suspension_reason', value)
+    
+    @property
+    def suspension_until(self) -> Optional[datetime]:
+        """获取暂停截止时间"""
+        suspension_until = self._node_attributes.get('suspension_until')
+        if isinstance(suspension_until, str):
+            try:
+                return datetime.fromisoformat(suspension_until)
+            except ValueError:
+                return None
+        return suspension_until
+    
+    @suspension_until.setter
+    def suspension_until(self, value: Optional[datetime]):
+        """设置暂停截止时间"""
+        if value is None:
+            self.set_node_attribute('suspension_until', None)
+        else:
+            self.set_node_attribute('suspension_until', value.isoformat())
+    
     # ==================== 账户管理方法 ====================
     
     def add_role(self, role: str) -> None:
@@ -749,6 +866,7 @@ class DefaultAccount(DefaultObject):
         if role not in roles:
             roles.append(role)
             self.roles = roles
+            self._schedule_node_sync()
     
     def remove_role(self, role: str) -> None:
         """移除角色"""
@@ -756,6 +874,7 @@ class DefaultAccount(DefaultObject):
         if role in roles:
             roles.remove(role)
             self.roles = roles
+            self._schedule_node_sync()
     
     def has_role(self, role: str) -> bool:
         """检查是否有指定角色"""
@@ -767,6 +886,7 @@ class DefaultAccount(DefaultObject):
         if permission not in permissions:
             permissions.append(permission)
             self.permissions = permissions
+            self._schedule_node_sync()
     
     def remove_permission(self, permission: str) -> None:
         """移除权限"""
@@ -774,6 +894,7 @@ class DefaultAccount(DefaultObject):
         if permission in permissions:
             permissions.remove(permission)
             self.permissions = permissions
+            self._schedule_node_sync()
     
     def has_permission(self, permission: str) -> bool:
         """检查是否有指定权限"""
@@ -788,29 +909,116 @@ class DefaultAccount(DefaultObject):
         if required_permission in self.permissions:
             return True
         
-        # 层级权限检查（例如：admin 包含 user 权限）
-        permission_hierarchy = {
-            "user": 1,
-            "moderator": 2,
-            "admin": 3,
-            "owner": 4
-        }
+        # 通配符权限检查
+        for perm in self.permissions:
+            if perm == "*" or perm == "all":  # 超级权限
+                return True
+            if perm.endswith(".*") and required_permission.startswith(perm[:-1]):
+                return True
         
-        user_level = max(permission_hierarchy.get(perm, 0) for perm in self.permissions)
-        required_level = permission_hierarchy.get(required_permission, 0)
+        # 角色权限检查
+        from app.core.permissions import permission_manager, Role
+        for role_name in self.roles:
+            try:
+                role = Role(role_name)
+                if permission_manager.check_role_permission(role, required_permission):
+                    return True
+            except ValueError:
+                continue
         
-        return user_level >= required_level
+        return False
+    
+    def check_role(self, required_role: str) -> bool:
+        """检查角色（支持层级角色）"""
+        if not self.roles:
+            return False
+        
+        # 直接角色检查
+        if required_role in self.roles:
+            return True
+        
+        # 角色层级检查
+        from app.core.permissions import permission_checker
+        return permission_checker.check_role(self.roles, required_role)
+    
+    def check_access_level(self, required_level: str) -> bool:
+        """检查访问级别"""
+        from app.core.permissions import permission_checker
+        user_level = self._node_attributes.get('access_level', 'normal')
+        return permission_checker.check_access_level(user_level, required_level)
     
     def update_last_login(self) -> None:
         """更新最后登录时间"""
         self.last_login = datetime.now()
+        self.login_count += 1
+        self.failed_login_attempts = 0  # 重置失败次数
+        self._schedule_node_sync()
+    
+    def update_last_activity(self) -> None:
+        """更新最后活动时间"""
+        self.last_activity = datetime.now()
+        self._schedule_node_sync()
+    
+    def record_failed_login(self) -> None:
+        """记录失败登录"""
+        self.failed_login_attempts += 1
+        if self.failed_login_attempts >= self.max_failed_attempts:
+            self.lock_account("登录失败次数过多")
+        self._schedule_node_sync()
     
     def lock_account(self, reason: str = None) -> None:
         """锁定账户"""
         self.is_locked = True
-        self.set_node_attribute("lock_reason", reason)
+        self.lock_reason = reason
+        self._schedule_node_sync()
     
     def unlock_account(self) -> None:
         """解锁账户"""
         self.is_locked = False
-        self.remove_attribute("lock_reason")
+        self.lock_reason = None
+        self.failed_login_attempts = 0
+        self._schedule_node_sync()
+    
+    def suspend_account(self, reason: str, until: datetime = None) -> None:
+        """暂停账户"""
+        self.is_suspended = True
+        self.suspension_reason = reason
+        self.suspension_until = until
+        self._schedule_node_sync()
+    
+    def unsuspend_account(self) -> None:
+        """恢复账户"""
+        self.is_suspended = False
+        self.suspension_reason = None
+        self.suspension_until = None
+        self._schedule_node_sync()
+    
+    def can_login(self) -> bool:
+        """检查是否可以登录"""
+        if self.is_locked:
+            return False
+        if self.is_suspended:
+            if self.suspension_until and datetime.now() < self.suspension_until:
+                return False
+            else:
+                # 暂停时间已过，自动恢复
+                self.unsuspend_account()
+        return True
+    
+    def get_status_summary(self) -> Dict[str, Any]:
+        """获取账户状态摘要"""
+        return {
+            'username': self.username,
+            'email': self.email,
+            'is_verified': self.is_verified,
+            'is_locked': self.is_locked,
+            'is_suspended': self.is_suspended,
+            'roles': self.roles,
+            'permissions': self.permissions,
+            'login_count': self.login_count,
+            'last_login': self.last_login.isoformat() if self.last_login else None,
+            'last_activity': self.last_activity.isoformat() if self.last_activity else None,
+            'lock_reason': self.lock_reason,
+            'suspension_reason': self.suspension_reason,
+            'suspension_until': self.suspension_until.isoformat() if self.suspension_until else None,
+        }

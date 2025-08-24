@@ -1,0 +1,26 @@
+# Minimal requirements for core functionality
+# FastAPI and ASGI
+fastapi>=0.116.0
+uvicorn[standard]>=0.24.0
+
+# Core dependencies
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# SSH and System
+paramiko>=4.0.0
+psutil>=7.0.0
+cryptography>=41.0.0
+
+# Utilities
+pyyaml>=6.0.0
+python-dateutil>=2.8.0
+
+# Optional: Database (comment out if not needed)
+# sqlalchemy>=2.0.0
+# psycopg2-binary>=2.9.0
+
+# Optional: Authentication (comment out if not needed)
+# python-jose[cryptography]>=3.5.0
+# passlib[bcrypt]>=1.7.0

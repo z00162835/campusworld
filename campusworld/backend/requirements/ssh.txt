@@ -1,0 +1,13 @@
+# SSH Server Dependencies
+paramiko==4.0.0
+cryptography==41.0.7
+
+# Terminal and Console
+blessed==1.20.0
+prompt-toolkit==3.0.39
+
+# System Information
+psutil==7.0.0
+
+# SSH Key Management
+sshpubkeys==3.3.1
