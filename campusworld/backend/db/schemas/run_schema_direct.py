@@ -16,8 +16,8 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 # 数据库连接配置
 DB_CONFIG = {
-    'host': 'localhost',
-    'port': 5433,
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', '5433')),
     'user': 'campusworld_dev_user',
     'password': 'campusworld_dev_password',
     'database': 'campusworld_dev'

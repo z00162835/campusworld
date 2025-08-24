@@ -24,7 +24,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
 # 配置
-DATABASE_URL = "postgresql://campusworld:campusworld@localhost:5433/campusworld"
+DATABASE_URL = os.getenv('DATABASE_URL', "postgresql://campusworld:campusworld@localhost:5433/campusworld")
 BACKUP_TABLES = True  # 是否备份现有表
 
 

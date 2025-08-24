@@ -1,0 +1,42 @@
+# 精简的开发环境配置
+# 只包含实际使用的配置项
+
+environment: "development"
+
+# 应用配置覆盖
+app:
+  debug: true
+  environment: "development"
+
+# 服务器配置覆盖
+server:
+  reload: true
+  workers: 1
+
+# 数据库配置覆盖
+database:
+  host: "localhost"
+  port: 5433
+  name: "campusworld_dev"
+  user: "campusworld_dev_user"
+  password: "campusworld_dev_password"
+  echo: true  # 开发环境显示SQL语句
+
+# Redis配置覆盖
+redis:
+  host: "localhost"
+  port: 6380
+  password: ""
+
+# 日志配置覆盖
+logging:
+  level: "DEBUG"
+  console_output: true
+  file_output: false
+
+# SSH配置覆盖
+ssh:
+  logging:
+    level: "DEBUG"
+    file:
+      path: "logs/ssh_dev.log"

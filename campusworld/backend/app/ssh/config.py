@@ -16,40 +16,40 @@ class SSHConfig:
     def _load_config(self):
         """加载配置"""
         # 服务器配置
-        self.host = get_setting('ssh.host', '0.0.0.0')
-        self.port = get_setting('ssh.port', 2222)
-        self.banner = get_setting('ssh.banner', 'Welcome to CampusWorld SSH Console')
+        self.host = get_setting('ssh_server.host', '0.0.0.0')
+        self.port = get_setting('ssh_server.port', 2222)
+        self.banner = get_setting('ssh_server.banner', 'Welcome to CampusWorld SSH Console')
         
         # 认证配置
-        self.auth_timeout = get_setting('ssh.auth_timeout', 60)
-        self.idle_timeout = get_setting('ssh.idle_timeout', 1800)  # 30分钟
-        self.max_connections = get_setting('ssh.max_connections', 100)
-        self.max_connections_per_user = get_setting('ssh.max_connections_per_user', 3)
+        self.auth_timeout = get_setting('ssh.authentication.timeout.auth_timeout', 60)
+        self.idle_timeout = get_setting('ssh.authentication.timeout.idle_timeout', 1800)  # 30分钟
+        self.max_connections = get_setting('ssh_server.max_connections', 100)
+        self.max_connections_per_user = get_setting('ssh.authentication.limits.max_connections_per_user', 3)
         
         # 安全配置
-        self.allowed_auth_methods = get_setting('ssh.allowed_auth_methods', ['password'])
-        self.password_auth_enabled = get_setting('ssh.password_auth_enabled', True)
-        self.public_key_auth_enabled = get_setting('ssh.public_key_auth_enabled', False)
+        self.allowed_auth_methods = get_setting('ssh.authentication.methods.password', ['password'])
+        self.password_auth_enabled = get_setting('ssh.authentication.methods.password', True)
+        self.public_key_auth_enabled = get_setting('ssh.authentication.methods.public_key', False)
         
         # 密钥配置
-        self.host_key_path = get_setting('ssh.host_key_path', 'ssh_host_key')
-        self.host_key_bits = get_setting('ssh.host_key_bits', 2048)
+        self.host_key_path = get_setting('ssh.security.host_key.path', 'ssh_host_key')
+        self.host_key_bits = get_setting('ssh.security.host_key.bits', 2048)
         
         # 日志配置
-        self.log_level = get_setting('ssh.log_level', 'INFO')
-        self.log_file = get_setting('ssh.log_file', 'logs/ssh.log')
-        self.log_format = get_setting('ssh.log_format', 
+        self.log_level = get_setting('ssh.logging.level', 'INFO')
+        self.log_file = get_setting('ssh.logging.file.path', 'logs/ssh.log')
+        self.log_format = get_setting('ssh.logging.format', 
                                     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         
         # 会话配置
-        self.session_timeout = get_setting('ssh.session_timeout', 1800)  # 30分钟
-        self.max_command_history = get_setting('ssh.max_command_history', 100)
-        self.enable_command_logging = get_setting('ssh.enable_command_logging', True)
+        self.session_timeout = get_setting('ssh.session.management.session_timeout', 1800)  # 30分钟
+        self.max_command_history = get_setting('ssh.session.command.max_command_history', 100)
+        self.enable_command_logging = get_setting('ssh.session.command.enable_command_logging', True)
         
         # 性能配置
-        self.worker_threads = get_setting('ssh.worker_threads', 10)
-        self.connection_backlog = get_setting('ssh.connection_backlog', 100)
-        self.socket_timeout = get_setting('ssh.socket_timeout', 1.0)
+        self.worker_threads = get_setting('ssh_server.worker_threads', 10)
+        self.connection_backlog = get_setting('ssh_server.connection_backlog', 100)
+        self.socket_timeout = get_setting('ssh_server.socket_timeout', 1.0)
     
     def get_server_config(self) -> Dict[str, Any]:
         """获取服务器配置"""

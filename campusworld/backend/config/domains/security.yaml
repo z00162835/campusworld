@@ -1,0 +1,162 @@
+# 安全配置域
+# 包含认证、授权、加密、安全策略等配置
+
+# 认证配置
+authentication:
+  # JWT配置
+  jwt:
+    secret_key: "your-secret-key-here-change-in-production"
+    algorithm: "HS256"
+    access_token_expire_minutes: 11520  # 8 days
+    refresh_token_expire_days: 30
+    refresh_token_rotate: true
+  
+  # 密码策略
+  password:
+    min_length: 8
+    max_length: 128
+    require_uppercase: true
+    require_lowercase: true
+    require_digits: true
+    require_special_chars: true
+    bcrypt_rounds: 12
+    history_count: 5
+  
+  # 会话配置
+  session:
+    timeout: 1800  # 30 minutes
+    max_concurrent_sessions: 3
+    idle_timeout: 900  # 15 minutes
+    absolute_timeout: 86400  # 24 hours
+  
+  # 登录策略
+  login:
+    max_attempts: 5
+    lockout_duration: 900  # 15 minutes
+    require_captcha_after: 3
+    remember_me_days: 30
+
+# 授权配置
+authorization:
+  # 角色定义
+  roles:
+    admin:
+      name: "Administrator"
+      description: "Full system access"
+      permissions: ["*"]
+    
+    developer:
+      name: "Developer"
+      description: "Development and testing access"
+      permissions: ["read:*", "write:test:*", "admin:dev:*"]
+    
+    user:
+      name: "User"
+      description: "Standard user access"
+      permissions: ["read:own:*", "write:own:*"]
+    
+    campus_user:
+      name: "Campus User"
+      description: "Campus-specific access"
+      permissions: ["read:campus:*", "write:campus:own:*"]
+  
+  # 权限配置
+  permissions:
+    # 用户管理权限
+    user:
+      create: ["admin"]
+      read: ["admin", "developer", "own"]
+      update: ["admin", "own"]
+      delete: ["admin"]
+    
+    # 校园管理权限
+    campus:
+      create: ["admin", "developer"]
+      read: ["*"]
+      update: ["admin", "developer", "owner"]
+      delete: ["admin"]
+    
+    # 系统管理权限
+    system:
+      read: ["admin", "developer"]
+      update: ["admin"]
+      admin: ["admin"]
+
+# 加密配置
+encryption:
+  # 数据加密
+  data:
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 90
+    enable_at_rest: true
+    enable_in_transit: true
+  
+  # 密钥管理
+  key_management:
+    provider: "local"  # local, aws-kms, azure-keyvault
+    master_key_path: "keys/master.key"
+    key_derivation_salt: "campusworld-salt-2024"
+  
+  # 哈希配置
+  hashing:
+    algorithm: "bcrypt"
+    salt_rounds: 12
+    pepper: "campusworld-pepper-2024"
+
+# 安全策略
+security_policy:
+  # 输入验证
+  input_validation:
+    max_string_length: 10000
+    allow_html: false
+    allow_scripts: false
+    sanitize_inputs: true
+  
+  # 输出编码
+  output_encoding:
+    html_encoding: true
+    json_encoding: true
+    xml_encoding: true
+  
+  # 文件上传安全
+  file_upload:
+    max_file_size: "10MB"
+    allowed_extensions: ["jpg", "jpeg", "png", "gif", "pdf", "doc", "docx"]
+    scan_virus: true
+    store_external: false
+  
+  # API安全
+  api_security:
+    rate_limiting: true
+    request_size_limit: "1MB"
+    enable_cors: true
+    cors_origins: ["*"]
+    cors_methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+  
+  # 审计日志
+  audit:
+    enabled: true
+    log_level: "INFO"
+    log_sensitive_operations: true
+    retention_days: 365
+
+# 网络安全
+network_security:
+  # HTTPS配置
+  https:
+    enabled: false
+    certificate_path: ""
+    private_key_path: ""
+    redirect_http: true
+  
+  # 防火墙规则
+  firewall:
+    allowed_ips: ["*"]
+    blocked_ips: []
+    rate_limit_per_ip: 100
+  
+  # 代理配置
+  proxy:
+    enabled: false
+    trusted_proxies: ["127.0.0.1", "::1"]
+    forward_headers: ["X-Forwarded-For", "X-Real-IP"]

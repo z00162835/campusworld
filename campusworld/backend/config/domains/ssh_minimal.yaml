@@ -1,0 +1,44 @@
+# 精简的SSH服务配置
+# 只包含实际使用的配置项
+
+# SSH服务器配置
+ssh_server:
+  host: "0.0.0.0"
+  port: 2222
+  max_connections: 100
+  connection_backlog: 100
+  worker_threads: 10
+  socket_timeout: 1.0
+  banner: "Welcome to CampusWorld SSH Console"
+
+# SSH认证配置
+ssh:
+  authentication:
+    timeout:
+      auth_timeout: 60
+      idle_timeout: 1800
+    limits:
+      max_connections_per_user: 3
+    methods:
+      password: true
+      public_key: false
+  
+  # SSH安全配置
+  security:
+    host_key:
+      path: "ssh_host_key"
+      bits: 2048
+  
+  # SSH日志配置
+  logging:
+    level: "INFO"
+    file:
+      path: "logs/ssh.log"
+  
+  # SSH会话配置
+  session:
+    management:
+      session_timeout: 1800
+    command:
+      max_command_history: 100
+      enable_command_logging: true

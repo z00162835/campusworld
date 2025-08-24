@@ -1,0 +1,84 @@
+# 应用核心配置域
+# 包含应用基础信息、API配置、服务器配置等
+
+app:
+  # 应用基础信息
+  name: "CampusWorld"
+  version: "0.1.0"
+  description: "A modern campus world application with SSH console support"
+  author: "CampusWorld Team"
+  contact:
+    email: "support@campusworld.com"
+    website: "https://campusworld.com"
+  
+  # 环境配置
+  environment: "development"  # development, testing, staging, production
+  debug: false
+  timezone: "UTC"
+  locale: "en_US"
+  
+  # 应用特性开关
+  features:
+    ssh_console: true
+    graph_database: true
+    real_time_updates: false
+    api_rate_limiting: true
+    caching: true
+    monitoring: true
+
+# API配置
+api:
+  # API版本和路由
+  v1_prefix: "/api/v1"
+  title: "CampusWorld API"
+  description: "CampusWorld REST API Documentation"
+  version: "1.0.0"
+  
+  # 文档配置
+  docs_url: "/docs"
+  redoc_url: "/redoc"
+  openapi_url: "/openapi.json"
+  
+  # API限制
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+    burst_size: 20
+  
+  # 响应配置
+  response:
+    include_timestamp: true
+    include_request_id: true
+    default_page_size: 20
+    max_page_size: 100
+
+# 服务器配置
+server:
+  # 网络配置
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  
+  # 性能配置
+  worker_class: "uvicorn.workers.UvicornWorker"
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 100
+  
+  # 功能开关
+  reload: true
+  access_log: true
+  error_log: true
+  
+  # 超时配置
+  timeout:
+    keep_alive: 5
+    graceful_shutdown: 30
+    request_timeout: 60
+  
+  # 安全配置
+  security:
+    trusted_hosts: ["*"]
+    allowed_hosts: ["*"]
+    secure_headers: true
+    hsts: false

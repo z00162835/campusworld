@@ -183,7 +183,7 @@ class CampusWorldSSHServerInterface(ServerInterface):
 class CampusWorldSSHServer:
     """CampusWorld SSH服务器主类"""
     
-    def __init__(self, host: str = '0.0.0.0', port: int = 2222):
+    def __init__(self, host: str = None, port: int = None):
         self.host = host
         self.port = port
         self.server_socket = None
@@ -294,7 +294,7 @@ class CampusWorldSSHServer:
         self.logger.info("SSH server stopped")
 
 
-def start_ssh_server(host: str = '0.0.0.0', port: int = 2222):
+def start_ssh_server(host: str = None, port: int = None):
     """启动SSH服务器的便捷函数"""
     server = CampusWorldSSHServer(host, port)
     try:

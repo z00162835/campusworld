@@ -1,0 +1,195 @@
+# SSH服务配置域
+# 包含SSH服务器、认证、安全、会话等配置
+
+# SSH服务器配置
+ssh_server:
+  # 网络配置
+  host: "0.0.0.0"
+  port: 2222
+  max_connections: 100
+  connection_backlog: 100
+  
+  # 性能配置
+  worker_threads: 10
+  socket_timeout: 1.0
+  keepalive_interval: 30
+  keepalive_count_max: 3
+  
+  # 功能开关
+  enable_sftp: false
+  enable_port_forwarding: false
+  enable_x11_forwarding: false
+  
+  # 服务器信息
+  banner: "Welcome to CampusWorld SSH Console"
+  version: "SSH-2.0-CampusWorld_1.0"
+
+# 认证配置
+authentication:
+  # 认证方法
+  methods:
+    password: true
+    public_key: false
+    keyboard_interactive: false
+    gssapi: false
+  
+  # 认证超时
+  timeout:
+    auth_timeout: 60
+    idle_timeout: 1800  # 30 minutes
+    session_timeout: 1800  # 30 minutes
+  
+  # 连接限制
+  limits:
+    max_connections_per_user: 3
+    max_failed_attempts: 5
+    lockout_duration: 900  # 15 minutes
+  
+  # 用户认证配置
+  users:
+    # 默认用户配置
+    default:
+      shell: "/bin/bash"
+      home_directory: "/home/user"
+      allowed_commands: ["*"]
+    
+    # 管理员用户配置
+    admin:
+      shell: "/bin/bash"
+      home_directory: "/home/admin"
+      allowed_commands: ["*"]
+      sudo_access: true
+
+# 安全配置
+security:
+  # 主机密钥
+  host_key:
+    path: "ssh_host_key"
+    bits: 2048
+    algorithm: "rsa"  # rsa, ecdsa, ed25519
+    auto_generate: true
+  
+  # 加密算法
+  algorithms:
+    kex: ["diffie-hellman-group14-sha256", "diffie-hellman-group16-sha512"]
+    cipher: ["aes256-gcm@openssh.com", "aes256-ctr"]
+    mac: ["hmac-sha2-256", "hmac-sha2-512"]
+    hostkey: ["ssh-rsa", "ecdsa-sha2-nistp256", "ssh-ed25519"]
+  
+  # 安全策略
+  policy:
+    weak_algorithms: false
+    legacy_openssh: false
+    compression: false
+    tcp_forwarding: false
+  
+  # 访问控制
+  access_control:
+    allowed_users: ["*"]
+    denied_users: []
+    allowed_groups: ["*"]
+    denied_groups: []
+    allowed_ips: ["*"]
+    denied_ips: []
+
+# 会话配置
+session:
+  # 会话管理
+  management:
+    max_sessions: 100
+    session_timeout: 1800  # 30 minutes
+    idle_timeout: 900  # 15 minutes
+  
+  # 命令执行
+  command:
+    max_command_history: 100
+    enable_command_logging: true
+    log_sensitive_commands: true
+    allowed_commands: ["*"]
+    denied_commands: []
+  
+  # 终端配置
+  terminal:
+    default_type: "xterm-256color"
+    max_width: 200
+    max_height: 100
+    enable_color: true
+  
+  # 环境变量
+  environment:
+    TERM: "xterm-256color"
+    LANG: "en_US.UTF-8"
+    LC_ALL: "en_US.UTF-8"
+
+# 日志配置
+logging:
+  # 日志级别
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  
+  # 日志文件
+  file:
+    path: "logs/ssh.log"
+    max_size: "10MB"
+    backup_count: 5
+    rotation: "daily"
+  
+  # 日志格式
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  
+  # 日志内容
+  content:
+    log_connections: true
+    log_commands: true
+    log_errors: true
+    log_authentication: true
+  
+  # 审计日志
+  audit:
+    enabled: true
+    separate_file: true
+    file_path: "logs/ssh_audit.log"
+    retention_days: 90
+
+# 监控配置
+monitoring:
+  # 性能监控
+  performance:
+    enabled: true
+    collect_metrics: true
+    metrics_interval: 60  # 1 minute
+  
+  # 健康检查
+  health_check:
+    enabled: true
+    interval: 30  # 30 seconds
+    timeout: 5
+  
+  # 告警配置
+  alerts:
+    enabled: true
+    max_connections_threshold: 80
+    failed_auth_threshold: 10
+    error_rate_threshold: 0.1
+
+# 集成配置
+integration:
+  # 数据库集成
+  database:
+    enabled: true
+    session_storage: true
+    command_logging: true
+    user_activity: true
+  
+  # 外部认证
+  external_auth:
+    enabled: false
+    provider: "ldap"  # ldap, radius, oauth
+    config: {}
+  
+  # 通知系统
+  notifications:
+    enabled: false
+    email: false
+    slack: false
+    webhook: false
