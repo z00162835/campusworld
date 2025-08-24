@@ -63,19 +63,19 @@ class GraphSynchronizer:
     
     def _create_graph_node_from_object(self, obj: DefaultObject) -> GraphNode:
         """从DefaultObject创建图节点"""
-        # 获取对象属性
+        # 获取对象属性（不包含name）
         attributes = obj.get_node_attributes()
         
-        # 创建图节点
+        # 创建图节点，name从对象的独立字段获取
         node = GraphNode(
             uuid=obj.get_node_uuid(),
             type=obj.get_node_type(),
             typeclass=obj.get_node_typeclass(),
             classname=obj.__class__.__name__,
             module_path=obj.__class__.__module__,
-            name=attributes.get('name', ''),
+            name=obj.get_node_name(),  # 从独立字段获取name
             description=attributes.get('description', ''),
-            attributes=attributes,
+            attributes=attributes,  # 不包含name的属性
             tags=attributes.get('tags', []),
             is_active=attributes.get('is_active', True),
             is_public=attributes.get('is_public', True),
@@ -88,13 +88,13 @@ class GraphSynchronizer:
     
     def _update_graph_node_from_object(self, node: GraphNode, obj: DefaultObject) -> None:
         """从DefaultObject更新图节点"""
-        # 获取对象属性
+        # 获取对象属性（不包含name）
         attributes = obj.get_node_attributes()
         
-        # 更新节点属性
-        node.name = attributes.get('name', '')
+        # 更新节点属性，name从对象的独立字段获取
+        node.name = obj.get_node_name()  # 从独立字段获取name
         node.description = attributes.get('description', '')
-        node.attributes = attributes
+        node.attributes = attributes  # 不包含name的属性
         node.tags = attributes.get('tags', [])
         node.is_active = attributes.get('is_active', True)
         node.is_public = attributes.get('is_public', True)
@@ -110,9 +110,11 @@ class GraphSynchronizer:
     def sync_node_to_object(self, node: GraphNode, obj_class: Type[DefaultObject]) -> Optional[DefaultObject]:
         """将图节点同步到DefaultObject"""
         try:
-            # 从节点属性创建对象
+            # 从节点属性创建对象（不包含name）
             attributes = node.attributes or {}
-            name = attributes.get('name', node.name)
+            
+            # 从节点的独立name字段获取名称
+            name = node.name
             
             # 创建对象实例
             obj = obj_class(name=name, **attributes)

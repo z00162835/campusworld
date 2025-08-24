@@ -100,6 +100,7 @@ class DefaultObject(GraphNodeInterface):
     
     所有对象都存储在Node中，通过type和typeclass区分
     不再有独立的数据库表，完全依赖图节点系统
+    集成命令系统，支持命令执行和管理
     """
     
     def __init__(self, name: str, **kwargs):
@@ -107,9 +108,11 @@ class DefaultObject(GraphNodeInterface):
         self._node_type = self.__class__.__name__.lower()  # 如: 'campus', 'user'
         self._node_typeclass = f"{self.__class__.__module__}.{self.__class__.__name__}"
         
-        # 所有属性都存储在Node的attributes中
+        # 设置独立的name字段（对应数据库nodes表的name字段）
+        self._node_name = name
+        
+        # 所有其他属性都存储在Node的attributes中（不包含name）
         self._node_attributes = {
-            'name': name,
             'type': self._node_type,
             'typeclass': self._node_typeclass,
             'is_active': True,
@@ -123,12 +126,16 @@ class DefaultObject(GraphNodeInterface):
         # 自动生成UUID
         self._node_uuid = str(uuid.uuid4())
         
+        # 命令系统相关属性
+        self._cmdset = None
+        self._command_history = []
+        self._max_command_history = 100
+        
         # 自动同步到Node表
         self._schedule_node_sync()
     
     def __repr__(self):
-        name = self._node_attributes.get('name', 'Unknown')
-        return f"<{self.__class__.__name__}(uuid='{self._node_uuid}', name='{name}', type='{self._node_type}')>"
+        return f"<{self.__class__.__name__}(uuid='{self._node_uuid}', name='{self._node_name}', type='{self._node_type}')>"
     
     # ==================== 图节点接口实现 ====================
     
@@ -144,12 +151,25 @@ class DefaultObject(GraphNodeInterface):
         """获取节点类型类"""
         return self._node_typeclass
     
+    def get_node_name(self) -> str:
+        """获取节点名称"""
+        return self._node_name
+    
+    def set_node_name(self, name: str) -> None:
+        """设置节点名称"""
+        self._node_name = name
+        self._schedule_node_sync()
+    
     def get_node_attributes(self) -> Dict[str, Any]:
-        """获取节点属性"""
+        """获取节点属性（不包含name）"""
         return self._node_attributes.copy()
     
     def set_node_attribute(self, key: str, value: Any) -> None:
         """设置节点属性"""
+        # 不允许设置name属性，name应该通过set_node_name方法设置
+        if key == 'name':
+            raise ValueError("不能直接设置name属性，请使用set_node_name方法")
+        
         self._node_attributes[key] = value
         self._node_attributes['updated_at'] = datetime.now()
         self._schedule_node_sync()
@@ -209,6 +229,209 @@ class DefaultObject(GraphNodeInterface):
         """获取类的节点类型类"""
         return f"{cls.__module__}.{cls.__name__}"
     
+    # ==================== 命令系统集成 ====================
+    
+    def get_cmdset(self):
+        """获取命令集合"""
+        if self._cmdset is None:
+            # 延迟初始化命令集合
+            self._init_default_cmdset()
+        return self._cmdset
+    
+    def set_cmdset(self, cmdset):
+        """设置命令集合"""
+        self._cmdset = cmdset
+    
+    def _init_default_cmdset(self):
+        """初始化默认命令集合"""
+        try:
+            from app.commands.base import CmdSet
+            # 创建空的命令集合，子类可以重写此方法添加特定命令
+            self._cmdset = CmdSet()
+        except ImportError:
+            # 如果命令系统不可用，创建空的命令集合
+            self._cmdset = None
+    
+    def execute_command(self, command_string: str, caller=None, **kwargs) -> Dict[str, Any]:
+        """
+        执行命令
+        
+        Args:
+            command_string: 命令字符串
+            caller: 命令调用者
+            **kwargs: 其他参数
+            
+        Returns:
+            执行结果字典
+        """
+        try:
+            from app.commands.base import CommandExecutor
+            
+            # 获取命令集合
+            cmdset = self.get_cmdset()
+            if not cmdset:
+                return {
+                    'success': False,
+                    'error': '命令集合未初始化',
+                    'command': command_string
+                }
+            
+            # 创建命令执行器
+            executor = CommandExecutor(default_cmdset=cmdset)
+            
+            # 执行命令
+            results = executor.execute_command_string(command_string, caller=caller, **kwargs)
+            
+            # 处理执行结果（可能包含多个命令）
+            if not results:
+                error_result = {
+                    'success': False,
+                    'error': '命令执行失败，无结果返回',
+                    'command': command_string
+                }
+                self._add_command_to_history(command_string, error_result)
+                return error_result
+            
+            # 如果只有一个结果，直接返回
+            if len(results) == 1:
+                result = results[0]
+                self._add_command_to_history(command_string, result)
+                return result
+            
+            # 如果有多个结果，合并为一个
+            combined_result = {
+                'success': all(r.get('success', False) for r in results),
+                'command': command_string,
+                'results': results,
+                'result_count': len(results)
+            }
+            
+            # 检查是否有错误
+            errors = [r.get('error') for r in results if r.get('error')]
+            if errors:
+                combined_result['error'] = f"多个错误: {'; '.join(errors)}"
+            
+            self._add_command_to_history(command_string, combined_result)
+            return combined_result
+            
+        except Exception as e:
+            error_result = {
+                'success': False,
+                'error': str(e),
+                'command': command_string
+            }
+            self._add_command_to_history(command_string, error_result)
+            return error_result
+    
+    def _add_command_to_history(self, command: str, result: Dict[str, Any]):
+        """添加命令到历史记录"""
+        history_entry = {
+            'command': command,
+            'timestamp': datetime.now(),
+            'result': result,
+            'success': result.get('success', False)
+        }
+        
+        self._command_history.append(history_entry)
+        
+        # 限制历史记录数量
+        if len(self._command_history) > self._max_command_history:
+            self._command_history.pop(0)
+    
+    def get_command_history(self, limit: int = None) -> List[Dict[str, Any]]:
+        """获取命令历史记录"""
+        if limit is None:
+            return self._command_history.copy()
+        else:
+            return self._command_history[-limit:]
+    
+    def clear_command_history(self):
+        """清除命令历史记录"""
+        self._command_history.clear()
+    
+    def has_command(self, command_key: str) -> bool:
+        """检查是否有指定命令"""
+        cmdset = self.get_cmdset()
+        if not cmdset:
+            return False
+        return cmdset.has_command(command_key)
+    
+    def get_available_commands(self) -> List[str]:
+        """获取可用命令列表"""
+        cmdset = self.get_cmdset()
+        if not cmdset:
+            return []
+        return list(cmdset.get_commands().keys())
+    
+    def get_commands_by_category(self, category: str) -> List[str]:
+        """根据分类获取命令"""
+        cmdset = self.get_cmdset()
+        if not cmdset:
+            return []
+        return cmdset.get_commands_by_category(category)
+    
+    # ==================== 权限管理方法 ====================
+    
+    def has_role(self, role: str) -> bool:
+        """检查是否有指定角色"""
+        roles = self._node_attributes.get('roles', [])
+        return role in roles
+    
+    def has_permission(self, permission: str) -> bool:
+        """检查是否有指定权限"""
+        permissions = self._node_attributes.get('permissions', [])
+        return permission in permissions
+    
+    def add_role(self, role: str) -> None:
+        """添加角色"""
+        roles = self._node_attributes.get('roles', [])
+        if role not in roles:
+            roles.append(role)
+            self._node_attributes['roles'] = roles
+            self._schedule_node_sync()
+    
+    def remove_role(self, role: str) -> None:
+        """移除角色"""
+        roles = self._node_attributes.get('roles', [])
+        if role in roles:
+            roles.remove(role)
+            self._node_attributes['roles'] = roles
+            self._schedule_node_sync()
+    
+    def add_permission(self, permission: str) -> None:
+        """添加权限"""
+        permissions = self._node_attributes.get('permissions', [])
+        if permission not in permissions:
+            permissions.append(permission)
+            self._node_attributes['permissions'] = permissions
+            self._schedule_node_sync()
+    
+    def remove_permission(self, permission: str) -> None:
+        """移除权限"""
+        permissions = self._node_attributes.get('permissions', [])
+        if permission in permissions:
+            permissions.remove(permission)
+            self._node_attributes['permissions'] = permissions
+            self._schedule_node_sync()
+    
+    def check_permission(self, required_permission: str) -> bool:
+        """检查权限（支持层级权限）"""
+        if not self.has_permission(required_permission):
+            return False
+        
+        # 层级权限检查（例如：admin 包含 user 权限）
+        permission_hierarchy = {
+            "user": 1,
+            "moderator": 2,
+            "admin": 3,
+            "owner": 4
+        }
+        
+        user_level = max(permission_hierarchy.get(perm, 0) for perm in self._node_attributes.get('permissions', []))
+        required_level = permission_hierarchy.get(required_permission, 0)
+        
+        return user_level >= required_level
+    
     # ==================== 属性访问器 ====================
     
     @property
@@ -225,12 +448,12 @@ class DefaultObject(GraphNodeInterface):
     @property
     def name(self) -> str:
         """获取名称"""
-        return self._node_attributes.get('name', '')
+        return self._node_name
     
     @name.setter
     def name(self, value: str):
         """设置名称"""
-        self.set_node_attribute('name', value)
+        self.set_node_name(value)
     
     @property
     def description(self) -> str:
@@ -395,6 +618,7 @@ class DefaultAccount(DefaultObject):
     
     继承自DefaultObject，提供用户账户相关功能
     所有数据都存储在Node中，type为'account'
+    集成命令系统，支持用户命令执行
     """
     
     def __init__(self, username: str, email: str, **kwargs):
@@ -417,6 +641,19 @@ class DefaultAccount(DefaultObject):
         }
         
         super().__init__(name=username, **account_attrs)
+    
+    def _init_default_cmdset(self):
+        """初始化账户默认命令集合"""
+        try:
+            from app.commands.base import CmdSet
+            from app.commands.system.cmdset import SystemCmdSet
+            
+            # 账户默认包含系统命令
+            self._cmdset = SystemCmdSet()
+            
+        except ImportError:
+            # 如果命令系统不可用，创建空的命令集合
+            self._cmdset = None
     
     # ==================== 账户属性访问器 ====================
     
