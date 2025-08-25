@@ -172,21 +172,19 @@ class SSHSessionCommand(SSHCommand):
                         required_permission="system.view")
     
     def execute(self, console, args: List[str]) -> str:
-        session_manager = console.ssh_interface.session_manager
-        stats = session_manager.get_session_stats()
+        session = console.get_session()
+        if not session:
+            return "No active session"
         
         info = f"""
 Session Information:
 ===================
-Total Sessions: {stats['total_sessions']}
-Active Sessions: {stats['active_sessions']}
-Users Connected: {len(stats['user_stats'])}
-
-User Sessions:
+Username: {session.username}
+User ID: {session.user_id}
+Connected: {session.connected_at.strftime('%Y-%m-%d %H:%M:%S')}
+Last Activity: {session.last_activity.strftime('%Y-%m-%d %H:%M:%S')}
+Commands Executed: {len(session.command_history)}
 """
-        for username, user_info in stats['user_stats'].items():
-            info += f"  {username}: {user_info['session_count']} sessions, {user_info['total_commands']} commands\n"
-        
         return info
 
 
@@ -241,23 +239,18 @@ class SSHWhoCommand(SSHCommand):
         super().__init__("who", "Show online users")
     
     def execute(self, console, args: List[str]) -> str:
-        session_manager = console.ssh_interface.session_manager
-        active_sessions = session_manager.get_active_sessions()
+        session = console.get_session()
+        if not session:
+            return "No active session"
         
-        if not active_sessions:
-            return "No active sessions"
-        
-        info = "Online Users:\n"
-        info += "=" * 50 + "\n"
-        info += f"{'Username':<15} {'Connected':<20} {'Last Activity':<20} {'Commands':<10}\n"
-        info += "-" * 50 + "\n"
-        
-        for session in active_sessions:
-            connected = session.connected_at.strftime('%H:%M:%S')
-            last_activity = session.last_activity.strftime('%H:%M:%S')
-            commands = len(session.command_history)
-            info += f"{session.username:<15} {connected:<20} {last_activity:<20} {commands:<10}\n"
-        
+        info = f"""
+Online User:
+============
+Username: {session.username}
+Connected: {session.connected_at.strftime('%H:%M:%S')}
+Last Activity: {session.last_activity.strftime('%H:%M:%S')}
+Commands Executed: {len(session.command_history)}
+"""
         return info
 
 
@@ -349,8 +342,17 @@ class SSHStatusCommand(SSHCommand):
             disk = psutil.disk_usage('/')
             
             # 会话状态
-            session_manager = console.ssh_interface.session_manager
-            session_stats = session_manager.get_session_stats()
+            session = console.get_session()
+            session_info = ""
+            if session:
+                session_info = f"""
+SSH Session:
+============
+Username: {session.username}
+Connected: {session.connected_at.strftime('%H:%M:%S')}
+Last Activity: {session.last_activity.strftime('%H:%M:%S')}
+Commands Executed: {len(session.command_history)}
+"""
             
             status = f"""
 System Status:
@@ -358,13 +360,7 @@ System Status:
 CPU Usage: {cpu_percent}%
 Memory: {memory.percent}% used ({memory.used // (1024**3)} GB / {memory.total // (1024**3)} GB)
 Disk: {disk.percent}% used ({disk.used // (1024**3)} GB / {disk.total // (1024**3)} GB)
-
-SSH Sessions:
-=============
-Active Sessions: {session_stats['active_sessions']}
-Total Sessions: {session_stats['total_sessions']}
-Users Connected: {len(session_stats['user_stats'])}
-"""
+{session_info}"""
             return status
             
         except ImportError:

@@ -70,7 +70,7 @@ class CampusWorldSSHServerInterface(ServerInterface):
                 # 查找用户账号
                 user_node = session.query(Node).filter(
                     Node.type_code == "account",
-                    Node.attributes['username'].astext == username
+                    Node.name == username
                 ).first()
                 
                 if not user_node:
@@ -94,7 +94,7 @@ class CampusWorldSSHServerInterface(ServerInterface):
                         return AUTH_FAILED
                 
                 # 验证密码
-                stored_hash = attrs.get("password_hash", "")
+                stored_hash = attrs.get("hashed_password", "")
                 if not stored_hash:
                     self.logger.warning(f"No password hash for user: {username}")
                     return AUTH_FAILED
@@ -242,30 +242,33 @@ class CampusWorldSSHServer:
                 return
                 
             # 等待shell请求
-            channel.send(self.ssh_interface.banner + '\n')
-            channel.send('Type "help" for available commands.\n\n')
+            # 注意：不要在这里发送额外的消息，让控制台自己处理输出
+            # channel.send(self.ssh_interface.banner + '\n')
+            # channel.send('Type "help" for available commands.\n\n')
             
             # 创建控制台实例
-            console = SSHConsole(channel, self.ssh_interface)
+            console = SSHConsole(channel, None)  # 先创建控制台，稍后设置会话
             
             # 设置会话（从认证成功的会话中获取）
-            # 这里需要根据用户名找到对应的会话
-            # 由于认证成功后，我们需要知道是哪个用户
-            # 暂时创建一个匿名会话，后续可以通过其他方式识别用户
-            
-            # 尝试从传输中获取认证信息
             try:
                 # 获取认证的用户名
                 transport = channel.get_transport()
                 if hasattr(transport, 'get_username'):
                     username = transport.get_username()
-                    # 查找对应的会话
-                    for session_id, session in self.sessions.items():
+                    self.logger.info(f"Setting up console for user: {username}")
+                    
+                    # 查找对应的会话（从ssh_interface中获取）
+                    for session_id, session in self.ssh_interface.sessions.items():
                         if session.username == username:
-                            console.set_session(session)
+                            console.current_session = session  # 直接设置会话
+                            self.logger.info(f"Session set for user: {username}")
                             break
+                    else:
+                        self.logger.warning(f"No session found for user: {username}")
+                else:
+                    self.logger.warning("Could not get username from transport")
             except Exception as e:
-                self.logger.debug(f"Could not get username from transport: {e}")
+                self.logger.error(f"Error setting up console session: {e}")
             
             console.run()
             
