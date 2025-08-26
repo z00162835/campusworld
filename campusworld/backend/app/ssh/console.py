@@ -28,10 +28,10 @@ class SSHConsole:
         """初始化SSH控制台"""
         self.channel = channel
         self.current_session = session
-        self.running = True
+        # 设置日志级别
         self.debug_mode = os.getenv('SSH_DEBUG', 'false').lower() == 'true'
         
-        # 配置日志系统
+        # 初始化日志系统
         self.logger = logging.getLogger(__name__)
         self._setup_logging()
         
@@ -39,19 +39,30 @@ class SSHConsole:
         self.command_registry = SSHCommandRegistry()
         register_builtin_commands(self.command_registry)
         
+        if self.debug_mode:
+            self.logger.info("SSH控制台已启动 - DEBUG模式")
+            self.logger.debug(f"命令注册表包含 {len(self.command_registry.get_all_commands())} 个命令")
+        else:
+            self.logger.info("SSH控制台已启动")
+        
         # 初始化其他组件
         self.input_buffer = ""
-        self.command_history = []
-        self.history_index = 0
-        self.terminal_width = 80
-        self.terminal_height = 24
+        self.history = []                    # 命令历史记录
+        self.command_history = self.history  # 保持向后兼容
+        self.history_index = 0               # 历史记录索引
+        self.aliases = {}
+        self.running = False
+        
+        # 设置终端尺寸
+        self.terminal_width = self._detect_terminal_width()
+        self.terminal_height = self._detect_terminal_height()
         
         # 初始化状态显示
         self.status_display = StatusDisplay(channel)
         
-        self.logger.info("SSH Console initialized in DEBUG mode (Event-Driven + Adaptive Terminal)")
-        self.logger.info(f"Terminal size: {self.terminal_width}x{self.terminal_height}")
-        self.logger.info(f"Command registry contains {len(self.command_registry.get_all_commands())} commands")
+        if self.debug_mode:
+            self.logger.info(f"终端尺寸: {self.terminal_width}x{self.terminal_height}")
+            self.logger.debug(f"命令注册表包含 {len(self.command_registry.get_all_commands())} 个命令")
     
     def _setup_logging(self):
         """配置日志系统 - 减少冗余日志"""
@@ -553,10 +564,10 @@ class SSHConsole:
             
             # 添加到历史记录
             if input_text.strip():
-                self.command_history.append(input_text)
-                self.history_index = len(self.command_history)
+                self.history.append(input_text)
+                self.history_index = len(self.history)
                 if self.debug_mode:
-                    self.logger.debug(f"输入已添加到历史记录，当前历史长度: {len(self.command_history)}")
+                    self.logger.debug(f"输入已添加到历史记录，当前历史长度: {len(self.history)}")
             
             # 解析命令
             parts = input_text.strip().split()
@@ -603,6 +614,10 @@ class SSHConsole:
                 # 发送命令未找到消息
                 not_found_msg = self._beautify_command_not_found(command_name)
                 self._safe_send_output(not_found_msg)
+                
+                # 发送额外的换行符，确保输出格式对齐
+                self._send_command_output_newline()
+                
                 if self.debug_mode:
                     self.logger.debug("命令未找到消息已发送")
                 # 显示新提示符 - 只在需要时显示
@@ -619,6 +634,10 @@ class SSHConsole:
                 # 发送权限拒绝消息
                 permission_msg = f"Permission denied for command '{command_name}'.\n"
                 self._safe_send_output(permission_msg)
+                
+                # 发送额外的换行符，确保输出格式对齐
+                self._send_command_output_newline()
+                
                 if self.debug_mode:
                     self.logger.debug("权限拒绝消息已发送")
                 # 显示新提示符 - 只在需要时显示
@@ -638,8 +657,19 @@ class SSHConsole:
                 
                 # 美化输出
                 beautified_result = self._beautify_command_output(command_name, result)
+                
+                # 验证输出格式
+                if self.debug_mode and not self._validate_output_format(beautified_result):
+                    self.logger.warning(f"命令 '{command_name}' 输出格式验证失败，尝试修复")
+                    # 尝试修复格式
+                    beautified_result = self._normalize_output_format(beautified_result)
+                
                 # 发送命令输出
                 self._safe_send_output(beautified_result)
+                
+                # 发送额外的换行符，确保输出格式对齐
+                self._send_command_output_newline()
+                
                 if self.debug_mode:
                     self.logger.debug("命令输出已发送")
             else:
@@ -648,6 +678,10 @@ class SSHConsole:
                 # 即使没有输出，也发送确认消息
                 success_msg = f"Command '{command_name}' executed successfully.\n"
                 self._safe_send_output(success_msg)
+                
+                # 发送额外的换行符，确保输出格式对齐
+                self._send_command_output_newline()
+                
                 if self.debug_mode:
                     self.logger.debug("成功消息已发送")
             
@@ -666,6 +700,10 @@ class SSHConsole:
             # 发送错误消息
             error_msg = self._beautify_error_output(command_name, e)
             self._safe_send_output(error_msg)
+            
+            # 发送额外的换行符，确保输出格式对齐
+            self._send_command_output_newline()
+            
             if self.debug_mode:
                 self.logger.debug("错误消息已发送")
             
@@ -685,7 +723,7 @@ class SSHConsole:
                 self.logger.debug(f"命令执行完成，输入缓冲区已清空: '{self.input_buffer}'")
     
     def _normalize_output_format(self, result: str) -> str:
-        """标准化输出格式 - 确保第一行居左对齐"""
+        """标准化输出格式 - 强制第一行居左对齐，彻底清理前导空格"""
         try:
             if not result or not result.strip():
                 return result
@@ -695,33 +733,62 @@ class SSHConsole:
             if not lines:
                 return result
             
-            # 处理第一行，确保居左对齐
-            first_line = lines[0].strip()
-            if first_line:
-                lines[0] = first_line
-            
-            # 处理后续行，保持原有格式
-            normalized_lines = []
+            # 彻底清理每一行，移除所有前导空格、制表符等空白字符
+            cleaned_lines = []
             for i, line in enumerate(lines):
                 if i == 0:
-                    # 第一行居左对齐
-                    normalized_lines.append(line)
+                    # 第一行强制居左对齐，移除所有前导空白字符
+                    cleaned_line = line.lstrip()
+                    if cleaned_line:
+                        cleaned_lines.append(cleaned_line)
+                    else:
+                        # 如果第一行清理后为空，跳过
+                        continue
                 else:
-                    # 后续行保持原有格式
-                    normalized_lines.append(line)
+                    # 后续行保持原有格式，但清理前导空白
+                    cleaned_line = line.rstrip()  # 只清理尾部空白，保持缩进
+                    cleaned_lines.append(cleaned_line)
             
             # 重新组合
-            normalized_result = '\n'.join(normalized_lines)
+            normalized_result = '\n'.join(cleaned_lines)
             
             # 确保结果以换行符结尾
             if not normalized_result.endswith('\n'):
                 normalized_result += '\n'
+            
+            if self.debug_mode:
+                self.logger.debug(f"输出格式标准化完成，第一行: '{cleaned_lines[0] if cleaned_lines else ''}', 总行数: {len(cleaned_lines)}")
             
             return normalized_result
             
         except Exception as e:
             self.logger.error(f"输出格式标准化失败: {e}")
             return result
+    
+    def _validate_output_format(self, result: str) -> bool:
+        """验证输出格式是否正确 - 确保第一行居左对齐"""
+        try:
+            if not result or not result.strip():
+                return True
+            
+            lines = result.strip().split('\n')
+            if not lines:
+                return True
+            
+            # 检查第一行是否居左对齐
+            first_line = lines[0]
+            if first_line and first_line[0].isspace():
+                if self.debug_mode:
+                    self.logger.warning(f"输出格式验证失败: 第一行包含前导空格: '{repr(first_line)}'")
+                return False
+            
+            if self.debug_mode:
+                self.logger.debug(f"输出格式验证通过: 第一行='{first_line}'")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"输出格式验证失败: {e}")
+            return False
     
     def _get_beautify_strategy(self, command_name: str):
         """获取美化策略 - 策略模式实现"""
@@ -765,14 +832,33 @@ class SSHConsole:
             return self._beautify_default_output(result)
     
     def _beautify_with_title(self, result: str, title: str, check_start: str = None) -> str:
-        """通用标题美化方法 - 减少重复代码"""
-        # 检查结果是否已经包含标题，避免重复
-        if check_start and result.strip().startswith(check_start):
-            return self._normalize_output_format(result)
-        
-        # 确保第一行居左对齐
-        formatted_result = f"{title}\n{result}"
-        return self._normalize_output_format(formatted_result)
+        """通用标题美化方法 - 确保标题和内容都居左对齐"""
+        try:
+            # 检查结果是否已经包含标题，避免重复
+            if check_start and result.strip().startswith(check_start):
+                return self._normalize_output_format(result)
+            
+            # 清理标题和结果，确保都居左对齐
+            clean_title = title.strip()
+            clean_result = result.strip()
+            
+            # 组合标题和结果，确保格式正确
+            if clean_result:
+                # 如果结果不为空，添加空行分隔
+                formatted_result = f"{clean_title}\n{clean_result}"
+            else:
+                # 如果结果为空，只显示标题
+                formatted_result = clean_title
+            
+            if self.debug_mode:
+                self.logger.debug(f"标题美化完成: 标题='{clean_title}', 结果长度={len(clean_result)}")
+            
+            return self._normalize_output_format(formatted_result)
+            
+        except Exception as e:
+            self.logger.error(f"标题美化失败: {e}")
+            # 降级到简单处理
+            return self._normalize_output_format(f"{title}\n{result}")
     
     def _beautify_help_output_simple(self, result: str) -> str:
         """美化帮助命令输出 - 简化版本"""
@@ -798,16 +884,49 @@ class SSHConsole:
         return self._normalize_output_format(result)
     
     def _beautify_system_output_simple(self, result: str) -> str:
-        """美化系统信息输出 - 简化版本"""
-        return self._beautify_with_title(result, "System Information:", "System Information:")
+        """美化系统信息输出 - 确保格式一致"""
+        # 检查结果是否已经包含标题
+        if result.strip().startswith("System Information:"):
+            return self._normalize_output_format(result)
+        
+        # 添加标题并确保格式正确
+        title = "System Information:"
+        if result.strip():
+            formatted_result = f"{title}\n{result.strip()}"
+        else:
+            formatted_result = title
+        
+        return self._normalize_output_format(formatted_result)
     
     def _beautify_user_output_simple(self, result: str) -> str:
-        """美化用户信息输出 - 简化版本"""
-        return self._beautify_with_title(result, "User Information:", "User Information:")
+        """美化用户信息输出 - 确保格式一致"""
+        # 检查结果是否已经包含标题
+        if result.strip().startswith("User Information:"):
+            return self._normalize_output_format(result)
+        
+        # 添加标题并确保格式正确
+        title = "User Information:"
+        if result.strip():
+            formatted_result = f"{title}\n{result.strip()}"
+        else:
+            formatted_result = title
+        
+        return self._normalize_output_format(formatted_result)
     
     def _beautify_status_output_simple(self, result: str) -> str:
-        """美化状态信息输出 - 简化版本"""
-        return self._beautify_with_title(result, "System Status:", "System Status:")
+        """美化状态信息输出 - 确保格式一致"""
+        # 检查结果是否已经包含标题
+        if result.strip().startswith("System Status:"):
+            return self._normalize_output_format(result)
+        
+        # 添加标题并确保格式正确
+        title = "System Status:"
+        if result.strip():
+            formatted_result = f"{title}\n{result.strip()}"
+        else:
+            formatted_result = title
+        
+        return self._normalize_output_format(formatted_result)
     
     def _beautify_who_output_simple(self, result: str) -> str:
         """美化who命令输出 - 确保第一行居左对齐"""
@@ -818,8 +937,25 @@ class SSHConsole:
         return self._normalize_output_format(result)
     
     def _beautify_date_output_simple(self, result: str) -> str:
-        """美化日期时间输出 - 确保第一行居左对齐"""
-        return self._normalize_output_format(result)
+        """美化日期时间输出 - 强制居左对齐，添加标题"""
+        try:
+            if not result or not result.strip():
+                return "No date information available.\n"
+            
+            # 清理结果，确保没有前导空格
+            cleaned_result = result.strip()
+            
+            # 添加标题，强制居左对齐
+            formatted_result = f"Current Date & Time:\n{cleaned_result}\n"
+            
+            if self.debug_mode:
+                self.logger.debug(f"Date命令美化完成: 原始='{repr(result)}', 格式化后='{repr(formatted_result)}'")
+            
+            return formatted_result
+            
+        except Exception as e:
+            self.logger.error(f"Date命令美化失败: {e}")
+            return result
     
     def _beautify_version_output_simple(self, result: str) -> str:
         """美化版本信息输出 - 确保第一行居左对齐"""
@@ -933,33 +1069,85 @@ class SSHConsole:
             return False
     
     def _safe_send_output(self, message: str) -> bool:
-        """安全发送输出 - 单行输出版本"""
+        """安全发送输出 - 修复光标位置累积问题版本"""
         try:
             if not self._check_channel_status():
                 self.logger.warning("通道状态检查失败，无法发送输出")
                 return False
             
-            # 将消息按行分割
-            lines = message.split('\n')
+            # 确保消息格式正确
+            if not message or not message.strip():
+                return True
             
-            # 逐行发送，确保每行都是完整的
+            # 调试信息：显示终端状态
+            if self.debug_mode:
+                self.logger.debug(f"开始发送输出，消息长度: {len(message)}")
+                self.logger.debug(f"终端尺寸: {getattr(self, 'terminal_width', 'unknown')}x{getattr(self, 'terminal_height', 'unknown')}")
+                self.logger.debug(f"消息前3行: {[repr(line) for line in message.strip().split('\n')[:3]]}")
+            
+            # 将消息按行分割
+            lines = message.strip().split('\n')
+            if not lines:
+                return True
+            
+            # 最终格式验证：确保第一行绝对居左
+            if lines and lines[0].strip():
+                first_line = lines[0].strip()
+                if first_line and first_line[0].isspace():
+                    if self.debug_mode:
+                        self.logger.warning(f"发送前格式验证失败: 第一行包含前导空格: '{repr(first_line)}'")
+                    # 强制修复第一行
+                    lines[0] = first_line.lstrip()
+                    if self.debug_mode:
+                        self.logger.info("发送前强制修复完成，第一行现在绝对居左")
+                
+                # 额外检查：确保第一行不是空字符串
+                if not lines[0].strip():
+                    if self.debug_mode:
+                        self.logger.warning("第一行清理后为空，跳过空行")
+                    lines = lines[1:]  # 跳过空行
+                    if not lines:
+                        return True
+            
+            # 逐行发送，确保光标位置正确
             for i, line in enumerate(lines):
                 if line.strip():  # 跳过空行
-                    # 确保每行以换行符结尾
-                    if not line.endswith('\r\n') and not line.endswith('\n'):
-                        line += '\r\n'
-                    else:
-                        line += '\r\n'  # 统一使用 \r\n
+                    # 确保行首没有前导空格
+                    clean_line = line.lstrip()
+                    if clean_line:
+                        # 强制居左：在行首添加控制字符确保居左
+                        if i == 0:  # 第一行特别处理
+                            # 发送回车确保光标回到行首
+                            self.channel.send(b'\r')
+                            time.sleep(0.005)
+                        
+                        # 发送清理后的行，使用 \r\n 确保光标回到行首
+                        output_line = clean_line + '\r\n'
+                        encoded_line = output_line.encode('utf-8')
+                        self.channel.send(encoded_line)
+                        
+                        # 短暂等待，确保传输完成
+                        time.sleep(0.01)
+                        
+                        # 额外确保光标回到行首，防止位置累积
+                        if i < len(lines) - 1:  # 不是最后一行
+                            self.channel.send(b'\r')
+                            time.sleep(0.005)
+                        
+                        if self.debug_mode:
+                            self.logger.debug(f"行 {i+1} 发送成功: '{clean_line}' ({len(encoded_line)} 字节)")
+                            # 显示实际发送的字节内容
+                            if i == 0:  # 第一行特别关注
+                                self.logger.debug(f"第一行发送详情: 原始='{repr(line)}', 清理后='{repr(clean_line)}', 编码后={encoded_line}")
+                                self.logger.debug(f"第一行强制居左控制已应用")
+                else:
+                    # 发送空行，确保光标回到行首
+                    self.channel.send(b'\r\n')
+                    time.sleep(0.01)
                     
-                    # 编码并发送单行
-                    encoded_line = line.encode('utf-8')
-                    self.channel.send(encoded_line)
-                    
-                    # 等待输出完成
-                    time.sleep(0.02)
-                    
-                    if self.debug_mode:
-                        self.logger.debug(f"行 {i+1} 发送成功: {len(encoded_line)} 字节")
+                    # 额外确保光标回到行首
+                    self.channel.send(b'\r')
+                    time.sleep(0.005)
             
             return True
             
@@ -968,7 +1156,7 @@ class SSHConsole:
             return False
     
     def _send_newline(self) -> bool:
-        """发送换行符并重置光标位置 - 确保prompt居左对齐"""
+        """发送换行符并重置光标位置 - 确保光标回到行首"""
         try:
             if not self._check_channel_status():
                 return False
@@ -986,6 +1174,27 @@ class SSHConsole:
             
         except Exception as e:
             self.logger.error(f"换行符发送失败: {e}")
+            return False
+    
+    def _send_command_output_newline(self) -> bool:
+        """发送命令输出后的换行符 - 确保光标回到行首"""
+        try:
+            if not self._check_channel_status():
+                return False
+            
+            # 发送回车+换行，确保光标回到行首
+            encoded_chars = b'\r\n'
+            self.channel.send(encoded_chars)
+            
+            # 短暂等待，确保传输完成
+            time.sleep(0.01)
+            
+            if self.debug_mode:
+                self.logger.debug("命令输出换行符发送成功")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"命令输出换行符发送失败: {e}")
             return False
     
     def _clear_input_buffer(self):
