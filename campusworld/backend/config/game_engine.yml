@@ -1,0 +1,177 @@
+# CampusWorld 游戏引擎配置文件
+# 参考Evennia框架设计，提供游戏与引擎解耦的配置
+
+# 引擎基本配置
+game_engine:
+  # 引擎名称
+  name: "CampusWorld"
+  # 引擎版本
+  version: "1.0.0"
+  # 最大游戏数量
+  max_games: 10
+  # 自动重载
+  auto_reload: true
+  # 调试模式
+  debug_mode: false
+  # 日志级别
+  log_level: "INFO"
+
+# 游戏加载配置
+game_loader:
+  # 游戏搜索路径
+  search_paths:
+    - "app/games"      # 内置游戏
+    - "games"          # 外部游戏
+    - "../games"       # 上级游戏目录
+  
+  # 自动加载游戏
+  auto_load: true
+  
+  # 热重载支持
+  hot_reload: true
+  
+  # 游戏依赖检查
+  dependency_check: true
+
+# 游戏接口配置
+game_interface:
+  # 命令注册
+  command_registration: true
+  
+  # 对象注册
+  object_registration: true
+  
+  # 事件钩子注册
+  hook_registration: true
+  
+  # 权限检查
+  permission_check: true
+
+# 游戏对象系统配置
+object_system:
+  # 对象缓存
+  object_cache: true
+  
+  # 缓存大小
+  cache_size: 1000
+  
+  # 对象持久化
+  persistence: true
+  
+  # 自动清理
+  auto_cleanup: true
+
+# 游戏命令系统配置
+command_system:
+  # 命令缓存
+  command_cache: true
+  
+  # 命令别名
+  command_aliases: true
+  
+  # 命令权限
+  command_permissions: true
+  
+  # 命令历史
+  command_history: true
+
+# 游戏脚本系统配置
+script_system:
+  # 脚本执行
+  script_execution: true
+  
+  # 定时任务
+  scheduled_tasks: true
+  
+  # 脚本超时
+  script_timeout: 30
+  
+  # 最大脚本数
+  max_scripts: 100
+
+# 游戏事件系统配置
+event_system:
+  # 事件钩子
+  event_hooks: true
+  
+  # 事件队列
+  event_queue: true
+  
+  # 事件优先级
+  event_priority: true
+  
+  # 事件过滤
+  event_filtering: true
+
+# 游戏数据配置
+game_data:
+  # 数据存储
+  data_storage: true
+  
+  # 数据备份
+  data_backup: true
+  
+  # 数据迁移
+  data_migration: true
+  
+  # 数据验证
+  data_validation: true
+
+# 游戏网络配置
+game_network:
+  # 网络通信
+  network_communication: true
+  
+  # 协议支持
+  protocol_support:
+    - "SSH"
+    - "HTTP"
+    - "WebSocket"
+  
+  # 连接管理
+  connection_management: true
+  
+  # 会话管理
+  session_management: true
+
+# 游戏安全配置
+game_security:
+  # 权限系统
+  permission_system: true
+  
+  # 角色管理
+  role_management: true
+  
+  # 访问控制
+  access_control: true
+  
+  # 审计日志
+  audit_logging: true
+
+# 游戏性能配置
+game_performance:
+  # 性能监控
+  performance_monitoring: true
+  
+  # 资源管理
+  resource_management: true
+  
+  # 负载均衡
+  load_balancing: false
+  
+  # 缓存策略
+  cache_strategy: "LRU"
+
+# 游戏开发配置
+game_development:
+  # 开发模式
+  development_mode: true
+  
+  # 调试工具
+  debug_tools: true
+  
+  # 测试支持
+  testing_support: true
+  
+  # 文档生成
+  documentation_generation: true
