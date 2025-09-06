@@ -15,11 +15,11 @@ from paramiko import ServerInterface, SFTPServerInterface
 from paramiko.common import AUTH_SUCCESSFUL, AUTH_FAILED, OPEN_SUCCEEDED
 # Paramiko 4.0+ 不再需要 py3compat
 
-from app.core.config import get_setting
+from app.core.config_manager import get_setting
 from app.core.database import SessionLocal
 from app.models.graph import Node
 from app.core.security import verify_password
-from app.ssh.console import SSHConsole
+from app.ssh.console_optimized import SSHConsoleOptimized
 from app.ssh.session import SSHSession, SessionManager
 
 
@@ -247,7 +247,7 @@ class CampusWorldSSHServer:
             # channel.send('Type "help" for available commands.\n\n')
             
             # 创建控制台实例
-            console = SSHConsole(channel, None)  # 先创建控制台，稍后设置会话
+            console = SSHConsoleOptimized(channel, None)  # 先创建控制台，稍后设置会话
             
             # 设置会话（从认证成功的会话中获取）
             try:

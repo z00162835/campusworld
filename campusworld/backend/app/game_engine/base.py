@@ -7,15 +7,15 @@
 - 命令系统集成
 - 事件钩子系统
 """
-
-import logging
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime
 import asyncio
 from pathlib import Path
-
-from app.core.config import get_setting
+from app.core.log import (
+    get_logger, 
+    LoggerNames,
+)
 
 
 class GameEngine(ABC):
@@ -24,7 +24,7 @@ class GameEngine(ABC):
     def __init__(self, name: str, version: str = "1.0.0"):
         self.name = name
         self.version = version
-        self.logger = logging.getLogger(f"game_engine.{name}")
+        self.logger = get_logger(LoggerNames.GAME)
         
         # 引擎状态
         self.is_running = False
@@ -37,25 +37,7 @@ class GameEngine(ABC):
         self.script_manager = ScriptManager(self)
         self.hook_manager = HookManager(self)
         
-        # 配置
-        self.config = self._load_config()
-        
         self.logger.info(f"游戏引擎 '{name}' v{version} 初始化完成")
-    
-    def _load_config(self) -> Dict[str, Any]:
-        """加载引擎配置"""
-        try:
-            config = {
-                "max_games": get_setting("game_engine.max_games", 10),
-                "auto_reload": get_setting("game_engine.auto_reload", True),
-                "debug_mode": get_setting("game_engine.debug_mode", False),
-                "log_level": get_setting("game_engine.log_level", "INFO"),
-            }
-            self.logger.debug(f"引擎配置加载完成: {config}")
-            return config
-        except Exception as e:
-            self.logger.error(f"引擎配置加载失败: {e}")
-            return {}
     
     def start(self) -> bool:
         """启动游戏引擎"""
@@ -161,7 +143,6 @@ class GameEngine(ABC):
             "start_time": self.start_time.isoformat() if self.start_time else None,
             "games_count": len(self.games),
             "games": list(self.games.keys()),
-            "config": self.config
         }
 
 
@@ -170,7 +151,7 @@ class ObjectManager:
     
     def __init__(self, engine: GameEngine):
         self.engine = engine
-        self.logger = logging.getLogger(f"game_engine.{engine.name}.objects")
+        self.logger = get_logger(LoggerNames.GAME)
         self.objects: Dict[str, Any] = {}
         self.is_running = False
     
@@ -204,7 +185,7 @@ class CommandManager:
     
     def __init__(self, engine: GameEngine):
         self.engine = engine
-        self.logger = logging.getLogger(f"game_engine.{engine.name}.commands")
+        self.logger = get_logger(LoggerNames.GAME)
         self.commands: Dict[str, Any] = {}
         self.is_running = False
     
@@ -234,7 +215,7 @@ class ScriptManager:
     
     def __init__(self, engine: GameEngine):
         self.engine = engine
-        self.logger = logging.getLogger(f"game_engine.{engine.name}.scripts")
+        self.logger = get_logger(LoggerNames.GAME)
         self.scripts: Dict[str, Any] = {}
         self.is_running = False
     
@@ -254,7 +235,7 @@ class HookManager:
     
     def __init__(self, engine: GameEngine):
         self.engine = engine
-        self.logger = logging.getLogger(f"game_engine.{engine.name}.hooks")
+        self.logger = get_logger(LoggerNames.GAME)
         self.hooks: Dict[str, List[Callable]] = {}
         self.is_running = False
     
@@ -308,7 +289,7 @@ class BaseGame(ABC):
         self.engine = None
         
         # 日志
-        self.logger = logging.getLogger(f"game.{name}")
+        self.logger = get_logger(LoggerNames.GAME)
         
         self.logger.info(f"游戏 '{name}' v{version} 初始化完成")
     

@@ -3,8 +3,6 @@
 
 继承自BaseGame，实现校园生活游戏的核心逻辑。
 """
-
-import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pathlib import Path
@@ -13,10 +11,13 @@ from app.game_engine.base import BaseGame
 from .commands import CampusLifeCommands
 from .objects import CampusLifeObjects
 from .scripts import CampusLifeScripts
-
+from app.core.log import (
+    get_logger, 
+    LoggerNames,
+)
 
 class Game(BaseGame):
-    """校园生活游戏主类"""
+    """校园生活游戏主类 - 兼容接口"""
     
     def __init__(self):
         super().__init__(
@@ -37,10 +38,47 @@ class Game(BaseGame):
         self.locations: Dict[str, Any] = {}
         self.items: Dict[str, Any] = {}
         
+        # 兼容性属性
+        self.game_name = self.name
+        self.game_version = self.version
+        self.game_description = self.description
+        self.game_author = self.author
+        self.is_initialized = False
+        
         # 初始化游戏世界
         self._init_game_world()
         
         self.logger.info("校园生活游戏初始化完成")
+    
+    def initialize_game(self) -> bool:
+        """初始化游戏 - 兼容接口"""
+        try:
+            if self.is_initialized:
+                self.logger.warning("游戏已初始化")
+                return True
+            
+            self.is_initialized = True
+            self.logger.info("校园生活游戏初始化成功")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"校园生活游戏初始化失败: {e}")
+            return False
+    
+    def get_game_info(self) -> Dict[str, Any]:
+        """获取游戏信息 - 兼容接口"""
+        return {
+            "name": self.game_name,
+            "version": self.game_version,
+            "description": self.game_description,
+            "author": self.game_author,
+            "is_initialized": self.is_initialized,
+            "is_running": self.is_running,
+            "start_time": self.start_time,
+            "rooms_count": len(self.locations),
+            "items_count": len(self.items),
+            "characters_count": len(self.players)
+        }
     
     def _init_game_world(self):
         """初始化游戏世界"""

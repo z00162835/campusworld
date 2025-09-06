@@ -11,11 +11,19 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from app.core.config import (
-    SECRET_KEY, 
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    get_security_config
-)
+# 修改导入
+from app.core.config_manager import get_config, get_setting
+from app.core.log import get_logger
+
+# 获取日志器
+logger = get_logger("campusworld.security")
+
+# 获取配置管理器
+config_manager = get_config()
+
+# 从配置管理器获取配置
+SECRET_KEY = get_setting('security.secret_key', 'your-secret-key-here')
+ACCESS_TOKEN_EXPIRE_MINUTES = get_setting('security.access_token_expire_minutes', 11520)
 
 # 密码加密上下文
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
