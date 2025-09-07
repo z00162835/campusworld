@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 import uuid
 import time
 from datetime import datetime
+from app.models.graph_sync import GraphSynchronizer
 
 
 # ==================== 图节点接口定义 ====================
@@ -201,7 +202,6 @@ class DefaultObject(GraphNodeInterface):
     def sync_to_node(self) -> None:
         """同步到图节点系统"""
         try:
-            from app.models.graph_sync import GraphSynchronizer
             synchronizer = GraphSynchronizer()
             synchronizer.sync_object_to_node(self)
         except Exception as e:
@@ -442,7 +442,6 @@ class DefaultObject(GraphNodeInterface):
     def id(self) -> Optional[int]:
         """获取节点ID（从Node中获取）"""
         try:
-            from app.models.graph_sync import GraphSynchronizer
             synchronizer = GraphSynchronizer()
             node = synchronizer.get_node_by_uuid(self._node_uuid)
             return node.id if node else None
@@ -588,7 +587,6 @@ class DefaultObject(GraphNodeInterface):
     def create_relationship(self, target: 'DefaultObject', rel_type: str, **attributes) -> 'GraphRelationship':
         """创建关系"""
         try:
-            from app.models.graph_sync import GraphSynchronizer
             synchronizer = GraphSynchronizer()
             return synchronizer.create_relationship(self, target, rel_type, **attributes)
         except Exception as e:
@@ -598,7 +596,6 @@ class DefaultObject(GraphNodeInterface):
     def get_relationships(self, rel_type: str = None) -> List['GraphRelationship']:
         """获取关系"""
         try:
-            from app.models.graph_sync import GraphSynchronizer
             synchronizer = GraphSynchronizer()
             return synchronizer.get_object_relationships(self, rel_type)
         except Exception as e:
