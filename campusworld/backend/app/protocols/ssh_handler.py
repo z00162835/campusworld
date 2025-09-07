@@ -92,7 +92,9 @@ class SSHHandler(ProtocolHandler):
     def _format_command_result(self, result: CommandResult) -> str:
         """格式化命令结果"""
         if result.success:
-            return result.message + "\n"
+            message = result.message + "\n"
+            return message
+            
         else:
             return f"Error: {result.message}\n"
     

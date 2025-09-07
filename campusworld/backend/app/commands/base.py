@@ -3,12 +3,11 @@
 基于单一职责原则，命令与协议无关
 """
 
-import logging
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
-
+from app.core.log import get_logger, LoggerNames
 
 class CommandType(Enum):
     """命令类型枚举"""
@@ -45,6 +44,7 @@ class CommandResult:
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     command_type: Optional[CommandType] = None
+    should_exit: bool = False
     
     @classmethod
     def success_result(cls, message: str, data: Optional[Dict[str, Any]] = None, 
@@ -66,7 +66,7 @@ class BaseCommand(ABC):
         self.description = description
         self.aliases = aliases or []
         self.command_type = command_type
-        self.logger = logging.getLogger(f"command.{name}")
+        self.logger = get_logger(LoggerNames.COMMAND)
     
     @abstractmethod
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:

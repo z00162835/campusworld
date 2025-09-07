@@ -95,7 +95,9 @@ class QuitCommand(SystemCommand):
         super().__init__("quit", "Exit system", ["exit", "q"])
     
     def execute(self, context, args: List[str]) -> CommandResult:
-        return CommandResult.success_result("Goodbye!")
+        result = CommandResult.success_result("Goodbye!")
+        result.should_exit = True
+        return result
 
 
 class TimeCommand(SystemCommand):

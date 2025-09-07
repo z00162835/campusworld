@@ -18,7 +18,7 @@ database:
   name: "campusworld_dev"
   user: "campusworld_dev_user"
   password: "campusworld_dev_password"
-  echo: true  # 开发环境显示SQL语句
+  echo: false  # 开发环境显示SQL语句
 
 # Redis配置
 redis:
@@ -27,9 +27,9 @@ redis:
 
 # 日志配置
 logging:
-  level: "DEBUG"
+  level: "INFO"
   console_output: true
-  file_output: false
+  file_output: true
 
 # CORS配置
 cors:

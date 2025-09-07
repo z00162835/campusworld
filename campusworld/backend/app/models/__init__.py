@@ -13,11 +13,9 @@ from .world import World, WorldObject
 
 # 图数据结构系统
 from .graph import (
-    Node, 
-    GraphNode, 
+    Node,
     Relationship
 )
-from .graph_sync import GraphSynchronizer
 
 # 工厂和组件系统
 from .factory import (
@@ -44,9 +42,7 @@ __all__ = [
     
     # 图数据结构系统
     "Node",
-    "GraphNode",
     "Relationship",
-    "GraphSynchronizer",
     
     # 工厂和组件系统
     "ModelFactory",
@@ -64,5 +60,5 @@ model_factory.register_model("world", World)
 model_factory.register_model("world_object", WorldObject)
 
 # 注册图节点模型
-model_factory.register_model("graph_node", GraphNode)
+model_factory.register_model("graph_node", Node)
 model_factory.register_model("relationship", Relationship)

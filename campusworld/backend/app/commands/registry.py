@@ -3,16 +3,15 @@
 管理所有命令的注册、查找和分类
 """
 
-import logging
 from typing import Dict, List, Optional, Set, Any
 from .base import BaseCommand, CommandContext, CommandType
-
+from app.core.log import get_logger, LoggerNames
 
 class CommandRegistry:
     """命令注册表 - 协议无关"""
     
     def __init__(self):
-        self.logger = logging.getLogger("command.registry")
+        self.logger = get_logger(LoggerNames.COMMAND)
         self.commands: Dict[str, BaseCommand] = {}
         self.aliases: Dict[str, str] = {}
         self.commands_by_type: Dict[CommandType, List[BaseCommand]] = {

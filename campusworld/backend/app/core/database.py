@@ -10,10 +10,10 @@ from sqlalchemy.pool import QueuePool, StaticPool
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config_manager import get_config
-from app.core.log import get_logger
+from app.core.log import get_logger, LoggerNames
 
 # 获取日志器
-logger = get_logger("campusworld.database")
+logger = get_logger(LoggerNames.DATABASE)
 
 # 全局变量
 _config_manager: Optional[Any] = None
@@ -59,7 +59,6 @@ def _create_engine():
             
             # 获取数据库URL
             database_url = config_manager.get_database_url()
-            logger.info(f"数据库连接URL: {database_url.split('@')[-1] if '@' in database_url else database_url}")
             
             # 根据数据库类型设置连接参数
             connect_args = {}
@@ -85,8 +84,6 @@ def _create_engine():
                 connect_args=connect_args,
             )
             
-            logger.info("数据库引擎创建成功")
-            
         except Exception as e:
             logger.error(f"创建数据库引擎失败: {e}")
             raise
@@ -108,7 +105,6 @@ def _create_session_factory():
                 autoflush=False, 
                 bind=engine
             )
-            logger.info("数据库会话工厂创建成功")
         except Exception as e:
             logger.error(f"创建会话工厂失败: {e}")
             raise

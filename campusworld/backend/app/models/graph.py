@@ -8,11 +8,12 @@
 - 通过type和typeclass区分不同的对象类型
 """
 
+import uuid
 from typing import Dict, Any, List, Optional, Type, Union, TYPE_CHECKING
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index, UniqueConstraint, or_, and_
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, declarative_base, Session
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.declarative import declared_attr
 import json
 import inspect
@@ -20,13 +21,9 @@ from abc import ABC, abstractmethod
 
 from app.core.database import Base
 
-if TYPE_CHECKING:
-    from .graph_manager import GraphManager
-
-
 # ==================== 基础类型定义 ====================
 
-class BaseNode(ABC):
+class BaseNode:
     """
     节点基础抽象类
     
@@ -59,7 +56,7 @@ class BaseNode(ABC):
         pass
 
 
-class BaseRelationship(ABC):
+class BaseRelationship:
     """
     关系基础抽象类
     
@@ -94,7 +91,7 @@ class BaseRelationship(ABC):
 
 # ==================== 数据库模型定义 ====================
 
-class Node(Base):
+class Node(Base, BaseNode):
     """
     图节点基础类型 - 纯图数据设计
     
@@ -103,13 +100,13 @@ class Node(Base):
     
     __tablename__ = "nodes"
     
-    # 基础标识
+    # 基础标识 - 修复类型匹配
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String(36), unique=True, nullable=False, index=True)  # 全局唯一标识
+    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, index=True, default=uuid.uuid4)
     
-    # 类型元数据 - 用于区分不同的对象类型
+    # 类型元数据
     type_id = Column(Integer, ForeignKey("node_types.id"), nullable=False)
-    type_code = Column(String(100), nullable=False, index=True)  # 对象类型: 'campus', 'user', 'world'
+    type_code = Column(String(100), nullable=False, index=True)
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
     
@@ -123,41 +120,22 @@ class Node(Base):
     home_id = Column(Integer, ForeignKey("nodes.id"), nullable=True)
     
     # 节点属性
-    attributes = Column(JSONB, default=dict)  # 动态属性，使用JSONB提高性能
-    
-    # 标签系统
+    attributes = Column(JSONB, default=dict)
     tags = Column(JSONB, default=list)
     
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # 关系映射
-    # 作为源节点的关系
-    source_relationships = relationship(
-        "Relationship",
-        foreign_keys="Relationship.source_id",
-        back_populates="source_node",
-        cascade="all, delete-orphan"
-    )
-    
-    # 作为目标节点的关系
-    target_relationships = relationship(
-        "Relationship",
-        foreign_keys="Relationship.target_id",
-        back_populates="target_node",
-        cascade="all, delete-orphan"
-    )
-    
-    # 位置关系
+    # 关系映射 - 使用overlaps参数消除警告
     location = relationship(
         "Node",
         foreign_keys=[location_id],
         remote_side=[id],
-        backref="located_objects"
+        backref="located_objects",
+        overlaps="contents"
     )
     
-    # 家关系
     home = relationship(
         "Node",
         foreign_keys=[home_id],
@@ -165,20 +143,34 @@ class Node(Base):
         backref="home_objects"
     )
     
-    # 图结构索引
-    __table_args__ = (
-        Index('idx_node_type_code', 'type_code'),
-        Index('idx_node_name', 'name'),
-        Index('idx_node_attributes', 'attributes', postgresql_using='gin'),
-        Index('idx_node_tags', 'tags', postgresql_using='gin'),
-        Index('idx_node_uuid', 'uuid'),
-        Index('idx_node_active', 'is_active'),
-        Index('idx_node_public', 'is_public'),
-        Index('idx_node_access', 'access_level'),
+    # 添加contents关系作为location的反向关系
+    @property
+    def contents(self):
+        """获取当前位置的内容"""
+        return self.located_objects
+    
+    # 图关系映射
+    source_relationships = relationship(
+        "Relationship",
+        foreign_keys="Relationship.source_id",
+        back_populates="source_node",
+        lazy="dynamic"
     )
     
-    def __repr__(self):
-        return f"<{self.__class__.__name__}(id={self.id}, uuid='{self.uuid}', name='{self.name}', type='{self.type_code}')>"
+    target_relationships = relationship(
+        "Relationship",
+        foreign_keys="Relationship.target_id", 
+        back_populates="target_node",
+        lazy="dynamic"
+    )
+    
+    # 图结构方法
+    def get_related_nodes(self, relationship_type: str = None):
+        """获取相关节点"""
+        if relationship_type:
+            return [rel.target_node for rel in self.source_relationships 
+                   if rel.type_code == relationship_type and rel.is_active]
+        return [rel.target_node for rel in self.source_relationships if rel.is_active]
     
     # 实现BaseNode接口
     def get_uuid(self) -> str:
@@ -315,7 +307,7 @@ class Node(Base):
         }
 
 
-class Relationship(Base):
+class Relationship(Base, BaseRelationship):
     """
     图关系基础类型
     
@@ -347,9 +339,17 @@ class Relationship(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # 关系定义
-    source_node = relationship("Node", foreign_keys=[source_id], back_populates="source_relationships")
-    target_node = relationship("Node", foreign_keys=[target_id], back_populates="target_relationships")
+    # 关系定义 - 确保back_populates正确
+    source_node = relationship(
+        "Node", 
+        foreign_keys=[source_id], 
+        back_populates="source_relationships"
+    )
+    target_node = relationship(
+        "Node", 
+        foreign_keys=[target_id], 
+        back_populates="target_relationships"
+    )
     
     # 约束和索引
     __table_args__ = (
@@ -470,70 +470,6 @@ class Relationship(Base):
         }
 
 
-# ==================== 具体节点类型 ====================
-
-class GraphNode(Node):
-    """
-    图节点实现 - 纯图数据设计
-    
-    继承自Node，提供图结构功能
-    所有对象都存储在此表中，通过type和typeclass区分
-    """
-    
-    __tablename__ = "nodes"
-    
-    # 确保继承Base - 移除有问题的__table_args__继承
-    
-    # 关系定义
-    @declared_attr
-    def location(cls):
-        """当前位置"""
-        return relationship(
-            "GraphNode",
-            foreign_keys=[cls.location_id],
-            remote_side=[cls.id],
-            backref="contents"
-        )
-    
-    @declared_attr
-    def home(cls):
-        """默认位置"""
-        return relationship(
-            "GraphNode",
-            foreign_keys=[cls.home_id],
-            remote_side=[cls.id]
-        )
-    
-    def get_related_nodes(self, relationship_type: str = None) -> List['GraphNode']:
-        """获取相关节点"""
-        if relationship_type:
-            return [rel.target for rel in self.outgoing_relationships 
-                   if rel.type == relationship_type and rel.is_active]
-        return [rel.target for rel in self.outgoing_relationships if rel.is_active]
-    
-    def create_relationship(self, target: 'GraphNode', rel_type: str, **attributes) -> 'Relationship':
-        """创建关系"""
-        try:
-            from .graph_manager import get_graph_manager
-            graph_manager = get_graph_manager()
-            return graph_manager.create_relationship(self, target, rel_type, **attributes)
-        except Exception as e:
-            print(f"创建关系失败: {e}")
-            return None
-
-
-# ==================== 具体关系类型 ====================
-
-# 移除具体关系类型，使用统一的Relationship类
-# 关系类型通过type字段和attributes中的特定属性来区分
-
-
-# 移除具体关系类型，使用统一的Relationship类
-# 关系类型通过type字段和attributes中的特定属性来区分
-
-
-# 移除装饰器，使用GraphSynchronizer进行同步
-
 # ==================== 节点类型和关系类型模型 ====================
 
 class NodeType(Base):
@@ -541,15 +477,15 @@ class NodeType(Base):
     
     __tablename__ = "node_types"
     
-    id = Column(Integer, primary_key=True, index=True)
-    type_code = Column(String(100), unique=True, nullable=False, index=True)
+    id = Column(Integer, primary_key=True)
+    type_code = Column(String(100), unique=True, nullable=False)
     type_name = Column(String(255), nullable=False)
     typeclass = Column(String(500), nullable=False)
     classname = Column(String(100), nullable=False)
     module_path = Column(String(300), nullable=False)
-    description = Column(Text, nullable=True)
+    description = Column(Text)
     schema_definition = Column(JSONB, default=dict)
-    is_active = Column(Boolean, default=True, index=True)
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -650,3 +586,29 @@ class RelationshipType(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+
+class NodeAttributeIndex(Base):
+    """节点属性索引表"""
+    __tablename__ = "node_attribute_indexes"
+    
+    id = Column(Integer, primary_key=True)
+    node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    attribute_key = Column(String(255), nullable=False)
+    attribute_value = Column(Text)
+    attribute_type = Column(String(50), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class NodeTagIndex(Base):
+    """节点标签索引表"""
+    __tablename__ = "node_tag_indexes"
+    
+    id = Column(Integer, primary_key=True)
+    node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    tag = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('node_id', 'tag', name='idx_node_tag_indexes_unique'),
+    )

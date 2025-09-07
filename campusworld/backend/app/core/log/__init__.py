@@ -43,6 +43,9 @@ class LoggerNames:
     PERFORMANCE = "performance"
     AUDIT = "audit"
     SECURITY = "security"
+    COMMAND = "command"
+    PROTOCOL = "protocol"
+    SESSION = "session"
 
 def get_logging_manager() -> object:
     """

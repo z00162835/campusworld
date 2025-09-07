@@ -3,14 +3,9 @@
 基于重构后的命令系统，解决乱码问题
 """
 
-import re
-import logging
-import threading
 import time
 import select
-import queue
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+from typing import Optional
 import os
 
 import paramiko
@@ -18,7 +13,7 @@ import paramiko
 from app.ssh.session import SSHSession
 from app.protocols.ssh_handler import SSHHandler
 from app.commands.init_commands import initialize_commands
-
+from app.core.log import get_logger, LoggerNames
 
 class SSHConsoleOptimized:
     """优化的SSH控制台 - 解决乱码问题"""
@@ -32,8 +27,7 @@ class SSHConsoleOptimized:
         self.debug_mode = os.getenv('SSH_DEBUG', 'false').lower() == 'true'
         
         # 初始化日志系统
-        self.logger = logging.getLogger(__name__)
-        self._setup_logging()
+        self.logger = get_logger(LoggerNames.SSH)
         
         # 初始化命令系统
         if not initialize_commands():
@@ -42,11 +36,6 @@ class SSHConsoleOptimized:
         
         # 初始化SSH协议处理器
         self.ssh_handler = SSHHandler()
-        
-        if self.debug_mode:
-            self.logger.info("优化SSH控制台已启动 - DEBUG模式")
-        else:
-            self.logger.info("优化SSH控制台已启动")
         
         # 初始化其他组件
         self.input_buffer = ""
@@ -57,17 +46,7 @@ class SSHConsoleOptimized:
         # 设置终端尺寸
         self.terminal_width = self._detect_terminal_width()
         self.terminal_height = self._detect_terminal_height()
-        
-        if self.debug_mode:
-            self.logger.info(f"终端尺寸: {self.terminal_width}x{self.terminal_height}")
     
-    def _setup_logging(self):
-        """配置日志系统"""
-        if self.debug_mode:
-            self.logger.setLevel(logging.DEBUG)
-        else:
-            self.logger.setLevel(logging.INFO)
-            self.logger.addFilter(lambda record: record.levelno >= logging.INFO)
     
     def _detect_terminal_width(self) -> int:
         """检测终端宽度"""
@@ -92,7 +71,6 @@ class SSHConsoleOptimized:
     def run(self):
         """运行控制台"""
         try:
-            self.logger.info("开始运行优化SSH控制台")
             self.running = True
             
             # 显示欢迎信息
@@ -117,7 +95,6 @@ class SSHConsoleOptimized:
         except Exception as e:
             self.logger.error(f"控制台运行错误: {e}")
         finally:
-            self.logger.info("控制台运行结束")
             self._cleanup()
     
     def _display_welcome(self):
@@ -183,7 +160,6 @@ class SSHConsoleOptimized:
             # 短暂等待，确保提示符传输完成
             time.sleep(0.01)
             
-            self.logger.debug(f"提示符发送成功: {repr(prompt)}")
             return True
             
         except Exception as e:
@@ -199,10 +175,8 @@ class SSHConsoleOptimized:
                 # 有数据可读
                 data = self.channel.recv(1024)
                 if data:
-                    self.logger.info(f"接收到数据: {repr(data)}")
                     # 解码数据
                     text = data.decode('utf-8', errors='ignore')
-                    self.logger.info(f"解码后文本: {repr(text)}")
                     self._process_raw_input_chars(text)
                     
         except Exception as e:
@@ -211,41 +185,29 @@ class SSHConsoleOptimized:
     
     def _process_raw_input_chars(self, raw_input: str):
         """处理原始输入字符 - 简化版本，避免乱码"""
-        if self.debug_mode:
-            self.logger.debug(f"处理原始输入: {repr(raw_input)}")
         
         for char in raw_input:
-            if self.debug_mode:
-                self.logger.debug(f"处理字符: {repr(char)}")
             
             if char == '\r' or char == '\n':
                 # 输入完成，提交命令
                 if self.input_buffer.strip():
                     command = self.input_buffer.strip()
-                    self.logger.info(f"提交命令: '{command}'")
                     # 发送换行符，确保命令输入完成
                     self._send_char_echo('\n')
                     # 处理命令
                     self._process_input(command)
                 else:
-                    self.logger.debug("空命令，忽略")
                     # 空命令显示新提示符
                     self._send_newline()
                     self._display_prompt()
             elif char == '\b' or char == '\x7f':  # Backspace
                 if self.input_buffer:
                     self.input_buffer = self.input_buffer[:-1]
-                    if self.debug_mode:
-                        self.logger.debug(f"退格处理，当前缓冲: '{self.input_buffer}'")
                     # 发送退格序列
                     self._send_char_echo('\b')
                     self._send_char_echo(' ')
                     self._send_char_echo('\b')
-                else:
-                    if self.debug_mode:
-                        self.logger.debug("退格处理，但缓冲已空")
             elif char == '\x03':  # Ctrl+C
-                self.logger.info("检测到Ctrl+C，清空输入缓冲")
                 self.input_buffer = ""
                 # 发送换行符
                 self._send_char_echo('\n')
@@ -255,7 +217,6 @@ class SSHConsoleOptimized:
                 # 显示新提示符
                 self._display_prompt()
             elif char == '\x04':  # Ctrl+D
-                self.logger.info("检测到Ctrl+D，退出控制台")
                 self.input_buffer = ""
                 # 发送换行符
                 self._send_char_echo('\n')
@@ -265,26 +226,16 @@ class SSHConsoleOptimized:
                 self.running = False
             else:
                 self.input_buffer += char
-                if self.debug_mode:
-                    self.logger.debug(f"添加字符到缓冲，当前缓冲: '{self.input_buffer}'")
                 # 回显字符
                 self._send_char_echo(char)
-        
-        if self.debug_mode:
-            self.logger.debug(f"输入处理完成，当前缓冲: '{self.input_buffer}'")
     
     def _process_input(self, input_text: str):
         """处理输入 - 简化版本"""
         try:
-            if self.debug_mode:
-                self.logger.debug(f"开始处理输入: '{input_text}'")
-            
             # 添加到历史记录
             if input_text.strip():
                 self.history.append(input_text)
                 self.history_index = len(self.history)
-                if self.debug_mode:
-                    self.logger.debug(f"输入已添加到历史记录，当前历史长度: {len(self.history)}")
             
             # 获取用户信息
             if self.current_session:
@@ -312,12 +263,14 @@ class SSHConsoleOptimized:
             # 发送额外的换行符，确保输出格式对齐
             self._send_command_output_newline()
             
+            # 检查是否需要退出
+            if self._should_exit(input_text):
+                self.running = False
+                return
+
             # 显示新提示符
             if self.running:
                 self._display_prompt()
-            
-            if self.debug_mode:
-                self.logger.debug(f"输入处理完成: '{input_text}'")
             
         except Exception as e:
             self.logger.error(f"输入处理错误: {e}")
@@ -334,9 +287,13 @@ class SSHConsoleOptimized:
         finally:
             # 确保输入缓冲区被清空
             self.input_buffer = ""
-            if self.debug_mode:
-                self.logger.debug(f"输入缓冲区已清空，当前状态: '{self.input_buffer}'")
-    
+            
+    def _should_exit(self, input_text: str) -> bool:
+        """检查是否应该退出"""
+        command = input_text.strip().lower()
+        exit_commands = ['quit', 'exit', 'q']
+        return command in exit_commands
+
     def _check_channel_status(self) -> bool:
         """检查SSH通道状态"""
         try:
@@ -405,8 +362,6 @@ class SSHConsoleOptimized:
                             self.channel.send(b'\r')
                             time.sleep(0.005)
                         
-                        if self.debug_mode:
-                            self.logger.debug(f"行 {i+1} 发送成功: '{clean_line}' ({len(encoded_line)} 字节)")
                 else:
                     # 发送空行，确保光标回到行首
                     self.channel.send(b'\r\n')
@@ -435,8 +390,6 @@ class SSHConsoleOptimized:
             # 短暂等待，确保传输完成
             time.sleep(0.01)
             
-            if self.debug_mode:
-                self.logger.debug("换行符发送成功，光标位置已重置")
             return True
             
         except Exception as e:
@@ -456,8 +409,6 @@ class SSHConsoleOptimized:
             # 短暂等待，确保字符传输完成
             time.sleep(0.01)
             
-            if self.debug_mode:
-                self.logger.debug(f"字符回显成功: {repr(char)}")
             return True
             
         except Exception as e:
@@ -477,8 +428,6 @@ class SSHConsoleOptimized:
             # 短暂等待，确保传输完成
             time.sleep(0.01)
             
-            if self.debug_mode:
-                self.logger.debug("命令输出换行符发送成功")
             return True
             
         except Exception as e:
@@ -488,16 +437,30 @@ class SSHConsoleOptimized:
     def _cleanup(self):
         """清理资源"""
         try:
+            # 设置运行标志为False
             self.running = False
-            self.logger.info("Console cleanup completed")
+            
+            # 清理会话
+            if self.current_session:
+                try:
+                    # 从会话管理器中移除会话
+                    if hasattr(self, 'session_manager'):
+                        self.session_manager.remove_session(self.current_session.session_id)
+                    self.logger.debug(f"会话已清理: {self.current_session.session_id}")
+                except Exception as e:
+                    self.logger.warning(f"清理会话时出错: {e}")
+            
+            # 清理输入缓冲区
+            self.input_buffer = ""
+            self.history.clear()
+            
+            # 关闭SSH通道（如果可用）
+            if hasattr(self, 'channel') and self.channel:
+                try:
+                    if not self.channel.closed:
+                        self.channel.close()
+                        self.logger.debug("SSH通道已关闭")
+                except Exception as e:
+                    self.logger.warning(f"关闭SSH通道时出错: {e}")
         except Exception as e:
-            self.logger.error(f"Cleanup error: {e}")
-    
-    def set_session(self, session: SSHSession):
-        """设置会话"""
-        self.current_session = session
-        if session:
-            self.logger.info(f"Session set for user: {session.username}")
-        else:
-            self.logger.info("Session cleared")
-
+            self.logger.error(f"清理SSH控制台资源时出错: {e}")

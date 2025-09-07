@@ -3,37 +3,49 @@
 负责注册所有系统命令和游戏命令
 """
 
-import logging
 from .registry import command_registry
 from .system_commands import SYSTEM_COMMANDS
+import threading
+from typing import Optional
+import os
+from app.core.log import get_logger, LoggerNames
+logger = get_logger(LoggerNames.COMMAND)
+
+_commands_initialized = False
+_init_lock = threading.Lock()
 
 
-def initialize_commands() -> bool:
-    """初始化所有命令"""
-    logger = logging.getLogger("command.init")
+def initialize_commands(force_reinit: bool = False) -> bool:
+    """初始化命令系统 - 单例模式"""
+    global _commands_initialized
     
-    try:
-        logger.info("开始初始化命令系统...")
+    if _commands_initialized and not force_reinit:
+        return True
+    
+    with _init_lock:
+        if _commands_initialized and not force_reinit:
+            return True
         
-        # 注册系统命令
-        system_success = 0
-        for command in SYSTEM_COMMANDS:
-            if command_registry.register_command(command):
-                system_success += 1
-            else:
-                logger.error(f"系统命令 '{command.name}' 注册失败")
-        
-        logger.info(f"系统命令注册完成: {system_success}/{len(SYSTEM_COMMANDS)}")
-        
-        # 显示注册摘要
-        summary = command_registry.get_commands_summary()
-        logger.info(f"命令系统初始化完成: {summary}")
-        
-        return system_success == len(SYSTEM_COMMANDS)
-        
-    except Exception as e:
-        logger.error(f"命令系统初始化失败: {e}")
-        return False
+        try:
+            
+            # 注册系统命令
+            system_success = 0
+            for command in SYSTEM_COMMANDS:
+                if command_registry.register_command(command):
+                    system_success += 1
+                else:
+                    logger.error(f"系统命令 '{command.name}' 注册失败")
+            
+            
+            # 显示注册摘要
+            summary = command_registry.get_commands_summary()
+            
+            _commands_initialized = True
+            return system_success == len(SYSTEM_COMMANDS)
+            
+        except Exception as e:
+            logger.error(f"命令系统初始化失败: {e}")
+            return False
 
 
 def get_command_summary() -> dict:
@@ -43,8 +55,6 @@ def get_command_summary() -> dict:
 
 def register_game_commands(game_name: str, commands: list) -> bool:
     """注册游戏特定命令"""
-    logger = logging.getLogger("command.init")
-    
     try:
         success_count = 0
         for command in commands:
@@ -63,8 +73,6 @@ def register_game_commands(game_name: str, commands: list) -> bool:
 
 def unregister_game_commands(game_name: str) -> bool:
     """注销游戏特定命令"""
-    logger = logging.getLogger("command.init")
-    
     try:
         # 这里需要实现按游戏名称注销命令的逻辑
         # 暂时返回True

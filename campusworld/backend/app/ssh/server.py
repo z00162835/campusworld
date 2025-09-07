@@ -5,13 +5,12 @@ SSH服务器实现
 
 import socket
 import threading
-import logging
 import time
-from typing import Dict, Optional, Any
+from typing import Dict
 from datetime import datetime
 
 import paramiko
-from paramiko import ServerInterface, SFTPServerInterface
+from paramiko import ServerInterface
 from paramiko.common import AUTH_SUCCESSFUL, AUTH_FAILED, OPEN_SUCCEEDED
 # Paramiko 4.0+ 不再需要 py3compat
 
@@ -21,6 +20,7 @@ from app.models.graph import Node
 from app.core.security import verify_password
 from app.ssh.console_optimized import SSHConsoleOptimized
 from app.ssh.session import SSHSession, SessionManager
+from app.core.log import get_logger, LoggerNames
 
 
 class CampusWorldSSHServerInterface(ServerInterface):
@@ -31,8 +31,10 @@ class CampusWorldSSHServerInterface(ServerInterface):
         self.sessions: Dict[str, SSHSession] = {}
         self.session_manager = SessionManager()
         
-        # 配置日志
-        self.logger = logging.getLogger(__name__)
+        # 使用统一的日志系统
+        self.logger = get_logger(LoggerNames.SSH)
+        self.audit_logger = get_logger(LoggerNames.AUDIT)
+        self.security_logger = get_logger(LoggerNames.SECURITY)
         
         # 服务器配置
         self.host_key = self._load_host_key()
@@ -61,8 +63,14 @@ class CampusWorldSSHServerInterface(ServerInterface):
     
     def check_auth_password(self, username: str, password: str) -> int:
         """验证用户名和密码"""
+        start_time = time.time()
         try:
-            self.logger.info(f"Authentication attempt for user: {username}")
+            # 记录认证尝试
+            self.security_logger.info(f"SSH认证尝试", extra={
+                'username': username,
+                'client_ip': getattr(self, 'client_ip', 'unknown'),
+                'timestamp': datetime.now().isoformat()
+            })
             
             # 查询数据库验证用户
             session = SessionLocal()
@@ -74,33 +82,55 @@ class CampusWorldSSHServerInterface(ServerInterface):
                 ).first()
                 
                 if not user_node:
-                    self.logger.warning(f"User not found: {username}")
+                    self.security_logger.warning(f"用户不存在", extra={
+                        'username': username,
+                        'client_ip': getattr(self, 'client_ip', 'unknown'),
+                        'event_type': 'auth_failed_user_not_found'
+                    })
                     return AUTH_FAILED
                 
                 # 检查账号状态
                 attrs = user_node.attributes
                 if not attrs.get("is_active", True):
-                    self.logger.warning(f"Account inactive: {username}")
+                    self.security_logger.warning(f"账号已禁用", extra={
+                        'username': username,
+                        'client_ip': getattr(self, 'client_ip', 'unknown'),
+                        'event_type': 'auth_failed_account_inactive'
+                    })
                     return AUTH_FAILED
                 
                 if attrs.get("is_locked", False):
-                    self.logger.warning(f"Account locked: {username}")
+                    self.security_logger.warning(f"账号已锁定", extra={
+                        'username': username,
+                        'client_ip': getattr(self, 'client_ip', 'unknown'),
+                        'event_type': 'auth_failed_account_locked',
+                        'lock_reason': attrs.get("lock_reason", "unknown")
+                    })
                     return AUTH_FAILED
                 
                 if attrs.get("is_suspended", False):
                     suspension_until = attrs.get("suspension_until")
                     if suspension_until and datetime.fromisoformat(suspension_until) > datetime.now():
-                        self.logger.warning(f"Account suspended: {username}")
+                        self.security_logger.warning(f"账号已暂停", extra={
+                            'username': username,
+                            'client_ip': getattr(self, 'client_ip', 'unknown'),
+                            'event_type': 'auth_failed_account_suspended',
+                            'suspension_until': suspension_until
+                        })
                         return AUTH_FAILED
                 
                 # 验证密码
                 stored_hash = attrs.get("hashed_password", "")
                 if not stored_hash:
-                    self.logger.warning(f"No password hash for user: {username}")
+                    self.security_logger.warning(f"用户无密码哈希", extra={
+                        'username': username,
+                        'client_ip': getattr(self, 'client_ip', 'unknown'),
+                        'event_type': 'auth_failed_no_password_hash'
+                    })
                     return AUTH_FAILED
                 
                 if verify_password(password, stored_hash):
-                    # 认证成功，创建会话
+                    # 认证成功
                     session_id = f"{username}_{int(time.time())}"
                     ssh_session = SSHSession(
                         session_id=session_id,
@@ -109,11 +139,10 @@ class CampusWorldSSHServerInterface(ServerInterface):
                         user_attrs=attrs
                     )
                     
-                    # 存储会话信息，供后续使用
+                    # 存储会话信息
                     self.sessions[session_id] = ssh_session
                     self.session_manager.add_session(ssh_session)
                     
-                    # 存储用户名到会话ID的映射
                     if not hasattr(self, 'user_sessions'):
                         self.user_sessions = {}
                     self.user_sessions[username] = session_id
@@ -123,7 +152,25 @@ class CampusWorldSSHServerInterface(ServerInterface):
                     user_node.attributes = attrs
                     session.commit()
                     
-                    self.logger.info(f"Authentication successful for user: {username}")
+                    # 记录成功认证
+                    auth_duration = time.time() - start_time
+                    self.security_logger.info(f"SSH认证成功", extra={
+                        'username': username,
+                        'client_ip': getattr(self, 'client_ip', 'unknown'),
+                        'session_id': session_id,
+                        'auth_duration': auth_duration,
+                        'event_type': 'auth_success'
+                    })
+                    
+                    # 记录审计日志
+                    self.audit_logger.info(f"SSH登录成功", extra={
+                        'username': username,
+                        'session_id': session_id,
+                        'client_ip': getattr(self, 'client_ip', 'unknown'),
+                        'login_time': datetime.now().isoformat(),
+                        'event_type': 'ssh_login'
+                    })
+                    
                     return AUTH_SUCCESSFUL
                 else:
                     # 记录失败登录
@@ -135,19 +182,38 @@ class CampusWorldSSHServerInterface(ServerInterface):
                     if failed_attempts >= max_attempts:
                         attrs["is_locked"] = True
                         attrs["lock_reason"] = "Too many failed login attempts"
-                        self.logger.warning(f"Account locked due to failed attempts: {username}")
+                        attrs["locked_at"] = datetime.now().isoformat()
+                        
+                        self.security_logger.warning(f"账号因多次失败登录被锁定", extra={
+                            'username': username,
+                            'client_ip': getattr(self, 'client_ip', 'unknown'),
+                            'failed_attempts': failed_attempts,
+                            'max_attempts': max_attempts,
+                            'event_type': 'account_locked'
+                        })
                     
                     user_node.attributes = attrs
                     session.commit()
                     
-                    self.logger.warning(f"Authentication failed for user: {username}")
+                    self.security_logger.warning(f"SSH认证失败", extra={
+                        'username': username,
+                        'client_ip': getattr(self, 'client_ip', 'unknown'),
+                        'failed_attempts': failed_attempts,
+                        'event_type': 'auth_failed_wrong_password'
+                    })
+                    
                     return AUTH_FAILED
                     
             finally:
-                session.close()
-                
+                    session.close()
+                    
         except Exception as e:
-            self.logger.error(f"Authentication error for user {username}: {e}")
+            self.logger.error(f"认证过程发生异常", extra={
+                'username': username,
+                'error': str(e),
+                'error_type': type(e).__name__,
+                'event_type': 'auth_error'
+            })
             return AUTH_FAILED
     
     def check_auth_publickey(self, username: str, key: paramiko.PKey) -> int:
@@ -190,14 +256,24 @@ class CampusWorldSSHServer:
         self.server = None
         self.running = False
         
-        # 配置日志
-        self.logger = logging.getLogger(__name__)
+        # 使用统一的日志系统
+        self.logger = get_logger(LoggerNames.SSH)
+        self.audit_logger = get_logger(LoggerNames.AUDIT)
         
         # 创建SSH服务器接口
         self.ssh_interface = CampusWorldSSHServerInterface()
         
+        # 记录服务器初始化
+        self.logger.info(f"SSH服务器初始化", extra={
+            'host': self.host,
+            'port': self.port,
+            'event_type': 'ssh_server_init'
+        })
+    
     def start(self):
         """启动SSH服务器"""
+        start_time = time.time()
+        
         try:
             # 创建服务器socket
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -205,14 +281,36 @@ class CampusWorldSSHServer:
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(100)
             
-            self.logger.info(f"SSH server started on {self.host}:{self.port}")
             self.running = True
+            
+            # 记录服务器启动成功
+            startup_duration = time.time() - start_time
+            self.logger.info(f"SSH服务器启动成功", extra={
+                'host': self.host,
+                'port': self.port,
+                'startup_duration': startup_duration,
+                'event_type': 'ssh_server_start'
+            })
+            
+            # 记录审计日志
+            self.audit_logger.info(f"SSH服务器启动", extra={
+                'host': self.host,
+                'port': self.port,
+                'startup_time': datetime.now().isoformat(),
+                'event_type': 'ssh_server_startup'
+            })
             
             # 主服务器循环
             while self.running:
                 try:
                     client, addr = self.server_socket.accept()
-                    self.logger.info(f"Connection from {addr[0]}:{addr[1]}")
+                    
+                    # 记录新连接
+                    self.logger.info(f"接受新SSH连接", extra={
+                        'client_ip': addr[0],
+                        'client_port': addr[1],
+                        'event_type': 'ssh_connection_accepted'
+                    })
                     
                     # 为每个连接创建新线程
                     t = threading.Thread(target=self._handle_client, args=(client, addr))
@@ -221,14 +319,36 @@ class CampusWorldSSHServer:
                     
                 except Exception as e:
                     if self.running:
-                        self.logger.error(f"Error accepting connection: {e}")
+                        self.logger.error(f"接受SSH连接时出错", extra={
+                            'error': str(e),
+                            'error_type': type(e).__name__,
+                            'event_type': 'ssh_accept_error'
+                        })
                         
         except Exception as e:
-            self.logger.error(f"Failed to start SSH server: {e}")
+            self.logger.error(f"启动SSH服务器失败", extra={
+                'host': self.host,
+                'port': self.port,
+                'error': str(e),
+                'error_type': type(e).__name__,
+                'event_type': 'ssh_server_start_failed'
+            })
             raise
             
     def _handle_client(self, client: socket.socket, addr: tuple):
         """处理客户端连接"""
+        client_ip = addr[0]
+        client_port = addr[1]
+        connection_id = f"{client_ip}:{client_port}_{int(time.time())}"
+        
+        # 记录连接开始
+        self.logger.info(f"新SSH连接", extra={
+            'client_ip': client_ip,
+            'client_port': client_port,
+            'connection_id': connection_id,
+            'event_type': 'ssh_connection_start'
+        })
+        
         try:
             # 创建传输
             t = paramiko.Transport(client)
@@ -238,83 +358,204 @@ class CampusWorldSSHServer:
             # 等待认证
             channel = t.accept(20)
             if channel is None:
-                self.logger.warning(f"Authentication timeout for {addr[0]}:{addr[1]}")
+                self.logger.warning(f"SSH认证超时", extra={
+                    'client_ip': client_ip,
+                    'client_port': client_port,
+                    'connection_id': connection_id,
+                    'event_type': 'ssh_auth_timeout'
+                })
                 return
                 
-            # 等待shell请求
-            # 注意：不要在这里发送额外的消息，让控制台自己处理输出
-            # channel.send(self.ssh_interface.banner + '\n')
-            # channel.send('Type "help" for available commands.\n\n')
-            
             # 创建控制台实例
-            console = SSHConsoleOptimized(channel, None)  # 先创建控制台，稍后设置会话
+            console = SSHConsoleOptimized(channel, None)
             
-            # 设置会话（从认证成功的会话中获取）
+            # 设置会话
             try:
-                # 获取认证的用户名
                 transport = channel.get_transport()
                 if hasattr(transport, 'get_username'):
                     username = transport.get_username()
-                    self.logger.info(f"Setting up console for user: {username}")
+                    self.logger.info(f"设置SSH控制台", extra={
+                        'username': username,
+                        'client_ip': client_ip,
+                        'connection_id': connection_id,
+                        'event_type': 'ssh_console_setup'
+                    })
                     
-                    # 查找对应的会话（从ssh_interface中获取）
+                    # 查找对应的会话
                     for session_id, session in self.ssh_interface.sessions.items():
                         if session.username == username:
-                            console.current_session = session  # 直接设置会话
-                            self.logger.info(f"Session set for user: {username}")
+                            console.current_session = session
+                            self.logger.info(f"SSH会话已设置", extra={
+                                'username': username,
+                                'session_id': session_id,
+                                'client_ip': client_ip,
+                                'connection_id': connection_id,
+                                'event_type': 'ssh_session_established'
+                            })
                             break
                     else:
-                        self.logger.warning(f"No session found for user: {username}")
+                        self.logger.warning(f"未找到对应的SSH会话", extra={
+                            'username': username,
+                            'client_ip': client_ip,
+                            'connection_id': connection_id,
+                            'event_type': 'ssh_session_not_found'
+                        })
                 else:
-                    self.logger.warning("Could not get username from transport")
+                    self.logger.warning(f"无法从传输层获取用户名", extra={
+                        'client_ip': client_ip,
+                        'connection_id': connection_id,
+                        'event_type': 'ssh_username_not_available'
+                    })
             except Exception as e:
-                self.logger.error(f"Error setting up console session: {e}")
+                self.logger.error(f"设置SSH控制台会话时出错", extra={
+                    'client_ip': client_ip,
+                    'connection_id': connection_id,
+                    'error': str(e),
+                    'error_type': type(e).__name__,
+                    'event_type': 'ssh_console_setup_error'
+                })
             
+            # 运行控制台
             console.run()
             
         except Exception as e:
-            self.logger.error(f"Error handling client {addr[0]}:{addr[1]}: {e}")
+            self.logger.error(f"处理SSH客户端连接时出错", extra={
+                'client_ip': client_ip,
+                'client_port': client_port,
+                'connection_id': connection_id,
+                'error': str(e),
+                'error_type': type(e).__name__,
+                'event_type': 'ssh_connection_error'
+            })
         finally:
-            try:
-                client.close()
-            except:
-                pass
+            # 记录连接结束
+            self.logger.info(f"SSH连接结束", extra={
+                'client_ip': client_ip,
+                'client_port': client_port,
+                'connection_id': connection_id,
+                'event_type': 'ssh_connection_end'
+            })
+            
+        # 清理资源 - 按正确顺序关闭
+        try:
+            # 1. 清理控制台
+            if console:
+                console._cleanup()
+            
+            # 2. 关闭SSH通道
+            if channel and not channel.closed:
+                try:
+                    channel.close()
+                except Exception as e:
+                    self.logger.warning(f"关闭SSH通道时出错: {e}")
+            
+            # 3. 关闭SSH传输层
+            if transport and transport.is_active():
+                try:
+                    transport.close()
+                except Exception as e:
+                    self.logger.warning(f"关闭SSH传输层时出错: {e}")
+            
+            # 4. 关闭客户端socket
+            if client:
+                try:
+                    client.close()
+                except Exception as e:
+                    self.logger.warning(f"关闭客户端socket时出错: {e}")
+                    
+        except Exception as e:
+            self.logger.error(f"清理SSH连接资源时出错: {e}")
                 
     def stop(self):
         """停止SSH服务器"""
-        self.logger.info("Stopping SSH server...")
+        stop_start_time = time.time()
+        
+        self.logger.info(f"开始停止SSH服务器", extra={
+            'host': self.host,
+            'port': self.port,
+            'event_type': 'ssh_server_stop_start'
+        })
+        
         self.running = False
         
         if self.server_socket:
             try:
                 self.server_socket.close()
-            except:
-                pass
-                
-        # 清理所有会话
-        self.ssh_interface.session_manager.cleanup_all()
+                self.logger.info(f"SSH服务器socket已关闭", extra={
+                    'event_type': 'ssh_socket_closed'
+                })
+            except Exception as e:
+                self.logger.error(f"关闭SSH服务器socket时出错", extra={
+                    'error': str(e),
+                    'error_type': type(e).__name__,
+                    'event_type': 'ssh_socket_close_error'
+                })
         
-        self.logger.info("SSH server stopped")
+        # 清理所有会话
+        try:
+            self.ssh_interface.session_manager.cleanup_all()
+            self.logger.info(f"SSH会话已清理", extra={
+                'event_type': 'ssh_sessions_cleaned'
+            })
+        except Exception as e:
+            self.logger.error(f"清理SSH会话时出错", extra={
+                'error': str(e),
+                'error_type': type(e).__name__,
+                'event_type': 'ssh_sessions_cleanup_error'
+            })
+        
+        stop_duration = time.time() - stop_start_time
+        self.logger.info(f"SSH服务器已停止", extra={
+            'host': self.host,
+            'port': self.port,
+            'stop_duration': stop_duration,
+            'event_type': 'ssh_server_stopped'
+        })
+        
+        # 记录审计日志
+        self.audit_logger.info(f"SSH服务器停止", extra={
+            'host': self.host,
+            'port': self.port,
+            'stop_time': datetime.now().isoformat(),
+            'event_type': 'ssh_server_shutdown'
+        })
 
 
 def start_ssh_server(host: str = None, port: int = None):
     """启动SSH服务器的便捷函数"""
+    # 使用统一的日志系统
+    logger = get_logger(LoggerNames.SSH)
+    audit_logger = get_logger(LoggerNames.AUDIT)
+    
+    logger.info(f"启动SSH服务器便捷函数", extra={
+        'host': host,
+        'port': port,
+        'event_type': 'ssh_server_convenience_start'
+    })
+    
     server = CampusWorldSSHServer(host, port)
     try:
         server.start()
     except KeyboardInterrupt:
+        logger.info(f"收到中断信号，停止SSH服务器", extra={
+            'event_type': 'ssh_server_interrupted'
+        })
         server.stop()
     except Exception as e:
-        logging.error(f"SSH server error: {e}")
+        logger.error(f"SSH服务器运行时出错", extra={
+            'error': str(e),
+            'error_type': type(e).__name__,
+            'event_type': 'ssh_server_runtime_error'
+        })
         server.stop()
 
 
 if __name__ == "__main__":
-    # 配置日志
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    # 获取日志器
+    logger = get_logger(LoggerNames.SSH)
+    logger.info(f"SSH服务器主程序启动", extra={
+        'event_type': 'ssh_server_main_start'
+    })
     
     # 启动服务器
     start_ssh_server()
