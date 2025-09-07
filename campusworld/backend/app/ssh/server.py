@@ -18,7 +18,7 @@ from app.core.config_manager import get_setting
 from app.core.database import SessionLocal
 from app.models.graph import Node
 from app.core.security import verify_password
-from app.ssh.console_optimized import SSHConsoleOptimized
+from app.ssh.console import SSHConsole
 from app.ssh.session import SSHSession, SessionManager
 from app.core.log import get_logger, LoggerNames
 
@@ -367,7 +367,7 @@ class CampusWorldSSHServer:
                 return
                 
             # 创建控制台实例
-            console = SSHConsoleOptimized(channel, None)
+            console = SSHConsole(channel, None)
             
             # 设置会话
             try:

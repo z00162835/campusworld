@@ -18,7 +18,7 @@ class SSHHandler(ProtocolHandler):
         super().__init__()
         self.logger.info("SSH协议处理器已初始化")
     
-    def handle_interactive_command(self, user_id: str, session_id: str, 
+    def handle_interactive_command(self, user_id: str, username: str, session_id: str, 
                                  permissions: List[str], command_line: str,
                                  game_state: Optional[Dict[str, Any]] = None) -> str:
         """处理SSH交互式命令"""
@@ -32,7 +32,7 @@ class SSHHandler(ProtocolHandler):
             args = parts[1:] if len(parts) > 1 else []
             
             # 创建命令上下文
-            context = self.create_context(user_id, session_id, permissions, game_state)
+            context = self.create_context(user_id, username, session_id, permissions, game_state)
             
             # 查找命令
             command = command_registry.get_command(command_name)
@@ -62,24 +62,6 @@ class SSHHandler(ProtocolHandler):
         else:
             return f"[{username}@{timestamp}] campusworld> "
     
-    def get_welcome_message(self, username: str) -> str:
-        """获取SSH欢迎消息"""
-        welcome_lines = [
-            "Welcome to CampusWorld!",
-            "",
-            "Available Commands:",
-            "  help     - Show available commands",
-            "  stats    - Show system statistics", 
-            "  version  - Show version information",
-            "  quit     - Exit system",
-            "",
-            "Type 'help' for detailed information",
-            f"Connected as: {username}",
-            f"Session started: {time.strftime('%Y-%m-%d %H:%M:%S')}",
-            "Ready for adventure!",
-            ""
-        ]
-        return "\n".join(welcome_lines)
     
     def _format_command_not_found(self, command_name: str) -> str:
         """格式化命令未找到消息"""

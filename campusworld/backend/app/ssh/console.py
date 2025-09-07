@@ -13,9 +13,11 @@ import paramiko
 from app.ssh.session import SSHSession
 from app.protocols.ssh_handler import SSHHandler
 from app.commands.init_commands import initialize_commands
+from app.commands.base import CommandContext
+from app.commands.registry import command_registry
 from app.core.log import get_logger, LoggerNames
 
-class SSHConsoleOptimized:
+class SSHConsole:
     """优化的SSH控制台 - 解决乱码问题"""
     
     def __init__(self, channel, session: Optional[SSHSession] = None):
@@ -109,26 +111,36 @@ class SSHConsoleOptimized:
         
         # 获取权限信息
         permissions = self.current_session.roles if self.current_session else ["guest"]
-        
-        # 使用简单的ASCII字符，避免乱码
+
+        # 创建命令上下文
+        context = CommandContext(
+            user_id=user_id,
+            username=username,
+            session_id=self.current_session.session_id if self.current_session else "guest_session",
+            permissions=permissions
+        )
+    
+        # 动态获取可用命令
+        available_commands = command_registry.get_available_commands(context)
+
+        # 构建欢迎信息
         welcome_lines = [
             "Welcome to CampusWorld!",
             "",
             "Available Commands:",
-            "  help     - Show available commands",
-            "  status   - Show system status",
-            "  config   - Show configuration",
-            "  quit     - Exit system",
+        ]
+        for cmd in available_commands:
+            welcome_lines.append(f"  {cmd.name:<15} - {cmd.description}")
+        
+        welcome_lines.extend([
             "",
             "Type 'help' for detailed information",
             f"Connected as: {username}",
-            f"Session: {user_id}",
-            f"Permissions: {', '.join(permissions)}",
             f"Terminal: {self.terminal_width}x{self.terminal_height}",
             f"Time: {time.strftime('%Y-%m-%d %H:%M:%S')}",
             "Ready for adventure!",
             ""
-        ]
+        ])
         
         # 逐行发送欢迎信息
         for line in welcome_lines:
@@ -240,16 +252,19 @@ class SSHConsoleOptimized:
             # 获取用户信息
             if self.current_session:
                 user_id = str(self.current_session.user_id)
+                username = self.current_session.username
                 session_id = self.current_session.session_id
                 permissions = self.current_session.roles
             else:
                 user_id = "guest"
+                username = "Guest"
                 session_id = "guest_session"
                 permissions = ["guest"]
             
             # 使用SSH处理器处理命令
             result = self.ssh_handler.handle_interactive_command(
                 user_id=user_id,
+                username=username,
                 session_id=session_id,
                 permissions=permissions,
                 command_line=input_text,

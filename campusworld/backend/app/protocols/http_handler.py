@@ -75,10 +75,3 @@ class HTTPHandler(ProtocolHandler):
         else:
             return f"{username}@campusworld> "
     
-    def get_welcome_message(self, username: str) -> str:
-        """获取HTTP欢迎消息"""
-        return json.dumps({
-            "message": f"Welcome to CampusWorld, {username}!",
-            "available_commands": ["help", "stats", "version", "quit"],
-            "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
-        })

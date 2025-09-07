@@ -20,6 +20,7 @@ class CommandType(Enum):
 class CommandContext:
     """命令执行上下文"""
     user_id: str
+    username: str
     session_id: str
     permissions: List[str]
     game_state: Optional[Dict[str, Any]] = None
@@ -87,7 +88,7 @@ class BaseCommand(ABC):
     
     def get_usage(self) -> str:
         """获取使用说明"""
-        return f"Usage: {self.name} [options]"
+        return f"{self.name} [options]"
     
     def get_detailed_help(self) -> str:
         """获取详细帮助信息"""

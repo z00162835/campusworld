@@ -26,17 +26,14 @@ class ProtocolHandler(ABC):
     def get_prompt(self, username: str, game_state: Optional[Dict[str, Any]] = None) -> str:
         """获取提示符"""
         pass
+
     
-    @abstractmethod
-    def get_welcome_message(self, username: str) -> str:
-        """获取欢迎消息"""
-        pass
-    
-    def create_context(self, user_id: str, session_id: str, permissions: List[str],
+    def create_context(self, user_id: str, username: str, session_id: str, permissions: List[str],
                       game_state: Optional[Dict[str, Any]] = None) -> CommandContext:
         """创建命令上下文"""
         return CommandContext(
             user_id=user_id,
+            username=username,
             session_id=session_id,
             permissions=permissions,
             game_state=game_state

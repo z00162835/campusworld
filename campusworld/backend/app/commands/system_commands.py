@@ -110,6 +110,14 @@ class TimeCommand(SystemCommand):
         current_time = time.strftime('%Y-%m-%d %H:%M:%S')
         return CommandResult.success_result(f"Current time: {current_time}")
 
+class WhoamiCommand(SystemCommand):
+    """显示当前用户命令"""
+    
+    def __init__(self):
+        super().__init__("whoami", "Show current user", ["who"])
+    
+    def execute(self, context, args: List[str]) -> CommandResult:
+        return CommandResult.success_result(f"Current user: {context.username}")
 
 # 系统命令列表
 SYSTEM_COMMANDS = [
@@ -118,4 +126,5 @@ SYSTEM_COMMANDS = [
     VersionCommand(),
     QuitCommand(),
     TimeCommand(),
+    WhoamiCommand(),
 ]
