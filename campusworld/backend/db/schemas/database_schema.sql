@@ -204,6 +204,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_relationships_unique
 ON relationships(source_id, target_id, type_code) 
 WHERE is_active = TRUE;
 
+-- 根节点唯一约束 - 确保只有一个根节点
+CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_single_root 
+ON nodes(id) 
+WHERE attributes->>'is_root' = 'true' AND is_active = TRUE;
+
 -- 属性索引表索引
 CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_node_id ON node_attribute_indexes(node_id);
 CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_key ON node_attribute_indexes(attribute_key);

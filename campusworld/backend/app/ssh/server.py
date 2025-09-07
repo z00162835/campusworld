@@ -21,7 +21,8 @@ from app.core.security import verify_password
 from app.ssh.console import SSHConsole
 from app.ssh.session import SSHSession, SessionManager
 from app.core.log import get_logger, LoggerNames
-
+from app.models.root_manager import root_manager
+from app.models.user import User
 
 class CampusWorldSSHServerInterface(ServerInterface):
     """CampusWorld SSH服务器实现"""
@@ -152,6 +153,9 @@ class CampusWorldSSHServerInterface(ServerInterface):
                     user_node.attributes = attrs
                     session.commit()
                     
+                    # 确保用户spawn到奇点房间
+                    self.spawn_user_to_singularity_room(user_node, session)
+                    
                     # 记录成功认证
                     auth_duration = time.time() - start_time
                     self.security_logger.info(f"SSH认证成功", extra={
@@ -244,6 +248,49 @@ class CampusWorldSSHServerInterface(ServerInterface):
                                           pixelwidth: int, pixelheight: int) -> bool:
         """检查窗口大小改变请求"""
         return True
+    
+    def spawn_user_to_singularity_room(self, user_node, session):
+        """
+        将用户spawn到奇点房间
+        
+        参考Evennia的DefaultHome设计，确保用户登录后出现在Singularity Room
+        """
+        try:
+            
+            # 确保根节点存在
+            if not root_manager.ensure_root_node_exists():
+                self.security_logger.warning(f"无法确保根节点存在，用户 {user_node.attributes.get('username', 'Unknown')} spawn失败")
+                return False
+            
+            # 获取根节点
+            root_node = root_manager.get_root_node(session)
+            if not root_node:
+                self.security_logger.warning(f"无法获取根节点，用户 {user_node.attributes.get('username', 'Unknown')} spawn失败")
+                return False
+            
+            # 设置用户位置到根节点
+            user_node.location_id = root_node.id
+            user_node.home_id = root_node.id  # 同时设置为home
+            
+            # 更新最后活动时间
+            attrs = user_node.attributes
+            attrs["last_activity"] = datetime.now().isoformat()
+            user_node.attributes = attrs
+            
+            # 提交更改
+            session.commit()
+            
+            return True
+            
+        except Exception as e:
+            self.security_logger.error(f"用户spawn到奇点房间失败: {e}", extra={
+                'username': user_node.attributes.get('username', 'Unknown') if user_node else 'Unknown',
+                'user_id': user_node.id if user_node else None,
+                'error': str(e),
+                'event_type': 'user_spawn_error'
+            })
+            return False
+
 
 
 class CampusWorldSSHServer:
@@ -548,6 +595,7 @@ def start_ssh_server(host: str = None, port: int = None):
             'event_type': 'ssh_server_runtime_error'
         })
         server.stop()
+    
 
 
 if __name__ == "__main__":

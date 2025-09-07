@@ -9,6 +9,10 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 from .base import DefaultAccount
+from .root_manager import root_manager
+from  app.core.log import get_logger, LoggerNames;
+from .graph import Node
+from app.core.database import SessionLocal
 
 
 class User(DefaultAccount):
@@ -22,6 +26,7 @@ class User(DefaultAccount):
     def __init__(self, username: str, email: str, **kwargs):
         # 设置用户特定的节点类型
         self._node_type = 'user'
+        self.logger = get_logger(LoggerNames.GAME)
         
         # 设置用户默认属性
         user_attrs = {
@@ -48,7 +53,7 @@ class User(DefaultAccount):
             
             # 统计信息
             'login_count': kwargs.get('login_count', 0),
-            'last_activity': kwargs.get('last_activity'),
+            'last_activity': kwargs.get('last_activity', datetime.now().isoformat()) if kwargs.get('last_activity') is None else kwargs.get('last_activity'),
             
             **kwargs
         }
@@ -315,7 +320,7 @@ class User(DefaultAccount):
             )
             return relationship is not None
         except Exception as e:
-            print(f"加入校园失败: {e}")
+            self.logger .error(f"加入校园失败: {e}")
             return False
     
     def leave_campus(self, campus) -> bool:
@@ -323,9 +328,221 @@ class User(DefaultAccount):
         try:
             return self.remove_relationship(campus, "campus_member")
         except Exception as e:
-            print(f"离开校园失败: {e}")
+            self.logger.error(f"离开校园失败: {e}")
             return False
     
     def get_node_attribute(self, key: str, default: Any = None) -> Any:
         """获取节点属性（别名方法）"""
         return self._node_attributes.get(key, default)
+    
+    # ==================== 用户spawn和位置管理 ====================
+    
+    def spawn_to_singularity_room(self) -> bool:
+        """
+        将用户spawn到奇点房间
+        
+        参考Evennia的DefaultHome设计，确保用户登录后出现在Singularity Room
+        """
+        try:
+            # 确保根节点存在
+            if not root_manager.ensure_root_node_exists():
+                self.logger.error("无法确保根节点存在")
+                return False
+            
+            # 获取根节点
+            root_node = root_manager.get_root_node()
+            if not root_node:
+                self.logger.error("无法获取根节点")
+                return False
+            
+            # 设置用户位置到根节点
+            self.location_id = root_node.id
+            self.home_id = root_node.id  # 同时设置为home
+            
+            # 更新最后活动时间
+            self.set_node_attribute('last_activity', datetime.now().isoformat())
+            
+            # 同步到数据库
+            self.sync_to_node()
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"用户spawn到奇点房间失败: {e}")
+            return False
+    
+    def spawn_to_home(self) -> bool:
+        """
+        将用户spawn到home位置
+        
+        如果home_id未设置，则spawn到奇点房间
+        """
+        try:
+            # 检查是否有home_id
+            if self.home_id:
+                # 有home_id，直接移动到home
+                self.location_id = self.home_id
+                self.set_node_attribute('last_activity', datetime.now().isoformat())
+                self.sync_to_node()
+                return True
+            else:
+                # 没有home_id，spawn到奇点房间
+                return self.spawn_to_singularity_room()
+                
+        except Exception as e:
+            self.logger.error(f"用户spawn到home失败: {e}")
+            return False
+    
+    def set_home_to_singularity_room(self) -> bool:
+        """
+        将用户的home设置为奇点房间
+        
+        确保所有用户的默认home都是奇点房间
+        """
+        try:
+            # 确保根节点存在
+            if not root_manager.ensure_root_node_exists():
+                return False
+            
+            # 获取根节点
+            root_node = root_manager.get_root_node()
+            if not root_node:
+                return False
+            
+            # 设置home_id
+            self.home_id = root_node.id
+            self.sync_to_node()
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"设置home到奇点房间失败: {e}")
+            return False
+    
+    def get_current_location_info(self) -> Optional[Dict[str, Any]]:
+        """获取当前位置信息"""
+        try:
+            if not self.location_id:
+                return None
+            
+            session = SessionLocal()
+            try:
+                location_node = session.query(Node).filter(
+                    Node.id == self.location_id
+                ).first()
+                
+                if not location_node:
+                    return None
+                
+                return {
+                    'id': location_node.id,
+                    'uuid': str(location_node.uuid),
+                    'name': location_node.name,
+                    'type': location_node.type_code,
+                    'description': location_node.description,
+                    'is_root': location_node.attributes.get('is_root', False) if location_node.attributes else False,
+                    'is_home': location_node.attributes.get('is_home', False) if location_node.attributes else False,
+                    'room_capacity': location_node.attributes.get('room_capacity', 0) if location_node.attributes else 0,
+                    'is_public': location_node.is_public,
+                    'is_accessible': location_node.attributes.get('is_accessible', True) if location_node.attributes else True
+                }
+                
+            finally:
+                session.close()
+                
+        except Exception as e:
+            self.logger.error(f"获取当前位置信息失败: {e}")
+            return None
+    
+    def can_enter_location(self, location_id: int) -> bool:
+        """检查是否可以进入指定位置"""
+        try:
+            session = SessionLocal()
+            try:
+                location_node = session.query(Node).filter(
+                    Node.id == location_id
+                ).first()
+                
+                if not location_node:
+                    return False
+                
+                # 检查位置是否可访问
+                if not location_node.attributes.get('is_accessible', True) if location_node.attributes else True:
+                    return False
+                
+                # 检查权限要求
+                required_permissions = location_node.attributes.get('permission_required', []) if location_node.attributes else []
+                if required_permissions:
+                    for permission in required_permissions:
+                        if not self.has_permission(permission):
+                            return False
+                
+                # 检查角色要求
+                required_roles = location_node.attributes.get('role_required', []) if location_node.attributes else []
+                if required_roles:
+                    user_roles = self._node_attributes.get('roles', [])
+                    if not any(role in user_roles for role in required_roles):
+                        return False
+                
+                return True
+                
+            finally:
+                session.close()
+                
+        except Exception as e:
+            self.logger.error(f"检查位置访问权限失败: {e}")
+            return False
+    
+    def move_to_location(self, location_id: int) -> bool:
+        """移动到指定位置"""
+        try:
+            # 检查是否可以进入该位置
+            if not self.can_enter_location(location_id):
+                print("无法进入该位置")
+                return False
+            
+            # 移动用户
+            self.location_id = location_id
+            self.set_node_attribute('last_activity', datetime.now().isoformat())
+            self.sync_to_node()
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"移动用户失败: {e}")
+            return False
+    
+    def get_spawn_info(self) -> Dict[str, Any]:
+        """获取用户spawn信息"""
+        return {
+            'user_id': self.id,
+            'username': self.username,
+            'current_location_id': self.location_id,
+            'home_id': self.home_id,
+            'last_activity': self._node_attributes.get('last_activity'),
+            'is_in_singularity_room': self._is_in_singularity_room(),
+            'can_spawn_to_home': self.home_id is not None
+        }
+    
+    def _is_in_singularity_room(self) -> bool:
+        """检查是否在奇点房间"""
+        try:
+            if not self.location_id:
+                return False
+            session = SessionLocal()
+            try:
+                location_node = session.query(Node).filter(
+                    Node.id == self.location_id
+                ).first()
+                
+                if not location_node:
+                    return False
+                
+                return location_node.attributes.get('is_root', False) if location_node.attributes else False
+                
+            finally:
+                session.close()
+                
+        except Exception as e:
+            self.logger.error(f"检查是否在奇点房间失败: {e}")
+            return False

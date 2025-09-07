@@ -5,18 +5,19 @@
 所有对象都存储在Node中，通过type和typeclass区分
 """
 
-from typing import Dict, Any, List, Optional, Type, Union
+from typing import Dict, Any, List, Optional, Type, Union, TYPE_CHECKING
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, Text
 import time
 import uuid
 from app.core.log import get_logger, LoggerNames
-
-from .base import DefaultObject
 from .graph import (
-    Node, NodeType, Relationship, RelationshipType
+    Node, NodeType, Relationship
 )
 from app.core.database import SessionLocal
+
+if TYPE_CHECKING:
+    from .base import DefaultObject
 
 class GraphSynchronizer:
     """
@@ -37,7 +38,7 @@ class GraphSynchronizer:
     
     # ==================== 对象到图节点同步 ====================
     
-    def sync_object_to_node(self, obj: DefaultObject) -> Optional[Node]:
+    def sync_object_to_node(self, obj: 'DefaultObject') -> Optional[Node]:
         """将DefaultObject同步到图节点"""
         try:
             session = self._get_db_session()
@@ -62,7 +63,7 @@ class GraphSynchronizer:
             self.logger.error(f"同步对象到图节点失败: {e}")
             return None
     
-    def _create_graph_node_from_object(self, obj: DefaultObject) -> Node:
+    def _create_graph_node_from_object(self, obj: 'DefaultObject') -> Node:
         """从DefaultObject创建图节点"""
         # 获取对象属性（不包含name）
         attributes = obj.get_node_attributes()
@@ -86,7 +87,7 @@ class GraphSynchronizer:
         
         return node
     
-    def _update_graph_node_from_object(self, node: Node, obj: DefaultObject) -> None:
+    def _update_graph_node_from_object(self, node: Node, obj: 'DefaultObject') -> None:
         """从DefaultObject更新图节点"""
         # 获取对象属性（不包含name）
         attributes = obj.get_node_attributes()
@@ -139,7 +140,7 @@ class GraphSynchronizer:
         return rel_type.id
     # ==================== 图节点到对象同步 ====================
     
-    def sync_node_to_object(self, node: Node, obj_class: Type[DefaultObject]) -> Optional[DefaultObject]:
+    def sync_node_to_object(self, node: Node, obj_class: Type['DefaultObject']) -> Optional['DefaultObject']:
         """将图节点同步到DefaultObject"""
         try:
             # 从节点属性创建对象（不包含name）
@@ -162,7 +163,7 @@ class GraphSynchronizer:
     
     # ==================== 关系管理 ====================
     
-    def create_relationship(self, source: DefaultObject, target: DefaultObject, 
+    def create_relationship(self, source: 'DefaultObject', target: 'DefaultObject', 
                           rel_type: str, **attributes) -> Optional[Relationship]:
         """创建关系"""
         try:
@@ -234,7 +235,7 @@ class GraphSynchronizer:
         # 使用统一的Relationship类，关系类型通过type字段和attributes区分
         return Relationship
     
-    def get_object_relationships(self, obj: DefaultObject, rel_type: str = None) -> List[Relationship]:
+    def get_object_relationships(self, obj: 'DefaultObject', rel_type: str = None) -> List[Relationship]:
         """获取对象的关系"""
         try:
             session = self._get_db_session()
@@ -264,7 +265,7 @@ class GraphSynchronizer:
             self.logger.error(f"获取对象关系失败: {e}")
             return []
     
-    def remove_relationship(self, source: DefaultObject, target: DefaultObject, 
+    def remove_relationship(self, source: 'DefaultObject', target: 'DefaultObject', 
                           rel_type: str) -> bool:
         """移除关系"""
         try:
@@ -292,7 +293,7 @@ class GraphSynchronizer:
     
     # ==================== 批量同步 ====================
     
-    def sync_objects_batch(self, objects: List[DefaultObject]) -> List[Node]:
+    def sync_objects_batch(self, objects: List['DefaultObject']) -> List[Node]:
         """批量同步对象到图节点"""
         synced_nodes = []
         
@@ -307,7 +308,7 @@ class GraphSynchronizer:
         return synced_nodes
     
     def sync_graph_nodes_batch(self, nodes: List[Node], 
-                              obj_class: Type[DefaultObject]) -> List[DefaultObject]:
+                              obj_class: Type['DefaultObject']) -> List['DefaultObject']:
         """批量同步图节点到对象"""
         synced_objects = []
         
@@ -333,7 +334,7 @@ class GraphSynchronizer:
     # ==================== 查询和搜索 ====================
     
     def find_objects_by_attribute(self, attribute_key: str, attribute_value: Any, 
-                                 obj_class: Type[DefaultObject] = None) -> List[DefaultObject]:
+                                 obj_class: Type['DefaultObject'] = None) -> List['DefaultObject']:
         """通过属性查找对象"""
         try:
             session = self._get_db_session()
@@ -372,7 +373,7 @@ class GraphSynchronizer:
             self.logger.error(f"通过属性查找对象失败: {e}")
             return []
     
-    def find_objects_by_tag(self, tag: str, obj_class: Type[DefaultObject] = None) -> List[DefaultObject]:
+    def find_objects_by_tag(self, tag: str, obj_class: Type['DefaultObject'] = None) -> List['DefaultObject']:
         """通过标签查找对象"""
         try:
             session = self._get_db_session()
@@ -410,7 +411,7 @@ class GraphSynchronizer:
             self.logger.error(f"通过标签查找对象失败: {e}")
             return []
     
-    def search_objects(self, query: str, obj_class: Type[DefaultObject] = None) -> List[DefaultObject]:
+    def search_objects(self, query: str, obj_class: Type['DefaultObject'] = None) -> List['DefaultObject']:
         """搜索对象"""
         try:
             session = self._get_db_session()
