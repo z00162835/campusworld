@@ -5,7 +5,7 @@
 
 import time
 import select
-from typing import Optional
+from typing import Optional, Dict, Any
 import os
 
 import paramiko
@@ -110,7 +110,7 @@ class SSHConsole:
             user_id = "guest"
         
         # 获取权限信息
-        permissions = self.current_session.roles if self.current_session else ["guest"]
+        permissions = self.current_session.permissions if self.current_session else ["guest"]
 
         # 创建命令上下文
         context = CommandContext(
@@ -254,12 +254,15 @@ class SSHConsole:
                 user_id = str(self.current_session.user_id)
                 username = self.current_session.username
                 session_id = self.current_session.session_id
-                permissions = self.current_session.roles
+                permissions = self.current_session.permissions
             else:
                 user_id = "guest"
                 username = "Guest"
                 session_id = "guest_session"
                 permissions = ["guest"]
+            
+            # 获取游戏状态
+            game_state = self._get_game_state()
             
             # 使用SSH处理器处理命令
             result = self.ssh_handler.handle_interactive_command(
@@ -268,7 +271,7 @@ class SSHConsole:
                 session_id=session_id,
                 permissions=permissions,
                 command_line=input_text,
-                game_state=None  # 这里应该从游戏状态获取
+                game_state=game_state
             )
             
             # 发送结果
@@ -479,3 +482,40 @@ class SSHConsole:
                     self.logger.warning(f"关闭SSH通道时出错: {e}")
         except Exception as e:
             self.logger.error(f"清理SSH控制台资源时出错: {e}")
+
+    def _get_game_state(self) -> Dict[str, Any]:
+        """从游戏引擎管理器获取游戏状态"""
+        try:
+            from app.game_engine.manager import game_engine_manager
+            
+            # 获取游戏引擎
+            engine = game_engine_manager.get_engine()
+            if not engine:
+                return {
+                    'is_running': False,
+                    'current_game': None,
+                    'game_info': {}
+                }
+            
+            # 通过GameInterface获取游戏状态
+            game_status = engine.interface.get_game_status('campus_life')
+            if game_status:
+                return {
+                    'is_running': game_status.get('is_running', False),
+                    'current_game': 'campus_life',
+                    'game_info': game_status
+                }
+            else:
+                return {
+                    'is_running': False,
+                    'current_game': None,
+                    'game_info': {}
+                }
+                
+        except Exception as e:
+            self.logger.error(f"从游戏引擎获取状态失败: {e}")
+            return {
+                'is_running': False,
+                'current_game': None,
+                'game_info': {'error': str(e)}
+            }

@@ -5,6 +5,7 @@
 
 from .registry import command_registry
 from .system_commands import SYSTEM_COMMANDS
+from .game import GAME_COMMANDS
 import threading
 from typing import Optional
 import os
@@ -36,12 +37,19 @@ def initialize_commands(force_reinit: bool = False) -> bool:
                 else:
                     logger.error(f"系统命令 '{command.name}' 注册失败")
             
+            # 注册游戏命令
+            game_success = 0
+            for command in GAME_COMMANDS:
+                if command_registry.register_command(command):
+                    game_success += 1
+                else:
+                    logger.error(f"游戏命令 '{command.name}' 注册失败")
             
             # 显示注册摘要
             summary = command_registry.get_commands_summary()
             
             _commands_initialized = True
-            return system_success == len(SYSTEM_COMMANDS)
+            return system_success == len(SYSTEM_COMMANDS) and game_success == len(GAME_COMMANDS)
             
         except Exception as e:
             logger.error(f"命令系统初始化失败: {e}")

@@ -152,7 +152,7 @@ class GameInterface:
             status = {
                 "name": game.name,
                 "version": game.version,
-                "is_running": getattr(game, 'is_running', False),
+                "is_running": game.is_running,
                 "start_time": getattr(game, 'start_time', None),
                 "player_count": getattr(game, 'get_player_count', lambda: 0)(),
                 "description": getattr(game, 'description', ''),
