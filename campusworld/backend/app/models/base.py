@@ -111,33 +111,30 @@ class DefaultObject(GraphNodeInterface):
         # 设置独立的name字段（对应数据库nodes表的name字段）
         self._node_name = name
         
-        # 所有其他属性都存储在Node的attributes中（不包含name）
-        self._node_attributes = {
-            'type': self._node_type,
-            'typeclass': self._node_typeclass,
-            'is_active': True,
-            'is_public': True,
-            'access_level': 'normal',
-            'created_at': datetime.now().isoformat(),
-            'updated_at': datetime.now().isoformat(),
-            **kwargs
-        }
-        
-        # 自动生成UUID
+        # 固定字段 - 对应数据库表的列
         self._node_uuid = str(uuid.uuid4())
+        self._node_type_code = self._node_type
+        self._node_description = kwargs.get('description', '')
+        self._node_is_active = kwargs.get('is_active', True)
+        self._node_is_public = kwargs.get('is_public', True)
+        self._node_access_level = kwargs.get('access_level', 'normal')
+        self._node_location_id = kwargs.get('location_id')
+        self._node_home_id = kwargs.get('home_id')
+        self._node_created_at = datetime.now()
+        self._node_updated_at = datetime.now()
+        
+        # 动态属性 - 存储在 attributes JSONB 字段中
+        self._node_attributes = kwargs.get('attributes', {})
+        
+        # 标签 - 存储在 tags JSONB 字段中
+        self._node_tags = kwargs.get('tags', [])
         
         # 命令系统相关属性
         self._cmdset = None
         self._command_history = []
         self._max_command_history = 100
-        
-        # 自动同步到Node表
-        self._schedule_node_sync()
     
-    def __repr__(self):
-        return f"<{self.__class__.__name__}(uuid='{self._node_uuid}', name='{self._node_name}', type='{self._node_type}')>"
-    
-    # ==================== 图节点接口实现 ====================
+    # ==================== 固定字段访问方法 ====================
     
     def get_node_uuid(self) -> str:
         """获取节点UUID"""
@@ -145,7 +142,7 @@ class DefaultObject(GraphNodeInterface):
     
     def get_node_type(self) -> str:
         """获取节点类型"""
-        return self._node_type
+        return self._node_type_code
     
     def get_node_typeclass(self) -> str:
         """获取节点类型类"""
@@ -160,6 +157,81 @@ class DefaultObject(GraphNodeInterface):
         self._node_name = name
         self._schedule_node_sync()
     
+    def get_node_description(self) -> str:
+        """获取节点描述"""
+        return self._node_description
+    
+    def set_node_description(self, description: str) -> None:
+        """设置节点描述"""
+        self._node_description = description
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
+    
+    def is_node_active(self) -> bool:
+        """检查节点是否活跃"""
+        return self._node_is_active
+    
+    def set_node_active(self, is_active: bool) -> None:
+        """设置节点活跃状态"""
+        self._node_is_active = is_active
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
+    
+    def is_node_public(self) -> bool:
+        """检查节点是否公开"""
+        return self._node_is_public
+    
+    def set_node_public(self, is_public: bool) -> None:
+        """设置节点公开状态"""
+        self._node_is_public = is_public
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
+    
+    def get_node_access_level(self) -> str:
+        """获取节点访问级别"""
+        return self._node_access_level
+    
+    def set_node_access_level(self, access_level: str) -> None:
+        """设置节点访问级别"""
+        self._node_access_level = access_level
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
+    
+    def get_node_location_id(self) -> Optional[int]:
+        """获取节点位置ID"""
+        return self._node_location_id
+    
+    def set_node_location_id(self, location_id: Optional[int]) -> None:
+        """设置节点位置ID"""
+        self._node_location_id = location_id
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
+    
+    def get_node_home_id(self) -> Optional[int]:
+        """获取节点家ID"""
+        return self._node_home_id
+    
+    def set_node_home_id(self, home_id: Optional[int]) -> None:
+        """设置节点家ID"""
+        self._node_home_id = home_id
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
+    
+    def get_node_created_at(self) -> datetime:
+        """获取节点创建时间"""
+        return self._node_created_at
+    
+    def get_node_updated_at(self) -> datetime:
+        """获取节点更新时间"""
+        return self._node_updated_at
+    
+    def update_timestamp(self) -> None:
+        """更新时间戳"""
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
+    
+    # ==================== 动态属性访问方法 ====================
+    
     def get_node_attributes(self) -> Dict[str, Any]:
         """获取节点属性"""
         return self._node_attributes.copy()
@@ -170,68 +242,48 @@ class DefaultObject(GraphNodeInterface):
     
     def set_node_attribute(self, key: str, value: Any) -> None:
         """设置节点属性"""
-        # 不允许设置name属性，name应该通过set_node_name方法设置
-        if key == 'name':
-            raise ValueError("不能直接设置name属性，请使用set_node_name方法")
-        
         self._node_attributes[key] = value
-        self._node_attributes['updated_at'] = datetime.now()
+        self._node_updated_at = datetime.now()
         self._schedule_node_sync()
+    
+    def remove_node_attribute(self, key: str) -> bool:
+        """移除节点动态属性"""
+        if key in self._node_attributes:
+            del self._node_attributes[key]
+            self._node_updated_at = datetime.now()
+            self._schedule_node_sync()
+            return True
+        return False
+    
+    # ==================== 标签访问方法 ====================
     
     def get_node_tags(self) -> List[str]:
         """获取节点标签"""
-        return self._node_attributes.get('tags', [])
+        return self._node_tags.copy()
     
     def add_node_tag(self, tag: str) -> None:
-        """添加节点标签"""
-        tags = self._node_attributes.get('tags', [])
-        if tag not in tags:
-            tags.append(tag)
-            self._node_attributes['tags'] = tags
+        """添加节点标签 - 操作内存中的_node_tags"""
+        if tag not in self._node_tags:
+            self._node_tags.append(tag)
+            self._node_updated_at = datetime.now()
             self._schedule_node_sync()
     
     def remove_node_tag(self, tag: str) -> None:
-        """移除节点标签"""
-        tags = self._node_attributes.get('tags', [])
-        if tag in tags:
-            tags.remove(tag)
-            self._node_attributes['tags'] = tags
+        """移除节点标签 - 操作内存中的_node_tags"""
+        if tag in self._node_tags:
+            self._node_tags.remove(tag)
+            self._node_updated_at = datetime.now()
             self._schedule_node_sync()
     
-    def sync_to_node(self) -> None:
-        """同步到图节点系统"""
-        try:
-            from app.models.graph_sync import GraphSynchronizer
-            synchronizer = GraphSynchronizer()
-            synchronizer.sync_object_to_node(self)
-        except Exception as e:
-            # 记录同步错误，但不中断对象操作
-            print(f"图节点同步失败: {e}")
+    def set_node_tags(self, tags: List[str]) -> None:
+        """设置节点标签列表"""
+        self._node_tags = tags.copy()
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
     
-    # ==================== 图节点管理方法 ====================
-    
-    def _schedule_node_sync(self) -> None:
-        """调度图节点同步"""
-        # 在实际应用中，这里可以使用异步任务队列
-        # 目前使用简单的延迟同步
-        import threading
-        def delayed_sync():
-            time.sleep(0.1)  # 延迟100ms
-            self.sync_to_node()
-        
-        thread = threading.Thread(target=delayed_sync)
-        thread.daemon = True
-        thread.start()
-    
-    @classmethod
-    def get_node_type(cls) -> str:
-        """获取类的节点类型"""
-        return cls.__name__.lower()
-    
-    @classmethod
-    def get_node_typeclass(cls) -> str:
-        """获取类的节点类型类"""
-        return f"{cls.__module__}.{cls.__name__}"
+    def has_node_tag(self, tag: str) -> bool:
+        """检查是否有指定标签"""
+        return tag in self._node_tags
     
     # ==================== 命令系统集成 ====================
     
@@ -462,78 +514,78 @@ class DefaultObject(GraphNodeInterface):
     @property
     def description(self) -> str:
         """获取描述"""
-        return self._node_attributes.get('description', '')
+        return self._node_description
     
     @description.setter
     def description(self, value: str):
         """设置描述"""
-        self.set_node_attribute('description', value)
+        self.set_node_description(value)
     
     @property
     def is_active(self) -> bool:
         """获取是否活跃"""
-        return self._node_attributes.get('is_active', True)
+        return self._node_is_active
     
     @is_active.setter
     def is_active(self, value: bool):
         """设置是否活跃"""
-        self.set_node_attribute('is_active', value)
+        self.set_node_active(value)
     
     @property
     def is_public(self) -> bool:
         """获取是否公开"""
-        return self._node_attributes.get('is_public', True)
+        return self._node_is_public
     
     @is_public.setter
     def is_public(self, value: bool):
         """设置是否公开"""
-        self.set_node_attribute('is_public', value)
+        self.set_node_public(value)
     
     @property
     def access_level(self) -> str:
         """获取访问级别"""
-        return self._node_attributes.get('access_level', 'normal')
+        return self._node_access_level
     
     @access_level.setter
     def access_level(self, value: str):
         """设置访问级别"""
-        self.set_node_attribute('access_level', value)
+        self.set_node_access_level(value)
     
     @property
     def created_at(self):
         """获取创建时间"""
-        return self._node_attributes.get('created_at')
+        return self._node_created_at
     
     @property
     def updated_at(self):
         """获取更新时间"""
-        return self._node_attributes.get('updated_at')
+        return self._node_updated_at
     
     # ==================== 位置管理 ====================
     
     @property
     def location_id(self) -> Optional[int]:
         """获取位置ID"""
-        return self._node_attributes.get('location_id')
+        return self._node_location_id
     
     @location_id.setter
     def location_id(self, value: Optional[int]):
         """设置位置ID"""
-        self.set_node_attribute('location_id', value)
+        self.set_node_location_id(value)
     
     @property
     def home_id(self) -> Optional[int]:
         """获取默认位置ID"""
-        return self._node_attributes.get('home_id')
+        return self._node_home_id
     
     @home_id.setter
     def home_id(self, value: Optional[int]):
         """设置默认位置ID"""
-        self.set_node_attribute('home_id', value)
+        self.set_node_home_id(value)
     
     def move_to(self, new_location: 'DefaultObject') -> bool:
         """移动到新位置"""
-        if new_location and new_location.is_active:
+        if new_location and new_location.is_node_active():
             self.location_id = new_location.id
             return True
         return False
@@ -563,6 +615,7 @@ class DefaultObject(GraphNodeInterface):
         """移除属性"""
         if key in self._node_attributes:
             del self._node_attributes[key]
+            self._node_updated_at = datetime.now()
             self._schedule_node_sync()
             return True
         return False
@@ -570,51 +623,25 @@ class DefaultObject(GraphNodeInterface):
     # ==================== 标签管理 ====================
     
     def has_tag(self, tag: str) -> bool:
-        """检查是否有指定标签"""
-        tags = self._node_attributes.get('tags', [])
-        return tag in tags
+        """检查是否有指定标签 - 检查内存中的_node_tags"""
+        return tag in self._node_tags
     
     def get_all_tags(self) -> List[str]:
-        """获取所有标签"""
-        return self._node_attributes.get('tags', []).copy()
+        """获取所有标签 - 从内存中的_node_tags获取"""
+        return self._node_tags.copy()
     
     def clear_tags(self) -> None:
-        """清除所有标签"""
-        self._node_attributes['tags'] = []
+        """清除所有标签 - 清空内存中的_node_tags"""
+        self._node_tags.clear()
+        self._node_updated_at = datetime.now()
         self._schedule_node_sync()
     
-    # ==================== 关系管理 ====================
+    def set_tags(self, tags: List[str]) -> None:
+        """设置标签列表（替换现有标签）"""
+        self._node_tags = tags.copy()
+        self._node_updated_at = datetime.now()
+        self._schedule_node_sync()
     
-    def create_relationship(self, target: 'DefaultObject', rel_type: str, **attributes) -> 'GraphRelationship':
-        """创建关系"""
-        try:
-            from app.models.graph_sync import GraphSynchronizer
-            synchronizer = GraphSynchronizer()
-            return synchronizer.create_relationship(self, target, rel_type, **attributes)
-        except Exception as e:
-            print(f"创建关系失败: {e}")
-            return None
-    
-    def get_relationships(self, rel_type: str = None) -> List['GraphRelationship']:
-        """获取关系"""
-        try:
-            from app.models.graph_sync import GraphSynchronizer
-            synchronizer = GraphSynchronizer()
-            return synchronizer.get_object_relationships(self, rel_type)
-        except Exception as e:
-            print(f"获取关系失败: {e}")
-            return []
-    
-    def remove_relationship(self, target: 'DefaultObject', rel_type: str) -> bool:
-        """移除关系"""
-        try:
-            from app.models.graph_sync import GraphSynchronizer
-            synchronizer = GraphSynchronizer()
-            return synchronizer.remove_relationship(self, target, rel_type)
-        except Exception as e:
-            print(f"移除关系失败: {e}")
-            return False
-
 
 class DefaultAccount(DefaultObject):
     """
@@ -1022,3 +1049,19 @@ class DefaultAccount(DefaultObject):
             'suspension_reason': self.suspension_reason,
             'suspension_until': self.suspension_until.isoformat() if self.suspension_until else None,
         }
+
+    # ==================== 节点同步调度 ====================
+    
+    def _schedule_node_sync(self) -> None:
+        """调度节点同步到图数据库"""
+        try:
+            from app.models.graph_sync import GraphSynchronizer
+            synchronizer = GraphSynchronizer()
+            synchronizer.sync_object_to_node(self)
+        except Exception as e:
+            # 静默处理同步错误，避免影响对象操作
+            pass
+    
+    def sync_to_node(self) -> None:
+        """同步到图节点系统"""
+        self._schedule_node_sync()

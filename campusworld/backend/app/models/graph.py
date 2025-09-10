@@ -127,7 +127,7 @@ class Node(Base, BaseNode):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # 关系映射 - 使用overlaps参数消除警告
+    # 关系映射
     location = relationship(
         "Node",
         foreign_keys=[location_id],
@@ -181,9 +181,6 @@ class Node(Base, BaseNode):
     
     def get_type(self) -> str:
         return self.type_code
-    
-    def get_typeclass(self) -> str:
-        return self.attributes.get('typeclass', '') if self.attributes else ''
     
     def is_node_active(self) -> bool:
         return self.is_active

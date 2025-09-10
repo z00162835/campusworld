@@ -12,7 +12,7 @@ import time
 import uuid
 from app.core.log import get_logger, LoggerNames
 from .graph import (
-    Node, NodeType, Relationship
+    Node, NodeType, Relationship, RelationshipType
 )
 from app.core.database import SessionLocal
 
@@ -74,34 +74,33 @@ class GraphSynchronizer:
             uuid=obj.get_node_uuid(),
             type_id=type_id,
             type_code=obj.get_node_type(),
-            name=obj.get_node_name(),  # 从独立字段获取name
-            description=attributes.get('description', ''),
-            attributes=attributes,  # 不包含name的属性
-            tags=attributes.get('tags', []),
-            is_active=attributes.get('is_active', True),
-            is_public=attributes.get('is_public', True),
-            access_level=attributes.get('access_level', 'normal'),
-            location_id=attributes.get('location_id'),
-            home_id=attributes.get('home_id')
+            name=obj.get_node_name(),
+            description=obj.get_node_description(),
+            attributes=attributes,  # 只包含动态属性
+            tags=obj.get_node_tags(),
+            is_active=obj.is_node_active(),
+            is_public=obj.is_node_public(),
+            access_level=obj.get_node_access_level(),
+            location_id=obj.get_node_location_id(),
+            home_id=obj.get_node_home_id()
         )
         
         return node
     
     def _update_graph_node_from_object(self, node: Node, obj: 'DefaultObject') -> None:
         """从DefaultObject更新图节点"""
-        # 获取对象属性（不包含name）
         attributes = obj.get_node_attributes()
         
-        # 更新节点属性，name从对象的独立字段获取
-        node.name = obj.get_node_name()  # 从独立字段获取name
-        node.description = attributes.get('description', '')
-        node.attributes = attributes  # 不包含name的属性
-        node.tags = attributes.get('tags', [])
-        node.is_active = attributes.get('is_active', True)
-        node.is_public = attributes.get('is_public', True)
-        node.access_level = attributes.get('access_level', 'normal')
-        node.location_id = attributes.get('location_id')
-        node.home_id = attributes.get('home_id')
+        # 更新节点固定字段
+        node.name = obj.get_node_name()
+        node.description = obj.get_node_description()
+        node.attributes = attributes
+        node.tags = obj.get_node_tags()
+        node.is_active = obj.is_node_active()
+        node.is_public = obj.is_node_public()
+        node.access_level = obj.get_node_access_level()
+        node.location_id = obj.get_node_location_id()
+        node.home_id = obj.get_node_home_id()
         node.updated_at = func.now()
         
         self.db_session.commit()
@@ -365,7 +364,7 @@ class GraphSynchronizer:
                         if obj:
                             objects.append(obj)
                     except Exception as e:
-                        print(f"动态导入类 {node.typeclass} 失败: {e}")
+                        self.logger.error(f"动态导入类 {node.typeclass} 失败: {e}")
                 
                 return objects
                 
@@ -403,7 +402,7 @@ class GraphSynchronizer:
                         if obj:
                             objects.append(obj)
                     except Exception as e:
-                        print(f"动态导入类 {node.typeclass} 失败: {e}")
+                        self.logger.error(f"动态导入类 {node.typeclass} 失败: {e}")
                 
                 return objects
                 
@@ -447,7 +446,7 @@ class GraphSynchronizer:
                         if obj:
                             objects.append(obj)
                     except Exception as e:
-                        print(f"动态导入类 {node.typeclass} 失败: {e}")
+                        self.logger.error(f"动态导入类 {node.typeclass} 失败: {e}")
                 
                 return objects
                 
@@ -507,3 +506,317 @@ class GraphSynchronizer:
         except Exception as e:
             print(f"清理孤立节点失败: {e}")
             return 0
+    
+    def get_relationship_by_node(self, source: 'DefaultObject', target: 'DefaultObject', rel_code: str) -> Optional[List[Relationship]]:
+        """根据源节点和目标节点获取关系列表"""
+        try:
+            session = self._get_db_session()
+            return session.query(Relationship).filter(
+                and_(
+                    Relationship.source_id == source.id, 
+                    Relationship.target_id == target.id, 
+                    Relationship.type_code == rel_code,
+                    Relationship.is_active == True
+                )
+            ).all()
+        except Exception as e:
+            self.logger.error(f"获取关系失败: {e}")
+            return None
+
+    # ==================== 新增查询方法 ====================
+    
+    def get_node_by_name(self, name: str, node_type: str = None) -> Optional[Node]:
+        """根据名称获取节点"""
+        try:
+            session = self._get_db_session()
+            query = session.query(Node).filter(Node.name == name)
+            if node_type:
+                query = query.filter(Node.type_code == node_type)
+            return query.first()
+        except Exception as e:
+            self.logger.error(f"根据名称获取节点失败: {e}")
+            return None
+    
+    def get_node_by_code(self, type_code: str) -> Optional[Node]:
+        """根据类型代码获取节点"""
+        try:
+            session = self._get_db_session()
+            return session.query(Node).filter(Node.type_code == type_code).first()
+        except Exception as e:
+            self.logger.error(f"根据类型代码获取节点失败: {e}")
+            return None
+    
+    def get_nodes_by_type(self, node_type: str) -> List[Node]:
+        """根据类型获取节点列表"""
+        try:
+            session = self._get_db_session()
+            return session.query(Node).filter(Node.type_code == node_type).all()
+        except Exception as e:
+            self.logger.error(f"根据类型获取节点失败: {e}")
+            return []
+    
+    def get_active_nodes_by_type(self, node_type: str) -> List[Node]:
+        """根据类型获取活跃节点列表"""
+        try:
+            session = self._get_db_session()
+            return session.query(Node).filter(
+                Node.type_code == node_type,
+                Node.is_active == True
+            ).all()
+        except Exception as e:
+            self.logger.error(f"根据类型获取活跃节点失败: {e}")
+            return []
+    
+    def find_nodes_by_attribute(self, key: str, value: Any, node_type: str = None) -> List[Node]:
+        """根据属性查找节点"""
+        try:
+            session = self._get_db_session()
+            query = session.query(Node).filter(Node.attributes.contains({key: value}))
+            if node_type:
+                query = query.filter(Node.type_code == node_type)
+            return query.all()
+        except Exception as e:
+            self.logger.error(f"根据属性查找节点失败: {e}")
+            return []
+    
+    def find_nodes_by_tag(self, tag: str, node_type: str = None) -> List[Node]:
+        """根据标签查找节点"""
+        try:
+            session = self._get_db_session()
+            query = session.query(Node).filter(Node.tags.contains([tag]))
+            if node_type:
+                query = query.filter(Node.type_code == node_type)
+            return query.all()
+        except Exception as e:
+            self.logger.error(f"根据标签查找节点失败: {e}")
+            return []
+    
+    def get_node_type_by_code(self, type_code: str) -> Optional[NodeType]:
+        """根据类型代码获取节点类型"""
+        try:
+            session = self._get_db_session()
+            return NodeType.get_by_type_code(session, type_code)
+        except Exception as e:
+            self.logger.error(f"根据类型代码获取节点类型失败: {e}")
+            return None
+    
+    def get_node_type_by_name(self, type_name: str) -> Optional[NodeType]:
+        """根据类型名称获取节点类型"""
+        try:
+            session = self._get_db_session()
+            return session.query(NodeType).filter(NodeType.type_name == type_name).first()
+        except Exception as e:
+            self.logger.error(f"根据类型名称获取节点类型失败: {e}")
+            return None
+    
+    def get_all_node_types(self) -> List[NodeType]:
+        """获取所有节点类型"""
+        try:
+            session = self._get_db_session()
+            return NodeType.get_active_types(session)
+        except Exception as e:
+            self.logger.error(f"获取所有节点类型失败: {e}")
+            return []
+    
+    def create_node_type(self, type_code: str, type_name: str, typeclass: str, 
+                        classname: str, module_path: str, description: str = None,
+                        schema_definition: Dict[str, Any] = None) -> Optional[NodeType]:
+        """创建节点类型"""
+        try:
+            session = self._get_db_session()
+            
+            # 检查是否已存在
+            existing = NodeType.get_by_type_code(session, type_code)
+            if existing:
+                self.logger.warning(f"节点类型已存在: {type_code}")
+                return existing
+            
+            # 创建新节点类型
+            node_type = NodeType(
+                type_code=type_code,
+                type_name=type_name,
+                typeclass=typeclass,
+                classname=classname,
+                module_path=module_path,
+                description=description,
+                schema_definition=schema_definition or {}
+            )
+            
+            session.add(node_type)
+            session.commit()
+            return node_type
+            
+        except Exception as e:
+            self.logger.error(f"创建节点类型失败: {e}")
+            return None
+    
+    def update_node_type(self, type_code: str, **updates) -> bool:
+        """更新节点类型"""
+        try:
+            session = self._get_db_session()
+            node_type = NodeType.get_by_type_code(session, type_code)
+            if not node_type:
+                self.logger.warning(f"节点类型不存在: {type_code}")
+                return False
+            
+            # 更新字段
+            for key, value in updates.items():
+                if hasattr(node_type, key):
+                    setattr(node_type, key, value)
+            
+            session.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"更新节点类型失败: {e}")
+            return False
+    
+    def delete_node_type(self, type_code: str) -> bool:
+        """删除节点类型"""
+        try:
+            session = self._get_db_session()
+            node_type = NodeType.get_by_type_code(session, type_code)
+            if not node_type:
+                self.logger.warning(f"节点类型不存在: {type_code}")
+                return False
+            
+            # 标记为不活跃
+            node_type.is_active = False
+            session.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"删除节点类型失败: {e}")
+            return False
+    
+    def get_relationship_type_by_code(self, type_code: str) -> Optional[RelationshipType]:
+        """根据类型代码获取关系类型"""
+        try:
+            session = self._get_db_session()
+            return RelationshipType.get_by_type_code(session, type_code)
+        except Exception as e:
+            self.logger.error(f"根据类型代码获取关系类型失败: {e}")
+            return None
+    
+    def get_relationship_type_by_name(self, type_name: str) -> Optional[RelationshipType]:
+        """根据类型名称获取关系类型"""
+        try:
+            session = self._get_db_session()
+            return session.query(RelationshipType).filter(RelationshipType.type_name == type_name).first()
+        except Exception as e:
+            self.logger.error(f"根据类型名称获取关系类型失败: {e}")
+            return None
+    
+    def get_all_relationship_types(self) -> List[RelationshipType]:
+        """获取所有关系类型"""
+        try:
+            session = self._get_db_session()
+            return RelationshipType.get_active_types(session)
+        except Exception as e:
+            self.logger.error(f"获取所有关系类型失败: {e}")
+            return []
+    
+    def create_relationship_type(self, type_code: str, type_name: str, typeclass: str,
+                               description: str = None, is_directed: bool = True,
+                               is_symmetric: bool = False, is_transitive: bool = False,
+                               schema_definition: Dict[str, Any] = None) -> Optional[RelationshipType]:
+        """创建关系类型"""
+        try:
+            session = self._get_db_session()
+            
+            # 检查是否已存在
+            existing = RelationshipType.get_by_type_code(session, type_code)
+            if existing:
+                self.logger.warning(f"关系类型已存在: {type_code}")
+                return existing
+            
+            # 创建新关系类型
+            rel_type = RelationshipType(
+                type_code=type_code,
+                type_name=type_name,
+                typeclass=typeclass,
+                description=description,
+                is_directed=is_directed,
+                is_symmetric=is_symmetric,
+                is_transitive=is_transitive,
+                schema_definition=schema_definition or {}
+            )
+            
+            session.add(rel_type)
+            session.commit()
+            return rel_type
+            
+        except Exception as e:
+            self.logger.error(f"创建关系类型失败: {e}")
+            return None
+    
+    def update_relationship_type(self, type_code: str, **updates) -> bool:
+        """更新关系类型"""
+        try:
+            session = self._get_db_session()
+            rel_type = RelationshipType.get_by_type_code(session, type_code)
+            if not rel_type:
+                self.logger.warning(f"关系类型不存在: {type_code}")
+                return False
+            
+            # 更新字段
+            for key, value in updates.items():
+                if hasattr(rel_type, key):
+                    setattr(rel_type, key, value)
+            
+            session.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"更新关系类型失败: {e}")
+            return False
+    
+    def delete_relationship_type(self, type_code: str) -> bool:
+        """删除关系类型"""
+        try:
+            session = self._get_db_session()
+            rel_type = RelationshipType.get_by_type_code(session, type_code)
+            if not rel_type:
+                self.logger.warning(f"关系类型不存在: {type_code}")
+                return False
+            
+            # 标记为不活跃
+            rel_type.is_active = False
+            session.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"删除关系类型失败: {e}")
+            return False
+    
+    def update_relationship(self, rel_id: int, **attributes) -> bool:
+        """更新关系"""
+        try:
+            session = self._get_db_session()
+            relationship = session.query(Relationship).filter(Relationship.id == rel_id).first()
+            if not relationship:
+                self.logger.warning(f"关系不存在: {rel_id}")
+                return False
+            
+            # 更新属性
+            for key, value in attributes.items():
+                relationship.set_attribute(key, value)
+            
+            session.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"更新关系失败: {e}")
+            return False
+    
+    def delete_relationship(self, rel_id: int) -> bool:
+        """删除关系"""
+        try:
+            session = self._get_db_session()
+            relationship = session.query(Relationship).filter(Relationship.id == rel_id).first()
+            if not relationship:
+                self.logger.warning(f"关系不存在: {rel_id}")
+                return False
+            
+            # 标记为不活跃
+            relationship.is_active = False
+            session.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"删除关系失败: {e}")
+            return False
