@@ -133,6 +133,433 @@ class DefaultObject(GraphNodeInterface):
         self._cmdset = None
         self._command_history = []
         self._max_command_history = 100
+
+        # 对象创建后立即执行创建钩子
+        self.at_object_creation()
+    
+    # ==================== 生命周期钩子 ====================
+    
+    def at_object_creation(self):
+        """
+        对象创建钩子
+        
+        """
+        # 调用子类的特定初始化逻辑
+        self._at_object_creation()
+    
+    def _at_object_creation(self):
+        """
+        子类可重写的对象创建钩子
+        
+        子类应该重写此方法而不是at_object_creation
+        """
+        pass
+    
+    def at_object_delete(self):
+        """
+        对象删除钩子
+        
+        """
+        # 调用子类的特定清理逻辑
+        self._at_object_delete()
+    
+    def _at_object_delete(self):
+        """
+        子类可重写的对象删除钩子
+        
+        子类应该重写此方法而不是at_object_delete
+        """
+        pass
+    
+    def at_object_update(self):
+        """
+        对象更新钩子
+        
+        在对象更新时调用，子类可以重写此方法来实现更新逻辑
+        """
+        # 调用子类的特定更新逻辑
+        self._at_object_update()
+    
+    def _at_object_update(self):
+        """
+        子类可重写的对象更新钩子
+        
+        子类应该重写此方法而不是at_object_update
+        """
+        pass
+    
+    # ==================== 移动钩子 ====================
+    
+    def at_pre_move(self, destination: 'DefaultObject', **kwargs) -> bool:
+        """
+        移动前钩子
+        
+        在对象移动前调用，返回False可以阻止移动
+        
+        Args:
+            destination: 目标位置对象
+            **kwargs: 其他参数
+            
+        Returns:
+            bool: True允许移动，False阻止移动
+        """
+        # 检查基本移动条件
+        if not self._check_basic_move_conditions(destination):
+            return False
+        
+        # 调用子类的特定移动前逻辑
+        return self._at_pre_move(destination, **kwargs)
+    
+    def _at_pre_move(self, destination: 'DefaultObject', **kwargs) -> bool:
+        """
+        子类可重写的移动前钩子
+        
+        子类应该重写此方法来实现特定的移动前逻辑
+        """
+        return True
+    
+    def at_post_move(self, source: 'DefaultObject', destination: 'DefaultObject', **kwargs):
+        """
+        移动后钩子
+        
+        在对象移动后调用，用于处理移动后的逻辑
+
+        Args:
+            source: 源位置对象
+            destination: 目标位置对象
+            **kwargs: 其他参数
+        """
+        # 更新位置信息
+        if destination:
+            self.location_id = destination.id
+            self.set_attribute('last_location_change', datetime.now().isoformat())
+        
+        # 调用子类的特定移动后逻辑
+        self._at_post_move(source, destination, **kwargs)
+    
+    def _at_post_move(self, source: 'DefaultObject', destination: 'DefaultObject', **kwargs):
+        """
+        子类可重写的移动后钩子
+        
+        子类应该重写此方法来实现特定的移动后逻辑
+        """
+        pass
+    
+    # ==================== 对象接收钩子 ====================
+    
+    def at_pre_object_receive(self, received_obj: 'DefaultObject', **kwargs) -> bool:
+        """
+        接收对象前钩子
+        
+        在对象接收其他对象前调用，返回False可以阻止接收
+        
+        Args:
+            received_obj: 要接收的对象
+            **kwargs: 其他参数
+            
+        Returns:
+            bool: True允许接收，False阻止接收
+        """
+        # 检查基本接收条件
+        if not self._check_basic_receive_conditions(received_obj):
+            return False
+        
+        # 调用子类的特定接收前逻辑
+        return self._at_pre_object_receive(received_obj, **kwargs)
+    
+    def _at_pre_object_receive(self, received_obj: 'DefaultObject', **kwargs) -> bool:
+        """
+        子类可重写的接收对象前钩子
+        
+        子类应该重写此方法来实现特定的接收前逻辑
+        """
+        return True
+    
+    def at_post_object_receive(self, received_obj: 'DefaultObject', **kwargs):
+        """
+        接收对象后钩子
+        
+        在对象接收其他对象后调用，用于处理接收后的逻辑
+        
+        Args:
+            received_obj: 接收的对象
+            **kwargs: 其他参数
+        """
+        # 更新对象位置
+        if received_obj:
+            received_obj.location_id = self.id
+        
+        # 调用子类的特定接收后逻辑
+        self._at_post_object_receive(received_obj, **kwargs)
+    
+    def _at_post_object_receive(self, received_obj: 'DefaultObject', **kwargs):
+        """
+        子类可重写的接收对象后钩子
+        
+        子类应该重写此方法来实现特定的接收后逻辑
+        """
+        pass
+    
+    # ==================== 对象给予钩子 ====================
+    
+    def at_pre_object_give(self, target: 'DefaultObject', obj: 'DefaultObject', **kwargs) -> bool:
+        """
+        给予对象前钩子
+        
+        在对象给予其他对象前调用，返回False可以阻止给予
+        
+        Args:
+            target: 目标对象
+            obj: 要给予的对象
+            **kwargs: 其他参数
+            
+        Returns:
+            bool: True允许给予，False阻止给予
+        """
+        # 检查基本给予条件
+        if not self._check_basic_give_conditions(target, obj):
+            return False
+        
+        # 调用子类的特定给予前逻辑
+        return self._at_pre_object_give(target, obj, **kwargs)
+    
+    def _at_pre_object_give(self, target: 'DefaultObject', obj: 'DefaultObject', **kwargs) -> bool:
+        """
+        子类可重写的给予对象前钩子
+        
+        子类应该重写此方法来实现特定的给予前逻辑
+        """
+        return True
+    
+    def at_post_object_give(self, target: 'DefaultObject', obj: 'DefaultObject', **kwargs):
+        """
+        给予对象后钩子
+        
+        在对象给予其他对象后调用，用于处理给予后的逻辑
+        
+        Args:
+            target: 目标对象
+            obj: 给予的对象
+            **kwargs: 其他参数
+        """
+        # 调用子类的特定给予后逻辑
+        self._at_post_object_give(target, obj, **kwargs)
+    
+    def _at_post_object_give(self, target: 'DefaultObject', obj: 'DefaultObject', **kwargs):
+        """
+        子类可重写的给予对象后钩子
+        
+        子类应该重写此方法来实现特定的给予后逻辑
+        """
+        pass
+    
+    # ==================== 对象使用钩子 ====================
+    
+    def at_pre_object_use(self, obj: 'DefaultObject', **kwargs) -> bool:
+        """
+        使用对象前钩子
+        
+        在对象使用其他对象前调用，返回False可以阻止使用
+        参考Evennia的at_pre_object_use钩子
+        
+        Args:
+            obj: 要使用的对象
+            **kwargs: 其他参数
+            
+        Returns:
+            bool: True允许使用，False阻止使用
+        """
+        # 检查基本使用条件
+        if not self._check_basic_use_conditions(obj):
+            return False
+        
+        # 调用子类的特定使用前逻辑
+        return self._at_pre_object_use(obj, **kwargs)
+    
+    def _at_pre_object_use(self, obj: 'DefaultObject', **kwargs) -> bool:
+        """
+        子类可重写的使用对象前钩子
+        
+        子类应该重写此方法来实现特定的使用前逻辑
+        """
+        return True
+    
+    def at_post_object_use(self, obj: 'DefaultObject', **kwargs):
+        """
+        使用对象后钩子
+        
+        在对象使用其他对象后调用，用于处理使用后的逻辑
+        参考Evennia的at_post_object_use钩子
+        
+        Args:
+            obj: 使用的对象
+            **kwargs: 其他参数
+        """
+        # 调用子类的特定使用后逻辑
+        self._at_post_object_use(obj, **kwargs)
+    
+    def _at_post_object_use(self, obj: 'DefaultObject', **kwargs):
+        """
+        子类可重写的使用对象后钩子
+        
+        子类应该重写此方法来实现特定的使用后逻辑
+        """
+        pass
+    
+    # ==================== 辅助方法 ====================
+    
+    def _check_basic_move_conditions(self, destination: 'DefaultObject') -> bool:
+        """检查基本移动条件"""
+        if not destination:
+            return False
+        
+        # 检查对象是否被锁定
+        if self.get_attribute('is_locked', False):
+            return False
+        
+        # 检查对象是否被暂停
+        if self.get_attribute('is_suspended', False):
+            return False
+        
+        # 检查目标位置是否可访问
+        if not destination.get_attribute('is_accessible', True):
+            return False
+        
+        return True
+    
+    def _check_basic_receive_conditions(self, received_obj: 'DefaultObject') -> bool:
+        """检查基本接收条件"""
+        if not received_obj:
+            return False
+        
+        # 检查对象是否可接收物品
+        if not self.get_attribute('can_receive_objects', True):
+            return False
+        
+        # 检查接收的物品是否可移动
+        if not received_obj.get_attribute('is_movable', True):
+            return False
+        
+        return True
+    
+    def _check_basic_give_conditions(self, target: 'DefaultObject', obj: 'DefaultObject') -> bool:
+        """检查基本给予条件"""
+        if not target or not obj:
+            return False
+        
+        # 检查目标是否可以接收对象
+        if not target.get_attribute('can_receive_objects', True):
+            return False
+        
+        # 检查要给予的对象是否可移动
+        if not obj.get_attribute('is_movable', True):
+            return False
+        
+        return True
+    
+    def _check_basic_use_conditions(self, obj: 'DefaultObject') -> bool:
+        """检查基本使用条件"""
+        if not obj:
+            return False
+        
+        # 检查对象是否可使用
+        if not obj.get_attribute('is_usable', True):
+            return False
+        
+        return True
+    
+    # ==================== 集成钩子的方法 ====================
+    
+    def move_to(self, new_location: 'DefaultObject') -> bool:
+        """移动到新位置 - 集成钩子系统"""
+        if not new_location or not new_location.is_node_active():
+            return False
+        
+        # 执行移动前钩子
+        if not self.at_pre_move(new_location):
+            return False
+        
+        # 记录旧位置
+        old_location_id = self.location_id
+        
+        # 执行移动
+        self.location_id = new_location.id
+        
+        # 执行移动后钩子
+        self.at_post_move(old_location_id, new_location)
+        
+        return True
+    
+    def receive_object(self, obj: 'DefaultObject') -> bool:
+        """接收对象 - 集成钩子系统"""
+        # 执行接收前钩子
+        if not self.at_pre_object_receive(obj):
+            return False
+        
+        # 添加到对象列表
+        objects = self.get_attribute('contains_objects', [])
+        if obj.id not in objects:
+            objects.append(obj.id)
+            self.set_attribute('contains_objects', objects)
+        
+        # 执行接收后钩子
+        self.at_post_object_receive(obj)
+        
+        return True
+    
+    def give_object(self, target: 'DefaultObject', obj: 'DefaultObject') -> bool:
+        """给予对象 - 集成钩子系统"""
+        # 执行给予前钩子
+        if not self.at_pre_object_give(target, obj):
+            return False
+        
+        # 从当前对象移除
+        objects = self.get_attribute('contains_objects', [])
+        if obj.id in objects:
+            objects.remove(obj.id)
+            self.set_attribute('contains_objects', objects)
+        
+        # 添加到目标对象
+        if target.receive_object(obj):
+            # 执行给予后钩子
+            self.at_post_object_give(target, obj)
+            return True
+        
+        return False
+    
+    def use_object(self, obj: 'DefaultObject') -> bool:
+        """使用对象 - 集成钩子系统"""
+        # 执行使用前钩子
+        if not self.at_pre_object_use(obj):
+            return False
+        
+        # 执行使用后钩子
+        self.at_post_object_use(obj)
+        
+        return True
+    
+    def delete(self) -> bool:
+        """删除对象 - 集成钩子系统"""
+        # 执行删除前钩子
+        self.at_object_delete()
+        
+        # 执行删除
+        self.is_active = False
+        self.sync_to_node()
+        return True
+    
+    def update(self, **kwargs) -> bool:
+        """更新对象 - 集成钩子系统"""
+        # 更新属性
+        for key, value in kwargs.items():
+            self.set_attribute(key, value)
+        
+        # 执行更新钩子
+        self.at_object_update()
+        
+        # 同步到数据库
+        self.sync_to_node()
+        return True
     
     # ==================== 固定字段访问方法 ====================
     
@@ -683,19 +1110,6 @@ class DefaultAccount(DefaultObject):
         
         super().__init__(name=username, **account_attrs)
     
-    def _init_default_cmdset(self):
-        """初始化账户默认命令集合"""
-        try:
-            from app.commands.base import CmdSet
-            from app.commands.system.cmdset import SystemCmdSet
-            
-            # 账户默认包含系统命令
-            self._cmdset = SystemCmdSet()
-            
-        except ImportError:
-            # 如果命令系统不可用，创建空的命令集合
-            self._cmdset = None
-    
     # ==================== 账户属性访问器 ====================
     
     @property
@@ -1060,8 +1474,7 @@ class DefaultAccount(DefaultObject):
             synchronizer.sync_object_to_node(self)
         except Exception as e:
             # 静默处理同步错误，避免影响对象操作
-            pass
-    
+            pass    
     def sync_to_node(self) -> None:
         """同步到图节点系统"""
         self._schedule_node_sync()
