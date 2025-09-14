@@ -1,5 +1,5 @@
 """
-校园模型
+园区模型
 基于JSON配置的灵活属性定义
 """
 
@@ -10,11 +10,11 @@ from .base import DefaultObject
 
 class Campus(DefaultObject):
     """
-    校园模型
+    园区模型
     """
 
     def __init__(self, name: str, config: Dict[str, Any] = None, **kwargs):
-        # 设置校园特定的节点类型
+        # 设置节点类型
         self._node_type = 'campus'
 
         default_attrs = {
@@ -22,24 +22,42 @@ class Campus(DefaultObject):
             "campus_status": "active",
             "campus_level": "research",
             "campus_code": "RES001",
-            "campus_name": "示例研究院",
-            "campus_name_en": "Example Research Institute",
-            "campus_address": "北京市朝阳区望京科技园",
-            "campus_city": "北京",
-            "campus_province": "北京市",
+            "campus_name": "示例研究院园区",
+            "campus_name_en": "Example Research Institute Campus",
+            "campus_address": "深圳市龙岗区坂田街道",
+            "campus_city": "深圳市",
+            "campus_province": "广东省",
             "campus_country": "中国",
-            "campus_postal_code": "100000",
+            "campus_postal_code": "518100",
             "campus_area": 100000,
             "campus_capacity": 1000,
-            "campus_president": "Prof. Wang",
-            "campus_established_year": 2000,
-            "campus_website": "https://www.example-research.edu.cn",
-            "campus_phone": "010-98765432",
-            "campus_email": "info@example-research.edu.cn",
-            "campus_description": "专注于前沿科技研究的独立研究院",
-            "campus_motto": "创新驱动，科技报国",
+            "campus_president": "Prof. He",
+            "campus_established_year": 2019,
+            "campus_website": "https://www.campusworld.com",
+            "campus_phone": "0755-86791234",
+            "campus_email": "info@campusworld.com",
+            "campus_description": "专注于前沿科技研究的独立研究院园区",
+            "campus_motto": "构建万物互联的智能世界",
+            "campus_buildings": [],
+            "campus_dtmodels": {}, # 数字孪生模型对象，包括：GIS模型，BIM模型等
+            "campus_latitude": 22.586667,
+            "campus_longitude": 114.103611,
+            "campus_altitude": 0
         }
         default_tags = ['research', 'institute']
+        
+        # 合并配置
+        if config:
+            # 合并attributes
+            if 'attributes' in config:
+                default_attrs.update(config['attributes'])
+            # 合并tags
+            if 'tags' in config:
+                default_tags.extend(config['tags'])
+                
+        # 合并kwargs
+        default_attrs.update(kwargs)
+
         default_config = {
             'attributes': default_attrs,
             'tags': default_tags,

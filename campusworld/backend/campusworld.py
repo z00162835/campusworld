@@ -192,11 +192,8 @@ class CampusWorld:
         """停止CampusWorld系统"""
         try:
             if not self.is_running:
-                self.logger.warning("CampusWorld未在运行")
                 return True
-            
             self.logger.info("正在停止CampusWorld系统...")
-            
             # 停止SSH服务器
             if self.ssh_server:
                 try:

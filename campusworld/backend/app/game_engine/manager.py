@@ -19,32 +19,36 @@ from .interface import GameInterface
 
 class CampusWorldGameEngine(GameEngine):
     """CampusWorld内容引擎 - 继承自GameEngine基类"""
-    
+
     def __init__(self):
         super().__init__("CampusWorld", "1.0.0")
-        
+
         # 初始化组件
         self.loader = GameLoader(self)
         self.interface = GameInterface(self)
-        
+
         self.logger.info("CampusWorld内容引擎初始化完成")
-    
+
     def start(self) -> bool:
         """启动内容引擎"""
         try:
             if not super().start():
                 return False
-            
+
             # 自动加载内容
             loaded_games = self.loader.auto_load_games()
             if loaded_games:
                 self.logger.info(f"自动加载了 {len(loaded_games)} 个内容: {loaded_games}")
-            
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"启动内容引擎失败: {e}")
             return False
+    
+    def stop(self) -> bool:
+        """停止内容引擎"""
+        return super().stop();
     
     def get_engine_info(self) -> Dict[str, Any]:
         """获取内容引擎详细信息"""
@@ -57,6 +61,10 @@ class CampusWorldGameEngine(GameEngine):
         })
         return info
 
+    def stop_engine(self) -> bool:
+        """停止内容引擎"""
+        return self.stop();
+    
 
 class GameEngineManager:
     """内容引擎管理器 - 单例模式"""
