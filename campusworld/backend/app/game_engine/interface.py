@@ -1,8 +1,8 @@
 """
-游戏接口 - 提供游戏与引擎的交互接口
+场景接口 - 提供场景与引擎的交互接口
 
 参考Evennia框架的接口设计，提供：
-- 游戏生命周期管理
+- 场景生命周期管理
 - 命令系统集成
 - 对象系统访问
 - 事件系统集成
@@ -17,24 +17,24 @@ from .base import BaseGame
 
 
 class GameInterface:
-    """游戏接口 - 游戏与引擎的交互桥梁"""
+    """场景接口 - 场景与引擎的交互桥梁"""
     
     def __init__(self, engine):
         self.engine = engine
         self.logger = logging.getLogger(f"game_engine.{engine.name}.interface")
         
-        self.logger.info("游戏接口初始化完成")
+        self.logger.info("场景接口初始化完成")
     
     def register_game_commands(self, game: BaseGame) -> bool:
-        """注册游戏命令到引擎"""
+        """注册场景命令到引擎"""
         try:
             if not hasattr(game, 'get_commands'):
-                self.logger.warning(f"游戏 '{game.name}' 没有 get_commands 方法")
+                self.logger.warning(f"场景 '{game.name}' 没有 get_commands 方法")
                 return True
             
             commands = game.get_commands()
             if not commands:
-                self.logger.info(f"游戏 '{game.name}' 没有命令需要注册")
+                self.logger.info(f"场景 '{game.name}' 没有命令需要注册")
                 return True
             
             registered_count = 0
@@ -45,15 +45,15 @@ class GameInterface:
                 else:
                     self.logger.error(f"命令 '{cmd_name}' 注册失败")
             
-            self.logger.info(f"游戏 '{game.name}' 注册了 {registered_count} 个命令")
+            self.logger.info(f"场景 '{game.name}' 注册了 {registered_count} 个命令")
             return True
             
         except Exception as e:
-            self.logger.error(f"注册游戏 '{game.name}' 命令失败: {e}")
+            self.logger.error(f"注册场景 '{game.name}' 命令失败: {e}")
             return False
     
     def unregister_game_commands(self, game: BaseGame) -> bool:
-        """从引擎注销游戏命令"""
+        """从引擎注销场景命令"""
         try:
             if not hasattr(game, 'get_commands'):
                 return True
@@ -69,23 +69,23 @@ class GameInterface:
                 self.logger.debug(f"命令 '{cmd_name}' 注销成功")
                 unregistered_count += 1
             
-            self.logger.info(f"游戏 '{game.name}' 注销了 {unregistered_count} 个命令")
+            self.logger.info(f"场景 '{game.name}' 注销了 {unregistered_count} 个命令")
             return True
             
         except Exception as e:
-            self.logger.error(f"注销游戏 '{game.name}' 命令失败: {e}")
+            self.logger.error(f"注销场景 '{game.name}' 命令失败: {e}")
             return False
     
     def register_game_objects(self, game: BaseGame) -> bool:
-        """注册游戏对象到引擎"""
+        """注册场景对象到引擎"""
         try:
             if not hasattr(game, 'get_objects'):
-                self.logger.warning(f"游戏 '{game.name}' 没有 get_objects 方法")
+                self.logger.warning(f"场景 '{game.name}' 没有 get_objects 方法")
                 return True
             
             objects = game.get_objects()
             if not objects:
-                self.logger.info(f"游戏 '{game.name}' 没有对象需要注册")
+                self.logger.info(f"场景 '{game.name}' 没有对象需要注册")
                 return True
             
             registered_count = 0
@@ -96,23 +96,23 @@ class GameInterface:
                 else:
                     self.logger.error(f"对象 '{obj_id}' 注册失败")
             
-            self.logger.info(f"游戏 '{game.name}' 注册了 {registered_count} 个对象")
+            self.logger.info(f"场景 '{game.name}' 注册了 {registered_count} 个对象")
             return True
             
         except Exception as e:
-            self.logger.error(f"注册游戏 '{game.name}' 对象失败: {e}")
+            self.logger.error(f"注册场景 '{game.name}' 对象失败: {e}")
             return False
     
     def register_game_hooks(self, game: BaseGame) -> bool:
-        """注册游戏事件钩子到引擎"""
+        """注册场景事件钩子到引擎"""
         try:
             if not hasattr(game, 'get_hooks'):
-                self.logger.warning(f"游戏 '{game.name}' 没有 get_hooks 方法")
+                self.logger.warning(f"场景 '{game.name}' 没有 get_hooks 方法")
                 return True
             
             hooks = game.get_hooks()
             if not hooks:
-                self.logger.info(f"游戏 '{game.name}' 没有钩子需要注册")
+                self.logger.info(f"场景 '{game.name}' 没有钩子需要注册")
                 return True
             
             registered_count = 0
@@ -123,15 +123,15 @@ class GameInterface:
                 else:
                     self.logger.error(f"钩子 '{event_name}' 注册失败")
             
-            self.logger.info(f"游戏 '{game.name}' 注册了 {registered_count} 个钩子")
+            self.logger.info(f"场景 '{game.name}' 注册了 {registered_count} 个钩子")
             return True
             
         except Exception as e:
-            self.logger.error(f"注册游戏 '{game.name}' 钩子失败: {e}")
+            self.logger.error(f"注册场景 '{game.name}' 钩子失败: {e}")
             return False
     
     def trigger_game_event(self, event_name: str, *args, **kwargs) -> List[Any]:
-        """触发游戏事件"""
+        """触发场景事件"""
         try:
             results = self.engine.hook_manager.trigger_hook(event_name, *args, **kwargs)
             if results:
@@ -143,7 +143,7 @@ class GameInterface:
             return []
     
     def get_game_status(self, game_name: str) -> Optional[Dict[str, Any]]:
-        """获取游戏状态"""
+        """获取场景状态"""
         try:
             game = self.engine.get_game(game_name)
             if not game:
@@ -166,11 +166,11 @@ class GameInterface:
             return status
             
         except Exception as e:
-            self.logger.error(f"获取游戏 '{game_name}' 状态失败: {e}")
+            self.logger.error(f"获取场景 '{game_name}' 状态失败: {e}")
             return None
     
     def list_all_games_status(self) -> List[Dict[str, Any]]:
-        """列出所有游戏状态"""
+        """列出所有场景状态"""
         try:
             games_status = []
             for game_name in self.engine.list_games():
@@ -181,31 +181,31 @@ class GameInterface:
             return games_status
             
         except Exception as e:
-            self.logger.error(f"获取所有游戏状态失败: {e}")
+            self.logger.error(f"获取所有场景状态失败: {e}")
             return []
     
     def execute_game_command(self, game_name: str, command: str, *args, **kwargs) -> Any:
-        """执行游戏命令"""
+        """执行场景命令"""
         try:
             game = self.engine.get_game(game_name)
             if not game:
-                self.logger.error(f"游戏 '{game_name}' 不存在")
+                self.logger.error(f"场景 '{game_name}' 不存在")
                 return None
             
             if not hasattr(game, 'execute_command'):
-                self.logger.error(f"游戏 '{game_name}' 没有 execute_command 方法")
+                self.logger.error(f"场景 '{game_name}' 没有 execute_command 方法")
                 return None
             
             result = game.execute_command(command, *args, **kwargs)
-            self.logger.debug(f"游戏 '{game_name}' 命令 '{command}' 执行成功")
+            self.logger.debug(f"场景 '{game_name}' 命令 '{command}' 执行成功")
             return result
             
         except Exception as e:
-            self.logger.error(f"执行游戏 '{game_name}' 命令 '{command}' 失败: {e}")
+            self.logger.error(f"执行场景 '{game_name}' 命令 '{command}' 失败: {e}")
             return None
     
     def get_available_commands(self, game_name: str) -> List[str]:
-        """获取游戏可用命令列表"""
+        """获取场景可用命令列表"""
         try:
             game = self.engine.get_game(game_name)
             if not game:
@@ -218,11 +218,11 @@ class GameInterface:
             return []
             
         except Exception as e:
-            self.logger.error(f"获取游戏 '{game_name}' 可用命令失败: {e}")
+            self.logger.error(f"获取场景 '{game_name}' 可用命令失败: {e}")
             return []
     
     def get_game_help(self, game_name: str, command: str = None) -> Optional[str]:
-        """获取游戏帮助信息"""
+        """获取场景帮助信息"""
         try:
             game = self.engine.get_game(game_name)
             if not game:
@@ -234,5 +234,5 @@ class GameInterface:
             return None
             
         except Exception as e:
-            self.logger.error(f"获取游戏 '{game_name}' 帮助信息失败: {e}")
+            self.logger.error(f"获取场景 '{game_name}' 帮助信息失败: {e}")
             return None

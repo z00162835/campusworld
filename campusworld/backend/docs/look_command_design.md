@@ -19,7 +19,7 @@
 ```
 BaseCommand (抽象基类)
 ├── SystemCommand (系统命令)
-├── GameCommand (游戏命令)
+├── GameCommand (场景命令)
 │   └── LookCommand (Look命令实现)
 └── AdminCommand (管理员命令)
 ```
@@ -27,7 +27,7 @@ BaseCommand (抽象基类)
 ### 2. 核心组件
 
 - **LookCommand**: 主要的命令实现类
-- **CommandContext**: 命令执行上下文，包含用户信息和游戏状态
+- **CommandContext**: 命令执行上下文，包含用户信息和场景状态
 - **CommandResult**: 命令执行结果封装
 - **CommandRegistry**: 命令注册和管理系统
 
@@ -70,13 +70,13 @@ BaseCommand (抽象基类)
 
 #### 权限控制
 - 基于用户权限显示不同级别信息
-- 支持游戏状态检查
+- 支持场景状态检查
 - 集成现有的权限系统
 
 #### 上下文感知
 - 根据当前环境调整显示内容
 - 支持房间状态影响显示
-- 动态获取游戏信息
+- 动态获取场景信息
 
 ### 3. 别名支持
 
@@ -173,17 +173,17 @@ item = {
 # 在 init_commands.py 中
 from .game import GAME_COMMANDS
 
-# 注册游戏命令
+# 注册场景命令
 for command in GAME_COMMANDS:
     command_registry.register_command(command)
 ```
 
-### 2. 游戏集成
+### 2. 场景集成
 
 ```python
-# 在游戏初始化时
+# 在场景初始化时
 def initialize_game_commands():
-    """初始化游戏命令"""
+    """初始化场景命令"""
     from app.commands.game import GAME_COMMANDS
     for command in GAME_COMMANDS:
         command_registry.register_command(command)
@@ -192,7 +192,7 @@ def initialize_game_commands():
 ### 3. 上下文集成
 
 ```python
-# 在游戏运行时
+# 在场景运行时
 context = CommandContext(
     username=user.username,
     permissions=user.permissions,
@@ -259,9 +259,9 @@ context = CommandContext(
 
 可以通过重写 `_search_objects()` 方法来添加新的搜索逻辑，如按类型搜索、按属性搜索等。
 
-### 3. 集成更多游戏系统
+### 3. 集成更多场景系统
 
-可以通过扩展 `CommandContext` 来集成更多游戏系统，如玩家系统、物品系统等。
+可以通过扩展 `CommandContext` 来集成更多场景系统，如玩家系统、物品系统等。
 
 ## 测试方案
 
@@ -274,7 +274,7 @@ context = CommandContext(
 ### 2. 集成测试
 
 - 测试与命令系统的集成
-- 测试与游戏系统的集成
+- 测试与场景系统的集成
 - 测试权限控制
 
 ### 3. 用户测试

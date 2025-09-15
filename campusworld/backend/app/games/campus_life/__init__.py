@@ -1,5 +1,5 @@
 """
-校园生活游戏包 - 统一接口
+园区世界包 - 统一接口
 
 提供与单文件版本兼容的接口，内部使用模块化实现
 """
@@ -9,28 +9,28 @@ from .commands import CampusLifeCommands
 from .objects import CampusLifeObjects
 from .scripts import CampusLifeScripts
 
-# 创建游戏实例
+# 创建场景实例
 campus_life_game = CampusLifeGame()
 
 # 提供兼容接口
 def initialize_game() -> bool:
-    """初始化游戏 - 兼容接口"""
+    """初始化场景 - 兼容接口"""
     return campus_life_game.start()
 
 def start_game() -> bool:
-    """启动游戏 - 兼容接口"""
+    """启动场景 - 兼容接口"""
     return campus_life_game.start()
 
 def stop_game() -> bool:
-    """停止游戏 - 兼容接口"""
+    """停止场景 - 兼容接口"""
     return campus_life_game.stop()
 
 def cleanup_game():
-    """清理游戏 - 兼容接口"""
+    """清理场景 - 兼容接口"""
     campus_life_game.stop()
 
 def get_game_instance():
-    """获取游戏实例 - 兼容接口"""
+    """获取场景实例 - 兼容接口"""
     return campus_life_game
 
 # 导出所有接口

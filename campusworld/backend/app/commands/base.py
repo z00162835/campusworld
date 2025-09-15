@@ -31,7 +31,7 @@ class CommandContext:
         return permission in self.permissions
     
     def get_game_state(self, key: str, default: Any = None) -> Any:
-        """获取游戏状态"""
+        """获取场景状态"""
         if not self.game_state:
             return default
         return self.game_state.get(key, default)
@@ -128,7 +128,7 @@ class SystemCommand(BaseCommand):
 
 
 class GameCommand(BaseCommand):
-    """游戏命令基类"""
+    """场景命令基类"""
     
     def __init__(self, name: str, description: str = "", aliases: List[str] = None,
                  game_name: str = ""):
@@ -137,17 +137,17 @@ class GameCommand(BaseCommand):
         self.required_permission = f"game.{game_name}"
     
     def check_permission(self, context: CommandContext) -> bool:
-        """检查游戏权限"""
+        """检查场景权限"""
         if not self.required_permission:
             return True
         return context.has_permission(self.required_permission)
     
     def is_game_running(self, context: CommandContext) -> bool:
-        """检查游戏是否运行"""
+        """检查场景是否运行"""
         return context.get_game_state('is_running', False)
     
     def get_game_info(self, context: CommandContext) -> Dict[str, Any]:
-        """获取游戏信息"""
+        """获取场景信息"""
         return context.get_game_state('game_info', {})
 
 

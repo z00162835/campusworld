@@ -44,7 +44,7 @@ class CampusWorld:
         # 核心组件
         self.ssh_server = None
         
-        # 使用游戏引擎管理器而不是直接实例
+        # 使用场景引擎管理器而不是直接实例
         self.game_engine_manager = game_engine_manager
         
         self.logger.info("CampusWorld主程序初始化完成")
@@ -87,7 +87,7 @@ class CampusWorld:
             return False
     
     def initialize_games(self) -> bool:
-        """通过游戏引擎管理器初始化需加载的内容"""
+        """通过场景引擎管理器初始化需加载的内容"""
         try:
             
             # 初始化内容引擎
@@ -166,7 +166,7 @@ class CampusWorld:
             if not self.load_config():
                 return False
             
-            # 2. 初始化游戏
+            # 2. 初始化场景
             if not self.initialize_games():
                 return False
             
@@ -236,7 +236,7 @@ class CampusWorld:
             return False
     
     def get_status(self) -> dict:
-        """获取系统状态 - 通过游戏引擎管理器"""
+        """获取系统状态 - 通过场景引擎管理器"""
         status = {
             "is_running": self.is_running,
             "start_time": self.start_time,
@@ -253,14 +253,14 @@ class CampusWorld:
             }
         }
         
-        # 添加游戏状态 - 通过游戏引擎管理器
+        # 添加场景状态 - 通过场景引擎管理器
         try:
             engine = self.game_engine_manager.get_engine()
             if engine:
                 game_status = engine.interface.get_game_status('campus_life')
                 status["game"] = game_status
             else:
-                status["game"] = {"error": "游戏引擎未初始化"}
+                status["game"] = {"error": "场景引擎未初始化"}
                 
         except Exception as e:
             status["game"] = {"error": str(e)}
@@ -315,10 +315,10 @@ class CampusWorld:
         print(f"配置目录: {config.get('config_dir', 'Unknown')}")
         print(f"配置状态: {'已加载' if config.get('loaded') else '未加载'}")
         
-        # 游戏状态
+        # 场景状态
         if "game" in status and "error" not in status["game"]:
             game = status["game"]
-            print(f"游戏: {game.get('name', 'N/A')}")
+            print(f"场景: {game.get('name', 'N/A')}")
             print(f"  版本: {game.get('version', 'N/A')}")
             print(f"  描述: {game.get('description', 'N/A')}")
             print(f"  状态: {'运行中' if game.get('is_running') else '已停止'}")
@@ -335,7 +335,7 @@ class CampusWorld:
         print(f"系统运行时间: {status['runtime']:.2f}秒")
         print("\n系统已启动，可以通过SSH连接进行交互")
         print("使用 'help' 命令查看可用命令")
-        print("使用 'game help' 命令查看游戏管理帮助")
+        print("使用 'game help' 命令查看场景管理帮助")
         print("\n按 Ctrl+C 停止系统")
         print("=" * 60)
 

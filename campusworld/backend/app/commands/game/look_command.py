@@ -28,9 +28,9 @@ class LookCommand(GameCommand):
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         """执行look命令"""
         try:
-            # 检查游戏是否运行
+            # 检查场景是否运行
             if not self.is_game_running(context):
-                return CommandResult.error_result("游戏未运行，无法执行look命令")
+                return CommandResult.error_result("场景未运行，无法执行look命令")
             
             if not args:
                 # 没有参数，查看当前环境
@@ -90,7 +90,7 @@ class LookCommand(GameCommand):
             # 从用户图数据获取当前位置
             current_room_id = self._get_user_current_room_id(context)
 
-            # 如果游戏中没有该房间，尝试从图数据获取
+            # 如果场景中没有该房间，尝试从图数据获取
             return self._get_room_from_graph_data(context, current_room_id)
             
         except Exception as e:
@@ -360,7 +360,7 @@ class LookCommand(GameCommand):
     def _get_other_players(self, context: CommandContext, room: Dict[str, Any]) -> List[str]:
         """获取房间内其他玩家"""
         try:
-            # 这里需要从游戏状态获取当前房间的玩家列表
+            # 这里需要从场景状态获取当前房间的玩家列表
             # 暂时返回空列表，实际实现需要与玩家管理系统集成
             return []
             

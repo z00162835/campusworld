@@ -1,6 +1,6 @@
 """
 命令初始化模块
-负责注册所有系统命令和游戏命令
+负责注册所有系统命令和场景命令
 """
 
 from .registry import command_registry
@@ -37,13 +37,13 @@ def initialize_commands(force_reinit: bool = False) -> bool:
                 else:
                     logger.error(f"系统命令 '{command.name}' 注册失败")
             
-            # 注册游戏命令
+            # 注册场景命令
             game_success = 0
             for command in GAME_COMMANDS:
                 if command_registry.register_command(command):
                     game_success += 1
                 else:
-                    logger.error(f"游戏命令 '{command.name}' 注册失败")
+                    logger.error(f"场景命令 '{command.name}' 注册失败")
             
             # 显示注册摘要
             summary = command_registry.get_commands_summary()
@@ -62,31 +62,31 @@ def get_command_summary() -> dict:
 
 
 def register_game_commands(game_name: str, commands: list) -> bool:
-    """注册游戏特定命令"""
+    """注册场景特定命令"""
     try:
         success_count = 0
         for command in commands:
             if command_registry.register_command(command):
                 success_count += 1
             else:
-                logger.error(f"游戏 '{game_name}' 命令 '{command.name}' 注册失败")
+                logger.error(f"场景 '{game_name}' 命令 '{command.name}' 注册失败")
         
-        logger.info(f"游戏 '{game_name}' 命令注册完成: {success_count}/{len(commands)}")
+        logger.info(f"场景 '{game_name}' 命令注册完成: {success_count}/{len(commands)}")
         return success_count == len(commands)
         
     except Exception as e:
-        logger.error(f"注册游戏 '{game_name}' 命令失败: {e}")
+        logger.error(f"注册场景 '{game_name}' 命令失败: {e}")
         return False
 
 
 def unregister_game_commands(game_name: str) -> bool:
-    """注销游戏特定命令"""
+    """注销场景特定命令"""
     try:
-        # 这里需要实现按游戏名称注销命令的逻辑
+        # 这里需要实现按场景名称注销命令的逻辑
         # 暂时返回True
-        logger.info(f"游戏 '{game_name}' 命令已注销")
+        logger.info(f"场景 '{game_name}' 命令已注销")
         return True
         
     except Exception as e:
-        logger.error(f"注销游戏 '{game_name}' 命令失败: {e}")
+        logger.error(f"注销场景 '{game_name}' 命令失败: {e}")
         return False

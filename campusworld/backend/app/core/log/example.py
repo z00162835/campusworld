@@ -166,7 +166,7 @@ def example_module_loggers():
     # 记录不同类型的日志
     app_logger.info("应用日志消息")
     ssh_logger.info("SSH日志消息")
-    game_logger.info("游戏日志消息")
+    game_logger.info("场景日志消息")
     database_logger.info("数据库日志消息")
     audit_logger.info("审计日志消息")
     security_logger.warning("安全日志消息")

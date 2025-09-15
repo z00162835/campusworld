@@ -1,7 +1,7 @@
 """
-校园生活游戏命令系统
+园区世界命令系统
 
-实现游戏中的各种命令，如移动、查看、拾取等。
+实现场景中的各种命令，如移动、查看、拾取等。
 """
 
 import logging
@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 
 
 class CampusLifeCommands:
-    """校园生活游戏命令系统"""
+    """园区世界命令系统"""
     
     def __init__(self, game):
         self.game = game
@@ -30,17 +30,17 @@ class CampusLifeCommands:
             "i": self._cmd_inventory,  # 别名
         }
         
-        self.logger.info("校园生活游戏命令系统初始化完成")
+        self.logger.info("园区世界命令系统初始化完成")
     
     def start(self):
         """启动命令系统"""
         self.is_running = True
-        self.logger.info("校园生活游戏命令系统启动成功")
+        self.logger.info("园区世界命令系统启动成功")
     
     def stop(self):
         """停止命令系统"""
         self.is_running = False
-        self.logger.info("校园生活游戏命令系统已停止")
+        self.logger.info("园区世界命令系统已停止")
     
     def get_commands(self) -> Dict[str, Any]:
         """获取命令列表"""
@@ -147,7 +147,7 @@ help 命令帮助
 描述: 显示帮助信息
 
 示例:
-  help         - 显示游戏总体帮助
+  help         - 显示场景总体帮助
   help look    - 显示look命令帮助
   help move    - 显示move命令帮助
 

@@ -342,7 +342,7 @@ WHERE r.is_active = TRUE;
 INSERT INTO node_types (type_code, type_name, typeclass, classname, module_path, description) VALUES
 ('user', '用户', 'app.models.user.User', 'User', 'app.models.user', '系统用户'),
 ('campus', '校园', 'app.models.campus.Campus', 'Campus', 'app.models.campus', '校园实体'),
-('world', '世界', 'app.models.world.World', 'World', 'app.models.world', '游戏世界'),
+('world', '世界', 'app.models.world.World', 'World', 'app.models.world', '场景世界'),
 ('world_object', '世界对象', 'app.models.world.WorldObject', 'WorldObject', 'app.models.world', '世界中的对象')
 ON CONFLICT (type_code) DO NOTHING;
 

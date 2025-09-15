@@ -1,7 +1,7 @@
 """
-校园生活游戏主类
+园区世界主类
 
-继承自BaseGame，实现校园生活游戏的核心逻辑。
+继承自BaseGame，实现园区世界的核心逻辑。
 """
 from datetime import datetime
 from typing import Dict, List, Optional, Any
@@ -17,7 +17,7 @@ from app.core.log import (
 )
 
 class Game(BaseGame):
-    """校园生活游戏主类 - 兼容接口"""
+    """园区世界主类 - 兼容接口"""
     
     def __init__(self):
         super().__init__(
@@ -25,15 +25,15 @@ class Game(BaseGame):
             version="1.0.0"
         )
         
-        self.description = "一个基于文本的校园生活模拟游戏"
+        self.description = "一个基于文本的校园生活模拟场景"
         self.author = "CampusWorld Team"
         
-        # 游戏组件
+        # 场景组件
         self.commands = CampusLifeCommands(self)
         self.objects = CampusLifeObjects(self)
         self.scripts = CampusLifeScripts(self)
         
-        # 游戏状态
+        # 场景状态
         self.players: Dict[str, Any] = {}
         self.locations: Dict[str, Any] = {}
         self.items: Dict[str, Any] = {}
@@ -45,28 +45,28 @@ class Game(BaseGame):
         self.game_author = self.author
         self.is_initialized = False
         
-        # 初始化游戏世界
+        # 初始化场景世界
         self._init_game_world()
         
-        self.logger.info("校园生活游戏初始化完成")
+        self.logger.info("园区世界初始化完成")
     
     def initialize_game(self) -> bool:
-        """初始化游戏 - 兼容接口"""
+        """初始化场景 - 兼容接口"""
         try:
             if self.is_initialized:
-                self.logger.warning("游戏已初始化")
+                self.logger.warning("场景已初始化")
                 return True
             
             self.is_initialized = True
-            self.logger.info("校园生活游戏初始化成功")
+            self.logger.info("园区世界初始化成功")
             return True
             
         except Exception as e:
-            self.logger.error(f"校园生活游戏初始化失败: {e}")
+            self.logger.error(f"园区世界初始化失败: {e}")
             return False
     
     def get_game_info(self) -> Dict[str, Any]:
-        """获取游戏信息 - 兼容接口"""
+        """获取场景信息 - 兼容接口"""
         return {
             "name": self.game_name,
             "version": self.game_version,
@@ -81,7 +81,7 @@ class Game(BaseGame):
         }
     
     def _init_game_world(self):
-        """初始化游戏世界"""
+        """初始化场景世界"""
         try:
             # 初始化位置
             self.locations = {
@@ -133,41 +133,39 @@ class Game(BaseGame):
                 }
             }
             
-            self.logger.info("游戏世界初始化完成")
-            
         except Exception as e:
-            self.logger.error(f"游戏世界初始化失败: {e}")
+            self.logger.error(f"场景世界初始化失败: {e}")
     
     def start(self) -> bool:
-        """启动游戏"""
+        """启动场景"""
         try:
             if self.is_running:
-                self.logger.warning("游戏已在运行中")
+                self.logger.warning("场景已在运行中")
                 return True
             
             self.start_time = datetime.now()
             self.is_running = True
             
-            # 启动游戏组件
+            # 启动场景组件
             self.commands.start()
             self.objects.start()
             self.scripts.start()
             
-            self.logger.info(f"校园生活游戏启动成功，启动时间: {self.start_time}")
+            self.logger.info(f"园区世界启动成功，启动时间: {self.start_time}")
             return True
             
         except Exception as e:
-            self.logger.error(f"校园生活游戏启动失败: {e}")
+            self.logger.error(f"园区世界启动失败: {e}")
             return False
     
     def stop(self) -> bool:
-        """停止游戏"""
+        """停止场景"""
         try:
             if not self.is_running:
-                self.logger.warning("游戏未在运行")
+                self.logger.warning("场景未在运行")
                 return True
             
-            # 停止游戏组件
+            # 停止场景组件
             self.commands.stop()
             self.objects.stop()
             self.scripts.stop()
@@ -175,23 +173,23 @@ class Game(BaseGame):
             self.is_running = False
             runtime = datetime.now() - self.start_time if self.start_time else None
             
-            self.logger.info(f"校园生活游戏已停止，运行时间: {runtime}")
+            self.logger.info(f"园区世界已停止，运行时间: {runtime}")
             return True
             
         except Exception as e:
-            self.logger.error(f"校园生活游戏停止失败: {e}")
+            self.logger.error(f"园区世界停止失败: {e}")
             return False
     
     def get_commands(self) -> Dict[str, Any]:
-        """获取游戏命令列表"""
+        """获取场景命令列表"""
         return self.commands.get_commands()
     
     def get_objects(self) -> Dict[str, Any]:
-        """获取游戏对象列表"""
+        """获取场景对象列表"""
         return self.objects.get_objects()
     
     def get_hooks(self) -> Dict[str, Any]:
-        """获取游戏事件钩子"""
+        """获取场景事件钩子"""
         return {
             "player_join": self._on_player_join,
             "player_leave": self._on_player_leave,
@@ -225,7 +223,7 @@ class Game(BaseGame):
             # 触发玩家加入事件
             self.engine.hook_manager.trigger_hook("player_join", player_id, player_data)
             
-            self.logger.info(f"玩家 '{player_id}' 加入游戏成功")
+            self.logger.info(f"玩家 '{player_id}' 加入场景成功")
             return True
             
         except Exception as e:
@@ -244,7 +242,7 @@ class Game(BaseGame):
             # 触发玩家离开事件
             self.engine.hook_manager.trigger_hook("player_leave", player_id, player_data)
             
-            self.logger.info(f"玩家 '{player_id}' 离开游戏成功")
+            self.logger.info(f"玩家 '{player_id}' 离开场景成功")
             return True
             
         except Exception as e:
@@ -291,11 +289,11 @@ class Game(BaseGame):
     
     def _on_player_join(self, player_id: str, player_data: Dict[str, Any]):
         """玩家加入事件处理"""
-        self.logger.info(f"玩家 '{player_id}' 加入游戏")
+        self.logger.info(f"玩家 '{player_id}' 加入场景")
     
     def _on_player_leave(self, player_id: str, player_data: Dict[str, Any]):
         """玩家离开事件处理"""
-        self.logger.info(f"玩家 '{player_id}' 离开游戏")
+        self.logger.info(f"玩家 '{player_id}' 离开场景")
     
     def _on_player_move(self, player_id: str, old_location: str, new_location: str):
         """玩家移动事件处理"""
@@ -306,15 +304,15 @@ class Game(BaseGame):
         self.logger.info(f"玩家 '{player_id}' 执行行动: {action}")
     
     def get_help(self, command: str = None) -> Optional[str]:
-        """获取游戏帮助信息"""
+        """获取场景帮助信息"""
         if command:
             return self.commands.get_command_help(command)
         
         help_text = f"""
-校园生活游戏帮助
+园区世界帮助
 ================
 
-游戏简介: {self.description}
+场景简介: {self.description}
 版本: {self.version}
 作者: {self.author}
 

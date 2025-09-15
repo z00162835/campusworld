@@ -150,8 +150,8 @@ class SSHConsole:
         """显示提示符 - 简化版本"""
         if self.current_session:
             username = self.current_session.username
-            # 获取当前游戏状态
-            current_game = None  # 这里应该从游戏状态获取
+            # 获取当前场景状态
+            current_game = None  # 这里应该从场景状态获取
             prompt = self.ssh_handler.get_prompt(username, current_game)
         else:
             prompt = self.ssh_handler.get_prompt("Guest")
@@ -261,7 +261,7 @@ class SSHConsole:
                 session_id = "guest_session"
                 permissions = ["guest"]
             
-            # 获取游戏状态
+            # 获取场景状态
             game_state = self._get_game_state()
             
             # 使用SSH处理器处理命令
@@ -484,11 +484,11 @@ class SSHConsole:
             self.logger.error(f"清理SSH控制台资源时出错: {e}")
 
     def _get_game_state(self) -> Dict[str, Any]:
-        """从游戏引擎管理器获取游戏状态"""
+        """从场景引擎管理器获取场景状态"""
         try:
             from app.game_engine.manager import game_engine_manager
             
-            # 获取游戏引擎
+            # 获取场景引擎
             engine = game_engine_manager.get_engine()
             if not engine:
                 return {
@@ -497,7 +497,7 @@ class SSHConsole:
                     'game_info': {}
                 }
             
-            # 通过GameInterface获取游戏状态
+            # 通过GameInterface获取场景状态
             game_status = engine.interface.get_game_status('campus_life')
             if game_status:
                 return {
@@ -513,7 +513,7 @@ class SSHConsole:
                 }
                 
         except Exception as e:
-            self.logger.error(f"从游戏引擎获取状态失败: {e}")
+            self.logger.error(f"从场景引擎获取状态失败: {e}")
             return {
                 'is_running': False,
                 'current_game': None,

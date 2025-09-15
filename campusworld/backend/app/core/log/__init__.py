@@ -131,7 +131,7 @@ def get_ssh_logger() -> logging.Logger:
     return get_logger(LoggerNames.SSH)
 
 def get_game_logger() -> logging.Logger:
-    """获取游戏日志器"""
+    """获取场景日志器"""
     return get_logger(LoggerNames.GAME)
 
 def get_database_logger() -> logging.Logger:

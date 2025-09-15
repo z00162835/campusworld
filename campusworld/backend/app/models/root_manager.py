@@ -157,7 +157,7 @@ class RootNodeManager:
                 typeclass='app.models.room.Room',
                 classname='Room',
                 module_path='app.models.room',
-                description='游戏世界中的房间/地点',
+                description='场景世界中的房间/地点',
                 schema_definition={
                     'room_type': 'string',
                     'room_description': 'text',
