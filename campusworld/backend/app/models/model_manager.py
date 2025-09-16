@@ -647,10 +647,10 @@ class ModelManager(ModelManager):
 # ==================== 全局模型管理器实例 ====================
 
 # 创建全局模型管理器实例
-optimized_model_manager = ModelManager()
+model_manager = ModelManager()
 
 # 便捷函数
 def get_optimized_model_manager() -> ModelManager:
     """获取全局优化模型管理器实例"""
-    return optimized_model_manager
+    return model_manager
     

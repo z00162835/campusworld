@@ -18,6 +18,7 @@ class Campus(DefaultObject):
         self._node_type = 'campus'
 
         default_attrs = {
+            "uns": "RES001", # 统一命名空间标识, 格式是：园区代码, 如：RES001, 作为统一命名空间标识
             "campus_type": "research_institute",
             "campus_status": "active",
             "campus_level": "research",
