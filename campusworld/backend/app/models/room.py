@@ -71,12 +71,6 @@ class Room(DefaultObject):
             "is_home": False,  # 是否为默认home
             "is_special": False,  # 是否为特殊房间
             
-            # ==================== 功能属性 ====================
-            "room_functions": [],  # 房间功能列表
-            "room_services": [],  # 房间服务列表
-            "room_amenities": [],  # 房间设施列表
-            "room_equipment": [],  # 房间设备列表
-            
             # ==================== 访问控制 ====================
             "access_requirements": [],  # 访问要求
             "permission_required": [],  # 所需权限
@@ -87,6 +81,10 @@ class Room(DefaultObject):
             
             # ==================== 房间内容 ====================
             "room_objects": [],  # 房间内的对象ID列表
+            "room_functions": [],  # 房间功能列表,对象ID列表
+            "room_services": [],  # 房间服务列表,对象ID列表
+            "room_amenities": [],  # 房间设施列表,对象ID列表
+            "room_equipment": [],  # 房间设备列表,对象ID列表
             "room_exits": {},  # 出口信息 {direction: target_room_id}
             "room_scripts": [],  # 房间脚本
             

@@ -242,6 +242,7 @@ class ModelManager(ModelManager):
             
             # 创建节点 - 修复参数名
             node = node_class(name=name, **attributes or {})
+            node.sync_to_node()
             return node
             
         except Exception as e:

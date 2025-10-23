@@ -146,6 +146,7 @@ class DefaultObject(GraphNodeInterface):
         """
         # 调用子类的特定初始化逻辑
         self._at_object_creation()
+        self.sync_to_node()
     
     def _at_object_creation(self):
         """
