@@ -6,6 +6,7 @@
 from .registry import command_registry
 from .system_commands import SYSTEM_COMMANDS
 from .game import GAME_COMMANDS
+from .build import build_cmdset
 import threading
 from typing import Optional
 import os
@@ -45,6 +46,13 @@ def initialize_commands(force_reinit: bool = False) -> bool:
                 else:
                     logger.error(f"场景命令 '{command.name}' 注册失败")
             
+            if build_cmdset:
+                build_success = 0
+                for command in build_cmdset.get_commands().values():
+                    if command_registry.register_command(command):
+                        build_success += 1
+                    else:
+                        logger.error(f"建造命令 '{command.name}' 注册失败")
             # 显示注册摘要
             summary = command_registry.get_commands_summary()
             
