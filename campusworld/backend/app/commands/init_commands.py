@@ -6,7 +6,7 @@
 from .registry import command_registry
 from .system_commands import SYSTEM_COMMANDS
 from .game import GAME_COMMANDS
-from .build import build_cmdset
+from .builder import build_cmdset
 import threading
 from typing import Optional
 import os
