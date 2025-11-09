@@ -12,8 +12,9 @@ from dataclasses import dataclass, field
 
 from app.core.database import SessionLocal
 from app.models.graph import Node
-
-
+from app.models.user import User
+from app.core.log import get_logger, LoggerNames
+logger = get_logger(LoggerNames.SSH)
 @dataclass
 class SSHSession:
     """SSH会话信息"""
@@ -31,6 +32,7 @@ class SSHSession:
     roles: List[str] = field(default_factory=list)
     permissions: List[str] = field(default_factory=list)
     access_level: str = "normal"
+    _user_object: Optional[Any] = field(default=None, init=False, repr=False)
     
     # 控制台信息
     terminal_size: Optional[tuple] = None
@@ -87,11 +89,12 @@ class SSHSession:
     def _save_session_state(self):
         """保存会话状态到数据库"""
         try:
-            session = SessionLocal()
-            try:
+            with SessionLocal() as session:
                 # 查找用户节点
                 user_node = session.query(Node).filter(
-                    Node.id == self.user_id
+                    Node.id == self.user_id,
+                    Node.type_code == 'account',
+                    Node.is_active == True
                 ).first()
                 
                 if user_node:
@@ -106,11 +109,8 @@ class SSHSession:
                     user_node.attributes = attrs
                     session.commit()
                     
-            finally:
-                session.close()
         except Exception as e:
-            # 记录错误但不影响主流程
-            pass
+            logger.error(f"Failed to save session state: {e}")
     
     def restore_from_state(self, session_state: Dict[str, Any]):
         """从保存的状态恢复会话"""
@@ -123,7 +123,31 @@ class SSHSession:
             if "command_count" in session_state:
                 # 这里可以从数据库加载历史命令
                 pass
-
+    @property
+    def user_object(self) -> Optional[Any]:
+        """获取用户对象"""
+        if self._user_object is None:
+            self._user_object = self._load_user_object()
+        return self._user_object
+    def _load_user_object(self) -> Optional[Any]:
+        """加载用户对象"""
+        try:
+            with SessionLocal() as session:
+                user_node = session.query(Node).filter(
+                    Node.id == self.user_id,
+                    Node.type_code == 'account',
+                    Node.is_active == True
+                ).first()
+                if user_node:
+                    attrs = user_node.attributes
+                    return User(
+                        username=attrs.get('username', ''),
+                        **attrs
+                    )
+                return None
+        except Exception as e:
+            logger.error(f"Failed to load user object: {e}")
+            return None
 
 class SessionManager:
     """会话管理器"""

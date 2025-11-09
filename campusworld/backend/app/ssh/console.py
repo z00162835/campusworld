@@ -271,6 +271,7 @@ class SSHConsole:
                 session_id=session_id,
                 permissions=permissions,
                 command_line=input_text,
+                session=self.current_session,
                 game_state=game_state
             )
             

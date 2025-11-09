@@ -10,6 +10,8 @@ from .base import DefaultObject, DefaultAccount, GraphNodeInterface, GraphRelati
 from .user import User
 from .campus import Campus
 from .world import World, WorldObject
+from .room import Room, SingularityRoom
+from .exit import Exit
 
 # 图数据结构系统
 from .graph import (
@@ -39,6 +41,9 @@ __all__ = [
     "Campus",
     "World",
     "WorldObject",
+    "Room",
+    "SingularityRoom",
+    "Exit",
     
     # 图数据结构系统
     "Node",
@@ -58,6 +63,8 @@ model_factory.register_model("user", User)
 model_factory.register_model("campus", Campus)
 model_factory.register_model("world", World)
 model_factory.register_model("world_object", WorldObject)
+model_factory.register_model("room", Room)
+model_factory.register_model("exit", Exit)
 
 # 注册图节点模型
 model_factory.register_model("graph_node", Node)

@@ -3,13 +3,14 @@
 
 """
 
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import Dict, Any, List, Optional, TYPE_CHECKING, Union
 from datetime import datetime
 
 from .base import DefaultObject
 
 if TYPE_CHECKING:
     from .user import User
+    from .exit import Exit
 
 
 class Room(DefaultObject):
@@ -85,7 +86,8 @@ class Room(DefaultObject):
             "room_services": [],  # 房间服务列表,对象ID列表
             "room_amenities": [],  # 房间设施列表,对象ID列表
             "room_equipment": [],  # 房间设备列表,对象ID列表
-            "room_exits": {},  # 出口信息 {direction: target_room_id}
+            "room_exits": {},  # 出口信息 {direction: target_room_id} (向后兼容)
+            "room_exit_ids": [],  # 出口对象ID列表 (新设计)
             "room_scripts": [],  # 房间脚本
             
             # ==================== 房间效果 ====================
@@ -194,41 +196,266 @@ class Room(DefaultObject):
     
     # ==================== 出口管理 ====================
     
-    def add_exit(self, direction: str, target_room_id: int) -> bool:
-        """添加出口"""
+    def add_exit(self, direction: str, target_room_id: int, 
+                 aliases: List[str] = None, create_reverse: bool = True,
+                 reverse_name: str = None, **kwargs) -> Optional['Exit']:
+        """
+        添加出口 - 创建 Exit 对象
+        
+        Args:
+            direction: 出口方向名称，如 "north", "east"
+            target_room_id: 目标房间ID
+            aliases: 出口别名列表，如 ["n", "north"]
+            create_reverse: 是否自动创建反向出口
+            reverse_name: 反向出口名称，如果不提供则自动生成
+            **kwargs: 其他出口属性
+        
+        Returns:
+            Exit对象，如果创建失败则返回None
+        """
         try:
+            # 检查是否已存在同名出口
+            existing_exit = self.find_exit(direction)
+            if existing_exit:
+                print(f"出口 '{direction}' 已存在")
+                return None
+            
+            # 导入 Exit 类
+            from .exit import Exit
+            
+            # 创建 Exit 对象
+            exit_obj = Exit(
+                name=direction,
+                source_room_id=self.id if hasattr(self, 'id') else None,
+                destination_room_id=target_room_id,
+                config={
+                    'attributes': {
+                        'exit_aliases': aliases or [],
+                        **kwargs
+                    }
+                }
+            )
+            
+            # 保存 Exit 对象到数据库
+            exit_obj.sync_to_node()
+            
+            # 在房间中记录出口ID
+            exit_ids = self._node_attributes.get('room_exit_ids', [])
+            if hasattr(exit_obj, 'id') and exit_obj.id:
+                exit_ids.append(exit_obj.id)
+            else:
+                # 如果还没有ID，使用UUID作为临时标识
+                exit_ids.append(exit_obj._node_uuid)
+            self.set_node_attribute('room_exit_ids', exit_ids)
+            
+            # 向后兼容：同时更新旧的 room_exits 字典
             room_exits = self._node_attributes.get('room_exits', {})
             room_exits[direction] = target_room_id
             self.set_node_attribute('room_exits', room_exits)
-            return True
+            
+            self.sync_to_node()
+            
+            # 自动创建反向出口
+            if create_reverse and not exit_obj._node_attributes.get('is_one_way', False):
+                reverse = reverse_name or self._get_reverse_direction(direction)
+                if reverse:
+                    # 获取目标房间并创建反向出口
+                    # TODO: 实现从数据库加载目标房间的逻辑
+                    pass
+            
+            return exit_obj
+            
         except Exception as e:
             print(f"添加出口失败: {e}")
-            return False
+            import traceback
+            traceback.print_exc()
+            return None
     
     def remove_exit(self, direction: str) -> bool:
-        """移除出口"""
+        """
+        移除出口
+        
+        Args:
+            direction: 出口方向名称或别名
+        
+        Returns:
+            bool: 是否成功移除
+        """
         try:
+            # 查找出口对象
+            exit_obj = self.find_exit(direction)
+            if not exit_obj:
+                return False
+            
+            # 从房间的出口列表中移除
+            exit_ids = self._node_attributes.get('room_exit_ids', [])
+            exit_uuid = exit_obj._node_uuid
+            exit_ids = [eid for eid in exit_ids if eid != exit_uuid and 
+                       (hasattr(exit_obj, 'id') and eid != exit_obj.id)]
+            self.set_node_attribute('room_exit_ids', exit_ids)
+            
+            # 向后兼容：同时更新旧的 room_exits 字典
             room_exits = self._node_attributes.get('room_exits', {})
-            if direction in room_exits:
-                del room_exits[direction]
-                self.set_node_attribute('room_exits', room_exits)
-                return True
-            return False
+            exit_name = exit_obj._node_attributes.get('exit_name', direction)
+            if exit_name in room_exits:
+                del room_exits[exit_name]
+            self.set_node_attribute('room_exits', room_exits)
+            
+            self.sync_to_node()
+            
+            # 标记出口为不活跃（软删除）
+            exit_obj.set_node_active(False)
+            exit_obj.sync_to_node()
+            
+            return True
+            
         except Exception as e:
             print(f"移除出口失败: {e}")
             return False
     
-    def get_exits(self) -> Dict[str, int]:
-        """获取所有出口"""
-        return self._node_attributes.get('room_exits', {}).copy()
+    def get_exits(self) -> List['Exit']:
+        """
+        获取所有出口对象
+        
+        Returns:
+            Exit对象列表
+        """
+        try:
+            exit_ids = self._node_attributes.get('room_exit_ids', [])
+            exits = []
+            
+            for exit_id in exit_ids:
+                exit_obj = self._get_exit_by_id(exit_id)
+                if exit_obj:
+                    exits.append(exit_obj)
+            
+            return exits
+            
+        except Exception as e:
+            print(f"获取出口列表失败: {e}")
+            return []
     
-    def get_exit(self, direction: str) -> Optional[int]:
-        """获取指定方向的出口目标房间ID"""
-        return self._node_attributes.get('room_exits', {}).get(direction)
+    def get_exit(self, direction: str) -> Optional['Exit']:
+        """
+        获取指定方向的出口对象
+        
+        Args:
+            direction: 出口方向名称或别名
+        
+        Returns:
+            Exit对象，如果不存在则返回None
+        """
+        return self.find_exit(direction)
+    
+    def find_exit(self, name: str) -> Optional['Exit']:
+        """
+        根据名称或别名查找出口
+        
+        Args:
+            name: 出口名称或别名
+        
+        Returns:
+            Exit对象，如果不存在则返回None
+        """
+        try:
+            exits = self.get_exits()
+            for exit_obj in exits:
+                if exit_obj.match_name(name):
+                    return exit_obj
+            return None
+        except Exception as e:
+            print(f"查找出口失败: {e}")
+            return None
     
     def has_exit(self, direction: str) -> bool:
-        """检查是否有指定方向的出口"""
-        return direction in self._node_attributes.get('room_exits', {})
+        """
+        检查是否有指定方向的出口
+        
+        Args:
+            direction: 出口方向名称或别名
+        
+        Returns:
+            bool: 是否存在该出口
+        """
+        return self.find_exit(direction) is not None
+    
+    def get_exit_directions(self) -> List[str]:
+        """
+        获取所有出口方向名称
+        
+        Returns:
+            出口方向名称列表
+        """
+        exits = self.get_exits()
+        return [exit_obj._node_attributes.get('exit_name', '') 
+                for exit_obj in exits if exit_obj._node_attributes.get('exit_name')]
+    
+    def _get_exit_by_id(self, exit_id: Union[int, str]) -> Optional['Exit']:
+        """
+        根据ID或UUID获取出口对象
+        
+        Args:
+            exit_id: 出口ID或UUID
+        
+        Returns:
+            Exit对象，如果不存在则返回None
+        """
+        try:
+            from .model_manager import model_manager
+            from .graph import Node
+            from app.core.database import SessionLocal
+            
+            session = SessionLocal()
+            try:
+                # 尝试作为ID查询
+                if isinstance(exit_id, int):
+                    node = session.query(Node).filter(Node.id == exit_id).first()
+                else:
+                    # 作为UUID查询
+                    node = session.query(Node).filter(Node.uuid == exit_id).first()
+                
+                if node and node.type_code == 'exit':
+                    # 转换为 Exit 对象
+                    from .exit import Exit
+                    exit_obj = Exit(
+                        name=node.name,
+                        source_room_id=node.attributes.get('source_room_id') if node.attributes else None,
+                        destination_room_id=node.attributes.get('destination_room_id') if node.attributes else None,
+                        config={'attributes': node.attributes or {}}
+                    )
+                    exit_obj._node_uuid = str(node.uuid)
+                    if hasattr(node, 'id'):
+                        exit_obj.id = node.id
+                    return exit_obj
+                
+                return None
+            finally:
+                session.close()
+                
+        except Exception as e:
+            print(f"根据ID获取出口失败: {e}")
+            return None
+    
+    def _get_reverse_direction(self, direction: str) -> Optional[str]:
+        """
+        获取反向方向
+        
+        Args:
+            direction: 方向名称
+        
+        Returns:
+            反向方向名称，如果无法确定则返回None
+        """
+        reverse_map = {
+            'north': 'south', 'south': 'north',
+            'east': 'west', 'west': 'east',
+            'northeast': 'southwest', 'southwest': 'northeast',
+            'northwest': 'southeast', 'southeast': 'northwest',
+            'up': 'down', 'down': 'up',
+            'in': 'out', 'out': 'in',
+            'enter': 'exit', 'exit': 'enter',
+        }
+        return reverse_map.get(direction.lower())
     
     # ==================== 访问控制 ====================
     
@@ -383,7 +610,8 @@ class Room(DefaultObject):
                 'current_objects': self.get_object_count(),
                 'is_full': self.is_full()
             },
-            'exits': list(self.get_exits().keys()),
+            'exits': self.get_exit_directions(),
+            'exits_info': [exit_obj.get_exit_info() for exit_obj in self.get_exits()],
             'effects': [e['name'] for e in self.get_effects()],
             'manager': {
                 'name': self._node_attributes.get('room_manager'),
