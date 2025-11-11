@@ -1,0 +1,406 @@
+/* App Layout */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left var(--transition-slow);
+}
+
+.app-wrapper.with-sidebar {
+  margin-left: var(--sidebar-width);
+}
+
+/* Header */
+.app-header {
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0;
+  height: var(--header-height);
+  line-height: var(--header-height);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-index-header);
+}
+
+.app-wrapper.with-sidebar .app-header {
+  left: var(--sidebar-width);
+}
+
+/* Main Content */
+.app-main {
+  flex: 1;
+  padding: 0;
+  background: var(--bg-primary);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-top: calc(var(--header-height) + var(--tab-bar-height));
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  background: var(--bg-primary);
+}
+
+.empty-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-disabled);
+  font-size: var(--font-size-base);
+}
+
+/* Footer */
+.app-footer {
+  background: var(--bg-footer);
+  color: var(--text-primary);
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
+  position: fixed;
+  left: 0;
+  top: var(--header-height);
+  z-index: var(--z-index-sidebar);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-content {
+  padding: var(--spacing-md) var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 10px var(--spacing-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  user-select: none;
+  position: relative;
+}
+
+.sidebar-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.sidebar-item.active {
+  background: var(--bg-active);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--text-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.sidebar-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-icon :deep(svg) {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.sidebar-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 var(--spacing-xl);
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.navbar-button {
+  color: var(--text-tertiary) !important;
+  font-size: var(--font-size-base);
+  padding: var(--spacing-sm) var(--spacing-md) !important;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  font-weight: var(--font-weight-normal);
+  user-select: none;
+}
+
+.navbar-button:hover {
+  color: var(--text-secondary) !important;
+  background: var(--bg-hover) !important;
+}
+
+/* 覆盖 Element Plus 按钮元素本身 */
+.navbar-button:deep(.el-button) {
+  border: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.navbar-button:deep(.el-button:hover) {
+  background: var(--bg-hover) !important;
+  color: var(--text-secondary) !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.navbar-button:deep(.el-button:focus),
+.navbar-button:deep(.el-button:active) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 覆盖 text 类型按钮 */
+.navbar-button:deep(.el-button--text) {
+  border: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.navbar-button:deep(.el-button--text:hover) {
+  background: var(--bg-hover) !important;
+  color: var(--text-secondary) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.navbar-button:deep(.el-button--text:focus),
+.navbar-button:deep(.el-button--text:active) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 覆盖按钮内部所有可能的 wrapper 元素 */
+.navbar-button:deep(.el-button__inner),
+.navbar-button:deep(.el-button__wrapper),
+.navbar-button:deep(.el-button > span),
+.navbar-button:deep(.el-button > *),
+.navbar-button:deep(.el-button__inner > *),
+.navbar-button:deep(.el-button__wrapper > *) {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.navbar-button:hover:deep(.el-button__inner),
+.navbar-button:hover:deep(.el-button__wrapper),
+.navbar-button:hover:deep(.el-button > span),
+.navbar-button:hover:deep(.el-button > *) {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+/* 移除所有伪元素 */
+.navbar-button:deep(.el-button::before),
+.navbar-button:deep(.el-button::after),
+.navbar-button:deep(.el-button__inner::before),
+.navbar-button:deep(.el-button__inner::after) {
+  display: none !important;
+  background: transparent !important;
+}
+/* TabBar */
+.tab-bar {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  height: var(--tab-bar-height);
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  z-index: calc(var(--z-index-header) - 1);
+}
+
+/* TabBar在有sidebar时的定位 */
+#app:has(.app-wrapper.with-sidebar) .tab-bar {
+  left: var(--sidebar-width);
+}
+
+.tab-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tab-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-bar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.tab-list {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--spacing-sm);
+  gap: var(--spacing-xs);
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  padding: 6px var(--spacing-md);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-bottom: none;
+  min-width: 100px;
+  max-width: 200px;
+}
+
+.tab-item:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.tab-item.active {
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--bg-primary);
+}
+
+.tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-close {
+  margin-left: var(--spacing-sm);
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.tab-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+

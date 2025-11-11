@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/Home.vue'),
+    redirect: '/works',
     meta: { title: '首页' }
   },
   {
@@ -21,22 +21,40 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '注册' }
   },
   {
-    path: '/campus',
-    name: 'Campus',
-    component: () => import('@/views/campus/Campus.vue'),
-    meta: { title: '校园', requiresAuth: true }
-  },
-  {
-    path: '/world',
-    name: 'World',
-    component: () => import('@/views/world/World.vue'),
-    meta: { title: '世界', requiresAuth: true }
-  },
-  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/Profile.vue'),
-    meta: { title: '个人资料', requiresAuth: true }
+    meta: { title: '个人资料' }
+  },
+  {
+    path: '/works',
+    name: 'Works',
+    component: () => import('@/views/Home.vue'),
+    meta: { title: 'Works' }
+  },
+  {
+    path: '/spaces',
+    name: 'Spaces',
+    component: () => import('@/views/spaces/Spaces.vue'),
+    meta: { title: 'Spaces' }
+  },
+  {
+    path: '/agents',
+    name: 'Agents',
+    component: () => import('@/views/agents/Agents.vue'),
+    meta: { title: 'Agents' }
+  },
+  {
+    path: '/discovery',
+    name: 'Discovery',
+    component: () => import('@/views/discovery/Discovery.vue'),
+    meta: { title: 'Discovery' }
+  },
+  {
+    path: '/history',
+    name: 'History',
+    component: () => import('@/views/history/History.vue'),
+    meta: { title: 'History' }
   }
 ]
 
@@ -45,15 +63,10 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard for authentication
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('access_token')
-  
-  if (to.meta.requiresAuth && !token) {
-    next('/login')
-  } else {
-    next()
-  }
+// Navigation guard - 已禁用认证要求，直接允许访问
+router.beforeEach((_to, _from, next) => {
+  // 屏蔽登录要求，直接允许访问所有页面
+  next()
 })
 
 export default router

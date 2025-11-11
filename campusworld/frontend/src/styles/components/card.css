@@ -1,0 +1,64 @@
+/* Card Component Styles */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+}
+
+.card-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-header);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.card-body {
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+/* Element Plus Card Override */
+:deep(.el-card) {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+:deep(.el-card__header) {
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-header);
+  padding: var(--spacing-lg);
+}
+
+:deep(.el-card__body) {
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+:deep(.el-card__body p) {
+  color: var(--text-secondary);
+}
+
+/* Alert Override */
+:deep(.el-alert) {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+/* Descriptions Override */
+:deep(.el-descriptions) {
+  color: var(--text-secondary);
+}
+
+:deep(.el-descriptions__label) {
+  color: var(--text-tertiary);
+}
+
+:deep(.el-descriptions__content) {
+  color: var(--text-secondary);
+}
+

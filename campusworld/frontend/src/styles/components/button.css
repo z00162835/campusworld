@@ -1,0 +1,144 @@
+/* Button Component Styles - 统一按钮样式 */
+
+/* Element Plus Button Override */
+:deep(.el-button) {
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+/* Primary Button */
+:deep(.el-button--primary) {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+:deep(.el-button--primary:hover) {
+  background: var(--button-primary-bg-hover);
+  border-color: var(--button-primary-bg-hover);
+  color: var(--button-primary-text);
+}
+
+:deep(.el-button--primary:active) {
+  background: var(--button-primary-bg-active);
+  border-color: var(--button-primary-bg-active);
+  color: var(--button-primary-text);
+}
+
+:deep(.el-button--primary:focus) {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+:deep(.el-button--primary.is-disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-disabled);
+  opacity: 0.5;
+}
+
+/* Default Button */
+:deep(.el-button:not(.el-button--primary):not(.el-button--text):not(.el-button--danger)) {
+  background: var(--button-default-bg);
+  border-color: var(--button-default-border);
+  color: var(--button-default-text);
+}
+
+:deep(.el-button:not(.el-button--primary):not(.el-button--text):not(.el-button--danger):hover) {
+  background: var(--button-default-bg-hover);
+  border-color: var(--border-color-dark);
+  color: var(--text-primary);
+}
+
+:deep(.el-button:not(.el-button--primary):not(.el-button--text):not(.el-button--danger):active) {
+  background: var(--button-default-bg-active);
+  border-color: var(--border-color-dark);
+  color: var(--text-primary);
+}
+
+/* Text Button */
+/* Text Button - 排除 navbar-button */
+:deep(.el-button--text:not(.navbar-button)) {
+  background: var(--button-text-bg) !important;
+  border-color: transparent !important;
+  color: var(--button-text-text);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+:deep(.el-button--text:not(.navbar-button):hover) {
+  background: var(--button-text-bg-hover) !important;
+  border-color: transparent !important;
+  color: var(--button-text-text-hover);
+}
+
+:deep(.el-button--text:not(.navbar-button):active) {
+  background: var(--bg-active) !important;
+  border-color: transparent !important;
+  color: var(--text-primary);
+}
+
+/* 确保 navbar-button 不受全局样式影响 */
+:deep(.navbar-button.el-button--text),
+:deep(.navbar-button.el-button--text:hover),
+:deep(.navbar-button.el-button--text:focus),
+:deep(.navbar-button.el-button--text:active) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+:deep(.navbar-button.el-button--text:hover) {
+  background: var(--bg-hover) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* 确保 navbar-button 内部元素也没有背景 */
+:deep(.navbar-button.el-button--text .el-button__inner),
+:deep(.navbar-button.el-button--text .el-button__wrapper),
+:deep(.navbar-button.el-button--text:hover .el-button__inner),
+:deep(.navbar-button.el-button--text:hover .el-button__wrapper) {
+  background: transparent !important;
+}
+
+/* Danger Button */
+:deep(.el-button--danger) {
+  background: var(--button-danger-bg);
+  border-color: var(--button-danger-bg);
+  color: var(--button-danger-text);
+}
+
+:deep(.el-button--danger:hover) {
+  background: var(--button-danger-bg-hover);
+  border-color: var(--button-danger-bg-hover);
+  color: var(--button-danger-text);
+}
+
+:deep(.el-button--danger:active) {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--button-danger-text);
+}
+
+/* Button Loading State */
+:deep(.el-button.is-loading) {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Button Size Variants */
+:deep(.el-button--small) {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+:deep(.el-button--large) {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-md);
+}
+

@@ -1,0 +1,89 @@
+/* Form Component Styles - 统一表单样式 */
+
+/* Input Override */
+:deep(.el-input__wrapper) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  transition: all var(--transition-fast);
+}
+
+:deep(.el-input__wrapper:hover) {
+  border-color: var(--border-color-dark);
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+:deep(.el-input__inner) {
+  color: var(--text-primary);
+  background: transparent;
+  font-size: var(--font-size-base);
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: var(--text-placeholder);
+}
+
+:deep(.el-input.is-disabled .el-input__wrapper) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color-light);
+  opacity: 0.6;
+}
+
+:deep(.el-input.is-disabled .el-input__inner) {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* Form Label */
+:deep(.el-form-item__label) {
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+}
+
+:deep(.el-form-item.is-required .el-form-item__label::before) {
+  color: var(--color-danger);
+}
+
+/* Form Error Message */
+:deep(.el-form-item__error) {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+/* Select Override */
+:deep(.el-select .el-input__wrapper) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+:deep(.el-select .el-input__wrapper:hover) {
+  border-color: var(--border-color-dark);
+}
+
+/* Dropdown Menu */
+:deep(.el-dropdown-menu) {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+:deep(.el-dropdown-menu__item) {
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+:deep(.el-dropdown-menu__item.is-divided) {
+  border-top: 1px solid var(--border-color);
+}
+

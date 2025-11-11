@@ -1,0 +1,143 @@
+:root {
+  /* 颜色系统 - 主色调 */
+  --color-primary: #409eff;
+  --color-primary-hover: #66b1ff;
+  --color-primary-active: #3a8ee6;
+  --color-success: #67c23a;
+  --color-success-hover: #85ce61;
+  --color-warning: #e6a23c;
+  --color-warning-hover: #ebb563;
+  --color-danger: #f56c6c;
+  --color-danger-hover: #f78989;
+  --color-info: #909399;
+  --color-info-hover: #a6a9ad;
+
+  /* 按钮颜色 */
+  --button-primary-bg: var(--color-primary);
+  --button-primary-bg-hover: var(--color-primary-hover);
+  --button-primary-bg-active: var(--color-primary-active);
+  --button-primary-text: #ffffff;
+  
+  --button-default-bg: var(--bg-secondary);
+  --button-default-bg-hover: var(--bg-hover);
+  --button-default-bg-active: var(--bg-active);
+  --button-default-text: var(--text-secondary);
+  --button-default-border: var(--border-color);
+  
+  --button-text-bg: transparent;
+  --button-text-bg-hover: var(--bg-hover);
+  --button-text-text: var(--text-tertiary);
+  --button-text-text-hover: var(--text-secondary);
+  
+  --button-danger-bg: var(--color-danger);
+  --button-danger-bg-hover: var(--color-danger-hover);
+  --button-danger-text: #ffffff;
+
+  /* 背景色 */
+  --bg-primary: #171717;
+  --bg-secondary: #1f1f1f;
+  --bg-tertiary: #0f0f0f;
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-active: rgba(255, 255, 255, 0.1);
+  --bg-card: #1f1f1f;
+  --bg-header: #171717;
+  --bg-footer: #545c64;
+
+  /* 文字颜色 */
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --text-tertiary: rgba(255, 255, 255, 0.6);
+  --text-disabled: rgba(255, 255, 255, 0.5);
+  --text-placeholder: rgba(255, 255, 255, 0.4);
+
+  /* 边框颜色 */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-color-light: rgba(255, 255, 255, 0.05);
+  --border-color-dark: rgba(255, 255, 255, 0.2);
+
+  /* 阴影 */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+  /* 间距系统 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 字体大小 */
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+
+  /* 字体粗细 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 布局尺寸 */
+  --header-height: 60px;
+  --sidebar-width: 260px;
+  --tab-bar-height: 40px;
+
+  /* 过渡动画 */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Z-index层级 */
+  --z-index-sidebar: 100;
+  --z-index-header: 200;
+  --z-index-dropdown: 1000;
+  --z-index-modal: 2000;
+}
+
+/* 浅色主题（未来扩展） */
+[data-theme='light'] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f7fa;
+  --bg-tertiary: #fafafa;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.06);
+  --bg-card: #ffffff;
+  --bg-header: #ffffff;
+  --bg-footer: #545c64;
+
+  --text-primary: #303133;
+  --text-secondary: #606266;
+  --text-tertiary: #909399;
+  --text-disabled: #c0c4cc;
+  --text-placeholder: #a8abb2;
+
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color-light: rgba(0, 0, 0, 0.05);
+  --border-color-dark: rgba(0, 0, 0, 0.2);
+
+  /* 按钮颜色 - 浅色主题 */
+  --button-default-bg: #ffffff;
+  --button-default-bg-hover: #f5f7fa;
+  --button-default-bg-active: #ecf5ff;
+  --button-default-text: #606266;
+  --button-default-border: rgba(0, 0, 0, 0.1);
+  
+  --button-text-bg: transparent;
+  --button-text-bg-hover: rgba(0, 0, 0, 0.04);
+  --button-text-text: #606266;
+  --button-text-text-hover: #303133;
+}
+
