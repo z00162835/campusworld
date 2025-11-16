@@ -16,7 +16,7 @@
               :key="activeTab.id"
             />
             <div v-else class="empty-tab">
-              <p>选择一个菜单项开始</p>
+              <p>Welcome to CampusWorld</p>
             </div>
           </div>
         </el-main>

@@ -74,8 +74,7 @@ class CampusWorldSSHServerInterface(ServerInterface):
             })
             
             # 查询数据库验证用户
-            session = SessionLocal()
-            try:
+            with SessionLocal() as session: 
                 # 查找用户账号
                 user_node = session.query(Node).filter(
                     Node.type_code == "account",
@@ -206,18 +205,11 @@ class CampusWorldSSHServerInterface(ServerInterface):
                         'event_type': 'auth_failed_wrong_password'
                     })
                     
-                    return AUTH_FAILED
-                    
-            finally:
-                    session.close()
+            self.security_logger.warning(f"Failed to authenticate user: {e}")
+            return AUTH_FAILED
                     
         except Exception as e:
-            self.logger.error(f"认证过程发生异常", extra={
-                'username': username,
-                'error': str(e),
-                'error_type': type(e).__name__,
-                'event_type': 'auth_error'
-            })
+            self.security_logger.error(f"Failed to authenticate user: {e}")
             return AUTH_FAILED
     
     def check_auth_publickey(self, username: str, key: paramiko.PKey) -> int:

@@ -102,11 +102,6 @@ class Room(DefaultObject):
             "room_last_renovation": None,  # 最后翻新日期
             "room_expected_lifespan": 30,  # 预期寿命(年)
             
-            # ==================== 管理信息 ====================
-            "room_manager": "",  # 房间管理员
-            "room_manager_phone": "",  # 管理员电话
-            "room_manager_email": "",  # 管理员邮箱
-            "room_owner": "",  # 房间所有者
         }
         
         # 设置默认标签

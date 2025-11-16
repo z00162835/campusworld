@@ -20,6 +20,7 @@ class SSHHandler(ProtocolHandler):
     
     def handle_interactive_command(self, user_id: str, username: str, session_id: str, 
                                  permissions: List[str], command_line: str,
+                                 session: Optional[Any] = None,
                                  game_state: Optional[Dict[str, Any]] = None) -> str:
         """处理SSH交互式命令"""
         try:
@@ -32,7 +33,7 @@ class SSHHandler(ProtocolHandler):
             args = parts[1:] if len(parts) > 1 else []
             
             # 创建命令上下文
-            context = self.create_context(user_id, username, session_id, permissions, game_state)
+            context = self.create_context(user_id, username, session_id, permissions, session, game_state)
             
             # 查找命令
             command = command_registry.get_command(command_name)

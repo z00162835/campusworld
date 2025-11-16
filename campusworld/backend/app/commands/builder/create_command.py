@@ -7,19 +7,11 @@ import json
 import ast
 from typing import List, Dict, Any, Optional, Type
 from app.commands.base import SystemCommand, CommandResult, CommandType
-from app.commands.build.model_discoverer import model_discoverer
+from app.commands.builder.model_discovery import ModelDiscoverer # 模型发现器
 from app.models.base import DefaultObject
 from app.core.log import get_logger, LoggerNames
 
-
 class CreateCommand(SystemCommand):
-    """
-    建造命令 - 统一的对象创建命令
-    
-    支持语法: create ClassName = {参数}
-    例如: create User = {"username": "test", "email": "test@example.com"}
-    """
-    
     def __init__(self):
         super().__init__(
             name="create",
@@ -44,7 +36,10 @@ class CreateCommand(SystemCommand):
     def check_permission(self, context) -> bool:
         """检查权限"""
         # 只有管理员可以创建对象
-        return hasattr(context.caller, 'is_admin') and context.caller.is_admin
+        caller = context.get_caller()
+        if not caller:
+            return False
+        return hasattr(caller, 'is_admin') and caller.is_admin
     
     def execute(self, context, args: List[str]) -> CommandResult:
         """执行创建命令"""
@@ -60,9 +55,9 @@ class CreateCommand(SystemCommand):
             parameters = parse_result['parameters']
             
             # 发现模型类
-            model_class = model_discoverer.get_model_class(model_name)
+            model_class = ModelDiscoverer.get_model_class(model_name)
             if not model_class:
-                available_models = model_discoverer.list_models()
+                available_models = ModelDiscoverer.list_models()
                 return CommandResult.error_result(
                     f"未找到模型类 '{model_name}'。可用模型: {', '.join(available_models)}"
                 )
@@ -90,11 +85,8 @@ class CreateCommand(SystemCommand):
     def _parse_create_command(self, command_str: str) -> Dict[str, Any]:
         """解析创建命令"""
         try:
-            # 移除 'create ' 前缀
-            if not command_str.startswith('create '):
-                return {'success': False, 'error': '命令必须以 "create " 开头'}
             
-            rest = command_str[7:].strip()  # 移除 'create '
+            rest = command_str.strip()
             
             # 分割类名和参数
             if '=' not in rest:
@@ -132,7 +124,7 @@ class CreateCommand(SystemCommand):
     
     def _validate_parameters(self, model_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """验证参数"""
-        metadata = model_discoverer.get_model_metadata(model_name)
+        metadata = ModelDiscoverer.get_model_metadata(model_name)
         if not metadata:
             return {'success': False, 'error': f'无法获取模型 {model_name} 的元数据'}
         
@@ -184,7 +176,7 @@ class CreateCommand(SystemCommand):
     
     def get_help(self) -> str:
         """获取帮助信息"""
-        available_models = model_discoverer.list_models()
+        available_models = ModelDiscoverer.list_models()
         
         help_text = f"""
 {self.name} 命令帮助
@@ -229,16 +221,19 @@ class CreateInfoCommand(SystemCommand):
     
     def check_permission(self, context) -> bool:
         """检查权限"""
-        return hasattr(context.caller, 'is_admin') and context.caller.is_admin
+        caller = context.get_caller()
+        if not caller:
+            return False
+        return hasattr(caller, 'is_admin') and caller.is_admin
     
     def execute(self, context, args: List[str]) -> CommandResult:
         """执行命令"""
         model_name = args[0].lower()
         
         # 获取模型信息
-        model_info = model_discoverer.get_model_info(model_name)
+        model_info = ModelDiscoverer.get_model_info(model_name)
         if not model_info:
-            available_models = model_discoverer.list_models()
+            available_models = ModelDiscoverer.list_models()
             return CommandResult.error_result(
                 f"未找到模型 '{model_name}'。可用模型: {', '.join(available_models)}"
             )

@@ -78,7 +78,7 @@ class Building(DefaultObject):
             "building_latitude": 22.586667,
             "building_longitude": 114.103611,
             "building_altitude": 0,
-            "building_geojson": {},
+            "building_dtmodels": {},
             
             # ==================== 物理属性 ====================
             "building_area": 5000,  # 建筑面积(平方米)

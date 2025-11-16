@@ -8,8 +8,6 @@ from .system_commands import SYSTEM_COMMANDS
 from .game import GAME_COMMANDS
 from .builder import build_cmdset
 import threading
-from typing import Optional
-import os
 from app.core.log import get_logger, LoggerNames
 logger = get_logger(LoggerNames.COMMAND)
 

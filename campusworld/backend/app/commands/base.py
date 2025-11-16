@@ -23,8 +23,18 @@ class CommandContext:
     username: str
     session_id: str
     permissions: List[str]
+    session: Optional[Any] = None
+    caller: Optional[str] = None
     game_state: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
+
+    def get_caller(self):
+        if self.caller is None and self.session:
+            if hasattr(self.session, 'user_object'):
+                self.caller = self.session.user_object
+            elif hasattr(self.session, '_load_user_object'):
+                self.caller = self.session._load_user_object()
+        return self.caller
     
     def has_permission(self, permission: str) -> bool:
         """检查是否有指定权限"""

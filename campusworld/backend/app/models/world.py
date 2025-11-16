@@ -6,7 +6,7 @@ World: type='world', typeclass='app.models.world.World'
 WorldObject: type='world_object', typeclass='app.models.world.WorldObject'
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Optional, Dict, Any
 from datetime import datetime
 
 from .base import DefaultObject

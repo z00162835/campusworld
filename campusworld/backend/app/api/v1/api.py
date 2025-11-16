@@ -4,7 +4,7 @@ Main API router for CampusWorld
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, users, campus, world
+from app.api.v1.endpoints import auth
 
 api_router = APIRouter()
 
