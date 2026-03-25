@@ -16,6 +16,25 @@ from app.core.config_manager import ConfigManager
 from app.core.settings import create_settings_from_config
 
 
+def _try_load_dotenv() -> bool:
+    """
+    尝试加载 backend/.env 到当前进程环境变量。
+    - 仅用于开发/脚本工具，生产建议用真实环境变量或密钥管理系统注入。
+    """
+    dotenv_path = project_root / ".env"
+    if not dotenv_path.exists():
+        return False
+
+    try:
+        from dotenv import load_dotenv  # type: ignore
+    except Exception:
+        print(f"⚠️  检测到 {dotenv_path}，但未安装 python-dotenv，已跳过加载")
+        return False
+
+    load_dotenv(dotenv_path=dotenv_path, override=False)
+    return True
+
+
 def validate_config():
     """验证配置文件"""
     print("🔍 开始验证CampusWorld配置文件...")
@@ -44,7 +63,7 @@ def validate_config():
     # 测试配置加载
     try:
         print("\n📋 测试配置加载...")
-        config_manager = ConfigManager(str(config_dir))
+        config_manager = ConfigManager()
         
         # 验证配置
         if not config_manager.validate():
@@ -123,6 +142,10 @@ def main():
     """主函数"""
     print("🚀 CampusWorld 配置验证工具")
     print("=" * 50)
+
+    # 尝试加载 .env（混合配置模式：YAML 为主，env 为覆盖）
+    if _try_load_dotenv():
+        print("✅ 已加载 backend/.env（用于环境变量覆盖）")
     
     # 验证配置文件
     config_valid = validate_config()

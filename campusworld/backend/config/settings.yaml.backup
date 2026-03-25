@@ -1,0 +1,151 @@
+# CampusWorld 应用配置文件
+# 按领域组织的配置项
+
+# 项目路径配置
+project:
+  # 项目根目录（相对于当前工作目录或绝对路径）
+  root_dir: "."  # 默认当前目录
+  # 后端目录（相对于项目根目录）
+  backend_dir: "backend"
+  # 前端目录（相对于项目根目录）
+  frontend_dir: "frontend"
+  # 日志目录（相对于后端目录）
+  logs_dir: "logs"
+  # 配置目录（相对于后端目录）
+  config_dir: "config"
+
+# 应用基础配置
+app:
+  name: "CampusWorld"
+  version: "0.1.0"
+  description: "A modern campus world application"
+  debug: false
+
+# API配置
+api:
+  v1_prefix: "/api/v1"
+  title: "CampusWorld API"
+  description: "CampusWorld REST API Documentation"
+  docs_url: "/docs"
+  redoc_url: "/redoc"
+  openapi_url: "/openapi.json"
+
+# 服务器配置
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: true
+  access_log: true
+
+ssh:
+  host: "0.0.0.0"
+  port: 2222
+  max_connections: 10
+  worker_threads: 2
+
+# 安全配置
+security:
+  secret_key: "your-secret-key-here-change-in-production"
+  algorithm: "HS256"
+  access_token_expire_minutes: 11520  # 8 days
+  refresh_token_expire_days: 30
+  password_min_length: 8
+  bcrypt_rounds: 12
+
+# 数据库配置
+database:
+  engine: "postgresql"
+  host: "localhost"
+  port: 5433
+  name: "campusworld_dev"
+  user: "campusworld_dev_user"
+  password: "campusworld_dev_password"
+  pool_size: 20
+  max_overflow: 30
+  pool_pre_ping: true
+  pool_recycle: 300
+  echo: false
+
+# Redis配置
+redis:
+  host: "localhost"
+  port: 6380
+  db: 0
+  password: ""
+  max_connections: 10
+  socket_timeout: 5
+  socket_connect_timeout: 5
+
+# 缓存配置
+cache:
+  default_ttl: 3600  # 1 hour
+  max_size: 1000
+  enable_compression: true
+
+# 日志配置
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  file_name: "campusworld.log"  # 日志文件名
+  max_file_size: "10MB"
+  backup_count: 5
+  console_output: true
+  file_output: true
+  # 模块日志级别
+  module_levels:
+    paramiko: "WARNING"
+    asyncio: "WARNING"
+    urllib3: "WARNING"
+    requests: "WARNING"
+    sqlalchemy: "WARNING"
+
+# CORS配置
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+    - "OPTIONS"
+  allowed_headers:
+    - "*"
+  allow_credentials: true
+  max_age: 86400
+
+# 邮件配置
+email:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_user: ""
+  smtp_password: ""
+  use_tls: true
+  from_email: "noreply@campusworld.com"
+  from_name: "CampusWorld"
+
+# 文件存储配置
+storage:
+  type: "local"  # local, s3, azure, gcs
+  local_path: "uploads/"
+  max_file_size: "10MB"
+  allowed_extensions:
+    - "jpg"
+    - "jpeg"
+    - "png"
+    - "gif"
+    - "pdf"
+    - "doc"
+    - "docx"
+
+# 监控配置
+monitoring:
+  enable_metrics: true
+  metrics_port: 9090
+  health_check_interval: 30
+  enable_tracing: false
+  tracing_host: "localhost"
+  tracing_port: 6831

@@ -1,0 +1,145 @@
+# Game Engine - 游戏引擎
+
+CampusWorld 内容引擎，参考 Evennia 框架设计，提供场景与引擎解耦的基础设施。
+
+## 模块结构
+
+```
+game_engine/
+├── base.py           # 引擎基类
+├── manager.py        # 引擎管理器
+├── loader.py         # 内容加载器
+├── interface.py      # 游戏接口定义
+└── __init__.py
+```
+
+## 核心组件
+
+### GameEngine / BaseGame (基类)
+
+```python
+class GameEngine:
+    """引擎基类"""
+    name: str
+    version: str
+    started: bool
+
+    def start(self) -> bool
+    def stop(self) -> bool
+    def reload(self) -> bool
+    def get_info(self) -> dict
+
+class BaseGame:
+    """游戏基类"""
+    name: str
+    description: str
+```
+
+### GameEngineManager
+
+引擎管理器:
+
+```python
+class GameEngineManager:
+    """游戏引擎管理器"""
+
+    def start_engine(self) -> bool
+    def stop_engine(self) -> bool
+    def get_engine(self) -> GameEngine
+    def reload(self) -> bool
+```
+
+### CampusWorldGameEngine
+
+继承自 GameEngine:
+
+```python
+class CampusWorldGameEngine(GameEngine):
+    def __init__(self):
+        self.loader = GameLoader(self)
+        self.interface = GameInterface(self)
+
+    def start(self) -> bool:
+        loaded_games = self.loader.auto_load_games()
+        return True
+```
+
+### GameLoader
+
+内容加载器:
+
+```python
+class GameLoader:
+    def load_game(self, game_name: str) -> bool
+    def auto_load_games(self) -> List[str]
+    def reload_game(self, game_name: str) -> bool
+```
+
+### GameInterface
+
+游戏接口，提供:
+
+- 玩家状态管理
+- 世界状态查询
+- 命令执行
+- 事件触发
+
+## 使用方式
+
+```python
+from app.game_engine import game_engine_manager, GameEngineManager
+
+# 方式1: 使用全局管理器
+game_engine_manager.start_engine()
+info = game_engine_manager.get_engine().get_info()
+game_engine_manager.stop_engine()
+
+# 方式2: 直接使用
+from app.game_engine import CampusWorldGameEngine
+engine = CampusWorldGameEngine()
+engine.start()
+```
+
+## 游戏内容
+
+游戏内容定义在 `backend/app/games/`:
+
+```
+games/
+├── campus_life/      # 校园生活游戏
+│   ├── game.py      # 游戏定义
+│   ├── commands.py  # 游戏命令
+│   ├── objects.py   # 游戏对象
+│   └── scripts.py   # 脚本
+└── __init__.py
+```
+
+## 导出接口
+
+```python
+from app.game_engine import (
+    GameEngine,
+    BaseGame,
+    GameLoader,
+    GameInterface,
+    GameEngineManager,
+    CampusWorldGameEngine,
+    game_engine_manager
+)
+```
+
+## 生命周期
+
+1. **初始化**: 创建引擎实例
+2. **启动**: 加载游戏内容
+3. **运行**: 处理命令和事件
+4. **停止**: 保存状态，清理资源
+
+## 配置
+
+```yaml
+game_engine:
+  auto_load: true
+  save_interval: 300  # 保存间隔(秒)
+  max_players: 10000
+```

@@ -351,8 +351,23 @@ validate_configs() {
     log_step "验证配置文件..."
     
     # 切换到后端目录
-    cd "$PROJECT_ROOT/backend"
-    
+    cd "$PROJECT_ROOT/backend/scripts"
+
+    # 加载后端 .env（混合配置模式：YAML 为主，env 为覆盖）
+    # 说明：
+    # - setup.sh 运行在单独的 shell 进程中，如果不 source .env，子进程 python 将读不到变量
+    # - 使用 set -a 自动 export，确保变量对子进程可见
+    local backend_env="$PROJECT_ROOT/backend/.env"
+    if [ -f "$backend_env" ]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$backend_env"
+        set +a
+        log_info "已加载后端环境变量文件: $backend_env"
+    else
+        log_warning "后端环境变量文件不存在，跳过加载: $backend_env"
+    fi
+
     # 检查Python环境
     if command -v conda &> /dev/null; then
         eval "$(conda shell.bash hook)"
@@ -549,7 +564,7 @@ init_database() {
     
     # 运行数据库迁移
     log_info "运行数据库迁移..."
-    if python init_database.py; then
+    if python -m db.init_database; then
         log_success "数据库初始化成功"
     else
         log_error "数据库初始化失败"
