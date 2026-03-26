@@ -3,7 +3,10 @@ version: '3.8'
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: docker/postgres17/Dockerfile
     container_name: campusworld_postgres
     environment:
       POSTGRES_DB: campusworld
@@ -11,15 +14,21 @@ services:
       POSTGRES_PASSWORD: campusworld_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/postgres17/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     networks:
       - campusworld_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   # Redis Cache
   redis:
+    platform: linux/arm64
     image: redis:7-alpine
     container_name: campusworld_redis
     ports:
@@ -41,8 +50,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - campusworld_network
     restart: unless-stopped
@@ -63,6 +74,7 @@ services:
 
   # Nginx Reverse Proxy
   nginx:
+    platform: linux/arm64
     image: nginx:alpine
     container_name: campusworld_nginx
     ports:
