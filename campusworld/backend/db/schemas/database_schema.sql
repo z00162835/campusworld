@@ -1,300 +1,286 @@
 -- ==================================================
--- CampusWorld 纯图数据设计 - 修复版数据库建表语句
+-- CampusWorld 纯图数据设计 - 数据库建表语句
 -- ==================================================
--- 
--- 修复问题：
--- 1. 正确的SQL执行顺序
--- 2. 完整的函数定义
--- 3. 事务安全处理
--- 4. 依赖关系管理
+-- 设计要点（Evennia + Palantir 类实践）:
+-- - Evennia: 统一 Node/Relationship + 属性/标签旁路索引；类型表驱动运行时行为
+-- - Palantir 类: 类型层级(parent)、schema_default + inferred_rules(本体/约束)、
+--   ui_config(管理端表单)、审计与可演进元数据；节点侧向量/空间/时序引用可选扩展
 --
--- 作者：AI Assistant
--- 修复时间：2025-08-24
+-- 依赖扩展（按环境安装）:
+-- - pgvector: 语义/结构向量
+-- - postgis:  WGS84 几何与空间索引
+-- - pg_trgm:  模糊搜索
+-- TimescaleDB 为可选：见文件末尾说明块，默认不启用以免破坏纯 PostgreSQL 环境
 -- ==================================================
 
--- 启用必要的扩展
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";  -- 支持模糊搜索
+CREATE EXTENSION IF NOT EXISTS "vector";
+CREATE EXTENSION IF NOT EXISTS "postgis";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- ==================================================
 -- 第一阶段：创建基础表结构
 -- ==================================================
 
--- 1. 节点类型定义表
+-- 1. 节点类型定义表（支持类型层级 + 本体默认 + 推理约束 + 配置 UI）
 CREATE TABLE IF NOT EXISTS node_types (
     id SERIAL PRIMARY KEY,
-    type_code VARCHAR(100) UNIQUE NOT NULL,
+    type_code VARCHAR(128) UNIQUE NOT NULL,
+    parent_type_code VARCHAR(128) REFERENCES node_types (type_code) ON DELETE RESTRICT,
     type_name VARCHAR(255) NOT NULL,
     typeclass VARCHAR(500) NOT NULL,
+    status SMALLINT NOT NULL DEFAULT 0 CHECK (status IN (0, 1, 2)),
     classname VARCHAR(100) NOT NULL,
     module_path VARCHAR(300) NOT NULL,
     description TEXT,
-    schema_definition JSONB DEFAULT '{}',
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    schema_definition JSONB NOT NULL DEFAULT '{}',
+    schema_default JSONB NOT NULL DEFAULT '{}',
+    inferred_rules JSONB NOT NULL DEFAULT '{}',
+    tags JSONB NOT NULL DEFAULT '[]',
+    ui_config JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_node_types_parent_type_code ON node_types (parent_type_code);
+CREATE INDEX IF NOT EXISTS idx_node_types_tags_gin ON node_types USING GIN (tags);
+CREATE INDEX IF NOT EXISTS idx_node_types_schema_definition_gin ON node_types USING GIN (schema_definition);
+CREATE INDEX IF NOT EXISTS idx_node_types_schema_default_gin ON node_types USING GIN (schema_default);
+CREATE INDEX IF NOT EXISTS idx_node_types_inferred_rules_gin ON node_types USING GIN (inferred_rules);
+CREATE INDEX IF NOT EXISTS idx_node_types_ui_config_gin ON node_types USING GIN (ui_config);
+CREATE INDEX IF NOT EXISTS idx_node_types_status ON node_types (status);
+CREATE INDEX IF NOT EXISTS idx_node_types_code ON node_types (type_code);
+CREATE INDEX IF NOT EXISTS idx_node_types_classname ON node_types (classname);
 
 -- 2. 关系类型定义表
 CREATE TABLE IF NOT EXISTS relationship_types (
     id SERIAL PRIMARY KEY,
-    type_code VARCHAR(100) UNIQUE NOT NULL,
+    type_code VARCHAR(128) UNIQUE NOT NULL,
     type_name VARCHAR(255) NOT NULL,
     typeclass VARCHAR(500) NOT NULL,
+    status SMALLINT NOT NULL DEFAULT 0 CHECK (status IN (0, 1, 2)),
+    constraints JSONB NOT NULL DEFAULT '{}',
+    schema_definition JSONB NOT NULL DEFAULT '{}',
+    inferred_rules JSONB NOT NULL DEFAULT '{}',
+    tags JSONB NOT NULL DEFAULT '[]',
+    ui_config JSONB NOT NULL DEFAULT '{}',
     description TEXT,
-    schema_definition JSONB DEFAULT '{}',
-    is_directed BOOLEAN DEFAULT TRUE,
-    is_symmetric BOOLEAN DEFAULT FALSE,
-    is_transitive BOOLEAN DEFAULT FALSE,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    is_directed BOOLEAN NOT NULL DEFAULT TRUE,
+    is_symmetric BOOLEAN NOT NULL DEFAULT FALSE,
+    is_transitive BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. 节点实例表（核心表）
+CREATE INDEX IF NOT EXISTS idx_relationship_types_tags_gin ON relationship_types USING GIN (tags);
+CREATE INDEX IF NOT EXISTS idx_relationship_types_constraints_gin ON relationship_types USING GIN (constraints);
+CREATE INDEX IF NOT EXISTS idx_relationship_types_ui_config_gin ON relationship_types USING GIN (ui_config);
+CREATE INDEX IF NOT EXISTS idx_relationship_types_status ON relationship_types (status);
+CREATE INDEX IF NOT EXISTS idx_relationship_types_code ON relationship_types (type_code);
+
+-- 3. 节点实例表（向量 / PostGIS / GeoJSON / 可选时序引用）
 CREATE TABLE IF NOT EXISTS nodes (
     id SERIAL PRIMARY KEY,
     uuid UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
-    type_id INTEGER NOT NULL,
-    type_code VARCHAR(100) NOT NULL,
+    type_id INTEGER NOT NULL REFERENCES node_types (id) ON DELETE RESTRICT,
+    type_code VARCHAR(128) NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    is_active BOOLEAN DEFAULT TRUE,
-    is_public BOOLEAN DEFAULT TRUE,
-    access_level VARCHAR(50) DEFAULT 'normal',
-    location_id INTEGER,
-    home_id INTEGER,
-    attributes JSONB DEFAULT '{}',
-    tags JSONB DEFAULT '[]',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_public BOOLEAN NOT NULL DEFAULT TRUE,
+    access_level VARCHAR(50) NOT NULL DEFAULT 'normal',
+    location_id INTEGER REFERENCES nodes (id),
+    home_id INTEGER REFERENCES nodes (id),
+    location_geom geometry(Geometry, 4326),
+    home_geom geometry(Geometry, 4326),
+    geom_geojson JSONB,
+    attributes JSONB NOT NULL DEFAULT '{}',
+    tags JSONB NOT NULL DEFAULT '[]',
+    semantic_embedding vector(1536),
+    structure_embedding vector(256),
+    ts_data_ref_id UUID UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. 关系实例表
+-- 4. 关系实例表（与内部整数 id 一致，便于 ORM 与图遍历）
 CREATE TABLE IF NOT EXISTS relationships (
     id SERIAL PRIMARY KEY,
     uuid UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
-    type_id INTEGER NOT NULL,
-    type_code VARCHAR(100) NOT NULL,
-    source_id INTEGER NOT NULL,
-    target_id INTEGER NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    weight INTEGER DEFAULT 1,
-    attributes JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    type_id INTEGER NOT NULL REFERENCES relationship_types (id) ON DELETE RESTRICT,
+    type_code VARCHAR(128) NOT NULL,
+    source_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    target_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    weight INTEGER NOT NULL DEFAULT 1,
+    source_role VARCHAR(128),
+    target_role VARCHAR(128),
+    attributes JSONB NOT NULL DEFAULT '{}',
+    tags JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_relationships_type_code
+        FOREIGN KEY (type_code) REFERENCES relationship_types (type_code) ON DELETE RESTRICT
 );
 
 -- 5. 节点属性索引表
 CREATE TABLE IF NOT EXISTS node_attribute_indexes (
     id SERIAL PRIMARY KEY,
-    node_id INTEGER NOT NULL,
+    node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
     attribute_key VARCHAR(255) NOT NULL,
     attribute_value TEXT,
     attribute_type VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 6. 节点标签索引表
 CREATE TABLE IF NOT EXISTS node_tag_indexes (
     id SERIAL PRIMARY KEY,
-    node_id INTEGER NOT NULL,
+    node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
     tag VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ==================================================
--- 第二阶段：添加外键约束
+-- 第三阶段：索引（几何 / 向量 / 查询）
 -- ==================================================
 
--- 添加外键约束
-ALTER TABLE nodes 
-ADD CONSTRAINT fk_nodes_type_id 
-FOREIGN KEY (type_id) REFERENCES node_types(id);
+CREATE INDEX IF NOT EXISTS idx_nodes_uuid ON nodes (uuid);
+CREATE INDEX IF NOT EXISTS idx_nodes_type_id ON nodes (type_id);
+CREATE INDEX IF NOT EXISTS idx_nodes_type_code ON nodes (type_code);
+CREATE INDEX IF NOT EXISTS idx_nodes_name ON nodes (name);
+CREATE INDEX IF NOT EXISTS idx_nodes_active ON nodes (is_active);
+CREATE INDEX IF NOT EXISTS idx_nodes_public ON nodes (is_public);
+CREATE INDEX IF NOT EXISTS idx_nodes_access_level ON nodes (access_level);
+CREATE INDEX IF NOT EXISTS idx_nodes_location_id ON nodes (location_id);
+CREATE INDEX IF NOT EXISTS idx_nodes_home_id ON nodes (home_id);
+CREATE INDEX IF NOT EXISTS idx_nodes_created_at ON nodes (created_at);
+CREATE INDEX IF NOT EXISTS idx_nodes_updated_at ON nodes (updated_at);
+CREATE INDEX IF NOT EXISTS idx_nodes_ts_data_ref_id ON nodes (ts_data_ref_id) WHERE ts_data_ref_id IS NOT NULL;
 
-ALTER TABLE nodes 
-ADD CONSTRAINT fk_nodes_location_id 
-FOREIGN KEY (location_id) REFERENCES nodes(id);
-
-ALTER TABLE nodes 
-ADD CONSTRAINT fk_nodes_home_id 
-FOREIGN KEY (home_id) REFERENCES nodes(id);
-
-ALTER TABLE relationships 
-ADD CONSTRAINT fk_relationships_type_id 
-FOREIGN KEY (type_id) REFERENCES relationship_types(id);
-
-ALTER TABLE relationships 
-ADD CONSTRAINT fk_relationships_source_id 
-FOREIGN KEY (source_id) REFERENCES nodes(id);
-
-ALTER TABLE relationships 
-ADD CONSTRAINT fk_relationships_target_id 
-FOREIGN KEY (target_id) REFERENCES nodes(id);
-
-ALTER TABLE node_attribute_indexes 
-ADD CONSTRAINT fk_node_attribute_indexes_node_id 
-FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE;
-
-ALTER TABLE node_tag_indexes 
-ADD CONSTRAINT fk_node_tag_indexes_node_id 
-FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE;
-
--- ==================================================
--- 第三阶段：创建索引
--- ==================================================
-
--- 节点类型索引
-CREATE INDEX IF NOT EXISTS idx_node_types_code ON node_types(type_code);
-CREATE INDEX IF NOT EXISTS idx_node_types_classname ON node_types(classname);
-CREATE INDEX IF NOT EXISTS idx_node_types_active ON node_types(is_active);
-
--- 关系类型索引
-CREATE INDEX IF NOT EXISTS idx_relationship_types_code ON relationship_types(type_code);
-CREATE INDEX IF NOT EXISTS idx_relationship_types_active ON relationship_types(is_active);
-
--- 节点表索引
-CREATE INDEX IF NOT EXISTS idx_nodes_uuid ON nodes(uuid);
-CREATE INDEX IF NOT EXISTS idx_nodes_type_id ON nodes(type_id);
-CREATE INDEX IF NOT EXISTS idx_nodes_type_code ON nodes(type_code);
-CREATE INDEX IF NOT EXISTS idx_nodes_name ON nodes(name);
-CREATE INDEX IF NOT EXISTS idx_nodes_active ON nodes(is_active);
-CREATE INDEX IF NOT EXISTS idx_nodes_public ON nodes(is_public);
-CREATE INDEX IF NOT EXISTS idx_nodes_access_level ON nodes(access_level);
-CREATE INDEX IF NOT EXISTS idx_nodes_location_id ON nodes(location_id);
-CREATE INDEX IF NOT EXISTS idx_nodes_home_id ON nodes(home_id);
-CREATE INDEX IF NOT EXISTS idx_nodes_created_at ON nodes(created_at);
-CREATE INDEX IF NOT EXISTS idx_nodes_updated_at ON nodes(updated_at);
-
--- JSONB字段GIN索引
 CREATE INDEX IF NOT EXISTS idx_nodes_attributes_gin ON nodes USING GIN (attributes);
 CREATE INDEX IF NOT EXISTS idx_nodes_tags_gin ON nodes USING GIN (tags);
+CREATE INDEX IF NOT EXISTS idx_nodes_geom_geojson_gin ON nodes USING GIN (geom_geojson);
 
--- 复合索引
-CREATE INDEX IF NOT EXISTS idx_nodes_type_active ON nodes(type_code, is_active);
-CREATE INDEX IF NOT EXISTS idx_nodes_type_public ON nodes(type_code, is_public);
-CREATE INDEX IF NOT EXISTS idx_nodes_location_active ON nodes(location_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_nodes_type_active ON nodes (type_code, is_active);
+CREATE INDEX IF NOT EXISTS idx_nodes_type_public ON nodes (type_code, is_public);
+CREATE INDEX IF NOT EXISTS idx_nodes_location_active ON nodes (location_id, is_active);
 
--- 全文搜索索引
 CREATE INDEX IF NOT EXISTS idx_nodes_name_trgm ON nodes USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_nodes_description_trgm ON nodes USING GIN (description gin_trgm_ops);
 
--- 关系表索引
-CREATE INDEX IF NOT EXISTS idx_relationships_uuid ON relationships(uuid);
-CREATE INDEX IF NOT EXISTS idx_relationships_type_id ON relationships(type_id);
-CREATE INDEX IF NOT EXISTS idx_relationships_type_code ON relationships(type_code);
-CREATE INDEX IF NOT EXISTS idx_relationships_source_id ON relationships(source_id);
-CREATE INDEX IF NOT EXISTS idx_relationships_target_id ON relationships(target_id);
-CREATE INDEX IF NOT EXISTS idx_relationships_active ON relationships(is_active);
-CREATE INDEX IF NOT EXISTS idx_relationships_weight ON relationships(weight);
-CREATE INDEX IF NOT EXISTS idx_relationships_created_at ON relationships(created_at);
+CREATE INDEX IF NOT EXISTS idx_nodes_location_geom_gist ON nodes USING GIST (location_geom) WHERE location_geom IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_nodes_home_geom_gist ON nodes USING GIST (home_geom) WHERE home_geom IS NOT NULL;
 
--- JSONB字段GIN索引
+-- 向量 ANN 索引：建议在有一定数据量后创建（空表/极少行时 ivfflat/hnsw 可能报错或无效）
+-- CREATE INDEX idx_nodes_semantic_embedding_ivfflat ON nodes USING ivfflat (semantic_embedding vector_cosine_ops) WITH (lists = 100);
+-- CREATE INDEX idx_nodes_structure_embedding_ivfflat ON nodes USING ivfflat (structure_embedding vector_cosine_ops) WITH (lists = 50);
+
+CREATE INDEX IF NOT EXISTS idx_relationships_uuid ON relationships (uuid);
+CREATE INDEX IF NOT EXISTS idx_relationships_type_id ON relationships (type_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_type_code ON relationships (type_code);
+CREATE INDEX IF NOT EXISTS idx_relationships_source_id ON relationships (source_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_target_id ON relationships (target_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_active ON relationships (is_active);
+CREATE INDEX IF NOT EXISTS idx_relationships_weight ON relationships (weight);
+CREATE INDEX IF NOT EXISTS idx_relationships_created_at ON relationships (created_at);
 CREATE INDEX IF NOT EXISTS idx_relationships_attributes_gin ON relationships USING GIN (attributes);
+CREATE INDEX IF NOT EXISTS idx_relationships_tags_gin ON relationships USING GIN (tags);
 
--- 复合索引
-CREATE INDEX IF NOT EXISTS idx_relationships_source_type ON relationships(source_id, type_code);
-CREATE INDEX IF NOT EXISTS idx_relationships_target_type ON relationships(target_id, type_code);
-CREATE INDEX IF NOT EXISTS idx_relationships_source_target ON relationships(source_id, target_id);
-CREATE INDEX IF NOT EXISTS idx_relationships_type_active ON relationships(type_code, is_active);
+CREATE INDEX IF NOT EXISTS idx_relationships_source_type ON relationships (source_id, type_code);
+CREATE INDEX IF NOT EXISTS idx_relationships_target_type ON relationships (target_id, type_code);
+CREATE INDEX IF NOT EXISTS idx_relationships_source_target ON relationships (source_id, target_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_type_active ON relationships (type_code, is_active);
 
--- 唯一约束
-CREATE UNIQUE INDEX IF NOT EXISTS idx_relationships_unique 
-ON relationships(source_id, target_id, type_code) 
-WHERE is_active = TRUE;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_relationships_unique_active
+    ON relationships (source_id, target_id, type_code)
+    WHERE is_active = TRUE;
 
--- 根节点唯一约束 - 确保只有一个根节点
-CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_single_root 
-ON nodes(id) 
-WHERE attributes->>'is_root' = 'true' AND is_active = TRUE;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_single_root
+    ON nodes (id)
+    WHERE (attributes->>'is_root') = 'true' AND is_active = TRUE;
 
--- 属性索引表索引
-CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_node_id ON node_attribute_indexes(node_id);
-CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_key ON node_attribute_indexes(attribute_key);
-CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_value ON node_attribute_indexes(attribute_value);
-CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_key_value ON node_attribute_indexes(attribute_key, attribute_value);
-CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_type ON node_attribute_indexes(attribute_type);
+CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_node_id ON node_attribute_indexes (node_id);
+CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_key ON node_attribute_indexes (attribute_key);
+CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_value ON node_attribute_indexes (attribute_value);
+CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_key_value ON node_attribute_indexes (attribute_key, attribute_value);
+CREATE INDEX IF NOT EXISTS idx_node_attribute_indexes_type ON node_attribute_indexes (attribute_type);
 
--- 标签索引表索引
-CREATE INDEX IF NOT EXISTS idx_node_tag_indexes_node_id ON node_tag_indexes(node_id);
-CREATE INDEX IF NOT EXISTS idx_node_tag_indexes_tag ON node_tag_indexes(tag);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_node_tag_indexes_unique ON node_tag_indexes(node_id, tag);
+CREATE INDEX IF NOT EXISTS idx_node_tag_indexes_node_id ON node_tag_indexes (node_id);
+CREATE INDEX IF NOT EXISTS idx_node_tag_indexes_tag ON node_tag_indexes (tag);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_node_tag_indexes_unique ON node_tag_indexes (node_id, tag);
 
 -- ==================================================
--- 第四阶段：创建函数
+-- 第四阶段：触发器函数（属性/标签索引维护 - 增量更新优化）
 -- ==================================================
 
--- 自动更新属性索引的函数
+-- 增量更新节点属性索引：只处理变化的属性
 CREATE OR REPLACE FUNCTION update_node_attribute_indexes()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- 删除旧的属性索引
-    DELETE FROM node_attribute_indexes WHERE node_id = NEW.id;
-    
-    -- 插入新的属性索引
-    IF NEW.attributes IS NOT NULL THEN
-        INSERT INTO node_attribute_indexes (node_id, attribute_key, attribute_value, attribute_type)
-        SELECT 
-            NEW.id,
-            key,
-            CASE 
-                WHEN jsonb_typeof(value) = 'string' THEN value::text
-                WHEN jsonb_typeof(value) = 'number' THEN value::text
-                WHEN jsonb_typeof(value) = 'boolean' THEN value::text
-                ELSE value::text
-            END,
-            jsonb_typeof(value)
-        FROM jsonb_each(NEW.attributes);
+    -- 只在attributes实际变化时更新索引
+    IF OLD.attributes IS DISTINCT FROM NEW.attributes THEN
+        -- 删除旧索引
+        DELETE FROM node_attribute_indexes WHERE node_id = NEW.id;
+
+        -- 增量插入新属性（仅当attributes不为空时）
+        IF NEW.attributes IS NOT NULL AND NEW.attributes <> '{}'::jsonb THEN
+            INSERT INTO node_attribute_indexes (node_id, attribute_key, attribute_value, attribute_type)
+            SELECT
+                NEW.id,
+                key,
+                CASE
+                    WHEN jsonb_typeof(value) = 'string' THEN trim(both '"' from value::text)
+                    WHEN jsonb_typeof(value) IN ('number', 'boolean') THEN value::text
+                    ELSE value::text
+                END,
+                jsonb_typeof(value)
+            FROM jsonb_each(NEW.attributes);
+        END IF;
     END IF;
-    
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- 自动更新标签索引的函数
+-- 增量更新节点标签索引：只在tags实际变化时更新
 CREATE OR REPLACE FUNCTION update_node_tag_indexes()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- 删除旧的标签索引
-    DELETE FROM node_tag_indexes WHERE node_id = NEW.id;
-    
-    -- 插入新的标签索引
-    IF NEW.tags IS NOT NULL AND jsonb_array_length(NEW.tags) > 0 THEN
-        INSERT INTO node_tag_indexes (node_id, tag)
-        SELECT NEW.id, jsonb_array_elements_text(NEW.tags);
+    -- 只在tags实际变化时更新索引
+    IF OLD.tags IS DISTINCT FROM NEW.tags THEN
+        -- 删除旧索引
+        DELETE FROM node_tag_indexes WHERE node_id = NEW.id;
+
+        -- 增量插入新标签（仅当tags不为空时）
+        IF NEW.tags IS NOT NULL AND jsonb_array_length(NEW.tags) > 0 THEN
+            INSERT INTO node_tag_indexes (node_id, tag)
+            SELECT NEW.id, jsonb_array_elements_text(NEW.tags);
+        END IF;
     END IF;
-    
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- ==================================================
--- 第五阶段：创建触发器
--- ==================================================
-
--- 节点属性变化时自动更新索引
 DROP TRIGGER IF EXISTS trigger_update_node_attribute_indexes ON nodes;
 CREATE TRIGGER trigger_update_node_attribute_indexes
-    AFTER INSERT OR UPDATE ON nodes
+    AFTER INSERT OR UPDATE OF attributes ON nodes
     FOR EACH ROW
-    EXECUTE FUNCTION update_node_attribute_indexes();
+    EXECUTE PROCEDURE update_node_attribute_indexes();
 
--- 节点标签变化时自动更新索引
 DROP TRIGGER IF EXISTS trigger_update_node_tag_indexes ON nodes;
 CREATE TRIGGER trigger_update_node_tag_indexes
-    AFTER INSERT OR UPDATE ON nodes
+    AFTER INSERT OR UPDATE OF tags ON nodes
     FOR EACH ROW
-    EXECUTE FUNCTION update_node_tag_indexes();
+    EXECUTE PROCEDURE update_node_tag_indexes();
 
 -- ==================================================
--- 第六阶段：创建视图
+-- 第五阶段：视图
 -- ==================================================
 
--- 活跃节点视图
 DROP VIEW IF EXISTS active_nodes;
 CREATE VIEW active_nodes AS
-SELECT 
+SELECT
     n.id,
     n.uuid,
     n.name,
@@ -303,71 +289,107 @@ SELECT
     n.access_level,
     n.location_id,
     n.home_id,
+    n.location_geom,
+    n.home_geom,
+    n.geom_geojson,
+    n.ts_data_ref_id,
     nt.type_code,
     nt.type_name,
     nt.classname,
+    nt.parent_type_code,
     n.attributes,
     n.tags,
     n.created_at,
     n.updated_at
 FROM nodes n
 JOIN node_types nt ON n.type_id = nt.id
-WHERE n.is_active = TRUE;
+WHERE n.is_active = TRUE AND nt.status = 0;
 
--- 活跃关系视图
 DROP VIEW IF EXISTS active_relationships;
 CREATE VIEW active_relationships AS
-SELECT 
+SELECT
     r.id,
     r.uuid,
     r.source_id,
     r.target_id,
     r.weight,
+    r.source_role,
+    r.target_role,
     rt.type_code,
     rt.type_name,
     rt.is_directed,
     rt.is_symmetric,
     r.attributes,
+    r.tags,
     r.created_at,
     r.updated_at
 FROM relationships r
 JOIN relationship_types rt ON r.type_id = rt.id
-WHERE r.is_active = TRUE;
+WHERE r.is_active = TRUE AND rt.status = 0;
 
 -- ==================================================
--- 第七阶段：插入初始数据
+-- 第六阶段：初始数据（无父类型先行插入）
 -- ==================================================
 
--- 插入节点类型
-INSERT INTO node_types (type_code, type_name, typeclass, classname, module_path, description) VALUES
-('user', '用户', 'app.models.user.User', 'User', 'app.models.user', '系统用户'),
-('campus', '校园', 'app.models.campus.Campus', 'Campus', 'app.models.campus', '校园实体'),
-('world', '世界', 'app.models.world.World', 'World', 'app.models.world', '场景世界'),
-('world_object', '世界对象', 'app.models.world.WorldObject', 'WorldObject', 'app.models.world', '世界中的对象')
+INSERT INTO node_types (
+    type_code, parent_type_code, type_name, typeclass, status, classname, module_path, description,
+    schema_definition, schema_default, inferred_rules, tags, ui_config
+) VALUES
+('user', NULL, '用户', 'app.models.user.User', 0, 'User', 'app.models.user', '系统用户',
+ '{}', '{}', '{}', '[]', '{}'),
+('campus', NULL, '校园', 'app.models.campus.Campus', 0, 'Campus', 'app.models.campus', '校园实体',
+ '{}', '{}', '{}', '[]', '{}'),
+('world', NULL, '世界', 'app.models.world.World', 0, 'World', 'app.models.world', '场景世界',
+ '{}', '{}', '{}', '[]', '{}'),
+('world_object', NULL, '世界对象', 'app.models.world.WorldObject', 0, 'WorldObject', 'app.models.world', '世界中的对象',
+ '{}', '{}', '{}', '[]', '{}')
 ON CONFLICT (type_code) DO NOTHING;
 
--- 插入关系类型
-INSERT INTO relationship_types (type_code, type_name, typeclass, description, is_directed, is_symmetric) VALUES
-('member', '成员关系', 'app.models.relationships.MemberRelationship', '用户与校园/世界的成员关系', TRUE, FALSE),
-('friend', '朋友关系', 'app.models.relationships.FriendRelationship', '用户间的朋友关系', FALSE, TRUE),
-('owns', '拥有关系', 'app.models.relationships.OwnershipRelationship', '所有权关系', TRUE, FALSE),
-('location', '位置关系', 'app.models.relationships.LocationRelationship', '位置关系', TRUE, FALSE)
+INSERT INTO relationship_types (
+    type_code, type_name, typeclass, status, description,
+    constraints, schema_definition, inferred_rules, tags, ui_config,
+    is_directed, is_symmetric, is_transitive
+) VALUES
+('member', '成员关系', 'app.models.relationships.MemberRelationship', 0, '用户与校园/世界的成员关系',
+ '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE),
+('friend', '朋友关系', 'app.models.relationships.FriendRelationship', 0, '用户间的朋友关系',
+ '{}', '{}', '{}', '[]', '{}', FALSE, TRUE, FALSE),
+('owns', '拥有关系', 'app.models.relationships.OwnershipRelationship', 0, '所有权关系',
+ '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE),
+('location', '位置关系', 'app.models.relationships.LocationRelationship', 0, '位置关系',
+ '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE)
 ON CONFLICT (type_code) DO NOTHING;
 
 -- ==================================================
--- 第八阶段：添加表注释
+-- 注释（供 DBA / 配置 UI 生成器阅读）
 -- ==================================================
 
-COMMENT ON TABLE nodes IS '图节点实例表 - 存储所有对象实例';
-COMMENT ON TABLE relationships IS '图关系实例表 - 存储节点间关系';
-COMMENT ON TABLE node_types IS '节点类型定义表 - 定义可用的节点类型';
-COMMENT ON TABLE relationship_types IS '关系类型定义表 - 定义可用的关系类型';
-COMMENT ON TABLE node_attribute_indexes IS '节点属性索引表 - 优化属性查询性能';
-COMMENT ON TABLE node_tag_indexes IS '节点标签索引表 - 优化标签查询性能';
+COMMENT ON TABLE node_types IS '节点类型本体：层级(parent_type_code)、默认结构(schema_default)、推理约束(inferred_rules)、管理端 ui_config(JSON)';
+COMMENT ON COLUMN node_types.schema_default IS '新建该类型节点时合并到 attributes 的默认键值（Evennia 类默认属性）';
+COMMENT ON COLUMN node_types.inferred_rules IS '可选：JSON 规则，如下游校验、必填字段、关系基数（Palantir 类 ontology constraints 的轻量版）';
+COMMENT ON COLUMN node_types.ui_config IS '管理端表单：如 {"fields":[{"key":"name","widget":"text"}],"layout":"tabs"}';
+
+COMMENT ON COLUMN nodes.location_geom IS 'PostGIS geometry, SRID 4326；点/线/面均可';
+COMMENT ON COLUMN nodes.geom_geojson IS 'RFC 7946 GeoJSON 缓存；与 location_geom 应在应用层保持一致';
+COMMENT ON COLUMN nodes.semantic_embedding IS '文本/多模态语义向量（pgvector）';
+COMMENT ON COLUMN nodes.structure_embedding IS '图结构/拓扑 embedding（维度可随模型调整）';
+COMMENT ON COLUMN nodes.ts_data_ref_id IS '可选：关联时序数据（TimescaleDB hypertable 或外部 series UUID）';
+
+COMMENT ON TABLE relationships IS '图边；source_role/target_role 可用于本体角色（Palantir link roles）';
 
 -- ==================================================
--- 建表完成！
+-- 可选：TimescaleDB（需单独安装 TimescaleDB 扩展）
 -- ==================================================
+-- CREATE EXTENSION IF NOT EXISTS timescaledb;
+-- CREATE TABLE IF NOT EXISTS node_time_series (
+--     time TIMESTAMPTZ NOT NULL,
+--     series_id UUID NOT NULL,
+--     node_id INTEGER REFERENCES nodes(id) ON DELETE CASCADE,
+--     metric TEXT NOT NULL,
+--     value DOUBLE PRECISION,
+--     labels JSONB NOT NULL DEFAULT '{}'
+-- );
+-- SELECT create_hypertable('node_time_series', 'time', if_not_exists => TRUE);
+-- 然后在 nodes.ts_data_ref_id 中存 series_id 或与 hypertable 主键对齐。
 
--- 验证表创建
-SELECT 'Tables created successfully' as status;
+SELECT 'Tables created successfully' AS status;
