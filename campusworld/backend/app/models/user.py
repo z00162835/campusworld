@@ -12,7 +12,7 @@ from .base import DefaultAccount
 from .root_manager import root_manager
 from  app.core.log import get_logger, LoggerNames;
 from .graph import Node
-from app.core.database import SessionLocal
+from app.core.database import db_session_context
 
 
 class User(DefaultAccount):
@@ -424,16 +424,15 @@ class User(DefaultAccount):
         try:
             if not self.location_id:
                 return None
-            
-            session = SessionLocal()
-            try:
+
+            with db_session_context() as session:
                 location_node = session.query(Node).filter(
                     Node.id == self.location_id
                 ).first()
-                
+
                 if not location_node:
                     return None
-                
+
                 return {
                     'id': location_node.id,
                     'uuid': str(location_node.uuid),
@@ -446,10 +445,7 @@ class User(DefaultAccount):
                     'is_public': location_node.is_public,
                     'is_accessible': location_node.attributes.get('is_accessible', True) if location_node.attributes else True
                 }
-                
-            finally:
-                session.close()
-                
+
         except Exception as e:
             self.logger.error(f"获取当前位置信息失败: {e}")
             return None
@@ -457,38 +453,34 @@ class User(DefaultAccount):
     def can_enter_location(self, location_id: int) -> bool:
         """检查是否可以进入指定位置"""
         try:
-            session = SessionLocal()
-            try:
+            with db_session_context() as session:
                 location_node = session.query(Node).filter(
                     Node.id == location_id
                 ).first()
-                
+
                 if not location_node:
                     return False
-                
+
                 # 检查位置是否可访问
                 if not location_node.attributes.get('is_accessible', True) if location_node.attributes else True:
                     return False
-                
+
                 # 检查权限要求
                 required_permissions = location_node.attributes.get('permission_required', []) if location_node.attributes else []
                 if required_permissions:
                     for permission in required_permissions:
                         if not self.has_permission(permission):
                             return False
-                
+
                 # 检查角色要求
                 required_roles = location_node.attributes.get('role_required', []) if location_node.attributes else []
                 if required_roles:
                     user_roles = self._node_attributes.get('roles', [])
                     if not any(role in user_roles for role in required_roles):
                         return False
-                
+
                 return True
-                
-            finally:
-                session.close()
-                
+
         except Exception as e:
             self.logger.error(f"检查位置访问权限失败: {e}")
             return False
@@ -529,20 +521,16 @@ class User(DefaultAccount):
         try:
             if not self.location_id:
                 return False
-            session = SessionLocal()
-            try:
+            with db_session_context() as session:
                 location_node = session.query(Node).filter(
                     Node.id == self.location_id
                 ).first()
-                
+
                 if not location_node:
                     return False
-                
+
                 return location_node.attributes.get('is_root', False) if location_node.attributes else False
-                
-            finally:
-                session.close()
-                
+
         except Exception as e:
             self.logger.error(f"检查是否在奇点房间失败: {e}")
             return False

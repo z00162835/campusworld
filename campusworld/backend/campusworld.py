@@ -156,31 +156,38 @@ class CampusWorld:
             if self.is_running:
                 self.logger.warning("CampusWorld已在运行中")
                 return True
-            
+
             self.start_time = time.time()
             self.is_running = True
-            
+
             self.logger.info("正在启动CampusWorld系统...")
-            
+
             # 1. 加载配置
             if not self.load_config():
                 return False
-            
-            # 2. 初始化场景
-            if not self.initialize_games():
+
+            # 2. 初始化并启动游戏引擎（统一处理）
+            if not self.game_engine_manager.initialize_engine():
+                self.logger.error("引擎初始化失败")
                 return False
-            
-            # 3. 初始化SSH服务器
-            if not self.initialize_ssh_server():
+            if not self.game_engine_manager.start_engine():
+                self.logger.error("引擎启动失败")
                 return False
-            
-            # 4. 启动SSH服务器
-            if not self.start_ssh_server():
-                return False
-            
+
+            # 3. 初始化并启动SSH服务器
+            ssh_config = self.config_manager.get_ssh_config()
+            host = ssh_config.get('host', '0.0.0.0')
+            port = ssh_config.get('port', 2222)
+            max_connections = ssh_config.get('max_connections', 10)
+
+            self.logger.info(f"SSH配置: host={host}, port={port}, max_connections={max_connections}")
+
+            self.ssh_server = CampusWorldSSHServer(host=host, port=port)
+            self.ssh_server.start()
+
             self.logger.info("CampusWorld系统启动成功")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"CampusWorld系统启动失败: {e}", exc_info=True, extra={
                 "error_type": "system_start_error",

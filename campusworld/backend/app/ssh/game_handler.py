@@ -9,7 +9,7 @@ import time
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-from app.core.database import SessionLocal
+from app.core.database import db_session_context
 from app.core.log import get_logger, LoggerNames
 from app.models.graph import Node
 from app.models.root_manager import root_manager
@@ -57,7 +57,7 @@ class GameHandler:
 
         start_time = time.time()
         try:
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 # 查找用户账号
                 user_node = session.query(Node).filter(
                     Node.type_code == "account",
@@ -209,7 +209,7 @@ class GameHandler:
             是否成功
         """
         try:
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 # 确保根节点存在
                 if not root_manager.ensure_root_node_exists():
                     self.security_logger.warning(
@@ -266,7 +266,7 @@ class GameHandler:
             位置信息字典或None
         """
         try:
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 user_node = session.query(Node).filter(Node.id == user_id).first()
                 if not user_node or not user_node.location_id:
                     return None
@@ -299,7 +299,7 @@ class GameHandler:
             是否成功
         """
         try:
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 user_node = session.query(Node).filter(Node.id == user_id).first()
                 if user_node:
                     attrs = user_node.attributes

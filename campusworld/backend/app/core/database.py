@@ -135,7 +135,18 @@ def get_db_session() -> Session:
 def init_db() -> bool:
     """初始化数据库表"""
     try:
+        # 关键：确保所有 ORM 模型已被导入并注册到 Base.metadata
+        # 否则 Base.metadata 为空，create_all() 会“成功执行但不创建任何表”
+        import app.models  # noqa: F401
+
         engine = _create_engine()
+
+        if not Base.metadata.tables:
+            raise RuntimeError(
+                "未加载到任何 ORM 表定义（Base.metadata.tables 为空）。"
+                "请检查模型是否正确导入并继承 app.core.database.Base。"
+            )
+
         Base.metadata.create_all(bind=engine)
         logger.info("数据库表初始化成功")
         return True
@@ -205,15 +216,156 @@ SessionLocal = _get_session_local()
 # engine 应该是一个实例，不是函数
 engine = _get_engine_global()
 
+
+# ==================================================
+# 统一 Session 管理工具（解决Session管理混乱问题）
+# ==================================================
+
+from contextlib import contextmanager
+from functools import wraps
+from typing import Callable, TypeVar, Any, Optional
+from sqlalchemy.orm import Session
+
+T = TypeVar('T')
+
+
+@contextmanager
+def db_session_context() -> Session:
+    """
+    统一的Session上下文管理器（推荐使用）
+
+    用法:
+        with db_session_context() as session:
+            # 使用 session 查询
+            ...
+        # session 自动关闭和释放
+
+    替代以下模式:
+        - session = SessionLocal(); ...; session.close() ❌
+        - with SessionLocal() as session: ... ✅ (保留但推荐统一)
+        - get_db_session() (仅FastAPI依赖注入场景)
+    """
+    SessionFactory = _create_session_factory()
+    session = SessionFactory()
+    try:
+        yield session
+    except SQLAlchemyError as e:
+        logger.error(f"数据库操作失败，回滚事务: {e}")
+        session.rollback()
+        raise
+    except Exception as e:
+        logger.error(f"数据库会话异常，回滚事务: {e}")
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def get_session() -> Session:
+    """
+    获取一个新的Session实例（需手动管理生命周期）
+
+    用法:
+        session = get_session()
+        try:
+            # 使用 session
+            ...
+        finally:
+            session.close()
+
+    注意: 推荐使用 db_session_context() 上下文管理器
+    """
+    SessionFactory = _create_session_factory()
+    return SessionFactory()
+
+
+def run_in_session(func: Callable[..., T]) -> Callable[..., T]:
+    """
+    装饰器: 在统一的Session上下文中执行函数
+
+    用法:
+        @run_in_session
+        def my_query(user_id: int):
+            return session.query(User).filter(User.id == user_id).first()
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with db_session_context() as session:
+            return func(session, *args, **kwargs)
+    return wrapper
+
+
+def run_in_session_with_result(func: Callable[..., T]) -> Callable[..., T]:
+    """
+    装饰器: 在统一的Session上下文中执行函数，传递session作为第一个参数
+
+    用法:
+        @run_in_session_with_result
+        def get_user(session, user_id: int):
+            return session.query(User).filter(User.id == user_id).first()
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with db_session_context() as session:
+            return func(session, *args, **kwargs)
+    return wrapper
+
+
+# ==================================================
+# 便捷查询方法
+# ==================================================
+
+def execute_query(query_func: Callable[[Session], Any], default_return=None) -> Any:
+    """
+    执行查询的便捷方法，自动管理Session
+
+    用法:
+        users = execute_query(lambda s: s.query(User).all(), default_return=[])
+    """
+    try:
+        with db_session_context() as session:
+            return query_func(session)
+    except Exception as e:
+        logger.error(f"查询执行失败: {e}")
+        return default_return
+
+
+def execute_write(write_func: Callable[[Session], Any], default_return=None) -> Any:
+    """
+    执行写操作的便捷方法，自动管理Session和事务
+
+    用法:
+        new_user = execute_write(lambda s: create_user(s, data))
+    """
+    try:
+        with db_session_context() as session:
+            result = write_func(session)
+            session.commit()
+            return result
+    except SQLAlchemyError as e:
+        logger.error(f"写操作失败: {e}")
+        return default_return
+    except Exception as e:
+        logger.error(f"写操作异常: {e}")
+        return default_return
+
+
 # 更新 __all__
 __all__ = [
     'get_db',
-    'get_db_session', 
+    'get_db_session',
     'get_engine',
     'init_db',
     'check_db_connection',
     'get_database_info',
     'Base',
     'SessionLocal',  # 向后兼容
-    'engine'         # 向后兼容
+    'engine',         # 向后兼容
+    # 统一Session管理工具
+    'db_session_context',
+    'get_session',
+    'run_in_session',
+    'run_in_session_with_result',
+    'execute_query',
+    'execute_write',
 ]
