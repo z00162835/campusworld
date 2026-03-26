@@ -43,6 +43,9 @@ def main():
         
         # 导入数据库模块
         try:
+            # 关键：确保 ORM 模型被导入，从而注册到 Base.metadata
+            import app.models  # noqa: F401
+
             from app.core.database import init_db, engine
             print("✅ 数据库模块导入成功")
         except ImportError as e:
@@ -65,6 +68,43 @@ def main():
             print("初始化数据库表...")
             init_db()
             print("✅ 数据库初始化完成")
+
+            # 轻量 schema 兼容迁移（让旧库补齐新增字段）
+            schema_ok = True
+            try:
+                from db.schema_migrations import ensure_graph_schema
+
+                ensure_graph_schema(engine)
+                print("✅ schema 兼容迁移完成")
+            except Exception as e:
+                schema_ok = False
+                print(f"⚠️  schema 兼容迁移跳过/失败: {e}")
+
+            # 可选：开发环境种子数据
+            try:
+                from app.core.config_manager import get_setting
+
+                seed_enabled = bool(get_setting("development.seed_data", False))
+                # env 覆盖（更直观）：CAMPUSWORLD_DEVELOPMENT_SEED_DATA=true/false
+                env_override = os.getenv("CAMPUSWORLD_DEVELOPMENT_SEED_DATA")
+                if env_override is not None:
+                    seed_enabled = env_override.lower() == "true"
+
+                if seed_enabled:
+                    if not schema_ok:
+                        print("⚠️  种子数据跳过：schema 兼容迁移未完成（通常是缺少 postgis/vector 扩展）")
+                        return True
+                    print("🌱 开始初始化种子数据（development.seed_data=true）...")
+                    from db.seed_data import seed_minimal
+
+                    if seed_minimal():
+                        print("✅ 种子数据初始化完成")
+                    else:
+                        print("❌ 种子数据初始化失败")
+                        return False
+            except Exception as e:
+                print(f"⚠️  种子数据阶段跳过/失败: {e}")
+
             return True
         except Exception as e:
             print(f"❌ 数据库初始化失败: {e}")

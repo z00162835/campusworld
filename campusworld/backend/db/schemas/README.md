@@ -1,4 +1,21 @@
-# CampusWorld 数据库Schema工具 - 修复版
+# CampusWorld 数据库Schema工具
+
+## 当前图模式设计（Evennia + Palantir 类实践）
+
+`database_schema.sql` 实现以下能力，并与 `app.models.graph` 对齐：
+
+| 能力 | 说明 |
+|------|------|
+| **类型层级** | `node_types.parent_type_code` 自引用，插入子类型前须先有父类型 `type_code`。 |
+| **本体默认 / 推理** | `schema_default`（新建节点默认属性）、`inferred_rules`（轻量规则 JSON）、`relationship_types.constraints`（端点类型等）。 |
+| **配置 UI** | `ui_config`：管理端表单布局/控件描述（JSON），由前端按约定渲染。 |
+| **向量** | `nodes.semantic_embedding` / `structure_embedding`（pgvector `vector`）；ANN 索引请在有数据后按需 `CREATE INDEX`（文件内已注释示例）。 |
+| **GIS + GeoJSON** | `location_geom` / `home_geom`（PostGIS，SRID 4326）+ `geom_geojson`（API 互换；应用层负责与 geometry 一致）。 |
+| **时序** | `ts_data_ref_id` 可选 UUID；TimescaleDB hypertable 示例见 SQL 文件末尾注释块。 |
+
+**数据库依赖**：PostgreSQL 需安装扩展 `uuid-ossp`、`vector`、`postgis`、`pg_trgm`。Docker 镜像需基于带 PostGIS/pgvector 的发行版（或自行安装）。**TimescaleDB 为可选**，未安装时不要执行文件末尾注释中的 `timescaledb` 语句。
+
+**触发器语法**：若 `EXECUTE PROCEDURE` 报错，可改为 PostgreSQL 14+ 的 `EXECUTE FUNCTION`（视实例版本而定）。
 
 ## 📋 问题分析
 
