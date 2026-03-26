@@ -14,6 +14,7 @@ import threading
 import time
 from typing import Dict, Optional
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, Future
 
 import paramiko
 from paramiko import ServerInterface
@@ -79,10 +80,22 @@ class CampusWorldSSHServer:
         # 创建SSH服务器接口（Protocol Layer）
         self.ssh_interface = CampusWorldSSHServerInterface()
 
+        # 线程池配置 - 从配置文件读取
+        max_workers = get_setting('ssh.worker_pool_size', 50)
+        self.executor = ThreadPoolExecutor(
+            max_workers=max_workers,
+            thread_name_prefix='ssh_client'
+        )
+
+        # 跟踪活跃的客户端连接
+        self.active_connections: Dict[str, Future] = {}
+        self.connections_lock = threading.Lock()
+
         # 记录服务器初始化
         self.logger.info(f"SSH服务器初始化", extra={
             'host': self.host,
             'port': self.port,
+            'max_workers': max_workers,
             'event_type': 'ssh_server_init'
         })
 
@@ -128,10 +141,14 @@ class CampusWorldSSHServer:
                         'event_type': 'ssh_connection_accepted'
                     })
 
-                    # 为每个连接创建新线程
-                    t = threading.Thread(target=self._handle_client, args=(client, addr))
-                    t.daemon = True
-                    t.start()
+                    # 使用线程池处理连接
+                    future = self.executor.submit(self._handle_client, client, addr)
+                    with self.connections_lock:
+                        connection_id = f"{addr[0]}:{addr[1]}"
+                        self.active_connections[connection_id] = future
+
+                    # 清理完成的连接
+                    self._cleanup_completed_connections()
 
                 except Exception as e:
                     if self.running:
@@ -331,6 +348,13 @@ class CampusWorldSSHServer:
 
         self.running = False
 
+        # 关闭线程池
+        if self.executor:
+            self.executor.shutdown(wait=True)
+            self.logger.info(f"SSH线程池已关闭", extra={
+                'event_type': 'ssh_executor_shutdown'
+            })
+
         if self.server_socket:
             try:
                 self.server_socket.close()
@@ -372,6 +396,20 @@ class CampusWorldSSHServer:
             'stop_time': datetime.now().isoformat(),
             'event_type': 'ssh_server_shutdown'
         })
+
+    def _cleanup_completed_connections(self):
+        """清理已完成的连接"""
+        with self.connections_lock:
+            completed = []
+            for conn_id, future in self.active_connections.items():
+                if future.done():
+                    completed.append(conn_id)
+
+            for conn_id in completed:
+                del self.active_connections[conn_id]
+
+            if completed:
+                self.logger.debug(f"清理了 {len(completed)} 个已完成连接")
 
 
 def start_ssh_server(host: str = None, port: int = None):

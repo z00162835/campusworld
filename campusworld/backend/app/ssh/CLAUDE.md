@@ -145,13 +145,14 @@ ssh:
   host_key_path: ssh_host_key
   auth_timeout: 60
   banner: "Welcome to CampusWorld"
+  worker_pool_size: 50
   # 连接速率限制
   rate_limit:
-    max_connections_per_minute: 10  # 每分钟最大连接数
-    max_failed_attempts: 5           # 最大失败尝试次数
-    lockout_duration: 300            # 锁定时长（秒）
-    attempt_window: 300              # 尝试窗口时间（秒）
-    connection_window: 60            # 连接窗口时间（秒）
+    max_connections_per_minute: 10
+    max_failed_attempts: 5
+    lockout_duration: 300
+    attempt_window: 300
+    connection_window: 60
 ```
 
 ## 连接方式
@@ -175,3 +176,4 @@ ssh username@localhost -p 2222
 - **连接速率限制**：防止暴力破解和DDoS攻击
 - **登录失败追踪**：自动锁定可疑IP
 - **白名单支持**：管理员可排除特定IP
+- **线程池管理**：使用ThreadPoolExecutor管理客户端连接，优化资源使用
