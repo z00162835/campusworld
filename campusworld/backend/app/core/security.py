@@ -26,7 +26,8 @@ SECRET_KEY = get_setting('security.secret_key', 'your-secret-key-here')
 ACCESS_TOKEN_EXPIRE_MINUTES = get_setting('security.access_token_expire_minutes', 11520)
 
 # 密码加密上下文
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# 使用 Argon2id（通过 passlib 的 "argon2" scheme）替代 bcrypt，避免 bcrypt 72-byte 限制/后端兼容问题影响 seed。
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # JWT令牌配置
 ALGORITHM = "HS256"
