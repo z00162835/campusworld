@@ -8,7 +8,7 @@
 - 通过type和typeclass区分不同的对象类型
 """
 
-import uuid
+import uuid as uuidlib
 from typing import Dict, Any, List, Optional, Type, Union, TYPE_CHECKING
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index, UniqueConstraint, or_, and_, SmallInteger
 from sqlalchemy.sql import func
@@ -106,7 +106,7 @@ class Node(Base, BaseNode):
     
     # 基础标识 - 修复类型匹配
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, index=True, default=uuid.uuid4)
+    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, index=True, default=uuidlib.uuid4)
     
     # 类型元数据
     type_id = Column(Integer, ForeignKey("node_types.id"), nullable=False)
@@ -244,10 +244,10 @@ class Node(Base, BaseNode):
     
     # ORM查询方法
     @classmethod
-    def get_by_uuid(cls, session: Session, uid: Union[str, uuid.UUID]) -> Optional["Node"]:
+    def get_by_uuid(cls, session: Session, uid: Union[str, uuidlib.UUID]) -> Optional["Node"]:
         """根据UUID获取节点"""
         try:
-            u = uuid.UUID(str(uid)) if uid is not None else None
+            u = uuidlib.UUID(str(uid)) if uid is not None else None
         except (ValueError, TypeError):
             return None
         if u is None:
@@ -409,7 +409,7 @@ class Relationship(Base, BaseRelationship):
     
     # 基础标识
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, index=True, default=uuid.uuid4)
+    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, index=True, default=uuidlib.uuid4)
 
     # 关系类型
     type_id = Column(Integer, ForeignKey("relationship_types.id"), nullable=False)
@@ -494,10 +494,10 @@ class Relationship(Base, BaseRelationship):
     
     # ORM查询方法
     @classmethod
-    def get_by_uuid(cls, session: Session, uid: Union[str, uuid.UUID]) -> Optional["Relationship"]:
+    def get_by_uuid(cls, session: Session, uid: Union[str, uuidlib.UUID]) -> Optional["Relationship"]:
         """根据UUID获取关系"""
         try:
-            u = uuid.UUID(str(uid)) if uid is not None else None
+            u = uuidlib.UUID(str(uid)) if uid is not None else None
         except (ValueError, TypeError):
             return None
         if u is None:
