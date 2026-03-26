@@ -227,6 +227,20 @@ class PermissionManager:
         """检查角色是否有指定权限"""
         role_perms = self.get_role_permissions(role)
         return permission in role_perms
+
+    def check_role_permission_str(self, role: Role, required_permission: str) -> bool:
+        """
+        检查角色是否具备字符串权限（支持通配符）。
+
+        说明：
+        - 代码库里账号默认权限以字符串形式存储（如 `user.*`, `system.debug`）
+        - 同时保留 Enum 版本用于更严格的权限域
+        """
+        if not required_permission:
+            return False
+
+        patterns = ROLE_STRING_PERMISSIONS.get(role, [])
+        return permission_checker.check_permission(patterns, required_permission)
     
     def check_permission_level(self, user_level: PermissionLevel, required_level: PermissionLevel) -> bool:
         """检查用户级别是否满足要求"""
@@ -272,6 +286,44 @@ class PermissionManager:
 
 # 全局权限管理器实例
 permission_manager = PermissionManager()
+
+# 角色→字符串权限映射（与 app/models/accounts.py 默认权限对齐）
+ROLE_STRING_PERMISSIONS: Dict[Role, List[str]] = {
+    Role.GUEST: [
+        "user.login",
+        "user.view_profile",
+    ],
+    Role.USER: [
+        "user.login",
+        "user.logout",
+        "user.view_profile",
+        "user.edit_profile",
+        "campus.view",
+        "world.view",
+    ],
+    Role.DEVELOPER: [
+        "user.view",
+        "campus.view",
+        "campus.edit",
+        "campus.manage",
+        "world.view",
+        "world.edit",
+        "world.manage",
+        "system.view",
+        "system.debug",
+        "system.test",
+        "system.develop",
+        "logs.view",
+    ],
+    Role.ADMIN: [
+        "user.*",
+        "campus.*",
+        "world.*",
+        "system.*",
+        "admin.*",
+    ],
+    Role.OWNER: ["*"],
+}
 
 
 class PermissionChecker:
