@@ -9,8 +9,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 from .base import DefaultAccount
-from .root_manager import root_manager
-from  app.core.log import get_logger, LoggerNames;
+from app.core.log import get_logger, LoggerNames
 from .graph import Node
 from app.core.database import db_session_context
 
@@ -340,33 +339,36 @@ class User(DefaultAccount):
     def spawn_to_singularity_room(self) -> bool:
         """
         将用户spawn到奇点房间
-        
+
         参考Evennia的DefaultHome设计，确保用户登录后出现在Singularity Room
         """
         try:
+            # 动态导入避免循环依赖
+            from app.models.root_manager import root_manager
+
             # 确保根节点存在
             if not root_manager.ensure_root_node_exists():
                 self.logger.error("无法确保根节点存在")
                 return False
-            
+
             # 获取根节点
             root_node = root_manager.get_root_node()
             if not root_node:
                 self.logger.error("无法获取根节点")
                 return False
-            
+
             # 设置用户位置到根节点
             self.location_id = root_node.id
             self.home_id = root_node.id  # 同时设置为home
-            
+
             # 更新最后活动时间
             self.set_node_attribute('last_activity', datetime.now().isoformat())
-            
+
             # 同步到数据库
             self.sync_to_node()
-            
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"用户spawn到奇点房间失败: {e}")
             return False
@@ -396,25 +398,28 @@ class User(DefaultAccount):
     def set_home_to_singularity_room(self) -> bool:
         """
         将用户的home设置为奇点房间
-        
+
         确保所有用户的默认home都是奇点房间
         """
         try:
+            # 动态导入避免循环依赖
+            from app.models.root_manager import root_manager
+
             # 确保根节点存在
             if not root_manager.ensure_root_node_exists():
                 return False
-            
+
             # 获取根节点
             root_node = root_manager.get_root_node()
             if not root_node:
                 return False
-            
+
             # 设置home_id
             self.home_id = root_node.id
             self.sync_to_node()
-            
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"设置home到奇点房间失败: {e}")
             return False
