@@ -7,7 +7,7 @@ import json
 import ast
 from typing import List, Dict, Any, Optional, Type
 from app.commands.base import SystemCommand, CommandResult, CommandType
-from app.commands.builder.model_discovery import ModelDiscoverer # 模型发现器
+from app.commands.builder.model_discovery import model_discoverer
 from app.models.base import DefaultObject
 from app.core.log import get_logger, LoggerNames
 
