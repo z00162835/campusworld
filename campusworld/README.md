@@ -15,7 +15,7 @@
 
 ### 环境要求
 
-- Python 3.9+
+- Python 3.11（推荐，`backend/environment.yml` 默认）
 - Node.js 18+
 - PostgreSQL 13+
 - Docker & Docker Compose
@@ -27,11 +27,16 @@
 git clone <repository-url>
 cd campusworld
 
-# 启动开发环境
+# 一键初始化（推荐）
+./scripts/setup.sh
+
+# 或手动启动开发环境
 docker compose -f docker-compose.dev.yml up -d
 
-# 安装后端依赖
+# 安装后端依赖（Conda 方式，推荐）
 cd backend
+conda env create -f environment.yml  # 已存在则用 conda env update -f environment.yml
+conda activate campusworld
 pip install -r requirements/dev.txt
 
 # 安装前端依赖

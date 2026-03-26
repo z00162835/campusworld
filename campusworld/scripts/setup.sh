@@ -16,10 +16,6 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# 获取项目根目录（脚本所在目录的上级目录）
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
 # 全局变量
 SKIP_DOCKER=false
 SKIP_BACKEND=false
@@ -48,7 +44,6 @@ show_help() {
     echo ""
     echo "项目根目录: $PROJECT_ROOT"
     echo ""
-    echo "项目根目录: $PROJECT_ROOT"
 }
 
 # 解析命令行参数

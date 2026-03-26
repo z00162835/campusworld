@@ -305,7 +305,7 @@ export CAMPUSWORLD_DATABASE_PASSWORD=production-db-password
 export CAMPUSWORLD_REDIS_PASSWORD=production-redis-password
 
 # 启动应用
-python -m app.main
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## 🔍 配置验证

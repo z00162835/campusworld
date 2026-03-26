@@ -122,7 +122,7 @@ dependencies:              # 依赖列表
   - python=3.11           # Python 版本
   - pip                   # pip 包管理器
   - pip:                  # 通过 pip 安装的包
-    - fastapi==0.104.1    # Web 框架
+    - fastapi==0.116.1    # Web 框架
     - uvicorn[standard]   # ASGI 服务器
     # ... 其他依赖
 ```
