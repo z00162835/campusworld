@@ -19,6 +19,7 @@ from app.core.config_manager import get_setting
 from app.core.log import get_logger, LoggerNames
 from app.ssh.session import SSHSession, SessionManager
 from app.ssh.game_handler import game_handler
+from app.ssh.rate_limiter import get_rate_limiter
 
 
 class SSHProtocolHandler(ServerInterface):
@@ -52,20 +53,24 @@ class SSHProtocolHandler(ServerInterface):
 
         委托给GameHandler处理游戏逻辑
         """
-        try:
-            # 记录认证尝试
-            self.security_logger.info(f"SSH认证尝试", extra={
-                'username': username,
-                'client_ip': self.client_ip,
-                'timestamp': datetime.now().isoformat()
-            })
+        # 记录认证尝试
+        self.security_logger.info(f"SSH认证尝试", extra={
+            'username': username,
+            'client_ip': self.client_ip,
+            'timestamp': datetime.now().isoformat()
+        })
 
+        try:
             # 委托给GameHandler处理认证
             result = game_handler.authenticate_user(
                 username=username,
                 password=password,
                 client_ip=self.client_ip
             )
+
+            # 记录登录尝试（无论成功或失败）
+            rate_limiter = get_rate_limiter()
+            rate_limiter.record_login_attempt(self.client_ip, result['success'])
 
             if result['success']:
                 # 创建SSH会话

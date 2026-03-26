@@ -22,6 +22,11 @@
 │  - 会话状态管理                                            │
 │  - 游戏事件处理                                            │
 ├─────────────────────────────────────────────────────────────┤
+│  Security Layer (rate_limiter.py)                          │
+│  - 连接速率限制                                            │
+│  - 登录失败追踪                                            │
+│  - IP锁定保护                                              │
+├─────────────────────────────────────────────────────────────┤
 │  server.py - 服务器生命周期管理                              │
 │  session.py - 会话存储                                      │
 │  console.py - 终端交互                                      │
@@ -37,7 +42,8 @@ ssh/
 ├── game_handler.py     # Game Layer - 游戏逻辑处理
 ├── session.py          # 会话管理
 ├── console.py          # 终端控制台
-└── input_handler.py    # 输入处理
+├── input_handler.py    # 输入处理
+└── rate_limiter.py     # 连接速率限制（安全增强）
 ```
 
 ### server.py - SSH服务器
@@ -51,7 +57,7 @@ ssh/
 - 监听和接受连接
 - 事件驱动架构
 
-### protocol_handler.py - 协议层 (新增)
+### protocol_handler.py - 协议层
 
 **SSHProtocolHandler** (继承自 `paramiko.ServerInterface`)
 - SSH 协议处理
@@ -62,7 +68,7 @@ ssh/
 - 协议处理器工厂
 - 主机密钥加载（4096位RSA）
 
-### game_handler.py - 游戏层 (新增)
+### game_handler.py - 游戏层
 
 **GameHandler**
 - `authenticate_user()`: 用户认证
@@ -101,6 +107,19 @@ ssh/
 - 命令补全
 - 历史记录导航
 
+### rate_limiter.py - 连接速率限制
+
+**ConnectionRateLimiter**
+- `check_connection()`: 检查连接是否允许
+- `record_login_attempt()`: 记录登录尝试
+- `add_to_whitelist()`: 添加白名单
+- `get_stats()`: 获取统计信息
+
+**LoginAttemptTracker**
+- 登录失败追踪
+- 自动IP锁定
+- 锁定时间管理
+
 ## 启动SSH服务器
 
 ```bash
@@ -126,6 +145,13 @@ ssh:
   host_key_path: ssh_host_key
   auth_timeout: 60
   banner: "Welcome to CampusWorld"
+  # 连接速率限制
+  rate_limit:
+    max_connections_per_minute: 10  # 每分钟最大连接数
+    max_failed_attempts: 5           # 最大失败尝试次数
+    lockout_duration: 300            # 锁定时长（秒）
+    attempt_window: 300              # 尝试窗口时间（秒）
+    connection_window: 60            # 连接窗口时间（秒）
 ```
 
 ## 连接方式
@@ -146,3 +172,6 @@ ssh username@localhost -p 2222
 - 会话隔离
 - 输入验证
 - 游戏逻辑与协议层分离，便于安全审计
+- **连接速率限制**：防止暴力破解和DDoS攻击
+- **登录失败追踪**：自动锁定可疑IP
+- **白名单支持**：管理员可排除特定IP

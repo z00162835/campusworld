@@ -26,6 +26,7 @@ from app.ssh.console import SSHConsole
 from app.ssh.session import SSHSession, SessionManager
 from app.ssh.protocol_handler import SSHProtocolHandler, ProtocolFactory
 from app.ssh.game_handler import game_handler
+from app.ssh.rate_limiter import get_rate_limiter
 
 
 class CampusWorldSSHServerInterface(SSHProtocolHandler):
@@ -158,6 +159,33 @@ class CampusWorldSSHServer:
         console = None
         channel = None
         transport = None
+
+        # 速率限制检查
+        rate_limiter = get_rate_limiter()
+        check_result = rate_limiter.check_connection(client_ip)
+        if not check_result['allowed']:
+            # 超过速率限制，关闭连接
+            self.logger.warning(
+                f"SSH连接被速率限制器拒绝",
+                extra={
+                    'client_ip': client_ip,
+                    'client_port': client_port,
+                    'reason': check_result.get('reason'),
+                    'connection_id': connection_id,
+                    'event_type': 'ssh_connection_rate_limited'
+                }
+            )
+            # 发送拒绝消息
+            try:
+                reject_msg = b"Connection rate limit exceeded. Please try again later.\r\n"
+                client.send(reject_msg)
+            except:
+                pass
+            try:
+                client.close()
+            except:
+                pass
+            return
 
         # 记录连接开始
         self.logger.info(f"新SSH连接", extra={
