@@ -104,8 +104,13 @@ class DefaultObject(GraphNodeInterface):
     """
     
     def __init__(self, name: str, **kwargs):
+        # 控制对象创建时是否自动同步到图（少数场景如初始化根节点希望手动落库）
+        self._disable_auto_sync = bool(kwargs.pop("disable_auto_sync", False))
+
         # 设置节点类型和类型类
-        self._node_type = self.__class__.__name__.lower()  # 如: 'campus', 'user'
+        # 允许子类在 super().__init__ 之前预先设置 self._node_type（例如 DefaultAccount 固定为 'account'，Room 固定为 'room'）。
+        if not getattr(self, "_node_type", None):
+            self._node_type = self.__class__.__name__.lower()  # 如: 'campus', 'user'
         self._node_typeclass = f"{self.__class__.__module__}.{self.__class__.__name__}"
         
         # 设置独立的name字段（对应数据库nodes表的name字段）
@@ -146,7 +151,8 @@ class DefaultObject(GraphNodeInterface):
         """
         # 调用子类的特定初始化逻辑
         self._at_object_creation()
-        self.sync_to_node()
+        if not getattr(self, "_disable_auto_sync", False):
+            self.sync_to_node()
     
     def _at_object_creation(self):
         """
@@ -1069,6 +1075,23 @@ class DefaultObject(GraphNodeInterface):
         self._node_tags = tags.copy()
         self._node_updated_at = datetime.now()
         self._schedule_node_sync()
+
+    # ==================== 节点同步（所有对象通用）====================
+
+    def _schedule_node_sync(self) -> None:
+        """调度节点同步到图数据库"""
+        try:
+            from app.models.graph_sync import GraphSynchronizer
+
+            synchronizer = GraphSynchronizer()
+            synchronizer.sync_object_to_node(self)
+        except Exception:
+            # 静默处理同步错误，避免影响对象操作
+            pass
+
+    def sync_to_node(self) -> None:
+        """同步到图节点系统"""
+        self._schedule_node_sync()
     
 
 class DefaultAccount(DefaultObject):
@@ -1363,7 +1386,7 @@ class DefaultAccount(DefaultObject):
         for role_name in self.roles:
             try:
                 role = Role(role_name)
-                if permission_manager.check_role_permission(role, required_permission):
+                if permission_manager.check_role_permission_str(role, required_permission):
                     return True
             except ValueError:
                 continue

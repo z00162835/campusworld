@@ -22,6 +22,9 @@ class Room(DefaultObject):
     def __init__(self, name: str, config: Dict[str, Any] = None, **kwargs):
         # 设置房间特定的节点类型
         self._node_type = 'room'
+
+        # 允许在少数场景禁用“创建即同步”（例如根节点初始化时由 RootNodeManager 手动落库）
+        disable_auto_sync = bool(kwargs.pop("disable_auto_sync", False))
         
         # 设置房间默认属性
         default_attrs = {
@@ -133,8 +136,8 @@ class Room(DefaultObject):
             'attributes': default_attrs,
             'tags': default_tags,
         }
-        
-        super().__init__(name=name, **default_config)
+
+        super().__init__(name=name, disable_auto_sync=disable_auto_sync, **default_config)
     
     def __repr__(self):
         room_type = self._node_attributes.get('room_type', 'normal')
@@ -698,8 +701,8 @@ class SingularityRoom(Room):
         # 合并配置
         if config and 'attributes' in config:
             singularity_attrs.update(config['attributes'])
-        
-        super().__init__(name="Singularity Room", attributes=singularity_attrs)
+
+        super().__init__(name="Singularity Room", config={"attributes": singularity_attrs}, **kwargs)
     
     def _get_default_description(self) -> str:
         """获取默认描述"""

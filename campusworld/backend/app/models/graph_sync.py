@@ -189,14 +189,13 @@ class GraphSynchronizer:
             
             # 创建新关系
             relationship = relationship_class(
-                uuid=str(uuid.uuid4()),
+                uuid=uuid.uuid4(),
                 type_id=rel_type_id,
                 type_code=rel_type,
-                typeclass=f"app.models.relationships.{rel_type.capitalize()}Relationship",
                 source_id=source_node.id,
                 target_id=target_node.id,
                 attributes=attributes,
-                is_active=True
+                is_active=True,
             )
             
             session.add(relationship)
