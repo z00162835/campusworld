@@ -5,25 +5,17 @@
 
 import os
 from datetime import datetime, timedelta
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Callable
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-# 修改导入
-from app.core.config_manager import get_config, get_setting
+# 使用延迟导入避免循环依赖
 from app.core.log import get_logger
 
 # 获取日志器
 logger = get_logger("campusworld.security")
-
-# 获取配置管理器
-config_manager = get_config()
-
-# 从配置管理器获取配置
-SECRET_KEY = get_setting('security.secret_key', 'your-secret-key-here')
-ACCESS_TOKEN_EXPIRE_MINUTES = get_setting('security.access_token_expire_minutes', 11520)
 
 # 密码加密上下文
 # 使用 Argon2id（通过 passlib 的 "argon2" scheme）替代 bcrypt，避免 bcrypt 72-byte 限制/后端兼容问题影响 seed。
@@ -35,6 +27,25 @@ REFRESH_TOKEN_EXPIRE_DAYS = 30  # 默认30天
 
 # HTTP Bearer认证
 security = HTTPBearer()
+
+# ==================================================
+# 延迟加载配置（避免模块导入时的循环依赖）
+# ==================================================
+
+def _get_config_manager():
+    """延迟获取配置管理器"""
+    from app.core.config_manager import get_config
+    return get_config()
+
+def _get_secret_key() -> str:
+    """获取 _get_secret_key()（延迟加载）"""
+    from app.core.config_manager import get_setting
+    return get_setting('security.secret_key', 'your-secret-key-here')
+
+def _get_token_expire_minutes() -> int:
+    """获取 token 过期时间（延迟加载）"""
+    from app.core.config_manager import get_setting
+    return get_setting('security.access_token_expire_minutes', 11520)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -65,34 +76,34 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(
-    subject: Union[str, Any], 
+    subject: Union[str, Any],
     expires_delta: Optional[timedelta] = None,
     **kwargs
 ) -> str:
     """
     创建访问令牌
-    
+
     Args:
         subject: 令牌主题（通常是用户ID）
         expires_delta: 过期时间增量
         **kwargs: 其他要编码到令牌中的数据
-        
+
     Returns:
         str: JWT令牌
     """
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+        expire = datetime.utcnow() + timedelta(minutes=_get_token_expire_minutes())
+
     to_encode = {
         "exp": expire,
         "sub": str(subject),
         "iat": datetime.utcnow(),
         **kwargs
     }
-    
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    encoded_jwt = jwt.encode(to_encode, _get_secret_key(), algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -122,7 +133,7 @@ def create_refresh_token(
         "type": "refresh"
     }
     
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, _get_secret_key(), algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -140,7 +151,7 @@ def verify_token(token: str) -> dict:
         HTTPException: 令牌无效或过期
     """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, _get_secret_key(), algorithms=[ALGORITHM])
         return payload
     except JWTError:
         raise HTTPException(
@@ -258,7 +269,7 @@ def generate_password_reset_token(email: str) -> str:
         "type": "password_reset"
     }
     
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, _get_secret_key(), algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -273,7 +284,7 @@ def verify_password_reset_token(token: str) -> Optional[str]:
         Optional[str]: 邮箱地址，如果令牌无效则返回None
     """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, _get_secret_key(), algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         token_type: str = payload.get("type")
         
@@ -306,7 +317,7 @@ def generate_email_verification_token(email: str) -> str:
         "type": "email_verification"
     }
     
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, _get_secret_key(), algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -321,7 +332,7 @@ def verify_email_verification_token(token: str) -> Optional[str]:
         Optional[str]: 邮箱地址，如果令牌无效则返回None
     """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, _get_secret_key(), algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         token_type: str = payload.get("type")
         

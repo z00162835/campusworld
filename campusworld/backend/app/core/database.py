@@ -189,32 +189,60 @@ def get_database_info() -> Dict[str, Any]:
 # 创建基础模型类
 Base = declarative_base()
 
-# 在文件末尾添加兼容性包装器
-def _get_session_local():
-    """获取SessionLocal（向后兼容）"""
-    try:
-        return _create_session_factory()
-    except Exception as e:
-        logger.error(f"获取SessionLocal失败: {e}")
-        # 返回一个默认的sessionmaker，避免模块导入失败
-        from sqlalchemy.orm import sessionmaker
-        return sessionmaker()
+# ==================================================
+# 向后兼容层 - 懒加载，避免模块导入时的初始化问题
+# ==================================================
 
-def _get_engine_global():
-    """获取engine（向后兼容）"""
-    try:
-        return _create_engine()
-    except Exception as e:
-        logger.error(f"获取engine失败: {e}")
-        # 返回None，让调用者处理
-        return None
+class _LazySessionLocal:
+    """懒加载的SessionLocal类"""
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._factory = None
+        return cls._instance
+
+    def __call__(self):
+        if self._factory is None:
+            self._factory = _create_session_factory()
+        return self._factory()
 
 # 为了向后兼容，提供全局变量
-# SessionLocal 应该是一个类，不是函数
-SessionLocal = _get_session_local()
+# 使用懒加载类，避免模块导入时就初始化
+SessionLocal = _LazySessionLocal()
 
-# engine 应该是一个实例，不是函数
-engine = _get_engine_global()
+
+class _LazyEngine:
+    """懒加载的engine实例"""
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._engine = None
+        return cls._instance
+
+    @property
+    def engine(self):
+        if self._engine is None:
+            self._engine = _create_engine()
+        return self._engine
+
+    def __getattr__(self, name):
+        # 代理到实际的engine对象
+        return getattr(self.engine, name)
+
+
+# 使用懒加载类
+_engine_wrapper = _LazyEngine()
+
+
+def __getattr__(name):
+    """支持向后兼容访问 engine 属性"""
+    if name == 'engine':
+        return _engine_wrapper.engine
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # ==================================================

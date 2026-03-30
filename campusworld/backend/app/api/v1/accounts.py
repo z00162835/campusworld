@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.auth import require_permission, require_role, require_admin
+from app.core.authorization import require_permission, require_role, require_admin
 from app.models.graph import Node, NodeType
 from app.models.accounts import create_account, get_account_class, ACCOUNT_TYPES
 from app.core.security import get_password_hash, verify_password

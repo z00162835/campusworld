@@ -79,21 +79,28 @@ def ensure_default_accounts(session) -> bool:
         .all()
     )
     if existing:
+        logger.info(f"默认账号已存在，跳过创建（幂等）")
         return True
 
     def _attrs(obj) -> dict:
         attrs = dict(obj._node_attributes or {})
+        logger.debug(f"_attrs called for {obj.username}, keys: {list(attrs.keys())}")
         for k, v in list(attrs.items()):
             if isinstance(v, datetime):
                 attrs[k] = v.isoformat()
         return attrs
 
+    logger.info("开始创建默认账号...")
+
+    # 使用 disable_auto_sync=True 避免在对象创建时自动同步（会与传入的session冲突）
+    # seed_data 的设计是手动创建 Node 对象，不依赖自动同步
     admin = AdminAccount(
         username="admin",
         email="admin@campusworld.com",
         hashed_password=get_password_hash("admin123"),
         description="系统管理员账号，拥有所有管理权限",
         created_by="system",
+        disable_auto_sync=True,
     )
     dev = DeveloperAccount(
         username="dev",
@@ -101,6 +108,7 @@ def ensure_default_accounts(session) -> bool:
         hashed_password=get_password_hash("dev123"),
         description="开发者账号，拥有开发和调试权限",
         created_by="admin",
+        disable_auto_sync=True,
     )
     campus = CampusUserAccount(
         username="campus",
@@ -108,6 +116,7 @@ def ensure_default_accounts(session) -> bool:
         hashed_password=get_password_hash("campus123"),
         description="校园用户账号，用于测试校园功能",
         created_by="admin",
+        disable_auto_sync=True,
     )
 
     nodes = [
@@ -159,9 +168,9 @@ def seed_minimal() -> bool:
     执行最小种子数据初始化（幂等）。
     """
     try:
-        from app.core.database import get_db_session
+        from app.core.database import db_session_context
 
-        with get_db_session() as session:
+        with db_session_context() as session:
             if not ensure_account_type(session):
                 return False
             if not ensure_default_accounts(session):

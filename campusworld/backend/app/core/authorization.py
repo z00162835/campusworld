@@ -1,7 +1,7 @@
 """
-权限验证和认证系统
+权限验证系统
 
-参考Evennia框架设计，提供权限验证装饰器
+提供权限验证装饰器和便捷的权限检查接口
 集成到命令系统和API接口
 
 作者：AI Assistant
@@ -13,9 +13,21 @@ from functools import wraps
 import logging
 from datetime import datetime
 
-from .permissions import permission_checker, Role, Permission
+# 从 permissions 模块导入核心类（保持单一定义来源）
+from .permissions import PermissionChecker, permission_checker, Role, Permission, ROLE_STRING_PERMISSIONS
 
 logger = logging.getLogger(__name__)
+
+
+# 便捷函数 - 使用 PermissionChecker
+def check_permission(user_permissions: List[str], required_permission: str) -> bool:
+    """检查用户是否有指定权限"""
+    return PermissionChecker.check_permission(user_permissions, required_permission)
+
+
+def check_role(user_roles: List[str], required_role: str) -> bool:
+    """检查用户是否有指定角色"""
+    return PermissionChecker.check_role(user_roles, required_role)
 
 
 def require_permission(permission: str):

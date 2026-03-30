@@ -129,7 +129,23 @@ class DefaultObject(GraphNodeInterface):
         self._node_updated_at = datetime.now()
         
         # 动态属性 - 存储在 attributes JSONB 字段中
-        self._node_attributes = kwargs.get('attributes', {})
+        # 优先使用 kwargs 中的 'attributes' 键，否则收集所有其他 kwargs
+        attributes_from_kwarg = kwargs.get('attributes', {})
+
+        # 已知的固定字段（对应数据库表的列）
+        known_fixed_fields = {
+            'description', 'is_active', 'is_public', 'access_level',
+            'location_id', 'home_id', 'tags', 'attributes', 'disable_auto_sync'
+        }
+
+        # 将未知的 kwargs 添加到动态属性中
+        extra_attributes = {
+            k: v for k, v in kwargs.items()
+            if k not in known_fixed_fields and not hasattr(self, f'_node_{k}')
+        }
+
+        # 合并：attributes 参数优先，然后是额外参数
+        self._node_attributes = {**extra_attributes, **attributes_from_kwarg}
         
         # 标签 - 存储在 tags JSONB 字段中
         self._node_tags = kwargs.get('tags', [])
@@ -1082,12 +1098,17 @@ class DefaultObject(GraphNodeInterface):
         """调度节点同步到图数据库"""
         try:
             from app.models.graph_sync import GraphSynchronizer
-
             synchronizer = GraphSynchronizer()
             synchronizer.sync_object_to_node(self)
-        except Exception:
-            # 静默处理同步错误，避免影响对象操作
+        except (KeyboardInterrupt, SystemExit, GeneratorExit):
+            # 忽略中断相关异常
             pass
+        except Exception as e:
+            # 记录同步错误，便于调试
+            import logging
+            logging.getLogger('campusworld.model.sync').warning(
+                f"对象同步到图数据库失败: {type(self).__name__}, error: {e}"
+            )
 
     def sync_to_node(self) -> None:
         """同步到图节点系统"""

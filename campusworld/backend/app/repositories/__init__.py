@@ -12,7 +12,7 @@ Repository层 - 数据访问抽象
 from typing import Optional, List, Dict, Any, Union
 from uuid import UUID
 
-from app.core.database import db_session_context, get_session
+from app.core.database import db_session_context
 from app.models.graph import Node, Relationship, NodeType, RelationshipType
 
 
@@ -37,13 +37,6 @@ class NodeRepository:
                    否则在每个方法内部创建Session。
         """
         self._session = session
-        self._external_session = session is not None
-
-    def _get_session(self):
-        """获取Session，内部使用"""
-        if self._external_session:
-            return self._session
-        return get_session()
 
     def get_by_id(self, node_id: int) -> Optional[Node]:
         """根据ID获取节点"""

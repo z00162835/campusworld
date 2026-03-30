@@ -1,328 +1,221 @@
 # CampusWorld 项目目录结构
 
-本文档详细描述了 CampusWorld 项目的完整目录结构，展示了企业级工程化项目的组织方式。
+本文档描述 CampusWorld 项目的实际目录结构。
 
-## 📁 根目录结构
+## 根目录
 
 ```
 campusworld/
-├── README.md                    # 项目主说明文档
-├── CONTRIBUTING.md             # 贡献指南
-├── PROJECT_STRUCTURE.md        # 本文档
-├── .gitignore                  # Git 忽略文件配置
-├── docker-compose.yml          # 生产环境 Docker 配置
-├── docker-compose.dev.yml      # 开发环境 Docker 配置
-├── scripts/                    # 项目脚本目录
-├── docs/                       # 项目文档目录
-├── backend/                    # Python FastAPI 后端
-├── frontend/                   # Vue3 前端
-├── shared/                     # 共享代码和类型定义
-├── tests/                      # 集成测试
-└── .github/                    # GitHub Actions CI/CD
+├── CLAUDE.md              # AI/开发者上下文文档（英文）
+├── README.md              # 项目主说明（面向访客）
+├── PROJECT_STRUCTURE.md    # 本文档
+├── CONTRIBUTING.md        # 贡献指南
+├── docker-compose*.yml    # Docker 配置
+├── scripts/               # 项目脚本
+├── docs/                  # 项目文档
+├── backend/               # Python 后端
+├── frontend/              # Vue3 前端
+└── .github/               # GitHub Actions CI/CD
 ```
 
-## 🐍 后端目录结构 (backend/)
+## 后端 (backend/)
 
 ```
 backend/
-├── app/                        # 主应用包
-│   ├── __init__.py            # 包初始化文件
-│   ├── main.py                # FastAPI 应用入口
-│   ├── api/                   # API 路由层
-│   │   ├── __init__.py
-│   │   └── v1/               # API 版本 1
-│   │       ├── __init__.py
-│   │       ├── api.py        # 主路由聚合
-│   │       └── endpoints/    # 具体端点实现
-│   │           ├── __init__.py
-│   │           ├── auth.py   # 认证相关端点
-│   │           ├── users.py  # 用户管理端点
-│   │           ├── campus.py # 校园相关端点
-│   │           └── world.py  # 世界相关端点
-│   ├── core/                  # 核心功能模块
-│   │   ├── __init__.py
-│   │   ├── config.py         # 配置管理
-│   │   ├── database.py       # 数据库连接
-│   │   ├── security.py       # 安全相关工具
-│   │   ├── middleware.py     # 中间件
-│   │   └── events.py         # 应用事件处理
-│   ├── models/                # 数据模型
-│   │   ├── __init__.py
-│   │   ├── user.py           # 用户模型
-│   │   ├── campus.py         # 校园模型
-│   │   └── world.py          # 世界模型
-│   ├── schemas/               # Pydantic 模式
-│   │   ├── __init__.py
-│   │   ├── auth.py           # 认证相关模式
-│   │   ├── user.py           # 用户相关模式
-│   │   ├── campus.py         # 校园相关模式
-│   │   └── world.py          # 世界相关模式
-│   ├── services/              # 业务逻辑服务
-│   │   ├── __init__.py
-│   │   ├── auth_service.py   # 认证服务
-│   │   ├── user_service.py   # 用户服务
-│   │   ├── campus_service.py # 校园服务
-│   │   └── world_service.py  # 世界服务
-│   ├── repositories/          # 数据访问层
-│   │   ├── __init__.py
-│   │   ├── base.py           # 基础仓库类
-│   │   ├── user_repo.py      # 用户数据访问
-│   │   ├── campus_repo.py    # 校园数据访问
-│   │   └── world_repo.py     # 世界数据访问
-│   ├── utils/                 # 工具函数
-│   │   ├── __init__.py
-│   │   ├── helpers.py        # 通用辅助函数
-│   │   └── validators.py     # 数据验证工具
-│   └── plugins/               # 插件系统
-│       ├── __init__.py
-│       └── base.py           # 插件基类
-├── requirements/               # Python 依赖管理
-│   ├── base.txt              # 基础依赖
-│   ├── dev.txt               # 开发环境依赖
-│   └── prod.txt              # 生产环境依赖
-├── tests/                     # 后端测试
-│   ├── __init__.py
-│   ├── conftest.py           # 测试配置
-│   ├── unit/                 # 单元测试
-│   ├── integration/          # 集成测试
-│   └── fixtures/             # 测试数据
-├── alembic/                   # 数据库迁移
-│   ├── versions/             # 迁移版本文件
-│   ├── env.py                # 迁移环境配置
-│   └── alembic.ini          # Alembic 配置
-├── Dockerfile                 # 后端 Docker 镜像
-├── pytest.ini                # pytest 测试配置
-└── .env.example              # 环境变量示例
+├── campusworld.py              # 主入口（启动 SSH + FastAPI）
+├── app/
+│   ├── api/v1/                 # REST API
+│   │   ├── api.py              # 路由聚合
+│   │   ├── accounts.py          # 账户端点
+│   │   └── endpoints/auth.py    # 认证端点
+│   ├── core/                   # 核心功能
+│   │   ├── settings.py          # Pydantic 配置模型
+│   │   ├── config_manager.py    # YAML 配置管理器
+│   │   ├── database.py          # SQLAlchemy 连接
+│   │   ├── security.py          # 密码加密 / JWT
+│   │   ├── authorization.py     # 授权逻辑
+│   │   ├── permissions.py       # RBAC 权限系统
+│   │   ├── paths.py             # 路径工具
+│   │   └── log/                 # 结构化日志（structlog）
+│   │       ├── manager.py
+│   │       ├── decorators.py    # @log_function_call 等装饰器
+│   │       ├── handlers.py      # Handler/Filters/Formatters
+│   │       ├── middleware.py    # 请求/响应/错误中间件
+│   │       └── context.py
+│   ├── models/                  # 纯图数据模型
+│   │   ├── base.py              # DefaultObject / DefaultAccount 基类
+│   │   ├── user.py              # 用户模型
+│   │   ├── accounts.py          # 账户模型
+│   │   ├── character.py         # 角色模型
+│   │   ├── room.py             # 房间模型
+│   │   ├── building.py         # 建筑模型
+│   │   ├── world.py            # 世界模型
+│   │   ├── campus.py           # 园区模型
+│   │   ├── exit.py             # 出口模型
+│   │   ├── graph.py            # 图节点/边模型
+│   │   ├── factory.py          # 模型工厂（动态发现）
+│   │   ├── model_manager.py    # 模型管理器
+│   │   └── root_manager.py     # 根节点管理器
+│   ├── ssh/                     # SSH 服务器（Paramiko）
+│   │   ├── server.py            # SSH 服务器入口
+│   │   ├── session.py           # 会话管理
+│   │   ├── console.py           # 控制台交互
+│   │   ├── input_handler.py    # 输入处理
+│   │   ├── protocol_handler.py # 协议处理
+│   │   ├── game_handler.py     # 游戏命令处理器
+│   │   └── rate_limiter.py      # 速率限制
+│   ├── commands/                # 命令系统
+│   │   ├── base.py              # BaseCommand 基类
+│   │   ├── registry.py          # 命令注册表（自动发现）
+│   │   ├── context.py          # CommandContext
+│   │   ├── cmdset.py           # 命令集
+│   │   ├── init_commands.py    # 命令初始化
+│   │   ├── system_commands.py  # 系统命令（look/who 等）
+│   │   ├── character.py        # 角色命令
+│   │   ├── builder/            # 建造类命令
+│   │   │   ├── create_command.py
+│   │   │   └── model_discovery.py
+│   │   ├── game/               # 游戏命令
+│   │   │   └── look_command.py
+│   │   ├── admin/              # 管理命令
+│   │   └── utils/              # 命令工具
+│   ├── game_engine/             # 游戏引擎
+│   │   ├── base.py              # 引擎基类
+│   │   ├── manager.py           # 引擎管理器
+│   │   ├── loader.py            # 内容加载器（自动加载）
+│   │   └── interface.py         # 游戏接口
+│   ├── games/                   # 游戏内容包
+│   │   └── campus_life/        # 校园生活游戏
+│   │       ├── game.py
+│   │       ├── commands.py
+│   │       ├── game_commands.py
+│   │       ├── objects.py
+│   │       └── scripts.py
+│   ├── protocols/               # 协议处理
+│   │   ├── base.py             # 协议基类
+│   │   ├── http_handler.py     # FastAPI 路由处理
+│   │   └── ssh_handler.py     # SSH 命令执行
+│   ├── repositories/            # 数据访问层（已创建但核心逻辑在 models 中）
+│   └── schemas/                 # Pydantic 请求/响应模型
+│       ├── auth.py
+│       └── account.py
+├── config/                      # YAML 配置文件
+│   ├── settings.yaml            # 主配置
+│   ├── settings.dev.yaml        # 开发环境
+│   ├── settings.prod.yaml       # 生产环境
+│   └── tools/                   # 配置工具脚本
+├── db/                          # 数据库相关
+│   ├── schemas/                 # 数据库 schema 定义
+│   ├── seed_data.py            # 种子数据
+│   └── init_database.py         # 数据库初始化脚本
+├── requirements/                # Python 依赖
+│   ├── base.txt
+│   ├── dev.txt
+│   └── prod.txt
+├── tests/                       # 后端测试
+│   ├── unit/
+│   ├── integration/
+│   └── README_demo_building.md  # Demo building 生成器文档
+├── docs/                        # 后端开发文档
+│   ├── look_command_design.md   # look 命令设计文档
+│   ├── look_command_usage.md    # look 命令使用指南
+│   ├── singularity_room_implementation.md  # 单例房间实现
+│   └── examples/
+├── scripts/                      # 后端脚本
+│   └── database/               # 数据库工具脚本
+├── alembic.ini
+├── pytest.ini
+└── Dockerfile
 ```
 
-## 🎨 前端目录结构 (frontend/)
+## 前端 (frontend/)
 
 ```
 frontend/
-├── public/                    # 静态资源
-│   ├── index.html            # HTML 模板
-│   ├── favicon.ico           # 网站图标
-│   └── assets/               # 静态资源文件
-├── src/                       # 源代码
-│   ├── main.ts               # 应用入口
-│   ├── App.vue               # 根组件
-│   ├── style.css             # 全局样式
-│   ├── components/            # 组件目录
-│   │   ├── common/           # 通用组件
-│   │   │   ├── Button.vue
-│   │   │   ├── Input.vue
-│   │   │   └── Modal.vue
-│   │   ├── layout/           # 布局组件
-│   │   │   ├── NavBar.vue
-│   │   │   ├── Sidebar.vue
-│   │   │   └── Footer.vue
-│   │   └── business/         # 业务组件
-│   │       ├── campus/       # 校园相关组件
-│   │       └── world/        # 世界相关组件
-│   ├── views/                 # 页面视图
-│   │   ├── Home.vue          # 首页
-│   │   ├── auth/             # 认证相关页面
-│   │   │   ├── Login.vue
-│   │   │   └── Register.vue
-│   │   ├── campus/           # 校园相关页面
-│   │   │   └── Campus.vue
-│   │   ├── world/            # 世界相关页面
-│   │   │   └── World.vue
-│   │   └── user/             # 用户相关页面
-│   │       └── Profile.vue
-│   ├── router/                # 路由配置
-│   │   ├── index.ts          # 路由主配置
-│   │   └── guards.ts         # 路由守卫
-│   ├── stores/                # 状态管理
-│   │   ├── index.ts          # 状态管理入口
-│   │   ├── auth.ts           # 认证状态
-│   │   ├── user.ts           # 用户状态
-│   │   └── app.ts            # 应用状态
-│   ├── services/              # API 服务
-│   │   ├── api.ts            # API 客户端
-│   │   ├── auth.ts           # 认证 API
-│   │   ├── user.ts           # 用户 API
-│   │   ├── campus.ts         # 校园 API
-│   │   └── world.ts          # 世界 API
-│   ├── types/                 # TypeScript 类型定义
-│   │   ├── api.ts            # API 相关类型
-│   │   ├── user.ts           # 用户相关类型
-│   │   ├── campus.ts         # 校园相关类型
-│   │   └── world.ts          # 世界相关类型
-│   ├── utils/                 # 工具函数
-│   │   ├── constants.ts      # 常量定义
-│   │   ├── helpers.ts        # 辅助函数
-│   │   └── validators.ts     # 验证函数
-│   └── assets/                # 资源文件
-│       ├── images/            # 图片资源
-│       ├── icons/             # 图标资源
-│       └── styles/            # 样式文件
-├── tests/                     # 前端测试
-│   ├── unit/                  # 单元测试
-│   ├── integration/           # 集成测试
-│   └── e2e/                   # 端到端测试
-├── package.json               # Node.js 依赖配置
-├── vite.config.ts             # Vite 构建配置
-├── tsconfig.json              # TypeScript 配置
-├── .eslintrc.js               # ESLint 配置
-├── .prettierrc                # Prettier 配置
-├── Dockerfile                 # 前端 Docker 镜像
-└── .env.example               # 环境变量示例
+├── public/
+│   └── index.html
+├── src/
+│   ├── main.ts                  # 应用入口
+│   ├── App.vue
+│   ├── style.css
+│   ├── components/
+│   │   ├── layout/              # 布局组件
+│   │   └── works/               # 业务组件
+│   ├── views/
+│   │   ├── auth/                # 认证页面
+│   │   ├── agents/              # Agent 页面
+│   │   ├── discovery/           # 发现页面
+│   │   ├── history/             # 历史记录
+│   │   ├── spaces/              # 空间页面
+│   │   ├── user/                # 用户页面
+│   │   └── works/               # 作品页面
+│   ├── router/                  # Vue Router 配置
+│   ├── stores/                  # Pinia 状态管理
+│   ├── utils/                   # 工具函数
+│   ├── styles/                  # 样式
+│   │   ├── base/
+│   │   ├── components/
+│   │   └── themes/
+│   └── test/                    # 前端测试
+├── logs/                        # 前端日志
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+├── Dockerfile
+└── .env.example
 ```
 
-## 📚 文档目录结构 (docs/)
+## 文档 (docs/)
 
 ```
 docs/
-├── README.md                  # 文档主入口
-├── overview.md                # 项目概述
-├── setup.md                   # 环境搭建
-├── quickstart.md              # 快速启动
-├── architecture/              # 架构设计
-│   ├── README.md             # 架构概述
-│   ├── system-design.md      # 系统设计
-│   ├── database-design.md    # 数据库设计
-│   └── api-design.md         # API 设计
-├── backend/                   # 后端文档
-│   ├── README.md             # 后端概述
-│   ├── setup.md              # 后端环境搭建
-│   ├── development.md        # 开发指南
-│   ├── testing.md            # 测试指南
-│   └── deployment.md         # 部署指南
-├── frontend/                  # 前端文档
-│   ├── README.md             # 前端概述
-│   ├── setup.md              # 前端环境搭建
-│   ├── development.md        # 开发指南
-│   ├── testing.md            # 测试指南
-│   └── deployment.md         # 部署指南
-├── deployment/                # 部署运维
-│   ├── environments.md       # 环境配置
-│   ├── docker.md             # Docker 部署
-│   ├── production.md         # 生产环境部署
-│   └── monitoring.md         # 监控告警
-├── testing/                   # 测试指南
-│   ├── README.md             # 测试概述
-│   ├── unit-testing.md       # 单元测试
-│   ├── integration-testing.md # 集成测试
-│   └── e2e-testing.md        # 端到端测试
-├── tools/                     # 工具配置
-│   ├── README.md             # 工具概述
-│   ├── quality.md            # 代码质量工具
-│   └── ci-cd.md              # CI/CD 配置
-└── coding-standards.md        # 代码规范
+├── README.md                    # 文档导航（本文档入口）
+├── architecture/README.md       # 系统架构文档
+├── configuration.md              # 配置系统说明
+├── config-migration.md          # 配置迁移指南
+└── conda-setup.md               # Conda 环境设置
+
+# 以下文档待创建（规划中）
+├── overview.md                  # 项目概述
+├── quickstart.md                # 快速启动详细指南
+├── setup.md                     # 环境搭建
+├── database/README.md           # 数据库设计
+├── api/README.md                # API 设计
+├── backend/README.md            # 后端开发指南
+├── frontend/README.md           # 前端开发指南
+├── testing/README.md            # 测试指南
+├── coding-standards.md           # 代码规范
+└── deployment/                 # 部署文档
+    ├── environments.md
+    ├── docker.md
+    ├── production.md
+    └── monitoring.md
 ```
 
-## 🐳 Docker 目录结构
+## 目录设计原则
 
-```
-docker/
-├── nginx/                     # Nginx 配置
-│   ├── nginx.conf            # Nginx 主配置
-│   └── ssl/                  # SSL 证书
-├── postgres/                  # PostgreSQL 配置
-│   └── init.sql              # 数据库初始化脚本
-└── redis/                     # Redis 配置
-    └── redis.conf            # Redis 配置文件
-```
+### 1. 分层清晰
+- API 层 (`api/`) 处理 HTTP 请求
+- 模型层 (`models/`) 管理数据结构和关系
+- 命令层 (`commands/`) 处理用户输入和业务逻辑
+- 协议层 (`protocols/`) 桥接不同通信方式（HTTP/SSH）
 
-## 🔧 脚本目录结构 (scripts/)
+### 2. 图数据结构
+- 所有实体（Room、Character、User）继承自图节点基类
+- 通过关系边（Exit、Relationship）连接
+- 支持动态模型发现和扩展
 
-```
-scripts/
-├── setup.sh                   # 项目初始化脚本
-├── deploy.sh                  # 部署脚本
-├── backup.sh                  # 备份脚本
-├── monitor.sh                 # 监控脚本
-└── utils/                     # 工具脚本
-    ├── db-migrate.sh         # 数据库迁移脚本
-    └── health-check.sh       # 健康检查脚本
-```
+### 3. 命令系统
+- 所有命令继承 `BaseCommand`
+- 通过命令注册表自动发现
+- 支持命令集（CmdSet）组合
 
-## 🧪 测试目录结构 (tests/)
+### 4. 协议抽象
+- HTTP（FastAPI）和 SSH（Paramiko）共享同一游戏引擎
+- 协议处理器独立于核心逻辑
 
-```
-tests/
-├── integration/               # 集成测试
-│   ├── api/                  # API 集成测试
-│   ├── database/             # 数据库集成测试
-│   └── e2e/                  # 端到端测试
-├── performance/               # 性能测试
-│   ├── load-testing/         # 负载测试
-│   └── stress-testing/       # 压力测试
-└── fixtures/                  # 测试数据
-    ├── users.json            # 用户测试数据
-    ├── campus.json           # 校园测试数据
-    └── world.json            # 世界测试数据
-```
+## 扩展建议
 
-## 📋 配置文件说明
-
-### 根目录配置文件
-- **docker-compose.yml**: 生产环境服务编排
-- **docker-compose.dev.yml**: 开发环境服务编排
-- **.gitignore**: Git 版本控制忽略文件
-- **CONTRIBUTING.md**: 项目贡献指南
-
-### 后端配置文件
-- **requirements/**: Python 依赖管理
-- **pytest.ini**: 测试框架配置
-- **alembic.ini**: 数据库迁移配置
-- **.env.example**: 环境变量模板
-
-### 前端配置文件
-- **package.json**: Node.js 依赖和脚本
-- **vite.config.ts**: 构建工具配置
-- **tsconfig.json**: TypeScript 编译配置
-- **.eslintrc.js**: 代码质量检查配置
-
-### CI/CD 配置文件
-- **.github/workflows/ci.yml**: GitHub Actions 工作流
-- **Dockerfile**: 容器镜像构建配置
-
-## 🎯 目录设计原则
-
-### 1. 分层架构
-- **API 层**: 处理 HTTP 请求和响应
-- **服务层**: 实现业务逻辑
-- **数据层**: 管理数据访问和持久化
-- **模型层**: 定义数据结构和关系
-
-### 2. 模块化设计
-- **功能模块**: 按业务功能组织代码
-- **共享模块**: 提取公共功能和工具
-- **插件系统**: 支持功能扩展
-
-### 3. 环境分离
-- **开发环境**: 本地开发和调试
-- **测试环境**: 自动化测试和验证
-- **生产环境**: 稳定运行和部署
-
-### 4. 工具链集成
-- **代码质量**: 自动化的代码检查和格式化
-- **测试覆盖**: 完整的测试体系
-- **持续集成**: 自动化的构建和部署
-- **监控告警**: 运行时的监控和告警
-
-## 🚀 扩展建议
-
-### 1. 微服务化
-- 将大型模块拆分为独立服务
-- 实现服务间的通信和协调
-- 支持服务的独立部署和扩展
-
-### 2. 云原生
-- 迁移到 Kubernetes 集群
-- 实现自动扩缩容和负载均衡
-- 集成云原生监控和日志系统
-
-### 3. 国际化
-- 支持多语言和多地区
-- 实现本地化的内容和功能
-- 提供国际化的用户体验
-
-### 4. 移动端
-- 开发移动端应用
-- 实现响应式设计
-- 支持离线功能和推送通知
-
-这个目录结构体现了企业级项目的工程化特点，具有良好的可维护性、可扩展性和可测试性。
+- 添加微服务支持：拆分 `games/` 为独立服务
+- 引入 Kubernetes：基于现有 Docker 配置扩展
+- 完善文档：优先补充 docs/ 中规划但未实现的文档

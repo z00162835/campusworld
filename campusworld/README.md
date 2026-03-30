@@ -1,80 +1,42 @@
 # CampusWorld
 
-一个基于FastAPI和Vue3的现代化校园世界项目，采用企业级工程化架构设计。
+新一代智慧园区 OS，基于原生 AI 架构，借鉴 MUD 游戏世界设计原理构筑世界语义，基于模型驱动理念，采用全图数据结构实现物理世界设备、系统、人的语义孪生并实现与物理世界与系统的交互。
 
-## 项目架构
+## 技术栈
 
-- **后端**: Python + FastAPI + PostgreSQL
-- **前端**: Vue3 + TypeScript + Vite
-- **数据库**: PostgreSQL
-- **容器化**: Docker + Docker Compose
-- **CI/CD**: GitHub Actions
-- **测试**: pytest + Jest + Cypress
+| 层级 | 技术 |
+|------|------|
+| 后端 | Python 3.11+ · FastAPI · SQLAlchemy · Paramiko (SSH) · PostgreSQL |
+| 前端 | Vue 3 · TypeScript · Vite · Element Plus · Pinia |
+| 基础设施 | Docker Compose · Redis · GitHub Actions |
 
-## 快速开始
-
-### 环境要求
-
-- Python 3.11（推荐，`backend/environment.yml` 默认）
-- Node.js 18+
-- PostgreSQL 13+
-- Docker & Docker Compose
-
-### 开发环境启动
+## 快速启动
 
 ```bash
-# 克隆项目
-git clone <repository-url>
-cd campusworld
-
 # 一键初始化（推荐）
 ./scripts/setup.sh
 
-# 或手动启动开发环境
+# 或手动启动
 docker compose -f docker-compose.dev.yml up -d
 
-# 安装后端依赖（Conda 方式，推荐）
-cd backend
-conda env create -f environment.yml  # 已存在则用 conda env update -f environment.yml
-conda activate campusworld
-pip install -r requirements/dev.txt
+# 后端
+cd backend && pip install -r requirements/dev.txt
+python campusworld.py          # 含 SSH 服务器（推荐）
+# 或
+uvicorn campusworld:app --reload --port 8000
 
-# 安装前端依赖
-cd ../frontend
-npm install
-
-# 启动后端服务
-cd ../backend
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# 启动前端服务
-cd ../frontend
-npm run dev
+# 前端
+cd frontend && npm install && npm run dev
 ```
+
+访问：`http://localhost:5173`（前端）· `http://localhost:8000/docs`（API 文档）· `ssh localhost -p 2222`（游戏终端）
 
 ## 项目结构
 
-```
-campusworld/
-├── backend/                 # Python FastAPI 后端
-├── frontend/               # Vue3 前端
-├── shared/                 # 共享代码和类型定义
-├── docs/                   # 项目文档
-├── tests/                  # 集成测试
-├── scripts/                # 构建和部署脚本
-├── docker/                 # Docker 配置文件
-├── .github/                # GitHub Actions CI/CD
-├── requirements/            # Python 依赖管理
-└── package.json            # Node.js 依赖管理
-```
-
-## 开发指南
-
-详细的开发指南请参考 `docs/` 目录下的文档。
-
-## 贡献指南
-
-请参考 `CONTRIBUTING.md` 了解如何贡献代码。
+- [CLAUDE.md](./CLAUDE.md) — 开发者完整上下文（模块路径、命令、配置）
+- [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) — 详细目录结构说明
+- [docs/README.md](./docs/README.md) — 完整文档导航
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — 贡献指南
 
 ## 许可证
 
