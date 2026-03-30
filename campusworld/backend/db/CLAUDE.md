@@ -1,5 +1,7 @@
 # Database Module - 数据库模块
 
+> **Architecture Role**: 本模块是**知识本体**的持久化层。PostgreSQL 通过 GraphNode/GraphEdge 表支撑 CampusWorld 的**全图数据结构**，所有实体和语义关系都持久化于此。属于"系统适配层"的数据接入能力，为上层的知识服务层提供可靠的数据存储。
+
 PostgreSQL 数据库管理和初始化。
 
 ## 模块结构

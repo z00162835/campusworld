@@ -1,5 +1,7 @@
 # SSH Module - SSH终端服务
 
+> **Architecture Role**: SSH 模块是**系统适配层**的接入协议之一，提供类 MUD 的终端交互能力，是 Agent/用户进入**世界语义**的主要入口。用户通过 SSH 终端输入命令（commands/），命令系统操作图数据模型（models/），实现与世界语义的双向交互。参考 Evennia 的 Portal-Server 双层架构设计。
+
 基于 Paramiko 实现的 SSH 服务器，提供类 MUD 游戏的多人交互终端。
 
 ## 架构设计（双层架构）

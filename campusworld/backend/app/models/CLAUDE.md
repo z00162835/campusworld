@@ -1,5 +1,7 @@
 # Data Models - 数据模型
 
+> **Architecture Role**: 本模块是 CampusWorld **知识本体**的核心实现，通过**全图数据结构**构筑世界语义。所有实体（User、Character、Room、World 等）以图节点形式存在，关系以语义边表达，构成知识本体的骨架。属于"知识与能力层"的底层数据支撑，上承命令系统（commands）和游戏引擎（game_engine），下接数据库持久化层（db）。
+
 CampusWorld 采用**纯图数据设计**，所有模型基于图数据结构，存储在统一的 Node 表中，通过 type 和 typeclass 区分不同的对象类型。
 
 ## 模型列表
@@ -89,20 +91,24 @@ class Exit(DefaultObject):
 
 ### 图结构 (graph.py)
 
+图结构是**知识本体**的底层支撑：
+
 ```python
 class Node:
-    """图节点"""
+    """知识节点 - 世界中的实体"""
     id: UUID
-    type: str  # node_type
-    properties: JSON
+    type: str  # node_type = 实体类型
+    properties: JSON  # 节点属性 = 实体属性
 
 class Relationship:
-    """图关系"""
+    """语义边 - 实体间的关系"""
     id: UUID
-    source_id: UUID
-    target_id: UUID
-    type: str  # edge_type
+    source_id: UUID  # 源节点
+    target_id: UUID  # 目标节点
+    type: str  # edge_type = 语义关系类型
 ```
+
+> 世界语义体现在：Room 通过 Exit 连接到其他 Room（空间关系），Character 位于 Room 中（位置关系），User 拥有 Character（归属关系）—— 一切皆为节点，一切皆为关系。
 
 ### 组件系统 (factory.py)
 

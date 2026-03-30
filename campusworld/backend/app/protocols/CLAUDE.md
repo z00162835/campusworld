@@ -1,5 +1,7 @@
 # Protocols - 协议处理
 
+> **Architecture Role**: 本模块是**系统适配层**的协议抽象层，统一 HTTP（FastAPI/REST）和 SSH（Paramiko/终端）两种接入方式。所有外部请求（Web 前端 · SSH 终端 · 未来 WebSocket）通过协议层进入系统，协议层将请求路由到命令系统（commands/），命令系统操作知识本体（models/）。
+
 处理不同协议的请求，包括 HTTP 和 SSH。
 
 ## 模块结构

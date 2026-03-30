@@ -1,5 +1,7 @@
 # Backend - CampusWorld 后端服务
 
+> **Architecture Role**: 后端覆盖**系统适配层**（core/配置/安全/SSH协议）和**知识与能力层**（commands/命令系统 · models/全图数据模型 · game_engine/游戏引擎），为 Agent 服务层提供世界语义交互的能力底座。
+
 FastAPI + PostgreSQL + SSH 的后端服务，提供游戏逻辑、SSH终端和REST API。
 
 ## 模块结构

@@ -1,5 +1,7 @@
 # Game Engine - 游戏引擎
 
+> **Architecture Role**: 游戏引擎是**能力服务层**的核心，管理世界状态和业务能力。它将**世界语义**（Room/Character/Building 等图节点）封装为可操作的游戏内容包（games/campus_life），驱动世界的运行逻辑。与 commands/（命令系统）和 models/（全图数据模型）紧密协作：命令系统触发引擎操作，引擎操作修改图数据模型中的实体。
+
 CampusWorld 内容引擎，参考 Evennia 框架设计，提供场景与引擎解耦的基础设施。
 
 ## 模块结构
