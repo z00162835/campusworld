@@ -57,6 +57,18 @@ command_registry.execute("look", context, args)
 1. **执行命令**: 用户在 SSH 终端输入 `look`，命令系统解析命令名、查找命令、执行、返回结果
 2. **权限控制**: 管理员命令在执行前通过 `check_permission()` 验证权限
 3. **命令别名**: `look` 和 `l` 指向同一命令，用户体验一致
+4. **统一对象查看**: `look bulletin_board` 与 `look stone` 走同一命令路径，仅对象描述内容不同
+
+## Unified Look/Object Design
+
+`look` 应保持“统一命令 + 对象自描述”模式（参考 Evennia 的 `return_appearance` 设计）：
+
+1. 命令层负责目标解析（解析出要看的对象）。
+2. 命令层调用对象描述接口（如 `get_appearance(context)`）。
+3. 对象返回展示文本（静态对象返回静态描述；动态对象可返回列表/详情）。
+4. 命令层统一输出，不为某类对象建立特殊协议分支。
+
+这意味着公告栏对象（`system_bulletin_board`）不应通过专用命令通道实现，而应作为普通对象被 `look` 查看；其差异只在对象内部描述逻辑委托到公告栏服务层。
 
 ## Command Execution State
 
@@ -110,6 +122,7 @@ CommandResult.success_result("向北移动到食堂")
 
 - [ ] 命令注册表自动发现 `commands/` 下的所有命令子类
 - [ ] `look` 命令返回当前房间的完整描述（名称、描述、出口、物品）
+- [ ] `look` 对对象采用统一分发：`look bulletin_board` 与 `look <other_object>` 走相同命令链路
 - [ ] 权限不足时命令返回 `CommandResult.error_result("权限不足")`
 - [ ] 命令别名系统工作正常（`l` 等同于 `look`）
 - [ ] 不存在的命令返回 `CommandResult.error_result("未知命令")`

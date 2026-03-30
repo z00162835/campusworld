@@ -181,18 +181,39 @@ chore: 构建/工具链变更
 
 ## 测试
 
+测试工程化基于 pytest (后端) 和 vitest (前端)，详见 `docs/testing/SPEC/SPEC.md`。
+
 ```bash
 # 后端测试
 cd backend
-pytest
+pytest                          # 运行所有测试
+pytest -m unit                  # 仅运行单元测试
+pytest -m integration           # 仅运行集成测试
+pytest --cov=app --cov-report=xml  # 带覆盖率
 
 # 前端测试
 cd frontend
-npm run test
-
-# 前端E2E测试
-npm run test:e2e
+npm run test                    # 运行测试
+npm run test:coverage           # 带覆盖率
 ```
+
+### 测试分类
+
+| 类型 | 标记 | 说明 |
+|------|------|------|
+| Unit | `@pytest.mark.unit` | 隔离的组件测试 |
+| Integration | `@pytest.mark.integration` | 需要数据库/服务 |
+| SSH | `@pytest.mark.ssh` | SSH 模块测试 |
+| Models | `@pytest.mark.models` | 数据模型测试 |
+| Commands | `@pytest.mark.commands` | 命令系统测试 |
+
+### Fixtures
+
+共享 fixtures 定义在 `backend/tests/conftest.py`，包括：
+- `mock_db_session` - 模拟数据库会话
+- `mock_user_node` - 模拟用户节点
+- `mock_ssh_session` - 模拟 SSH 会话
+- `sample_room/character/world` - 示例数据 fixtures
 
 ## 配置文件
 

@@ -29,11 +29,18 @@ def test_enter_world_command_requires_world_name():
 
 def test_enter_world_command_accepts_campus_life():
     from app.commands.game.enter_world_command import EnterWorldCommand
-    from app.commands.game import enter_world_command
+    from app.ssh.game_handler import game_handler
 
-    cmd = EnterWorldCommand()
-    enter_world_command.game_handler.enter_world = lambda **kwargs: {"success": True, "message": "已进入世界 campus_life"}
-    result = cmd.execute(_build_context(), ["campus_life"])
+    # Mock game_handler.enter_world
+    original_enter_world = game_handler.enter_world
+    game_handler.enter_world = lambda **kwargs: {"success": True, "message": "已进入世界 campus_life"}
 
-    assert result.success
-    assert "campus_life" in result.message
+    try:
+        cmd = EnterWorldCommand()
+        result = cmd.execute(_build_context(), ["campus_life"])
+
+        assert result.success
+        assert "campus_life" in result.message
+    finally:
+        # Restore original
+        game_handler.enter_world = original_enter_world

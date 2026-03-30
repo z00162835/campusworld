@@ -118,3 +118,32 @@ ssh:
   host_key_path: ssh_host_key
   port: 2222
 ```
+
+## 测试 Fixtures
+
+测试 fixtures 定义在 `backend/tests/conftest.py`:
+
+| Fixture | 说明 | 类型 |
+|---------|------|------|
+| `mock_db_session` | 模拟 SQLAlchemy 数据库会话 | Session |
+| `mock_db_engine` | 模拟数据库引擎 | Engine |
+| `mock_user_node` | 模拟用户节点 | MagicMock |
+| `mock_user_node_with_world` | 模拟有世界恢复状态的用户节点 | MagicMock |
+| `mock_admin_node` | 模拟管理员用户节点 | MagicMock |
+| `mock_ssh_session` | 模拟 SSH 会话 | MagicMock |
+| `mock_ssh_client` | 模拟 Paramiko SSH 客户端 | MagicMock |
+| `sample_room` | 示例空间 fixture | MagicMock |
+| `sample_character` | 示例角色 fixture | MagicMock |
+| `sample_world` | 示例世界 fixture | MagicMock |
+| `mock_command_context` | 模拟命令执行上下文 | CommandContext |
+| `mock_game_handler` | 模拟游戏处理器 | MagicMock |
+| `mock_entry_router` | 模拟入口路由器 | EntryRouter |
+
+### 使用示例
+
+```python
+def test_something(mock_user_node, mock_db_session):
+    # 使用 fixture
+    assert mock_user_node.id == 1
+    assert mock_db_session is not None
+```

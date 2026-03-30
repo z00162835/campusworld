@@ -5,7 +5,6 @@ Enter world command.
 from typing import List
 
 from ..base import GameCommand, CommandContext, CommandResult
-from app.ssh.game_handler import game_handler
 
 
 class EnterWorldCommand(GameCommand):
@@ -25,6 +24,9 @@ class EnterWorldCommand(GameCommand):
         spawn_key = args[1].strip().lower() if len(args) > 1 else "campus"
         if not world_name:
             return CommandResult.error_result("世界名不能为空")
+
+        # 延迟导入，避免循环依赖
+        from app.ssh.game_handler import game_handler
 
         result = game_handler.enter_world(
             user_id=context.user_id,

@@ -142,6 +142,30 @@ python -m app.ssh.server
 pytest
 ```
 
+### 测试配置
+
+- **pytest.ini**: `backend/pytest.ini` 定义测试路径、markers、覆盖率配置
+- **fixtures**: `backend/tests/conftest.py` 提供共享测试 fixtures
+
+### 测试命令
+
+```bash
+pytest                           # 运行所有测试
+pytest -m unit                   # 仅运行单元测试
+pytest -m integration            # 仅运行集成测试
+pytest --cov=app --cov-report=xml  # 带覆盖率
+```
+
+### 测试分类
+
+| 标记 | 说明 |
+|------|------|
+| `@pytest.mark.unit` | 单元测试，隔离组件测试 |
+| `@pytest.mark.integration` | 集成测试，需要数据库/服务 |
+| `@pytest.mark.ssh` | SSH 模块测试 |
+| `@pytest.mark.models` | 数据模型测试 |
+| `@pytest.mark.commands` | 命令系统测试 |
+
 ## 配置
 
 配置通过 `config/settings.yaml` 管理，支持多环境配置。核心配置项:

@@ -92,9 +92,27 @@ npm run lint
 # 运行测试
 npm run test
 
-# 格式化代码
-npm run format
+# 运行测试(UI模式)
+npm run test:ui
+
+# 运行测试(带覆盖率)
+npm run test:coverage
 ```
+
+### 测试配置
+
+- **vitest.config.ts**: 定义 vitest 配置，包括 environment、globals、coverage
+- **setup.ts**: `src/test/setup.ts` 提供测试全局 setup 和 mocks
+
+### 测试规范
+
+| 文件 | 说明 |
+|------|------|
+| `*.spec.ts` | 组件测试 |
+| `*.test.ts` | 工具函数测试 |
+| `src/test/setup.ts` | 测试全局 setup |
+
+测试文件应放在与源文件相同的目录下，或集中放在 `src/test/` 目录。
 
 ## 开发规范
 

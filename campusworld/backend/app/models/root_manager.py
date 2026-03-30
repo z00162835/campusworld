@@ -12,6 +12,7 @@ from sqlalchemy import and_
 
 from .graph import Node, NodeType
 from .room import SingularityRoom
+from .system.bulletin_board import BulletinBoard
 from app.core.database import db_session_context, get_session
 from app.core.log import get_logger, LoggerNames
 
@@ -57,6 +58,7 @@ class RootNodeManager:
                 if existing_root and not force_recreate:
                     self._root_node_id = existing_root.id
                     self._root_node_uuid = str(existing_root.uuid)
+                    self._ensure_bulletin_board_exists(session, existing_root.id)
                     self.logger.info(f"根节点已存在: {existing_root.name} (ID: {existing_root.id})")
                     return True
 
@@ -70,6 +72,7 @@ class RootNodeManager:
                 if root_room:
                     self._root_node_id = root_room.id
                     self._root_node_uuid = str(root_room.uuid)
+                    self._ensure_bulletin_board_exists(session, root_room.id)
                     self.logger.info(f"根节点创建成功: {root_room.name} (ID: {root_room.id})")
                     return True
                 else:
@@ -284,6 +287,7 @@ class RootNodeManager:
             with db_session_context() as session:
                 root_node = self.get_root_node(session)
                 if root_node:
+                    self._ensure_bulletin_board_exists(session, root_node.id)
                     return True
 
                 # 根节点不存在，创建它
@@ -293,6 +297,84 @@ class RootNodeManager:
         except Exception as e:
             self.logger.error(f"确保根节点存在失败: {e}")
             return False
+
+    def _ensure_bulletin_board_exists(self, session: Session, root_node_id: int) -> Optional[Node]:
+        """Ensure singleton bulletin board node exists in SingularityRoom."""
+        try:
+            existing = session.query(Node).filter(
+                and_(
+                    Node.type_code == "system_bulletin_board",
+                    Node.location_id == root_node_id,
+                    Node.is_active == True,
+                    Node.attributes["board_key"].astext == BulletinBoard.DEFAULT_BOARD_KEY,
+                )
+            ).first()
+            if existing:
+                return existing
+
+            board_type_id = self._get_or_create_bulletin_board_type(session)
+            if not board_type_id:
+                self.logger.error("无法获取公告栏节点类型ID")
+                return None
+
+            board = BulletinBoard(disable_auto_sync=True)
+            node = Node(
+                uuid=board._node_uuid,
+                type_id=board_type_id,
+                type_code="system_bulletin_board",
+                name=board._node_name,
+                description=(board._node_attributes or {}).get("desc", "System bulletin board"),
+                is_active=True,
+                is_public=True,
+                access_level="normal",
+                location_id=root_node_id,
+                home_id=root_node_id,
+                attributes=board._node_attributes,
+                tags=getattr(board, "_node_tags", []) or [],
+            )
+            session.add(node)
+            session.commit()
+            session.refresh(node)
+            self.logger.info(f"系统公告栏单例创建成功: {node.name} (ID: {node.id})")
+            return node
+        except Exception as e:
+            self.logger.error(f"确保系统公告栏单例失败: {e}")
+            session.rollback()
+            return None
+
+    def _get_or_create_bulletin_board_type(self, session: Session) -> Optional[int]:
+        """Get or create node type for system bulletin board."""
+        try:
+            node_type = session.query(NodeType).filter(
+                NodeType.type_code == "system_bulletin_board"
+            ).first()
+            if node_type:
+                return node_type.id
+
+            node_type = NodeType(
+                type_code="system_bulletin_board",
+                type_name="SystemBulletinBoard",
+                typeclass="app.models.system.bulletin_board.BulletinBoard",
+                classname="BulletinBoard",
+                module_path="app.models.system.bulletin_board",
+                description="System singleton bulletin board object in SingularityRoom",
+                schema_definition={
+                    "board_key": "string",
+                    "display_name": "string",
+                    "desc": "text",
+                    "entry_room": "string",
+                    "is_system_singleton": "boolean",
+                },
+                is_active=True,
+            )
+            session.add(node_type)
+            session.commit()
+            session.refresh(node_type)
+            return node_type.id
+        except Exception as e:
+            self.logger.error(f"获取或创建系统公告栏节点类型失败: {e}")
+            session.rollback()
+            return None
 
     def get_users_in_root(self) -> List[Dict[str, Any]]:
         """获取在根节点的用户列表"""
