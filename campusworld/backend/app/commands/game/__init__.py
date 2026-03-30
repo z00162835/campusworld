@@ -5,10 +5,12 @@
 """
 
 from .look_command import LookCommand
+from .enter_world_command import EnterWorldCommand
 
 # 场景命令列表
 GAME_COMMANDS = [
     LookCommand(),
+    EnterWorldCommand(),
 ]
 
-__all__ = ['LookCommand', 'GAME_COMMANDS']
+__all__ = ['LookCommand', 'EnterWorldCommand', 'GAME_COMMANDS']

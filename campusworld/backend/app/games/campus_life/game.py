@@ -201,7 +201,7 @@ class Game(BaseGame):
         """获取玩家数量"""
         return len(self.players)
     
-    def add_player(self, player_id: str, player_data: Dict[str, Any]) -> bool:
+    def add_player(self, player_id: str, player_data: Dict[str, Any], initial_location: str = "campus") -> bool:
         """添加玩家"""
         try:
             if player_id in self.players:
@@ -209,7 +209,8 @@ class Game(BaseGame):
                 return False
             
             # 设置玩家初始位置
-            player_data["location"] = "campus"
+            spawn_location = initial_location if initial_location in self.locations else "campus"
+            player_data["location"] = spawn_location
             player_data["inventory"] = []
             player_data["stats"] = {
                 "energy": 100,
@@ -219,9 +220,11 @@ class Game(BaseGame):
             }
             
             self.players[player_id] = player_data
+            self._sync_player_world_location(player_id, spawn_location)
             
-            # 触发玩家加入事件
-            self.engine.hook_manager.trigger_hook("player_join", player_id, player_data)
+            # 触发玩家加入事件（离线/测试场景下 engine 可能未挂载）
+            if self.engine and getattr(self.engine, "hook_manager", None):
+                self.engine.hook_manager.trigger_hook("player_join", player_id, player_data)
             
             self.logger.info(f"玩家 '{player_id}' 加入场景成功")
             return True
@@ -240,7 +243,8 @@ class Game(BaseGame):
             player_data = self.players.pop(player_id)
             
             # 触发玩家离开事件
-            self.engine.hook_manager.trigger_hook("player_leave", player_id, player_data)
+            if self.engine and getattr(self.engine, "hook_manager", None):
+                self.engine.hook_manager.trigger_hook("player_leave", player_id, player_data)
             
             self.logger.info(f"玩家 '{player_id}' 离开场景成功")
             return True
@@ -266,11 +270,13 @@ class Game(BaseGame):
             
             old_location = self.players[player_id]["location"]
             self.players[player_id]["location"] = new_location
+            self._sync_player_world_location(player_id, new_location)
             
             # 触发玩家移动事件
-            self.engine.hook_manager.trigger_hook(
-                "player_move", player_id, old_location, new_location
-            )
+            if self.engine and getattr(self.engine, "hook_manager", None):
+                self.engine.hook_manager.trigger_hook(
+                    "player_move", player_id, old_location, new_location
+                )
             
             self.logger.info(f"玩家 '{player_id}' 从 '{old_location}' 移动到 '{new_location}'")
             return True
@@ -278,6 +284,25 @@ class Game(BaseGame):
         except Exception as e:
             self.logger.error(f"移动玩家 '{player_id}' 失败: {e}")
             return False
+
+    def _sync_player_world_location(self, player_id: str, world_location: str):
+        """将世界内位置同步回图节点属性，避免内存/DB漂移。"""
+        try:
+            from app.core.database import db_session_context
+            from app.models.graph import Node
+
+            with db_session_context() as session:
+                user_node = session.query(Node).filter(Node.id == int(player_id)).first()
+                if not user_node:
+                    return
+                attrs = user_node.attributes or {}
+                attrs["active_world"] = self.name
+                attrs["world_location"] = world_location
+                attrs["last_world_location"] = world_location
+                user_node.attributes = attrs
+                session.commit()
+        except Exception as e:
+            self.logger.warning(f"同步玩家世界位置失败: {e}")
     
     def get_location_info(self, location_name: str) -> Optional[Dict[str, Any]]:
         """获取位置信息"""

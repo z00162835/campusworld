@@ -1,5 +1,10 @@
 # TODO - games/campus_life 开发任务
 
+## 验收追踪
+
+- 统一验收文档：`docs/ssh/SPEC/ACCEPTANCE.md`
+- 语义边界：`campus_life` 定义世界内出生点，不定义系统登录入口。
+
 ## 空间扩展
 
 ### 高优先级
@@ -36,6 +41,11 @@
   - 在线用户数量统计
   - 用户位置广播（附近用户可见）
 
+- [ ] **入口衔接策略**
+  - 从 `SingularityRoom` 进入 `campus_life` 后默认出生点为 `campus`
+  - 世界不可用/无权限时回退逻辑由入口层处理，世界层返回可读错误
+  - 验收映射：`ACCEPTANCE 场景 A/C/D`
+
 ### 低优先级
 
 - [ ] **园区存档**: 用户状态持久化到数据库
@@ -54,7 +64,7 @@
 ## 验收检查清单
 
 - [ ] `game.py` 初始化后 locations 有 4 个预定义空间
-- [ ] `add_user("user1")` 后用户在 campus 位置
+- [ ] 从系统入口进入 `campus_life` 后用户在 `campus` 位置
 - [ ] `move_user("user1", "library")` 后用户在 library
 - [ ] `get_location_info("campus")` 返回完整的 location 数据
 - [ ] `get_game_info()` 返回园区统计（用户数/空间数/物品数）

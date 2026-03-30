@@ -4,9 +4,15 @@
 
 ## Module Overview
 
-`games/campus_life/` 是校园生活园区体验内容包，实现了园区的具体空间、对象、脚本和命令。
+`games/campus_life/` 是园区体验内容包，以高校校园为例，实现了一个样例园区的具体空间、对象、脚本和命令。
 
 > **注**：CampusWorld 是智慧园区 OS，不是游戏。系统借鉴 MUD 的设计原理构筑世界语义。"玩家行为"对应"用户行为"，"场景"对应"园区空间"，"玩家"对应"用户"。
+
+## Entry Boundary (System vs World)
+
+- `campus_life` 只定义**世界内**行为与出生点，不定义系统级登录入口。
+- 系统登录入口统一为 `SingularityRoom`（由 SSH/模型层规范）。
+- 用户进入 `campus_life` 世界后，默认出生点才是 `campus`。
 
 ```
 game_engine/          # 引擎框架
@@ -82,7 +88,7 @@ class Game(BaseGame):
 
 ## User Stories
 
-1. **探索园区**: 用户进入 `campus` 广场，通过 `go` 命令移动到图书馆/食堂/宿舍等空间
+1. **进入世界后探索园区**: 用户从系统入口进入 `campus_life` 后，在 `campus` 广场开始探索并通过 `go` 命令移动到图书馆/食堂/宿舍等空间
 2. **物品管理**: 用户通过 `take`/`drop` 管理物品，通过 `inventory` 查看物品列表
 3. **状态变化**: 用户的 stats（精力/饱食度）随时间/行动变化，驱动行为决策
 
@@ -98,7 +104,7 @@ user_action(user_id, action, *args)   # 用户执行动作
 ## Acceptance Criteria
 
 - [ ] 园区初始化后预定义 4 个空间（library/campus/canteen/dormitory）
-- [ ] 新用户进入园区时 spawn 到 `campus` 位置
+- [ ] 用户进入 `campus_life` 世界时，世界内默认 spawn 到 `campus` 位置
 - [ ] `go library` 成功移动到图书馆，返回新空间信息
 - [ ] `go north` 当前空间无该出口时返回错误
 - [ ] `add_user()` 触发 `user_join` hook

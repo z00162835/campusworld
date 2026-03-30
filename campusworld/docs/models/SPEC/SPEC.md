@@ -12,6 +12,12 @@
 实体（Node） + 关系（Edge） = 知识本体
 ```
 
+## Unified Terms (Cross-SPEC)
+
+- **System Entry Space**: `SingularityRoom`，系统级统一入口空间。
+- **World Default Spawn**: 某个世界内部默认出生点（例如 `campus_life/campus`）。
+- **Last Location Resume**: 用户重连后的位置恢复策略。
+
 ## Core Abstractions
 
 ### 基础模型
@@ -30,7 +36,7 @@
 | `User` | user.py | 用户账户（继承 DefaultAccount）|
 | `Character` | character.py | 角色（在知识本体中代表用户进入世界的化身）|
 | `Room` | room.py | 空间位置（图书馆/食堂/宿舍等）|
-| `SingularityRoom` | room.py | 单例空间（用户默认 spawn 位置）|
+| `SingularityRoom` | room.py | 系统入口空间（全局单例）|
 | `World` | world.py | 世界 |
 | `WorldObject` | world.py | 世界对象 |
 | `Building` | building.py | 建筑 |
@@ -91,12 +97,20 @@
 2. **空间连接**: Room 通过 Exit 连接到其他 Room，Exit 的 `source` 和 `destination` 代表空间的连通性
 3. **动态发现**: 新模型类通过 `model_factory` 自动注册，无需修改工厂代码
 
+## SingularityRoom as World Gateway
+
+- `SingularityRoom` 的语义是**系统入口与世界连接枢纽**，而不是每用户独有空间。
+- 用户登录后先进入系统入口，再由路由策略决定是否进入具体世界。
+- 世界内 spawn（如 `campus_life/campus`）属于世界语义，不应覆盖系统入口语义。
+- 奇点屋与世界的连接可通过图关系（如 `CONNECTED_TO` / `CONTAINS`）或策略映射表达，但必须保证可观测与可回退。
+
 ## Acceptance Criteria
 
 - [ ] 所有实体继承 `DefaultObject` 或 `DefaultAccount`
 - [ ] `model_factory.register_model("room", Room)` 后 `model_factory.get_model("room")` 能获取 Room 类
 - [ ] `Character` 位于 `Room` 通过语义边（而非外键）表达
 - [ ] 新用户创建后自动生成对应 Character 并 spawn 到 SingularityRoom
+- [ ] `SingularityRoom` 被定义为全局系统入口（非每用户单例）
 
 ## Design Decisions
 

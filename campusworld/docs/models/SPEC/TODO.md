@@ -1,5 +1,10 @@
 # TODO - 数据模型开发任务
 
+## 验收追踪
+
+- 统一验收文档：`docs/ssh/SPEC/ACCEPTANCE.md`
+- 入口语义约束：`SingularityRoom` 是系统全局入口，不是每用户独有空间。
+
 ## 实体扩展
 
 ### 高优先级
@@ -15,9 +20,10 @@
   - 方向：north/south/east/west 或自定义方向
 
 - [ ] **SingularityRoom 完善**
-  - 每个用户独有的单例空间
-  - 创建用户时自动创建对应 SingularityRoom
-  - 用户 spawn 到自己的 SingularityRoom
+  - 系统级全局单例入口空间（非每用户独有）
+  - 创建用户后默认可进入系统入口 `SingularityRoom`
+  - 与世界入口策略联动（进入世界后再落到世界内默认出生点）
+  - 验收映射：`ACCEPTANCE 场景 A/B/C/D`
 
 ### 中优先级
 
@@ -62,4 +68,5 @@
 - [ ] `model_factory.get_model("room")` 返回 Room 类
 - [ ] `User` 继承 `DefaultAccount`
 - [ ] `Room` 继承 `DefaultObject`
-- [ ] 新建用户后对应 Character spawn 到 SingularityRoom
+- [ ] 新建用户后可通过入口策略进入 `SingularityRoom`
+- [ ] `SingularityRoom` 语义为系统全局入口（非每用户单例）

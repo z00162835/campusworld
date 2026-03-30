@@ -54,7 +54,7 @@ class Campus(DefaultObject):
 
 ```python
 class World(DefaultObject):
-    """游戏世界"""
+    """虚拟世界"""
     owner_id: UUID
     is_public: bool
 

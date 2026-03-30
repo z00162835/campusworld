@@ -11,9 +11,11 @@ from datetime import datetime
 
 from app.core.database import db_session_context
 from app.core.log import get_logger, LoggerNames
+from app.game_engine.manager import game_engine_manager
 from app.models.graph import Node
 from app.models.root_manager import root_manager
 from app.models.user import User
+from app.ssh.entry_router import EntryRouter
 
 
 class GameHandler:
@@ -31,6 +33,7 @@ class GameHandler:
         self.logger = get_logger(LoggerNames.GAME)
         self.audit_logger = get_logger(LoggerNames.AUDIT)
         self.security_logger = get_logger(LoggerNames.SECURITY)
+        self.entry_router = EntryRouter()
 
     def authenticate_user(self, username: str, password: str,
                          client_ip: str = 'unknown') -> Dict[str, Any]:
@@ -231,19 +234,50 @@ class GameHandler:
                     self.security_logger.warning(f"用户节点不存在: {user_id}")
                     return False
 
-                # 设置用户位置到根节点
-                user_node.location_id = root_node.id
-                user_node.home_id = root_node.id
+                # 入口路由：先决策，再执行，失败降级到奇点屋
+                attrs = user_node.attributes or {}
+                route = self.entry_router.resolve_post_auth_destination(user_node)
+                fallback_used = False
 
-                # 更新最后活动时间
-                attrs = user_node.attributes
+                if route.target_kind == "world" and route.world_name:
+                    entered, _ = self._enter_world_in_session(
+                        session=session,
+                        user_node=user_node,
+                        username=username,
+                        world_name=route.world_name,
+                        spawn_key=route.world_spawn_key or "campus",
+                        root_node_id=root_node.id,
+                    )
+                    if not entered:
+                        fallback_used = True
+                        user_node.location_id = root_node.id
+                        user_node.home_id = root_node.id
+                        attrs["active_world"] = None
+                        attrs["entry_fallback_reason"] = "enter_world_failed"
+                else:
+                    user_node.location_id = root_node.id
+                    user_node.home_id = root_node.id
+
+                # 更新最后活动时间和路由信息
                 attrs["last_activity"] = datetime.now().isoformat()
+                attrs["last_entry_route"] = route.target_kind
+                attrs["last_entry_reason"] = route.reason
                 user_node.attributes = attrs
 
                 # 提交更改
                 session.commit()
 
-                self.logger.info(f"用户 {username} 已spawn到根节点")
+                self.logger.info(
+                    f"用户 {username} 登录入口路由完成",
+                    extra={
+                        "username": username,
+                        "route_target": route.target_kind,
+                        "route_reason": route.reason,
+                        "world_name": route.world_name,
+                        "fallback_used": fallback_used,
+                        "event_type": "user_post_auth_routed",
+                    },
+                )
                 return True
 
         except Exception as e:
@@ -254,6 +288,73 @@ class GameHandler:
                 'event_type': 'user_spawn_error'
             })
             return False
+
+    def enter_world(self, user_id, username: str, world_name: str, spawn_key: str = "campus") -> Dict[str, Any]:
+        """由命令层调用：从奇点屋进入指定世界。"""
+        try:
+            with db_session_context() as session:
+                user_node = session.query(Node).filter(Node.id == user_id).first()
+                if not user_node:
+                    return {"success": False, "message": "用户不存在"}
+
+                if not root_manager.ensure_root_node_exists():
+                    return {"success": False, "message": "系统入口不可用"}
+
+                root_node = root_manager.get_root_node(session)
+                if not root_node:
+                    return {"success": False, "message": "系统入口不可用"}
+
+                if user_node.location_id != root_node.id:
+                    return {"success": False, "message": "请先回到奇点屋再进入世界"}
+
+                success, message = self._enter_world_in_session(
+                    session=session,
+                    user_node=user_node,
+                    username=username,
+                    world_name=world_name,
+                    spawn_key=spawn_key,
+                    root_node_id=root_node.id,
+                )
+                if not success:
+                    return {"success": False, "message": message}
+
+                attrs = user_node.attributes or {}
+                attrs["last_activity"] = datetime.now().isoformat()
+                user_node.attributes = attrs
+                session.commit()
+                return {"success": True, "message": message}
+        except Exception as e:
+            self.logger.error(f"进入世界失败: {e}")
+            return {"success": False, "message": f"进入世界失败: {e}"}
+
+    def _enter_world_in_session(self, session, user_node: Node, username: str, world_name: str, spawn_key: str, root_node_id: int):
+        """在当前数据库会话内执行世界进入和状态写回。"""
+        engine = game_engine_manager.get_engine()
+        if not engine:
+            return False, "游戏引擎未启动"
+
+        game = engine.get_game(world_name)
+        if not game:
+            return False, f"世界未加载: {world_name}"
+
+        attrs = user_node.attributes or {}
+        player_payload = {
+            "username": username,
+            "world_name": world_name,
+        }
+        if hasattr(game, "add_player"):
+            ok = game.add_player(str(user_node.id), player_payload, initial_location=spawn_key)
+            if not ok:
+                return False, f"无法进入世界: {world_name}"
+
+        attrs["active_world"] = world_name
+        attrs["world_location"] = spawn_key
+        attrs["last_world_location"] = spawn_key
+        user_node.attributes = attrs
+        # 系统层位置仍锚定在奇点屋，世界内位置写入 attributes
+        user_node.location_id = root_node_id
+        user_node.home_id = root_node_id
+        return True, f"已进入世界 {world_name}（出生点: {spawn_key}）"
 
     def get_user_location(self, user_id) -> Optional[Dict[str, Any]]:
         """

@@ -12,6 +12,21 @@ SSH 服务器（`backend/app/ssh/`）基于 Paramiko 实现，采用 Evennia 的
 连接 → Protocol Layer → Game Layer → Security Layer → 命令执行
 ```
 
+## Unified Terms (Cross-SPEC)
+
+- **System Entry Space**: `SingularityRoom`，系统级默认登录入口。
+- **World Default Spawn**: 用户进入某个具体世界后，该世界内部的默认出生点（例如 `campus_life` 的 `campus`）。
+- **Last Location Resume**: 恢复用户上次有效位置的策略，不应与“系统入口”语义冲突。
+
+## Login to Hub Call Chain (Current Implementation)
+
+1. `SSHProtocolHandler.check_auth_password()` 调用 `game_handler.authenticate_user()` 进行认证。
+2. 认证成功后创建 `SSHSession`。
+3. `CampusWorldSSHServer._handle_client()` 在绑定会话后调用 `game_handler.spawn_user()`。
+4. `spawn_user()` 调用 `root_manager.ensure_root_node_exists()` 并将用户 `location_id/home_id` 指向根空间。
+
+该调用链说明：当前实现已具备“登录后进入奇点屋”的基础行为，但仍是同进程同步调用，不是进程间消息架构。
+
 ## 架构设计（四层架构）
 
 ```
@@ -78,17 +93,25 @@ DISCONNECTED
 ## User Stories
 
 1. **连接园区**: 用户通过 SSH 客户端连接园区，输入用户名密码认证
-2. **进入园区**: 认证成功后 spawn 到 SingularityRoom 或上次离开的位置
+2. **进入系统入口**: 认证成功后进入 `SingularityRoom`（或按恢复策略进入有效位置）
 3. **命令交互**: 通过终端命令与园区空间交互（look/go/say 等）
 4. **安全防护**: 连续登录失败 5 次后 IP 被锁定 5 分钟
+
+## Post-Authentication Routing Policy
+
+- **新用户**：认证成功后默认进入 `SingularityRoom`。
+- **已有用户**：若启用恢复策略且上次位置有效，可进入 Last Location；否则回退 `SingularityRoom`。
+- **目标世界不可达/无权限**：保持在 `SingularityRoom`，返回可选世界或失败原因，不中断会话。
+- **边界约束**：SSH 层只负责认证与会话建立；“入口->世界”路由策略由业务策略层定义。
 
 ## Acceptance Criteria
 
 - [ ] `ssh username@localhost -p 2222` 能建立 SSH 连接
-- [ ] 正确用户名密码登录成功，进入园区空间
+- [ ] 正确用户名密码登录成功，进入 `SingularityRoom` 或策略允许的恢复位置
 - [ ] 错误密码连续 5 次后，IP 被锁定 300 秒
 - [ ] `quit` 命令后正确断开 SSH 连接
 - [ ] 同时支持 50 个并发 SSH 会话
+- [ ] 世界不可达/无权限时，用户保持在 `SingularityRoom` 并收到明确提示
 
 ## Design Decisions
 
@@ -101,6 +124,7 @@ DISCONNECTED
 - [ ] 是否需要公钥认证支持？
 - [ ] 会话数据是否需要持久化（断线重连）？
 - [ ] 是否需要命令执行超时机制？
+- [ ] 是否将当前同进程调用升级为进程间消息交互（Portal/Server 分离）？
 
 ## Dependencies
 

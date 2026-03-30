@@ -1,6 +1,6 @@
 # CampusWorld
 
-一个基于 FastAPI 和 Vue3 的现代化校园世界项目，采用企业级工程化架构设计，借鉴 MUD 游戏世界设计原理构筑世界语义。
+下一代智慧园区OS系统，采用企业级工程化架构设计，借鉴 MUD 游戏世界设计原理构筑世界语义。
 
 ## Architectural Vision - 架构愿景
 
