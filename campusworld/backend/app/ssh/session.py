@@ -140,10 +140,7 @@ class SSHSession:
                 ).first()
                 if user_node:
                     attrs = user_node.attributes
-                    return User(
-                        username=attrs.get('username', ''),
-                        **attrs
-                    )
+                    return User(**attrs)
                 return None
         except Exception as e:
             logger.error(f"Failed to load user object: {e}")
