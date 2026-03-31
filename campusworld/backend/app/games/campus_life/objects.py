@@ -16,7 +16,6 @@ class CampusLifeObjects:
         self.logger = logging.getLogger(f"game.{game.name}.objects")
         self.is_running = False
         
-        self.logger.info("园区世界对象系统初始化完成")
     
     def start(self):
         """启动对象系统"""

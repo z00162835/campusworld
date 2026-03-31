@@ -47,8 +47,7 @@ class Game(BaseGame):
         
         # 初始化场景世界
         self._init_game_world()
-        
-        self.logger.info("园区世界初始化完成")
+        # 注意：真正的初始化在 initialize_game() 方法中进行
     
     def initialize_game(self) -> bool:
         """初始化场景 - 兼容接口"""
