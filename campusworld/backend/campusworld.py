@@ -17,10 +17,11 @@ sys.path.insert(0, str(project_root))
 from app.ssh.server import CampusWorldSSHServer
 from app.core.config_manager import get_setting, get_config
 from app.core.log import (
-    get_logger, 
-    setup_logging, 
+    get_logger,
+    setup_logging,
     LoggerNames,
 )
+from app.core.log.manager import get_logging_manager
 from app.core.paths import get_logs_dir
 from app.game_engine.manager import game_engine_manager
 
@@ -286,7 +287,7 @@ class CampusWorld:
             try:
                 while self.is_running:
                     time.sleep(0.1)
-                except KeyboardInterrupt:
+            except KeyboardInterrupt:
                 self.logger.info("Keyboard interrupt received")
 
             return True
@@ -373,6 +374,16 @@ def main():
         
         # 运行系统
         success = campusworld.run()
+
+        # 停止日志监听器，确保所有日志写入完成
+        # 参考 Evennia 的做法：在退出前确保日志被 flush
+        logging_manager = get_logging_manager()
+        logging_manager.stop_listener()
+
+        # 确保所有标准流都被 flush
+        sys.stdout.flush()
+        sys.stderr.flush()
+
         os._exit(0 if success else 1)
         
     except Exception as e:
