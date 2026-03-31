@@ -45,7 +45,7 @@ class BitCampusGenerator:
         
         # 初始化命令系统
         if not initialize_commands():
-            raise RuntimeError("命令系统初始化失败")
+            raise RuntimeError("Command system initialization failed")
         
         # 创建的管理员用户
         self.admin_user = None
@@ -66,12 +66,12 @@ class BitCampusGenerator:
             'errors': []
         }
         
-        self.logger.info("Bit Campus Generator 初始化完成")
+        self.logger.info("Bit Campus Generator initialization completed")
     
     def create_admin_user(self) -> bool:
         """创建管理员用户用于执行create命令"""
         try:
-            self.logger.info("创建管理员用户...")
+            self.logger.info("Creating admin user...")
             
             # 创建管理员用户
             admin_user = User(
@@ -86,11 +86,11 @@ class BitCampusGenerator:
             admin_user.sync_to_node()
             
             self.admin_user = admin_user
-            self.logger.info(f"✓ 管理员用户创建成功: {admin_user.username} (ID: {admin_user.id})")
+            self.logger.info(f"[OK] Admin user created: {admin_user.username} (ID: {admin_user.id})")
             return True
             
         except Exception as e:
-            self.logger.error(f"创建管理员用户失败: {e}")
+            self.logger.error(f"Failed to create admin user: {e}")
             return False
     
     def execute_create_command(self, model_name: str, parameters: Dict[str, Any]) -> bool:
@@ -125,10 +125,10 @@ class BitCampusGenerator:
             
             # 检查结果
             if "成功创建" in result or "success" in result.lower() or "UUID" in result:
-                self.logger.debug(f"✓ 命令执行成功: {model_name}")
+                self.logger.debug(f"[OK] Command executed successfully: {model_name}")
                 return True
             else:
-                self.logger.error(f"✗ 命令执行失败: {model_name}")
+                self.logger.error(f"[FAIL] Command execution failed: {model_name}")
                 self.logger.error(f"  结果: {result}")
                 self.stats['errors'].append(f"{model_name}: {result}")
                 return False
@@ -175,7 +175,7 @@ class BitCampusGenerator:
     def generate_campus(self) -> bool:
         """生成名为bit的campus"""
         try:
-            self.logger.info("生成Campus: bit...")
+            self.logger.info("Generating Campus: bit...")
             
             # 计算campus的尺寸（基于3个building，每个5层，每层最多50个房间）
             # 简化计算：假设每个房间平均50平方米
@@ -211,11 +211,11 @@ class BitCampusGenerator:
                 self.campus = model_manager.get_node_by_name("bit", "campus")
                 if self.campus:
                     self.stats['campus'] = 1
-                    self.logger.info(f"✓ Campus创建成功: {self.campus.name}")
+                    self.logger.info(f"[OK] Campus created: {self.campus.name}")
                     return True
                 else:
                     # 尝试通过UUID或其他方式查找
-                    self.logger.warning("Campus创建成功但无法从数据库获取，继续执行")
+                    self.logger.warning("Campus created but not retrievable from database, continuing")
                     # 创建一个临时campus对象用于后续操作
                     self.campus = Campus(name="bit", **campus_params)
                     self.stats['campus'] = 1
@@ -230,7 +230,7 @@ class BitCampusGenerator:
     def generate_buildings(self) -> bool:
         """生成3个building，每个5层"""
         try:
-            self.logger.info("生成3个Building...")
+            self.logger.info("Generating 3 Buildings...")
             
             if not self.campus:
                 self.logger.error("Campus未创建，无法生成Building")
@@ -243,7 +243,7 @@ class BitCampusGenerator:
                 building_code = f"BLD{building_num:03d}"
                 building_name = f"Building {building_num}"
                 
-                self.logger.info(f"生成Building {building_num}...")
+                self.logger.info(f"Generating Building {building_num}...")
                 
                 # 计算building尺寸（基于5层，每层最多50个房间）
                 estimated_area = 5 * 50 * 50  # 5层 * 50房间 * 50平方米
@@ -290,13 +290,13 @@ class BitCampusGenerator:
                     if building:
                         self.buildings.append(building)
                         self.stats['buildings'] += 1
-                        self.logger.info(f"✓ Building {building_num}创建成功: {building.name}")
+                        self.logger.info(f"[OK] Building {building_num} created: {building.name}")
                     else:
                         # 创建临时building对象
                         building = Building(name=building_name, **building_params)
                         self.buildings.append(building)
                         self.stats['buildings'] += 1
-                        self.logger.warning(f"Building {building_num}创建成功但无法从数据库获取，使用临时对象")
+                        self.logger.warning(f"Building {building_num} created but not retrievable from database, using temporary object")
                 else:
                     self.logger.error(f"Building {building_num}创建失败")
             
@@ -309,7 +309,7 @@ class BitCampusGenerator:
     def generate_floors(self) -> bool:
         """为每个building生成5层"""
         try:
-            self.logger.info("生成BuildingFloor...")
+            self.logger.info("Generating BuildingFloor...")
             
             if not self.buildings:
                 self.logger.error("Building未创建，无法生成Floor")
@@ -373,12 +373,12 @@ class BitCampusGenerator:
                             floor = BuildingFloor(name=floor_name, floor_number=floor_num, **floor_params)
                             building_floors.append(floor)
                             self.stats['floors'] += 1
-                            self.logger.warning(f"Floor {floor_name}创建成功但无法从数据库获取，使用临时对象")
+                            self.logger.warning(f"Floor {floor_name} created but not retrievable from database, using temporary object")
                     else:
                         self.logger.error(f"Floor {floor_name}创建失败")
                 
                 self.floors[building_id] = building_floors
-                self.logger.info(f"✓ Building {building.name}的5层创建完成")
+                self.logger.info(f"[OK] 5 floors created for Building {building.name}")
             
             return True
             
@@ -389,7 +389,7 @@ class BitCampusGenerator:
     def generate_rooms(self) -> bool:
         """为每层生成10-50个随机房间"""
         try:
-            self.logger.info("生成Room...")
+            self.logger.info("Generating Room...")
             
             if not self.floors:
                 self.logger.error("Floor未创建，无法生成Room")
@@ -408,7 +408,7 @@ class BitCampusGenerator:
                     
                     # 随机生成房间数量（10-50）
                     room_count = random.randint(10, 50)
-                    self.logger.info(f"为{floor.name}生成{room_count}个房间...")
+                    self.logger.info(f"Generating {room_count} rooms for {floor.name}...")
                     
                     floor_rooms = []
                     
@@ -482,12 +482,12 @@ class BitCampusGenerator:
                                 room = Room(name=room_name, **room_params)
                                 floor_rooms.append(room)
                                 self.stats['rooms'] += 1
-                                self.logger.warning(f"Room {room_name}创建成功但无法从数据库获取，使用临时对象")
+                                self.logger.warning(f"Room {room_name} created but not retrievable from database, using temporary object")
                         else:
                             self.logger.error(f"Room {room_name}创建失败")
                     
                     self.rooms[floor_id] = floor_rooms
-                    self.logger.info(f"✓ {floor.name}的{len(floor_rooms)}个房间创建完成")
+                    self.logger.info(f"[OK] {len(floor_rooms)} rooms created for {floor.name}")
                     
                     # 创建房间之间的连接
                     self._create_room_connections(floor_rooms, cols, rows)
@@ -572,7 +572,7 @@ class BitCampusGenerator:
         """生成所有对象"""
         try:
             self.logger.info("=" * 60)
-            self.logger.info("开始生成Bit Campus")
+            self.logger.info("Starting Bit Campus Generation")
             self.logger.info("=" * 60)
             
             # 1. 创建管理员用户
@@ -596,7 +596,7 @@ class BitCampusGenerator:
                 return False
             
             self.logger.info("=" * 60)
-            self.logger.info("Bit Campus生成完成！")
+            self.logger.info("Bit Campus Generation Completed!")
             self.logger.info("=" * 60)
             
             return True
@@ -609,33 +609,33 @@ class BitCampusGenerator:
         """验证所有对象是否正确创建"""
         try:
             self.logger.info("=" * 60)
-            self.logger.info("开始验证所有对象")
+            self.logger.info("Starting Validation of All Objects")
             self.logger.info("=" * 60)
             
             all_valid = True
             
             # 验证Campus
             if not self.campus:
-                self.logger.error("✗ Campus未创建")
+                self.logger.error("[FAIL] Campus not created")
                 all_valid = False
             else:
                 if self.campus.name != "bit":
-                    self.logger.error(f"✗ Campus名称错误: {self.campus.name}")
+                    self.logger.error(f"[FAIL] Campus name incorrect: {self.campus.name}")
                     all_valid = False
                 else:
-                    self.logger.info("✓ Campus验证通过")
+                    self.logger.info("[OK] Campus validation passed")
                 
                 # 验证campus_dtmodels
                 campus_dtmodels = self.campus._node_attributes.get('campus_dtmodels', {})
                 if not campus_dtmodels.get('geojson'):
-                    self.logger.error("✗ Campus缺少geojson数据")
+                    self.logger.error("[FAIL] Campus missing geojson data")
                     all_valid = False
                 else:
-                    self.logger.info("✓ Campus geojson验证通过")
+                    self.logger.info("[OK] Campus geojson validation passed")
             
             # 验证Building
             if len(self.buildings) != 3:
-                self.logger.error(f"✗ Building数量错误: {len(self.buildings)}")
+                self.logger.error(f"[FAIL] Building count incorrect: {len(self.buildings)}")
                 all_valid = False
             else:
                 self.logger.info("✓ Building数量验证通过")
@@ -651,12 +651,12 @@ class BitCampusGenerator:
                         all_valid = False
                 
                 if all_valid:
-                    self.logger.info("✓ Building验证通过")
+                    self.logger.info("[OK] Building validation passed")
             
             # 验证Floor
             expected_floors = 3 * 5  # 3个building * 5层
             if self.stats['floors'] != expected_floors:
-                self.logger.error(f"✗ Floor数量错误: {self.stats['floors']}, 期望{expected_floors}")
+                self.logger.error(f"[FAIL] Floor count incorrect: {self.stats['floors']}, expected {expected_floors}")
                 all_valid = False
             else:
                 self.logger.info("✓ Floor数量验证通过")
@@ -678,7 +678,7 @@ class BitCampusGenerator:
                             all_valid = False
                 
                 if all_valid:
-                    self.logger.info("✓ Floor验证通过")
+                    self.logger.info("[OK] Floor validation passed")
             
             # 验证Room
             for floor_id, rooms in self.rooms.items():
@@ -715,9 +715,9 @@ class BitCampusGenerator:
             
             self.logger.info("=" * 60)
             if all_valid:
-                self.logger.info("✓ 所有对象验证通过")
+                self.logger.info("[OK] All object validation passed")
             else:
-                self.logger.error("✗ 部分对象验证失败")
+                self.logger.error("[FAIL] Some object validation failed")
             self.logger.info("=" * 60)
             
             return all_valid
@@ -782,7 +782,7 @@ def main():
                     logger.info("\n🎉 Bit Campus生成和验证完成！")
                     sys.exit(0)
                 else:
-                    logger.error("\n❌ Bit Campus生成完成但验证失败")
+                    logger.error("\n[FAIL] Bit Campus generation completed but validation failed")
                     sys.exit(1)
             else:
                 logger.info("\n🎉 Bit Campus生成完成（跳过验证）")

@@ -257,19 +257,22 @@ class PermissionGuard:
     def require_permission(self, permission: str) -> bool:
         """要求权限（抛出异常）"""
         if not self.check_permission(permission):
-            raise PermissionError(f"权限不足: 需要权限 {permission}")
+            self.logger.warning(f"Permission denied: requires permission {permission}")
+            raise PermissionError(f"Permission denied: requires permission {permission}")
         return True
-    
+
     def require_role(self, role: str) -> bool:
         """要求角色（抛出异常）"""
         if not self.check_role(role):
-            raise PermissionError(f"角色不足: 需要角色 {role}")
+            self.logger.warning(f"Role denied: requires role {role}")
+            raise PermissionError(f"Role denied: requires role {role}")
         return True
-    
+
     def require_access_level(self, level: str) -> bool:
         """要求访问级别（抛出异常）"""
         if not self.check_access_level(level):
-            raise PermissionError(f"访问级别不足: 需要级别 {level}")
+            self.logger.warning(f"Access level denied: requires level {level}")
+            raise PermissionError(f"Access level denied: requires level {level}")
         return True
 
 

@@ -196,12 +196,12 @@ class CampusWorldSSHServer:
             try:
                 reject_msg = b"Connection rate limit exceeded. Please try again later.\r\n"
                 client.send(reject_msg)
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning(f"Failed to send rate limit rejection message: {e}")
             try:
                 client.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning(f"Failed to close client connection after rate limit: {e}")
             return
 
         # 记录连接开始

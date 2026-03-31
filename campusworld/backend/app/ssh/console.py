@@ -57,9 +57,10 @@ class SSHConsole:
                 return 80
             else:
                 return 80
-        except:
+        except Exception as e:
+            self.logger.debug(f"Terminal width detection failed: {e}")
             return 80
-    
+
     def _detect_terminal_height(self) -> int:
         """检测终端高度"""
         try:
@@ -67,7 +68,8 @@ class SSHConsole:
                 return 24
             else:
                 return 24
-        except:
+        except Exception as e:
+            self.logger.debug(f"Terminal height detection failed: {e}")
             return 24
     
     def run(self):

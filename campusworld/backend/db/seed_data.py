@@ -79,7 +79,7 @@ def ensure_default_accounts(session) -> bool:
         .all()
     )
     if existing:
-        logger.info(f"默认账号已存在，跳过创建（幂等）")
+        logger.info(f"Default accounts already exist, skipping creation (idempotent)")
         return True
 
     def _attrs(obj) -> dict:
@@ -90,7 +90,7 @@ def ensure_default_accounts(session) -> bool:
                 attrs[k] = v.isoformat()
         return attrs
 
-    logger.info("开始创建默认账号...")
+    logger.info("Starting default account creation...")
 
     # 使用 disable_auto_sync=True 避免在对象创建时自动同步（会与传入的session冲突）
     # seed_data 的设计是手动创建 Node 对象，不依赖自动同步

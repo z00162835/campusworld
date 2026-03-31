@@ -47,7 +47,7 @@ class CampusWorld:
         # 使用场景引擎管理器而不是直接实例
         self.game_engine_manager = game_engine_manager
         
-        self.logger.info("CampusWorld主程序初始化完成")
+        self.logger.info("CampusWorld main program initialization completed")
     
     def _setup_logging(self):
         """设置日志系统"""
@@ -62,7 +62,7 @@ class CampusWorld:
             )
             
         except Exception as e:
-            print(f"日志系统初始化失败: {e}")
+            print(f"Logging system initialization failed: {e}")
             # 使用默认配置作为后备
             setup_logging()
     
@@ -71,7 +71,7 @@ class CampusWorld:
         try:
             # 验证配置
             if not self.config_manager.validate():
-                self.logger.error("配置验证失败")
+                self.logger.error("Configuration validation failed")
                 return False
             
             # 获取配置摘要
@@ -92,12 +92,12 @@ class CampusWorld:
             
             # 初始化内容引擎
             if not self.game_engine_manager.initialize_engine():
-                self.logger.error("引擎初始化失败")
+                self.logger.error("Engine initialization failed")
                 return False
             
             # 启动内容引擎
             if not self.game_engine_manager.start_engine():
-                self.logger.error("引擎启动失败")
+                self.logger.error("Engine start failed")
                 return False
             return True
         except Exception as e:
@@ -107,7 +107,7 @@ class CampusWorld:
     def initialize_ssh_server(self) -> bool:
         """初始化SSH服务器"""
         try:
-            self.logger.info("正在初始化SSH服务器...")
+            self.logger.info("Initializing SSH server...")
             
             # 从配置获取SSH设置
             ssh_config = self.config_manager.get_ssh_config()
@@ -121,7 +121,7 @@ class CampusWorld:
             # 创建SSH服务器
             self.ssh_server = CampusWorldSSHServer(host=host, port=port)
             
-            self.logger.info(f"SSH服务器初始化成功 ({host}:{port})")
+            self.logger.info(f"SSH server initialized successfully ({host}:{port})")
             return True
             
         except Exception as e:
@@ -135,12 +135,12 @@ class CampusWorld:
         """启动SSH服务器"""
         try:
             if not self.ssh_server:
-                self.logger.error("SSH服务器未初始化")
+                self.logger.error("SSH server not initialized")
                 return False
             
             # 启动SSH服务器
             self.ssh_server.start()
-            self.logger.info("SSH服务器启动成功")
+            self.logger.info("SSH server started successfully")
             return True
             
         except Exception as e:
@@ -154,13 +154,13 @@ class CampusWorld:
         """启动CampusWorld系统"""
         try:
             if self.is_running:
-                self.logger.warning("CampusWorld已在运行中")
+                self.logger.warning("CampusWorld is already running")
                 return True
 
             self.start_time = time.time()
             self.is_running = True
 
-            self.logger.info("正在启动CampusWorld系统...")
+            self.logger.info("Starting CampusWorld system...")
 
             # 1. 加载配置
             if not self.load_config():
@@ -168,10 +168,10 @@ class CampusWorld:
 
             # 2. 初始化并启动游戏引擎（统一处理）
             if not self.game_engine_manager.initialize_engine():
-                self.logger.error("引擎初始化失败")
+                self.logger.error("Engine initialization failed")
                 return False
             if not self.game_engine_manager.start_engine():
-                self.logger.error("引擎启动失败")
+                self.logger.error("Engine start failed")
                 return False
 
             # 3. 初始化并启动SSH服务器
@@ -185,7 +185,7 @@ class CampusWorld:
             self.ssh_server = CampusWorldSSHServer(host=host, port=port)
             self.ssh_server.start()
 
-            self.logger.info("CampusWorld系统启动成功")
+            self.logger.info("CampusWorld system started successfully")
             return True
 
         except Exception as e:
@@ -200,14 +200,14 @@ class CampusWorld:
         try:
             if not self.is_running:
                 return True
-            self.logger.info("正在停止CampusWorld系统...")
+            self.logger.info("Stopping CampusWorld system...")
             # 停止SSH服务器
             if self.ssh_server:
                 try:
                     self.ssh_server.stop()
-                    self.logger.info("SSH服务器已停止")
+                    self.logger.info("SSH server stopped")
                 except Exception as e:
-                    self.logger.error(f"停止SSH服务器失败: {e}", exc_info=True, extra={
+                    self.logger.error(f"Failed to stop SSH server: {e}", exc_info=True, extra={
                         "error_type": "ssh_stop_error",
                         "host": self.ssh_server.host,
                         "port": self.ssh_server.port
@@ -218,18 +218,18 @@ class CampusWorld:
                 engine = self.game_engine_manager.get_engine()
                 if engine:
                     engine.stop_engine()
-                    self.logger.info("内容引擎已停止")
+                    self.logger.info("Content engine stopped")
                 else:
-                    self.logger.warning("内容引擎未初始化，无法停止内容")
+                    self.logger.warning("Content engine not initialized, cannot stop content")
             except Exception as e:
-                self.logger.error(f"停止内容引擎失败: {e}", exc_info=True, extra={
+                self.logger.error(f"Failed to stop content engine: {e}", exc_info=True, extra={
                     "error_type": "engine_stop_error",
                 })
             
             self.is_running = False
             runtime = time.time() - self.start_time if self.start_time else 0
             
-            self.logger.info(f"CampusWorld系统已停止，运行时间: {runtime:.2f}秒", extra={
+            self.logger.info(f"CampusWorld system stopped, runtime: {runtime:.2f} seconds", extra={
                 "runtime_seconds": runtime,
                 "stop_time": time.time()
             })
@@ -267,7 +267,7 @@ class CampusWorld:
                 game_status = engine.interface.get_game_status('campus_life')
                 status["game"] = game_status
             else:
-                status["game"] = {"error": "场景引擎未初始化"}
+                status["game"] = {"error": "Game engine not initialized"}
                 
         except Exception as e:
             status["game"] = {"error": str(e)}
@@ -279,7 +279,7 @@ class CampusWorld:
         try:
             # 启动系统
             if not self.start():
-                self.logger.error("CampusWorld系统启动失败")
+                self.logger.error("CampusWorld system start failed")
                 return False
             
             # 显示系统状态
@@ -290,7 +290,7 @@ class CampusWorld:
                 while self.is_running:
                     time.sleep(1)
             except KeyboardInterrupt:
-                self.logger.info("收到中断信号，正在关闭...")
+                self.logger.info("Received interrupt signal, shutting down...")
             
             return True
             
@@ -313,14 +313,14 @@ class CampusWorld:
         self.logger.info("显示系统状态")
         
         print("\n" + "=" * 60)
-        print("CampusWorld 系统状态")
+        print("CampusWorld System Status")
         print("=" * 60)
         
         # 配置信息
         config = status.get("config", {})
         print(f"环境: {config.get('environment', 'Unknown')}")
         print(f"配置目录: {config.get('config_dir', 'Unknown')}")
-        print(f"配置状态: {'已加载' if config.get('loaded') else '未加载'}")
+        print(f"Config status: {'Loaded' if config.get('loaded') else 'Not loaded'}")
         
         # 场景状态
         if "game" in status and "error" not in status["game"]:
@@ -328,7 +328,7 @@ class CampusWorld:
             print(f"场景: {game.get('name', 'N/A')}")
             print(f"  版本: {game.get('version', 'N/A')}")
             print(f"  描述: {game.get('description', 'N/A')}")
-            print(f"  状态: {'运行中' if game.get('is_running') else '已停止'}")
+            print(f"  Status: {'Running' if game.get('is_running') else 'Stopped'}")
             print(f"  房间数量: {game.get('rooms_count', 0)}")
             print(f"  物品数量: {game.get('items_count', 0)}")
             print(f"  角色数量: {game.get('characters_count', 0)}")
@@ -336,27 +336,27 @@ class CampusWorld:
         # SSH服务器状态
         if status["ssh_server"]:
             ssh = status["ssh_server"]
-            print(f"SSH服务器: {'运行中' if ssh.get('is_running') else '已停止'}")
+            print(f"SSH server: {'Running' if ssh.get('is_running') else 'Stopped'}")
             print(f"  地址: {ssh.get('host', 'N/A')}:{ssh.get('port', 'N/A')}")
         
         print(f"系统运行时间: {status['runtime']:.2f}秒")
-        print("\n系统已启动，可以通过SSH连接进行交互")
+        print("\nSystem started, you can interact via SSH connection")
         print("使用 'help' 命令查看可用命令")
         print("使用 'game help' 命令查看场景管理帮助")
-        print("\n按 Ctrl+C 停止系统")
+        print("\nPress Ctrl+C to stop the system")
         print("=" * 60)
 
 
 def signal_handler(signum, frame):
     """信号处理器"""
     # 使用print确保用户能看到中断信息
-    print(f"\n收到信号 {signum}，正在关闭CampusWorld系统...")
+    print(f"\nReceived signal {signum}, shutting down CampusWorld system...")
     
     if hasattr(signal_handler, 'campusworld'):
         # 记录到日志
         campusworld = signal_handler.campusworld
         if hasattr(campusworld, 'logger'):
-            campusworld.logger.info(f"收到信号 {signum}，正在关闭系统")
+            campusworld.logger.info(f"Received signal {signum}, shutting down system")
         campusworld.stop()
     
     sys.exit(0)
@@ -366,7 +366,7 @@ def main():
     """主函数"""
     # 使用print显示启动信息给用户
     print("=" * 60)
-    print("CampusWorld 主程序")
+    print("CampusWorld Main Program")
     print("=" * 60)
     
     try:
@@ -385,11 +385,11 @@ def main():
         
     except Exception as e:
         # 使用print确保错误信息显示给用户
-        print(f"启动CampusWorld系统失败: {e}")
+        print(f"Failed to start CampusWorld system: {e}")
         # 同时记录到日志（如果可能）
         try:
             import logging
-            logging.error(f"启动CampusWorld系统失败: {e}", exc_info=True)
+            logging.error(f"Failed to start CampusWorld system: {e}", exc_info=True)
         except:
             pass
         return False

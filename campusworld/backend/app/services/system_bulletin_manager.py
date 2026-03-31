@@ -264,8 +264,8 @@ class SystemBulletinManager:
             logger.error("ensure_system_notice_type failed: %s", e)
             try:
                 session.rollback()
-            except Exception:
-                pass
+            except Exception as rollback_err:
+                logger.warning(f"Rollback failed: {rollback_err}")
             return None
 
     def create_notice(
@@ -325,6 +325,132 @@ class SystemBulletinManager:
             logger.error("create_notice failed: %s", e)
             try:
                 session.rollback()
-            except Exception:
-                pass
+            except Exception as rollback_err:
+                logger.warning(f"Rollback failed: {rollback_err}")
+            return None
+
+    def list_notices(
+        self,
+        session: Session,
+        board_node_id: int,
+        *,
+        include_inactive: bool = False,
+        status: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 10,
+    ) -> Dict[str, Any]:
+        """Admin-facing notice list with optional status filter."""
+        if page < 1:
+            page = 1
+        if page_size < 1:
+            page_size = 10
+        try:
+            query = session.query(Node).filter(
+                Node.type_code == "system_notice",
+                Node.location_id == board_node_id,
+            )
+            if not include_inactive:
+                query = query.filter(Node.is_active == True)  # noqa: E712
+            rows = query.all()
+            if status:
+                rows = [r for r in rows if (r.attributes or {}).get("status") == status]
+            rows.sort(key=_sort_key_notice, reverse=True)
+            total = len(rows)
+            total_pages = max(1, math.ceil(total / page_size)) if total else 1
+            if total == 0:
+                return {"items": [], "total": 0, "total_pages": 1, "page": 1, "page_size": page_size}
+            if page > total_pages:
+                page = total_pages
+            offset = (page - 1) * page_size
+            picked = rows[offset : offset + page_size]
+            return {
+                "items": [notice_node_to_dto(n) for n in picked],
+                "total": total,
+                "total_pages": total_pages,
+                "page": page,
+                "page_size": page_size,
+            }
+        except Exception as e:
+            logger.error("list_notices failed: %s", e)
+            return {"items": [], "total": 0, "total_pages": 1, "page": max(1, page), "page_size": page_size}
+
+    def update_notice(
+        self,
+        session: Session,
+        notice_id: int,
+        *,
+        board_node_id: Optional[int] = None,
+        title: Optional[str] = None,
+        content_md: Optional[str] = None,
+        editor_id: Optional[int] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Edit notice title/content. Keeps status unchanged."""
+        try:
+            node = session.query(Node).filter(Node.id == notice_id, Node.type_code == "system_notice").first()
+            if not node:
+                return None
+            if board_node_id is not None and node.location_id != board_node_id:
+                return None
+            attrs = dict(node.attributes or {})
+            if title is not None:
+                ok, _ = validate_notice_title(title)
+                if not ok:
+                    return None
+                attrs["title"] = title.strip()
+                node.name = title.strip()
+                node.description = title.strip()
+            if content_md is not None:
+                ok, _ = validate_notice_content(content_md)
+                if not ok:
+                    return None
+                attrs["content_md"] = str(content_md)
+            attrs["updated_at"] = datetime.now().isoformat()
+            if editor_id is not None:
+                attrs["last_editor_id"] = editor_id
+            node.attributes = attrs
+            session.add(node)
+            session.commit()
+            session.refresh(node)
+            return notice_node_to_dto(node)
+        except Exception as e:
+            logger.error("update_notice failed: %s", e)
+            try:
+                session.rollback()
+            except Exception as rollback_err:
+                logger.warning(f"Rollback failed: {rollback_err}")
+            return None
+
+    def archive_notice(
+        self,
+        session: Session,
+        notice_id: int,
+        *,
+        board_node_id: Optional[int] = None,
+        editor_id: Optional[int] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Archive one notice (status=archived, is_active=False)."""
+        try:
+            node = session.query(Node).filter(Node.id == notice_id, Node.type_code == "system_notice").first()
+            if not node:
+                return None
+            if board_node_id is not None and node.location_id != board_node_id:
+                return None
+            attrs = dict(node.attributes or {})
+            attrs["status"] = "archived"
+            attrs["is_active"] = False
+            attrs["updated_at"] = datetime.now().isoformat()
+            if editor_id is not None:
+                attrs["last_editor_id"] = editor_id
+            node.attributes = attrs
+            node.is_active = False
+            session.add(node)
+            session.commit()
+            session.refresh(node)
+            return notice_node_to_dto(node)
+        except Exception as e:
+            logger.error("archive_notice failed: %s", e)
+            try:
+                session.rollback()
+            except Exception as rollback_err:
+                logger.warning(f"Rollback failed: {rollback_err}")
             return None

@@ -216,7 +216,8 @@ def is_token_expired(token: str) -> bool:
     try:
         exp_time = get_token_expiration(token)
         return datetime.utcnow() > exp_time
-    except:
+    except Exception as e:
+        logger.warning(f"Failed to check token expiration: {e}")
         return True
 
 
@@ -385,7 +386,8 @@ def verify_api_key(api_key: str) -> Optional[str]:
         # 这里应该查询数据库验证API密钥
         # 暂时返回None表示需要实现
         return None
-    except:
+    except Exception as e:
+        logger.warning(f"API key verification failed: {e}")
         return None
 
 

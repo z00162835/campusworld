@@ -26,7 +26,7 @@ def _must_exec(conn, sql: str, err: str) -> None:
     try:
         conn.execute(text(sql))
     except Exception as e:
-        raise SchemaMigrationError(f"{err}: {e}") from e
+        raise SchemaMigrationError(f"{e}") from e
 
 
 def ensure_graph_schema(engine) -> None:

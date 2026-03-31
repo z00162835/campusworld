@@ -21,10 +21,11 @@ except ImportError:
 
 class ConfigLoader:
     """配置加载器"""
-    
+
     def __init__(self, config_dir: Path, env: str):
         self.config_dir = config_dir
         self.env = env
+        self.logger = get_logger("campusworld.config_loader")
     
     def load_base_config(self) -> Dict[str, Any]:
         """加载基础配置"""
@@ -56,10 +57,10 @@ class ConfigLoader:
                 content = yaml.safe_load(f)
                 return content if content is not None else {}
         except yaml.YAMLError as e:
-            print(f"❌ YAML语法错误 {filename}: {e}")
+            self.logger.error(f"YAML syntax error in {filename}: {e}")
             return None
         except Exception as e:
-            print(f"❌ 读取配置文件失败 {filename}: {e}")
+            self.logger.error(f"Failed to read config file {filename}: {e}")
             return None
     
     def _merge_config(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -128,7 +129,7 @@ class ConfigManager:
             for key_path, value in self._get_env_configs():
                 self._set_nested_value(self._config_cache, key_path, value)
         except Exception as e:
-            print(f"⚠️  环境变量覆盖失败: {e}")
+            self.logger.warning(f"Environment variable override failed: {e}")
     
     def _get_env_configs(self) -> list:
         """获取环境变量配置"""
@@ -181,7 +182,7 @@ class ConfigManager:
         try:
             # 首先检查配置是否已加载
             if not self._config_cache:
-                print("❌ 配置未加载")
+                print("[FAIL] Config not loaded")
                 return False
             
             # 检查必要的配置键
@@ -193,33 +194,33 @@ class ConfigManager:
                     missing_keys.append(key)
             
             if missing_keys:
-                print(f"⚠️  缺少必要配置: {', '.join(missing_keys)}")
+                self.logger.warning(f"Missing required config keys: {', '.join(missing_keys)}")
                 return False
-            
+
             # 检查数据库配置
             db_config = self.get('database')
             if db_config:
                 required_db_keys = ['host', 'port', 'name']
                 for key in required_db_keys:
                     if not db_config.get(key):
-                        print(f"⚠️  数据库配置缺少: {key}")
+                        self.logger.warning(f"Database config missing key: {key}")
                         return False
-            
+
             # 检查安全配置
             security_config = self.get('security')
             if security_config:
                 if not security_config.get('secret_key') or security_config.get('secret_key') == 'your-secret-key-here-change-in-production':
                     if self.env == 'production':
-                        print("❌ 生产环境必须设置安全密钥")
+                        self.logger.error("Production environment must set security key")
                         return False
                     else:
-                        print("⚠️  开发环境使用默认安全密钥")
-            
-            print("✅ 配置验证通过")
+                        self.logger.warning("Development environment using default security key")
+
+            self.logger.info("Config validation passed")
             return True
             
         except Exception as e:
-            print(f"❌ 配置验证失败: {e}")
+            self.logger.error(f"Config validation failed: {e}")
             return False
 
 
@@ -253,7 +254,7 @@ class ConfigManager:
             
             return value
         except Exception as e:
-            print(f"获取嵌套配置失败: {e}")
+            self.logger.warning(f"Failed to get nested config: {e}")
             return default
     
     def set(self, key: str, value: Any):
@@ -484,7 +485,7 @@ def get_config_summary() -> str:
 # 如果直接运行此文件，进行测试
 if __name__ == "__main__":
     try:
-        print("🧪 测试配置管理器...")
+        print("Running config manager test...")
         
         # 创建配置管理器实例
         cm = ConfigManager()
@@ -494,10 +495,10 @@ if __name__ == "__main__":
         
         # 验证配置
         if cm.validate():
-            print("✅ 配置管理器测试成功")
+            print("[OK] Config manager test passed")
         else:
-            print("⚠️  配置管理器测试完成，但存在警告")
-            
+            print("[WARN] Config manager test completed with warnings")
+
     except Exception as e:
-        print(f"❌ 配置管理器测试失败: {e}")
+        print(f"[FAIL] Config manager test failed: {e}")
         sys.exit(1)

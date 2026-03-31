@@ -11,6 +11,10 @@ import uuid
 import time
 from datetime import datetime
 
+from app.core.log import get_logger, LoggerNames
+
+logger = get_logger(LoggerNames.CORE)
+
 
 # ==================== 图节点接口定义 ====================
 
@@ -948,7 +952,8 @@ class DefaultObject(GraphNodeInterface):
             synchronizer = GraphSynchronizer()
             node = synchronizer.get_node_by_uuid(self._node_uuid)
             return node.id if node else None
-        except:
+        except Exception as e:
+            logger.warning(f"Failed to get node ID for {self._node_uuid}: {e}")
             return None
     
     @property
@@ -1519,7 +1524,7 @@ class DefaultAccount(DefaultObject):
             synchronizer.sync_object_to_node(self)
         except Exception as e:
             # 静默处理同步错误，避免影响对象操作
-            pass    
+            logger.warning(f"Failed to sync DefaultAccount to graph database: {e}")    
     def sync_to_node(self) -> None:
         """同步到图节点系统"""
         self._schedule_node_sync()

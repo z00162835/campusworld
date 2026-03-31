@@ -33,7 +33,7 @@ def init_singularity_room(force_recreate: bool = False) -> bool:
     logger = get_logger(LoggerNames.GAME)
     
     try:
-        logger.info("开始初始化奇点房间...")
+        logger.info("Starting singularity room initialization...")
         
         # 确保数据库连接正常
         session = SessionLocal()
@@ -41,9 +41,9 @@ def init_singularity_room(force_recreate: bool = False) -> bool:
             # 测试数据库连接
             from sqlalchemy import text
             session.execute(text("SELECT 1"))
-            logger.info("数据库连接正常")
+            logger.info("Database connection normal")
         except Exception as e:
-            logger.error(f"数据库连接失败: {e}")
+            logger.error(f"Database connection failed: {e}")
             return False
         finally:
             session.close()
@@ -55,19 +55,19 @@ def init_singularity_room(force_recreate: bool = False) -> bool:
             # 获取根节点信息
             root_info = root_manager.get_root_node_info()
             if root_info:
-                logger.info(f"奇点房间初始化成功: {root_info['name']} (ID: {root_info['id']})")
+                logger.info(f"Singularity room initialization successful: {root_info['name']} (ID: {root_info['id']})")
                 logger.info(f"根节点UUID: {root_info['uuid']}")
                 logger.info(f"是否为根节点: {root_info['is_root']}")
                 logger.info(f"是否为默认home: {root_info['is_home']}")
             else:
-                logger.warning("奇点房间初始化成功，但无法获取详细信息")
+                logger.warning("Singularity room initialization successful but could not retrieve details")
         else:
-            logger.error("奇点房间初始化失败")
+            logger.error("Singularity room initialization failed")
         
         return success
         
     except Exception as e:
-        logger.error(f"初始化奇点房间时发生错误: {e}")
+        logger.error(f"Error during singularity room initialization: {e}")
         return False
 
 
@@ -81,17 +81,17 @@ def verify_singularity_room() -> bool:
     logger = get_logger(LoggerNames.GAME)
     
     try:
-        logger.info("开始验证奇点房间设置...")
+        logger.info("Starting singularity room verification...")
         
         # 确保根节点存在
         if not root_manager.ensure_root_node_exists():
-            logger.error("根节点不存在且无法创建")
+            logger.error("Root node does not exist and could not be created")
             return False
         
         # 获取根节点信息
         root_info = root_manager.get_root_node_info()
         if not root_info:
-            logger.error("无法获取根节点信息")
+            logger.error("Could not retrieve root node information")
             return False
         
         # 验证根节点属性
@@ -107,9 +107,9 @@ def verify_singularity_room() -> bool:
         all_passed = True
         for check_name, check_result in checks:
             if check_result:
-                logger.info(f"✓ {check_name}: 通过")
+                logger.info(f"[OK] {check_name}: Passed")
             else:
-                logger.error(f"✗ {check_name}: 失败")
+                logger.error(f"[FAIL] {check_name}: Failed")
                 all_passed = False
         
         # 获取统计信息
@@ -124,14 +124,14 @@ def verify_singularity_room() -> bool:
             logger.info(f"  - 房间是否已满: {stats.get('is_full', False)}")
         
         if all_passed:
-            logger.info("奇点房间验证通过")
+            logger.info("Singularity room verification passed")
         else:
-            logger.error("奇点房间验证失败")
+            logger.error("Singularity room verification failed")
         
         return all_passed
         
     except Exception as e:
-        logger.error(f"验证奇点房间时发生错误: {e}")
+        logger.error(f"Error during singularity room verification: {e}")
         return False
 
 
@@ -144,17 +144,17 @@ def migrate_existing_users() -> bool:
     logger = get_logger(LoggerNames.GAME)
     
     try:
-        logger.info("开始迁移现有用户到奇点房间...")
+        logger.info("Starting migration of existing users to singularity room...")
         
         # 确保根节点存在
         if not root_manager.ensure_root_node_exists():
-            logger.error("根节点不存在，无法迁移用户")
+            logger.error("Root node does not exist, cannot migrate users")
             return False
         
         # 获取根节点
         root_node = root_manager.get_root_node()
         if not root_node:
-            logger.error("无法获取根节点")
+            logger.error("Could not retrieve root node")
             return False
         
         session = SessionLocal()
@@ -173,10 +173,10 @@ def migrate_existing_users() -> bool:
                     # 设置home_id为根节点
                     user.home_id = root_node.id
                     migrated_count += 1
-                    logger.info(f"迁移用户: {user.attributes.get('username', 'Unknown')} (ID: {user.id})")
+                    logger.info(f"Migrating user: {user.attributes.get('username', 'Unknown')} (ID: {user.id})")
             
             session.commit()
-            logger.info(f"成功迁移 {migrated_count} 个用户到奇点房间")
+            logger.info(f"Successfully migrated {migrated_count} users to singularity room")
             
             return True
             
@@ -184,7 +184,7 @@ def migrate_existing_users() -> bool:
             session.close()
             
     except Exception as e:
-        logger.error(f"迁移现有用户时发生错误: {e}")
+        logger.error(f"Error during migration of existing users: {e}")
         return False
 
 
@@ -201,7 +201,7 @@ def main():
     
     logger = get_logger(LoggerNames.GAME)
     logger.info("=" * 60)
-    logger.info("奇点房间初始化脚本启动")
+    logger.info("Singularity room initialization script started")
     logger.info("=" * 60)
     
     success = True
@@ -223,12 +223,12 @@ def main():
     
     if success:
         logger.info("=" * 60)
-        logger.info("奇点房间初始化完成")
+        logger.info("Singularity room initialization completed")
         logger.info("=" * 60)
         sys.exit(0)
     else:
         logger.error("=" * 60)
-        logger.error("奇点房间初始化失败")
+        logger.error("Singularity room initialization failed")
         logger.error("=" * 60)
         sys.exit(1)
 
