@@ -95,6 +95,9 @@ def ensure_command_ability_nodes(session: Session) -> int:
                     "command_name": command_name,
                     "aliases": aliases,
                     "command_type": command_type,
+                    "entity_kind": "ability",
+                    "presentation_domains": ["help", "npc"],
+                    "access_locks": {"view": "all()", "invoke": "all()"},
                     "updated_at": now,
                 }
             )
@@ -120,6 +123,9 @@ def ensure_command_ability_nodes(session: Session) -> int:
                 "command_name": command_name,
                 "aliases": aliases,
                 "command_type": command_type,
+                "entity_kind": "ability",
+                "presentation_domains": ["help", "npc"],
+                "access_locks": {"view": "all()", "invoke": "all()"},
                 "updated_at": now,
             },
             tags=["system", "ability", "command_ability", "command", command_type],

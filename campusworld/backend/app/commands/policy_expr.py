@@ -15,7 +15,7 @@ Examples:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.permissions import permission_checker
 
@@ -158,7 +158,13 @@ class _Parser:
         return ("CALL", name, args)
 
 
-def evaluate_policy_expr(expr: str, *, user_permissions: List[str], user_roles: List[str]) -> bool:
+def evaluate_policy_expr(
+    expr: str,
+    *,
+    user_permissions: List[str],
+    user_roles: List[str],
+    object_attrs: Optional[Dict[str, Any]] = None,
+) -> bool:
     """
     Evaluate expression. Raises PolicyExprError on parse/eval problems.
     """
@@ -188,6 +194,20 @@ def evaluate_policy_expr(expr: str, *, user_permissions: List[str], user_roles: 
                 if not args:
                     return False
                 return permission_checker.check_role(user_roles, str(args[0]))
+            if lname == "attr":
+                if not args:
+                    return False
+                attrs = object_attrs or {}
+                key = str(args[0])
+                if len(args) == 1:
+                    return key in attrs
+                expected = str(args[1]).lower()
+                actual = attrs.get(key, None)
+                if isinstance(actual, bool):
+                    return ("true" if actual else "false") == expected
+                if actual is None:
+                    return expected in {"none", "null", ""}
+                return str(actual).lower() == expected
             raise PolicyExprError(f"unknown func: {name}")
         raise PolicyExprError(f"bad node: {op}")
 

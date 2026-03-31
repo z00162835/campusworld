@@ -11,6 +11,7 @@ Look命令实现 - 参考Evennia设计
 from typing import List, Optional, Dict, Any, Union
 from ..base import GameCommand, CommandResult, CommandContext
 from app.core.log import get_logger, LoggerNames
+from app.commands.policy_expr import evaluate_policy_expr, PolicyExprError
 
 
 class LookCommand(GameCommand):
@@ -170,6 +171,8 @@ class LookCommand(GameCommand):
                     for n in contents:
                         if n.type_code in ("account", "user"):
                             continue
+                        if not self._is_visible_in_room(context, n):
+                            continue
                         room_objects.append(n.name)
                     return {
                         'id': str(room_node.id),
@@ -186,6 +189,36 @@ class LookCommand(GameCommand):
         except Exception as e:
             self.logger.error(f"从图数据获取房间信息失败: {e}")
             return None
+
+    def _is_visible_in_room(self, context: CommandContext, node: Any) -> bool:
+        """
+        Evennia-style visibility gate driven by model attributes.
+        """
+        attrs = dict(getattr(node, "attributes", {}) or {})
+        entity_kind = str(attrs.get("entity_kind", "") or "").lower()
+        if not entity_kind:
+            # Sensible default for legacy room content nodes
+            entity_kind = "item"
+
+        domains = attrs.get("presentation_domains", None)
+        if isinstance(domains, list):
+            domain_set = {str(x).lower() for x in domains}
+        else:
+            domain_set = {"room"} if entity_kind in {"item", "service", "ui"} else set()
+        if "room" not in domain_set:
+            return False
+
+        locks = attrs.get("access_locks", {}) if isinstance(attrs.get("access_locks", {}), dict) else {}
+        view_lock = str(locks.get("view", "all()"))
+        try:
+            return evaluate_policy_expr(
+                view_lock,
+                user_permissions=list(getattr(context, "permissions", []) or []),
+                user_roles=list(getattr(context, "roles", []) or []),
+                object_attrs=attrs,
+            )
+        except PolicyExprError:
+            return False
     
     def _build_room_description(self, context: CommandContext, room: Dict[str, Any]) -> str:
         """构建房间描述"""

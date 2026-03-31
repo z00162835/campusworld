@@ -15,8 +15,44 @@
 from __future__ import annotations
 
 from app.core.log import get_logger
+from sqlalchemy import text
 
 logger = get_logger("campusworld.db.seed")
+
+
+def ensure_content_visibility_seed(session) -> bool:
+    """
+    Idempotent data seed for content visibility semantics.
+    """
+    from app.models.graph import Node
+
+    # Ability nodes are semantic capabilities, not room contents.
+    session.query(Node).filter(
+        Node.type_code == "system_command_ability",
+        Node.is_active == True,  # noqa: E712
+    ).update(
+        {
+            Node.attributes: Node.attributes.op("||")(
+                text("'{\"entity_kind\":\"ability\",\"presentation_domains\":[\"help\",\"npc\"],\"access_locks\":{\"view\":\"all()\",\"invoke\":\"all()\"}}'::jsonb")  # noqa: E501
+            )
+        },
+        synchronize_session=False,
+    )
+
+    # Bulletin board is a visible room object.
+    session.query(Node).filter(
+        Node.type_code == "system_bulletin_board",
+        Node.is_active == True,  # noqa: E712
+    ).update(
+        {
+            Node.attributes: Node.attributes.op("||")(
+                text("'{\"entity_kind\":\"item\",\"presentation_domains\":[\"room\"],\"access_locks\":{\"view\":\"all()\",\"interact\":\"all()\"}}'::jsonb")
+            )
+        },
+        synchronize_session=False,
+    )
+    session.commit()
+    return True
 
 
 def ensure_command_policies_seed(session) -> bool:
@@ -218,6 +254,8 @@ def seed_minimal() -> bool:
             if not ensure_account_type(session):
                 return False
             if not ensure_default_accounts(session):
+                return False
+            if not ensure_content_visibility_seed(session):
                 return False
             if not ensure_command_policies_seed(session):
                 return False
