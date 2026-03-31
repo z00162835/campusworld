@@ -389,3 +389,6 @@ cython_debug/
 *.iws
 modules.xml
 .idea_modules.xml
+
+# Worktrees
+.worktrees/
