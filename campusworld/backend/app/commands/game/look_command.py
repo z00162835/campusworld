@@ -36,9 +36,10 @@ class LookCommand(GameCommand):
                 # 没有参数，查看当前环境
                 return self._look_room(context)
             else:
-                # 有参数，查看特定物品
-                target = " ".join(args)
-                return self._look_object(context, target)
+                # 有参数，查看特定物品/对象
+                target = args[0]
+                target_args = args[1:]
+                return self._look_object(context, target, target_args)
                 
         except Exception as e:
             self.logger.error(f"Look命令执行失败: {e}")
@@ -61,9 +62,10 @@ class LookCommand(GameCommand):
             self.logger.error(f"查看房间失败: {e}")
             return CommandResult.error_result(f"查看房间失败: {str(e)}")
     
-    def _look_object(self, context: CommandContext, target: str) -> CommandResult:
-        """查看特定物品"""
+    def _look_object(self, context: CommandContext, target: str, target_args: Optional[List[str]] = None) -> CommandResult:
+        """查看特定物品/对象（统一：命令只负责目标解析，展示由对象自身决定）"""
         try:
+            target_args = target_args or []
             # 搜索目标物品
             found_objects = self._search_objects(context, target)
             
@@ -76,7 +78,7 @@ class LookCommand(GameCommand):
             
             # 单个匹配，显示详细信息
             obj = found_objects[0]
-            obj_info = self._build_object_description(context, obj)
+            obj_info = self._build_object_description(context, obj, target_args=target_args)
             
             return CommandResult.success_result(obj_info)
             
@@ -100,10 +102,10 @@ class LookCommand(GameCommand):
     def _get_user_current_room_id(self, context: CommandContext) -> Optional[str]:
         """从用户图数据获取当前房间ID"""
         try:
-            from app.core.database import SessionLocal
+            from app.core.database import db_session_context
             from app.models.graph import Node
             
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 # 根据用户ID查找用户节点
                 user_node = session.query(Node).filter(
                     Node.id == context.user_id,
@@ -137,10 +139,10 @@ class LookCommand(GameCommand):
     def _get_room_from_graph_data(self, context: CommandContext, room_id: str) -> Optional[Dict[str, Any]]:
         """从图数据获取房间信息"""
         try:
-            from app.core.database import SessionLocal
+            from app.core.database import db_session_context
             from app.models.graph import Node
             
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 # 尝试通过ID查找
                 room_node = session.query(Node).filter(
                     Node.id == int(room_id) if room_id.isdigit() else None,
@@ -151,19 +153,30 @@ class LookCommand(GameCommand):
                 if not room_node:
                     room_node = session.query(Node).filter(
                         Node.attributes['room_name'].astext == room_id,
-                        Node.type == 'room',
+                        Node.type_code == 'room',
                         Node.is_active == True
                     ).first()
                 
                 if room_node:
                     # 构建房间数据
                     attrs = room_node.attributes
+                    # 当前房间内容从图数据 location_id 反查（避免依赖 room_objects 静态属性）
+                    contents = (
+                        session.query(Node)
+                        .filter(Node.location_id == room_node.id, Node.is_active == True)
+                        .all()
+                    )
+                    room_objects = []
+                    for n in contents:
+                        if n.type_code in ("account", "user"):
+                            continue
+                        room_objects.append(n.name)
                     return {
                         'id': str(room_node.id),
                         'name': attrs.get('room_name', room_node.name),
                         'description': attrs.get('room_description', '这里没有什么特别的。'),
                         'exits': attrs.get('room_exits', {}).keys() if attrs.get('room_exits') else [],
-                        'items': attrs.get('room_objects', []),
+                        'items': room_objects,
                         'is_singularity': attrs.get('is_root', False),
                         'is_home': attrs.get('is_home', False)
                     }
@@ -215,7 +228,7 @@ class LookCommand(GameCommand):
             return f"房间描述生成失败: {str(e)}"
     
     def _search_objects(self, context: CommandContext, target: str) -> List[Dict[str, Any]]:
-        """搜索目标物品"""
+        """搜索目标物品/对象（优先在当前房间图内容中找，其次回退到场景内置 items）"""
         try:
             found_objects = []
             found_ids = set()  # 用于去重
@@ -227,10 +240,18 @@ class LookCommand(GameCommand):
                 room_items = current_room.get('items', [])
                 for item_name in room_items:
                     if target_lower in item_name.lower():
-                        item_info = self._get_item_info(context, item_name)
-                        if item_info and item_info.get('id') not in found_ids:
-                            found_objects.append(item_info)
-                            found_ids.add(item_info.get('id'))
+                        # 优先：尝试从图数据按名称解析为 Node
+                        graph_obj = self._get_graph_object_in_room_by_name(context, item_name)
+                        if graph_obj:
+                            gid = f"node:{graph_obj.get('node_id')}"
+                            if gid not in found_ids:
+                                found_objects.append(graph_obj)
+                                found_ids.add(gid)
+                        else:
+                            item_info = self._get_item_info(context, item_name)
+                            if item_info and item_info.get('id') not in found_ids:
+                                found_objects.append(item_info)
+                                found_ids.add(item_info.get('id'))
             
             # 搜索全局物品
             game_info = self.get_game_info(context)
@@ -248,6 +269,63 @@ class LookCommand(GameCommand):
         except Exception as e:
             self.logger.error(f"搜索物品失败: {e}")
             return []
+
+    def _get_graph_object_in_room_by_name(self, context: CommandContext, name: str) -> Optional[Dict[str, Any]]:
+        """Try resolve a graph Node in user's current room by name (exact, then fuzzy)."""
+        try:
+            from app.core.database import db_session_context
+            from app.models.graph import Node
+
+            with db_session_context() as session:
+                user_node = session.query(Node).filter(
+                    Node.id == context.user_id,
+                    Node.type_code == "account",
+                    Node.is_active == True,
+                ).first()
+                if not user_node or not user_node.location_id:
+                    return None
+
+                # exact match by name
+                node = session.query(Node).filter(
+                    Node.location_id == user_node.location_id,
+                    Node.name == name,
+                    Node.is_active == True,
+                ).first()
+                if not node:
+                    # fuzzy match: name contains token OR tag contains token OR display_name matches
+                    token = str(name).lower()
+                    candidates = (
+                        session.query(Node)
+                        .filter(
+                            Node.location_id == user_node.location_id,
+                            Node.is_active == True,
+                        )
+                        .all()
+                    )
+                    for c in candidates:
+                        if token in (c.name or "").lower():
+                            node = c
+                            break
+                        attrs = c.attributes or {}
+                        if token and token in str(attrs.get("display_name", "")).lower():
+                            node = c
+                            break
+                        tags = c.tags or []
+                        if isinstance(tags, list) and any(token in str(t).lower() for t in tags):
+                            node = c
+                            break
+                if not node:
+                    return None
+                return {
+                    "id": str(node.id),
+                    "name": node.name,
+                    "type": node.type_code,
+                    "node_id": node.id,
+                    "type_code": node.type_code,
+                    "attributes": dict(node.attributes or {}),
+                }
+        except Exception:
+            return None
     
     def _get_item_info(self, context: CommandContext, item_name: str) -> Optional[Dict[str, Any]]:
         """获取物品信息"""
@@ -274,9 +352,35 @@ class LookCommand(GameCommand):
             self.logger.error(f"获取物品信息失败: {e}")
             return None
     
-    def _build_object_description(self, context: CommandContext, obj: Dict[str, Any]) -> str:
-        """构建物品描述"""
+    def _build_object_description(self, context: CommandContext, obj: Dict[str, Any], target_args: Optional[List[str]] = None) -> str:
+        """构建物品/对象描述（统一外观链路：若对象实现 get_appearance，则由对象生成输出）"""
         try:
+            target_args = target_args or []
+
+            # Graph-backed node object: dispatch to model get_appearance if available
+            type_code = obj.get("type_code") or obj.get("type")
+            if type_code:
+                try:
+                    from app.models import model_factory
+
+                    model_cls = model_factory.get_model(type_code)
+                    if model_cls and hasattr(model_cls, "get_appearance"):
+                        # best-effort instantiation: avoid DB writes
+                        try:
+                            inst = model_cls(name=obj.get("name", type_code), disable_auto_sync=True)
+                        except TypeError:
+                            try:
+                                inst = model_cls(disable_auto_sync=True)
+                            except TypeError:
+                                inst = None
+                        if inst is not None:
+                            try:
+                                return inst.get_appearance(context=context, args=target_args)
+                            except TypeError:
+                                return inst.get_appearance(context=context)
+                except Exception:
+                    pass
+
             obj_name = obj.get('name', obj.get('id', '未知物品'))
             obj_desc = obj.get('description', '这看起来没什么特别的。')
             obj_type = obj.get('type', '未知')

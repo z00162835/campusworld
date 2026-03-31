@@ -189,12 +189,38 @@ cd backend
 pytest                          # 运行所有测试
 pytest -m unit                  # 仅运行单元测试
 pytest -m integration           # 仅运行集成测试
+pytest tests/models/            # 按模块运行测试
+pytest tests/ssh/               # SSH 模块测试
+pytest tests/services/           # 服务层测试
 pytest --cov=app --cov-report=xml  # 带覆盖率
 
 # 前端测试
 cd frontend
 npm run test                    # 运行测试
 npm run test:coverage           # 带覆盖率
+```
+
+### 测试目录结构
+
+```
+backend/tests/
+├── conftest.py              # 共享 fixtures
+├── core/                    # 核心模块测试
+│   └── test_database.py     # 数据库兼容性测试
+├── models/                  # 数据模型测试
+│   ├── test_singularity_room.py
+│   └── test_demo_building.py
+├── ssh/                     # SSH 模块测试
+│   ├── test_session.py
+│   ├── test_game_handler.py
+│   └── test_entry_router.py
+├── commands/                # 命令系统测试
+│   └── test_enter_world.py
+├── game_engine/             # 游戏引擎测试
+│   └── test_campus_life.py
+└── services/                # 服务层测试
+    ├── test_bulletin_board_service.py
+    └── test_system_bulletin_manager.py
 ```
 
 ### 测试分类
@@ -206,14 +232,22 @@ npm run test:coverage           # 带覆盖率
 | SSH | `@pytest.mark.ssh` | SSH 模块测试 |
 | Models | `@pytest.mark.models` | 数据模型测试 |
 | Commands | `@pytest.mark.commands` | 命令系统测试 |
+| Services | `@pytest.mark.services` | 服务层测试 |
+| Game | `@pytest.mark.game` | 游戏引擎测试 |
 
 ### Fixtures
 
 共享 fixtures 定义在 `backend/tests/conftest.py`，包括：
 - `mock_db_session` - 模拟数据库会话
 - `mock_user_node` - 模拟用户节点
+- `mock_user_node_with_world` - 模拟有世界恢复状态的用户
+- `mock_admin_node` - 模拟管理员用户节点
 - `mock_ssh_session` - 模拟 SSH 会话
-- `sample_room/character/world` - 示例数据 fixtures
+- `mock_ssh_client` - 模拟 Paramiko SSH 客户端
+- `sample_room` / `sample_character` / `sample_world` - 示例数据 fixtures
+- `mock_command_context` - 模拟命令执行上下文
+- `mock_game_handler` - 模拟游戏处理器
+- `mock_entry_router` - 模拟入口路由器
 
 ## 配置文件
 

@@ -165,6 +165,8 @@ pytest --cov=app --cov-report=xml  # 带覆盖率
 | `@pytest.mark.ssh` | SSH 模块测试 |
 | `@pytest.mark.models` | 数据模型测试 |
 | `@pytest.mark.commands` | 命令系统测试 |
+| `@pytest.mark.services` | 服务层测试 |
+| `@pytest.mark.game` | 游戏引擎测试 |
 
 ## 配置
 

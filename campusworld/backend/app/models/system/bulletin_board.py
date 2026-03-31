@@ -5,7 +5,7 @@ This object represents the singleton board placed in SingularityRoom.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.models.base import DefaultObject
 
@@ -14,6 +14,13 @@ class BulletinBoard(DefaultObject):
     """System singleton bulletin board object."""
 
     DEFAULT_BOARD_KEY = "system_bulletin_board"
+    _MODE_ALIASES = {
+        "next": "next",
+        "n": "next",
+        "prev": "prev",
+        "p": "prev",
+        "previous": "prev",
+    }
 
     def __init__(self, name: str = "bulletin_board", config: Optional[Dict[str, Any]] = None, **kwargs):
         self._node_type = "system_bulletin_board"
@@ -47,10 +54,160 @@ class BulletinBoard(DefaultObject):
     def get_display_name(self) -> str:
         return self.get_attribute("display_name", "bulletin_board")
 
-    def get_appearance(self, context=None) -> str:
-        # Phase 1 only provides object-level placeholder appearance.
-        # Detailed notice rendering is introduced in service integration phases.
-        return (
-            "bulletin_board\n"
-            "System bulletin board. Use look bulletin_board to browse notices."
-        )
+    def _get_ctx_page_key(self) -> str:
+        return "bulletin_board.page"
+
+    def _get_ctx_page(self, context: Any) -> int:
+        try:
+            if not context:
+                return 1
+            if not getattr(context, "metadata", None):
+                context.metadata = {}
+            v = context.metadata.get(self._get_ctx_page_key(), 1)
+            v = int(v)
+            return v if v >= 1 else 1
+        except Exception:
+            return 1
+
+    def _set_ctx_page(self, context: Any, page: int) -> None:
+        try:
+            if not context:
+                return
+            if not getattr(context, "metadata", None):
+                context.metadata = {}
+            context.metadata[self._get_ctx_page_key()] = int(page)
+        except Exception:
+            return
+
+    def _parse_appearance_args(self, args: Optional[List[str]]) -> Tuple[str, Dict[str, Any]]:
+        """
+        Parse sub-args for appearance.
+
+        Supported:
+        - [] -> list (page=1)
+        - ["next"|"prev"] -> paginate
+        - ["page", N] -> list page N
+        - [INDEX] -> detail by page index (1..N)
+        - ["id", NOTICE_ID] -> detail by id
+        """
+        args = args or []
+        if not args:
+            return "list", {}
+
+        a0 = str(args[0]).lower()
+        alias_mode = self._MODE_ALIASES.get(a0)
+        if alias_mode:
+            return alias_mode, {}
+        if a0 == "page" and len(args) >= 2:
+            try:
+                page = int(args[1])
+            except (TypeError, ValueError):
+                return "error", {"reason": "invalid_page"}
+            return "list", {"page": max(1, page)}
+        if a0 == "id" and len(args) >= 2:
+            try:
+                notice_id = int(args[1])
+            except (TypeError, ValueError):
+                return "error", {"reason": "invalid_notice_id"}
+            return "id", {"id": notice_id}
+
+        # index detail
+        try:
+            return "index", {"index": int(args[0])}
+        except (TypeError, ValueError):
+            return "list", {}
+
+    def get_appearance(self, context=None, args: Optional[List[str]] = None) -> str:
+        from app.services.bulletin_board import BulletinBoardService
+
+        service = BulletinBoardService()
+        mode, payload = self._parse_appearance_args(args)
+
+        page = self._get_ctx_page(context)
+        if mode == "error":
+            reason = payload.get("reason")
+            if reason == "invalid_page":
+                return "Invalid page number. Usage: look bulletin_board page <n>"
+            if reason == "invalid_notice_id":
+                return "Invalid notice id. Usage: look bulletin_board id <notice_id>"
+            return "Invalid bulletin_board command arguments."
+
+        if mode == "list":
+            page = int(payload.get("page", page or 1))
+            if page < 1:
+                page = 1
+            self._set_ctx_page(context, page)
+            data = service.list_notices(page=page, page_size=10)
+            return self._render_list_view(data)
+
+        if mode == "next":
+            page = page + 1
+            self._set_ctx_page(context, page)
+            data = service.list_notices(page=page, page_size=10)
+            # service clamps to last page; sync it back
+            self._set_ctx_page(context, int(data.get("page", page)))
+            return self._render_list_view(data)
+
+        if mode == "prev":
+            page = max(1, page - 1)
+            self._set_ctx_page(context, page)
+            data = service.list_notices(page=page, page_size=10)
+            self._set_ctx_page(context, int(data.get("page", page)))
+            return self._render_list_view(data)
+
+        if mode == "id":
+            notice_id = payload.get("id")
+            if not notice_id:
+                return "Invalid notice id."
+            notice = service.get_notice_by_id(int(notice_id), public_only=True)
+            if not notice:
+                return f"Notice not found: {notice_id}"
+            body = service.render_notice_md_to_terminal(notice.get("content_md", ""))
+            return self._render_detail_view(notice, body)
+
+        if mode == "index":
+            index = payload.get("index")
+            if not index or int(index) < 1:
+                return "Invalid notice index."
+            notice = service.get_notice_by_page_index(page=page, index=int(index), page_size=10)
+            if not notice:
+                return f"Notice not found on page {page}: {index}"
+            body = service.render_notice_md_to_terminal(notice.get("content_md", ""))
+            return self._render_detail_view(notice, body)
+
+        data = service.list_notices(page=page, page_size=10)
+        return self._render_list_view(data)
+
+    def _render_list_view(self, data: Dict[str, Any]) -> str:
+        items = data.get("items") or []
+        page = int(data.get("page", 1) or 1)
+        total_pages = int(data.get("total_pages", 1) or 1)
+
+        lines = ["bulletin_board", f"Page {page}/{total_pages}", ""]
+        if not items:
+            lines.append("No system notices.")
+            lines.append("")
+            lines.append("Usage: look bulletin_board | look bulletin_board next | look bulletin_board <index>")
+            return "\n".join(lines).strip()
+
+        for i, it in enumerate(items, 1):
+            title = it.get("title", "Untitled")
+            published_at = it.get("published_at") or ""
+            suffix = f" ({published_at})" if published_at else ""
+            lines.append(f"{i}. {title}{suffix}")
+
+        lines.append("")
+        lines.append("Usage: look bulletin_board <index> | look bulletin_board next | look bulletin_board prev | look bulletin_board page <n>")
+        return "\n".join(lines).strip()
+
+    def _render_detail_view(self, notice: Dict[str, Any], body: str) -> str:
+        title = notice.get("title", "Untitled")
+        published_at = notice.get("published_at") or ""
+        header = [title, "-" * len(title)]
+        if published_at:
+            header.append(f"Published: {published_at}")
+        header.append("")
+        header.append(body.strip())
+        header.append("")
+        header.append("Back: look bulletin_board")
+        return "\n".join(header).strip()
