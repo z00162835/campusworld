@@ -11,6 +11,7 @@ from .base import GameEngine, BaseGame
 from .loader import GameLoader
 from .interface import GameInterface
 from .manager import GameEngineManager, CampusWorldGameEngine, game_engine_manager
+from .runtime_store import OperationResult, WorldRuntimeStatus, WorldErrorCode
 
 __all__ = [
     "GameEngine",
@@ -19,5 +20,8 @@ __all__ = [
     "GameInterface",
     "GameEngineManager",
     "CampusWorldGameEngine",
-    "game_engine_manager"
+    "game_engine_manager",
+    "OperationResult",
+    "WorldRuntimeStatus",
+    "WorldErrorCode",
 ]

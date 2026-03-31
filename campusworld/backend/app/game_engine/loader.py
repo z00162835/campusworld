@@ -1,130 +1,118 @@
 """
-场景加载器 - 负责动态加载和管理场景模块
-
-参考Evennia框架的插件系统设计，提供：
-- 场景模块发现和加载
-- 热重载支持
-- 依赖管理
-- 版本兼容性检查
+Game package loader with F01 V2 runtime contracts.
 """
 
-import logging
-import importlib
+from __future__ import annotations
+
 import importlib.util
+import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Type, Callable
 import sys
-import os
+import threading
+from typing import Any, Dict, List, Optional
+
+import yaml
 
 from .base import BaseGame
+from .runtime_store import (
+    OperationResult,
+    WorldErrorCode,
+    WorldInstallerService,
+    WorldRuntimeRepository,
+    WorldRuntimeStatus,
+)
 from app.core.paths import get_backend_root, get_project_root
 
 
 class GameLoader:
-    """场景加载器"""
-    
+    """World package loader with persistent runtime state."""
+
     def __init__(self, engine):
         self.engine = engine
         self.logger = logging.getLogger(f"game_engine.{engine.name}.loader")
-        
-        # 使用项目路径管理系统
         self.backend_root = get_backend_root()
         self.project_root = get_project_root()
-        
-        # 场景搜索路径 - 基于项目路径系统
         self.search_paths = [
-            self.backend_root / "app" / "games",    # 内置场景
-            self.project_root / "games",            # 外部场景
-            self.backend_root / "games",            # 后端games目录
+            self.backend_root / "app" / "games",
+            self.project_root / "games",
+            self.backend_root / "games",
         ]
-        
-        # 已加载的场景
         self.loaded_games: Dict[str, BaseGame] = {}
         self.game_modules: Dict[str, Any] = {}
-        
-        self.logger.info("场景加载器初始化完成")
-    
+        self._op_locks: Dict[str, threading.Lock] = {}
+        self.repository = WorldRuntimeRepository()
+        self.service = WorldInstallerService(self.repository)
+
+    def _result(
+        self,
+        ok: bool,
+        world_id: str,
+        status_before: str,
+        status_after: str,
+        message: str,
+        error_code: Optional[WorldErrorCode] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> OperationResult:
+        return OperationResult(
+            ok=ok,
+            world_id=world_id,
+            status_before=status_before,
+            status_after=status_after,
+            message=message,
+            error_code=error_code.value if error_code else None,
+            details=details or {},
+        )
+
+    def _get_world_lock(self, world_id: str) -> threading.Lock:
+        if world_id not in self._op_locks:
+            self._op_locks[world_id] = threading.Lock()
+        return self._op_locks[world_id]
+
+    def get_runtime_state(self, world_id: str) -> Dict[str, Any]:
+        return self.repository.get_state(world_id)
+
     def discover_games(self) -> List[str]:
-        """发现可用的场景"""
-        available_games = []
-        
+        available_games: List[str] = []
         for search_path in self.search_paths:
-            if search_path.exists() and search_path.is_dir():
-                try:
-                    for game_dir in search_path.iterdir():
-                        if game_dir.is_dir() and self._is_valid_game_directory(game_dir):
-                            game_name = game_dir.name
-                            if game_name not in available_games:
-                                available_games.append(game_name)
-                                self.logger.debug(f"发现场景: {game_name} (路径: {game_dir})")
-                except Exception as e:
-                    self.logger.error(f"搜索路径 {search_path} 时出错: {e}")
-        
-        self.logger.info(f"发现 {len(available_games)} 个可用场景: {available_games}")
+            if not (search_path.exists() and search_path.is_dir()):
+                continue
+            try:
+                for game_dir in search_path.iterdir():
+                    if not game_dir.is_dir():
+                        continue
+                    if self._is_valid_game_directory(game_dir):
+                        if game_dir.name not in available_games:
+                            available_games.append(game_dir.name)
+            except Exception as e:
+                self.logger.error(f"搜索路径 {search_path} 时出错: {e}")
         return available_games
-    
+
     def _is_valid_game_directory(self, game_dir: Path) -> bool:
-        """检查是否为有效的场景目录"""
-        required_files = ["__init__.py", "game.py"]
-        
-        for required_file in required_files:
-            if not (game_dir / required_file).exists():
+        required = ["__init__.py", "game.py", "manifest.yaml"]
+        for filename in required:
+            if not (game_dir / filename).exists():
                 return False
-        
-        return True
+        manifest = self._load_manifest(game_dir)
+        if not manifest:
+            return False
+        required_manifest = ["world_id", "version", "api_version", "data_dir"]
+        return all(manifest.get(k) for k in required_manifest)
 
-    def load_game(self, game_name: str) -> Optional[BaseGame]:
-        """加载指定场景"""
+    def _load_manifest(self, game_dir: Path) -> Optional[Dict[str, Any]]:
+        manifest_path = game_dir / "manifest.yaml"
+        if not manifest_path.exists():
+            return None
         try:
-            if game_name in self.loaded_games:
-                self.logger.warning(f"场景 '{game_name}' 已加载")
-                return self.loaded_games[game_name]
-            
-            # 查找场景路径
-            game_path = self._find_game_path(game_name)
-            if not game_path:
-                self.logger.error(f"找不到场景 '{game_name}' 的目录")
+            content = manifest_path.read_text(encoding="utf-8")
+            data = yaml.safe_load(content) or {}
+            if not isinstance(data, dict):
                 return None
-            
-            # 加载场景模块
-            game_module = self._load_game_module(game_name, game_path)
-            if not game_module:
-                self.logger.error(f"加载场景模块 '{game_name}' 失败")
-                return None
-            
-            # 创建场景实例
-            game_instance = self._create_game_instance(game_name, game_module)
-            if not game_instance:
-                self.logger.error(f"创建场景实例 '{game_name}' 失败")
-                return None
-            
-            # 初始化场景实例
-            if not game_instance.initialize_game():
-                self.logger.error(f"初始化场景实例 '{game_name}' 失败")
-                return None
-
-            # 启动场景实例
-            if not game_instance.start():
-                self.logger.error(f"启动场景实例 '{game_name}' 失败")
-                return None
-
-            # 注册到引擎
-            if self.engine.register_game(game_instance):
-                self.loaded_games[game_name] = game_instance
-                self.game_modules[game_name] = game_module
-                
-                self.logger.info(f"场景 '{game_name}' 加载成功")
-                return game_instance
-            else:
-                self.logger.error(f"注册场景 '{game_name}' 到引擎失败")
-                return None
-                
+            return data
         except Exception as e:
-            self.logger.error(f"加载场景 '{game_name}' 失败: {e}")
+            self.logger.error(f"读取 manifest 失败: {manifest_path} err={e}")
             return None
 
     def _find_game_path(self, game_name: str) -> Optional[Path]:
-        """查找场景目录路径"""
         for search_path in self.search_paths:
             game_path = search_path / game_name
             if game_path.exists() and game_path.is_dir():
@@ -132,141 +120,466 @@ class GameLoader:
         return None
 
     def _load_game_module(self, game_name: str, game_path: Path) -> Optional[Any]:
-        """加载场景模块"""
         try:
-            # 根据路径位置确定正确的模块名
             if self.backend_root / "app" / "games" in game_path.parents:
-                # 内置场景：app.games.{game_name}
                 module_name = f"app.games.{game_name}"
-                # 添加app目录到sys.path
                 app_dir = str(self.backend_root / "app")
                 if app_dir not in sys.path:
                     sys.path.insert(0, app_dir)
-                    self.logger.debug(f"添加app目录到sys.path: {app_dir}")
             else:
-                # 外部场景：games.{game_name}
                 module_name = f"games.{game_name}"
-                # 添加games的父目录到sys.path
                 games_parent = str(game_path.parent)
                 if games_parent not in sys.path:
                     sys.path.insert(0, games_parent)
-                    self.logger.debug(f"添加games父目录到sys.path: {games_parent}")
-            
-            # 如果模块已加载，先卸载
             if module_name in sys.modules:
                 del sys.modules[module_name]
-            
-            # 导入场景模块
-            spec = importlib.util.spec_from_file_location(
-                module_name, 
-                game_path / "__init__.py"
-            )
-            
-            if spec and spec.loader:
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                return module
-            else:
-                self.logger.error(f"无法创建场景模块 '{game_name}' 的规范")
+            spec = importlib.util.spec_from_file_location(module_name, game_path / "__init__.py")
+            if not (spec and spec.loader):
                 return None
-                
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
         except Exception as e:
             self.logger.error(f"加载场景模块 '{game_name}' 失败: {e}")
             return None
 
     def _create_game_instance(self, game_name: str, game_module: Any) -> Optional[BaseGame]:
-        """创建场景实例"""
         try:
-            # 获取场景实例获取函数
-            get_game_instance_func = getattr(game_module, "get_game_instance", None)
-            if not get_game_instance_func:
-                self.logger.error(f"场景模块 '{game_name}' 中没有找到 'get_game_instance' 函数")
+            fn = getattr(game_module, "get_game_instance", None)
+            if not callable(fn):
+                self.logger.error(f"场景模块 '{game_name}' 缺少可调用 get_game_instance")
                 return None
-            
-            # 验证是否为可调用对象
-            if not callable(get_game_instance_func):
-                self.logger.error(f"场景模块 '{game_name}' 的 'get_game_instance' 不是可调用对象")
-                return None
-            
-            # 调用函数获取场景实例
-            game_instance = get_game_instance_func()
-            
-            return game_instance
-            
+            instance = fn()
+            return instance
         except Exception as e:
             self.logger.error(f"创建场景实例 '{game_name}' 失败: {e}")
             return None
-    
-    def unload_game(self, game_name: str) -> bool:
-        """卸载场景"""
+
+    def load_game(self, game_name: str) -> Dict[str, Any]:
+        state_before = self.repository.get_state(game_name)["status"]
+        lock = self._get_world_lock(game_name)
+        if not lock.acquire(blocking=False):
+            return self._result(
+                False,
+                game_name,
+                state_before,
+                state_before,
+                "world operation in progress",
+                WorldErrorCode.WORLD_BUSY,
+            ).to_dict()
+
         try:
-            if game_name not in self.loaded_games:
-                self.logger.warning(f"场景 '{game_name}' 未加载")
-                return False
-            
-            # 从引擎注销
-            if self.engine.unregister_game(game_name):
-                # 清理资源
-                del self.loaded_games[game_name]
-                if game_name in self.game_modules:
-                    del self.game_modules[game_name]
-                
-                self.logger.info(f"场景 '{game_name}' 卸载成功")
-                return True
-            else:
-                self.logger.error(f"从引擎注销场景 '{game_name}' 失败")
-                return False
-                
-        except Exception as e:
-            self.logger.error(f"卸载场景 '{game_name}' 失败: {e}")
-            return False
-    
-    def reload_game(self, game_name: str) -> Optional[BaseGame]:
-        """重新加载指定场景"""
+            if game_name in self.loaded_games:
+                return self._result(
+                    False,
+                    game_name,
+                    state_before,
+                    state_before,
+                    "world already loaded in runtime",
+                    WorldErrorCode.WORLD_STATE_CONFLICT,
+                ).to_dict()
+
+            def _run(job_id: str) -> OperationResult:
+                game_path = self._find_game_path(game_name)
+                if not game_path:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"world package '{game_name}' not found",
+                        WorldErrorCode.WORLD_NOT_FOUND,
+                    )
+                manifest = self._load_manifest(game_path)
+                if not manifest:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "manifest.yaml missing or invalid",
+                        WorldErrorCode.WORLD_MANIFEST_INVALID,
+                    )
+                required = ["world_id", "version", "api_version", "data_dir"]
+                if not all(manifest.get(k) for k in required):
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "manifest required fields missing",
+                        WorldErrorCode.WORLD_MANIFEST_INVALID,
+                        details={"manifest_required": required},
+                    )
+                if str(manifest["world_id"]) != game_name:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "manifest world_id mismatch",
+                        WorldErrorCode.WORLD_MANIFEST_INVALID,
+                    )
+
+                module = self._load_game_module(game_name, game_path)
+                if not module:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "failed to import world module",
+                        WorldErrorCode.WORLD_LOAD_FAILED,
+                    )
+                game_instance = self._create_game_instance(game_name, module)
+                if not game_instance:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "failed to create game instance",
+                        WorldErrorCode.WORLD_LOAD_FAILED,
+                    )
+
+                initialize = getattr(game_instance, "initialize_game", None)
+                if callable(initialize) and not initialize():
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "initialize_game returned false",
+                        WorldErrorCode.WORLD_LOAD_FAILED,
+                    )
+                if not game_instance.start():
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "game start failed",
+                        WorldErrorCode.WORLD_LOAD_FAILED,
+                    )
+                if not self.engine.register_game(game_instance):
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "engine register failed",
+                        WorldErrorCode.WORLD_LOAD_FAILED,
+                    )
+
+                self.loaded_games[game_name] = game_instance
+                self.game_modules[game_name] = module
+                return self._result(
+                    True,
+                    game_name,
+                    state_before,
+                    WorldRuntimeStatus.INSTALLED.value,
+                    "world loaded",
+                    details={
+                        "version": str(manifest.get("version")),
+                        "manifest": manifest,
+                        "job_id": job_id,
+                    },
+                )
+
+            try:
+                result = self.service.run_with_job(
+                    world_id=game_name,
+                    action="load",
+                    status_before=state_before,
+                    enter_status=WorldRuntimeStatus.LOADING.value,
+                    exec_fn=_run,
+                )
+                return result.to_dict()
+            except Exception as e:
+                return self._result(
+                    False,
+                    game_name,
+                    state_before,
+                    WorldRuntimeStatus.BROKEN.value,
+                    f"persist runtime state failed: {e}",
+                    WorldErrorCode.WORLD_DB_WRITE_FAILED,
+                ).to_dict()
+        finally:
+            lock.release()
+
+    def unload_game(self, game_name: str) -> Dict[str, Any]:
+        state_before = self.repository.get_state(game_name)["status"]
+        lock = self._get_world_lock(game_name)
+        if not lock.acquire(blocking=False):
+            return self._result(
+                False,
+                game_name,
+                state_before,
+                state_before,
+                "world operation in progress",
+                WorldErrorCode.WORLD_BUSY,
+            ).to_dict()
+
         try:
-            self.logger.info(f"开始重新加载场景 '{game_name}'")
-            
-            # 先卸载
-            if self.unload_game(game_name):
-                # 再加载
-                return self.load_game(game_name)
-            else:
-                self.logger.error(f"卸载场景 '{game_name}' 失败，无法重新加载")
-                return None
-                
-        except Exception as e:
-            self.logger.error(f"重新加载场景 '{game_name}' 失败: {e}")
-            return None
-    
+            def _run(job_id: str) -> OperationResult:
+                game_instance = self.loaded_games.get(game_name)
+                if not game_instance:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "world is not loaded",
+                        WorldErrorCode.WORLD_NOT_INSTALLED,
+                    )
+
+                try:
+                    if not game_instance.stop():
+                        return self._result(
+                            False,
+                            game_name,
+                            state_before,
+                            WorldRuntimeStatus.FAILED.value,
+                            "world stop failed",
+                            WorldErrorCode.WORLD_UNLOAD_FAILED,
+                        )
+                    if not self.engine.unregister_game(game_name):
+                        return self._result(
+                            False,
+                            game_name,
+                            state_before,
+                            WorldRuntimeStatus.FAILED.value,
+                            "engine unregister failed",
+                            WorldErrorCode.WORLD_UNLOAD_FAILED,
+                        )
+                    self.loaded_games.pop(game_name, None)
+                    self.game_modules.pop(game_name, None)
+                    return self._result(
+                        True,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.NOT_INSTALLED.value,
+                        "world unloaded",
+                        details={"job_id": job_id},
+                    )
+                except Exception as e:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"unload exception: {e}",
+                        WorldErrorCode.WORLD_UNLOAD_FAILED,
+                    )
+
+            try:
+                result = self.service.run_with_job(
+                    world_id=game_name,
+                    action="unload",
+                    status_before=state_before,
+                    enter_status=WorldRuntimeStatus.UNLOADING.value,
+                    exec_fn=_run,
+                )
+                return result.to_dict()
+            except Exception as e:
+                return self._result(
+                    False,
+                    game_name,
+                    state_before,
+                    WorldRuntimeStatus.BROKEN.value,
+                    f"persist runtime state failed: {e}",
+                    WorldErrorCode.WORLD_DB_WRITE_FAILED,
+                ).to_dict()
+        finally:
+            lock.release()
+
+    def reload_game(self, game_name: str) -> Dict[str, Any]:
+        state_before = self.repository.get_state(game_name)["status"]
+        lock = self._get_world_lock(game_name)
+        if not lock.acquire(blocking=False):
+            return self._result(
+                False,
+                game_name,
+                state_before,
+                state_before,
+                "world operation in progress",
+                WorldErrorCode.WORLD_BUSY,
+            ).to_dict()
+
+        try:
+            def _run(job_id: str) -> OperationResult:
+                game_instance = self.loaded_games.get(game_name)
+                if not game_instance:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "world is not loaded",
+                        WorldErrorCode.WORLD_RELOAD_FAILED,
+                    )
+                try:
+                    if not game_instance.stop():
+                        return self._result(
+                            False,
+                            game_name,
+                            state_before,
+                            WorldRuntimeStatus.FAILED.value,
+                            "reload failed while stopping current world",
+                            WorldErrorCode.WORLD_RELOAD_FAILED,
+                        )
+                    if not self.engine.unregister_game(game_name):
+                        return self._result(
+                            False,
+                            game_name,
+                            state_before,
+                            WorldRuntimeStatus.FAILED.value,
+                            "reload failed while unregistering current world",
+                            WorldErrorCode.WORLD_RELOAD_FAILED,
+                        )
+                    self.loaded_games.pop(game_name, None)
+                    self.game_modules.pop(game_name, None)
+                except Exception as e:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"reload unload phase exception: {e}",
+                        WorldErrorCode.WORLD_RELOAD_FAILED,
+                    )
+
+                game_path = self._find_game_path(game_name)
+                if not game_path:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"world package '{game_name}' not found",
+                        WorldErrorCode.WORLD_NOT_FOUND,
+                    )
+                manifest = self._load_manifest(game_path)
+                required = ["world_id", "version", "api_version", "data_dir"]
+                if not manifest or not all(manifest.get(k) for k in required):
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "manifest required fields missing",
+                        WorldErrorCode.WORLD_MANIFEST_INVALID,
+                    )
+                module = self._load_game_module(game_name, game_path)
+                if not module:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "reload failed while importing world module",
+                        WorldErrorCode.WORLD_RELOAD_FAILED,
+                    )
+                instance = self._create_game_instance(game_name, module)
+                if not instance:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "reload failed while creating world instance",
+                        WorldErrorCode.WORLD_RELOAD_FAILED,
+                    )
+                initialize = getattr(instance, "initialize_game", None)
+                if callable(initialize) and not initialize():
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "reload failed while initializing world instance",
+                        WorldErrorCode.WORLD_RELOAD_FAILED,
+                    )
+                if not instance.start():
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "reload failed while starting world instance",
+                        WorldErrorCode.WORLD_RELOAD_FAILED,
+                    )
+                if not self.engine.register_game(instance):
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        "reload failed while registering world instance",
+                        WorldErrorCode.WORLD_RELOAD_FAILED,
+                    )
+                self.loaded_games[game_name] = instance
+                self.game_modules[game_name] = module
+                return self._result(
+                    True,
+                    game_name,
+                    state_before,
+                    WorldRuntimeStatus.INSTALLED.value,
+                    "world reloaded",
+                    details={"job_id": job_id, "version": str(manifest.get("version"))},
+                )
+
+            try:
+                result = self.service.run_with_job(
+                    world_id=game_name,
+                    action="reload",
+                    status_before=state_before,
+                    enter_status=WorldRuntimeStatus.RELOADING.value,
+                    exec_fn=_run,
+                )
+                return result.to_dict()
+            except Exception as e:
+                return self._result(
+                    False,
+                    game_name,
+                    state_before,
+                    WorldRuntimeStatus.BROKEN.value,
+                    f"persist runtime state failed: {e}",
+                    WorldErrorCode.WORLD_DB_WRITE_FAILED,
+                ).to_dict()
+        finally:
+            lock.release()
+
     def get_loaded_games(self) -> List[str]:
-        """获取已加载的场景列表"""
         return list(self.loaded_games.keys())
-    
+
     def get_game_info(self, game_name: str) -> Optional[Dict[str, Any]]:
-        """获取场景信息"""
-        if game_name not in self.loaded_games:
-            return None
-        
-        game_instance = self.loaded_games[game_name]
+        game_instance = self.loaded_games.get(game_name)
+        if not game_instance:
+            state = self.repository.get_state(game_name)
+            return {
+                "name": game_name,
+                "version": state.get("version"),
+                "description": "",
+                "author": "",
+                "status": state.get("status", WorldRuntimeStatus.NOT_INSTALLED.value),
+            }
+        state = self.repository.get_state(game_name)
         return {
             "name": game_instance.name,
             "version": game_instance.version,
-            "description": getattr(game_instance, 'description', ''),
-            "author": getattr(game_instance, 'author', ''),
-            "status": "loaded"
+            "description": getattr(game_instance, "description", ""),
+            "author": getattr(game_instance, "author", ""),
+            "status": state.get("status", WorldRuntimeStatus.INSTALLED.value),
         }
-    
+
     def auto_load_games(self) -> List[str]:
-        """自动加载所有发现的场景"""
-        available_games = self.discover_games()
-        loaded_games = []
-        
-        for game_name in available_games:
-            try:
-                if self.load_game(game_name):
-                    loaded_games.append(game_name)
-            except Exception as e:
-                self.logger.error(f"自动加载场景 '{game_name}' 失败: {e}")
-        
-        self.logger.info(f"自动加载完成，成功加载 {len(loaded_games)} 个场景: {loaded_games}")
-        return loaded_games
+        loaded: List[str] = []
+        for game_name in self.discover_games():
+            result = self.load_game(game_name)
+            if result.get("ok"):
+                loaded.append(game_name)
+            else:
+                self.logger.error(f"自动加载场景 '{game_name}' 失败: {result}")
+        self.logger.info(f"自动加载完成，成功加载 {len(loaded)} 个场景: {loaded}")
+        return loaded

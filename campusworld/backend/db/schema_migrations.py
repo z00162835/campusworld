@@ -135,3 +135,85 @@ def ensure_command_policy_schema(engine) -> None:
         _must_exec(conn, section, "apply command_policies schema from database_schema.sql failed")
     finally:
         conn.close()
+
+
+def ensure_world_runtime_schema(engine) -> None:
+    """
+    Ensure world runtime state/job schema exists for old databases.
+
+    Source of truth is `db/schemas/database_schema.sql` (world_runtime section).
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        runtime_ok = bool(conn.execute(text("select to_regclass('public.world_runtime_states');")).scalar())
+        jobs_ok = bool(conn.execute(text("select to_regclass('public.world_install_jobs');")).scalar())
+        if runtime_ok and jobs_ok:
+            _try_exec(
+                conn,
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_world_install_jobs_running_action "
+                "ON world_install_jobs (world_id, action) WHERE status = 'running';",
+            )
+            return
+
+        sql_path = Path(__file__).parent / "schemas" / "database_schema.sql"
+        schema_sql = sql_path.read_text(encoding="utf-8")
+        start = "-- BEGIN world_runtime"
+        end = "-- END world_runtime"
+        if start not in schema_sql or end not in schema_sql:
+            raise SchemaMigrationError("world_runtime section not found in database_schema.sql")
+
+        section = schema_sql.split(start, 1)[1].split(end, 1)[0].strip()
+        if not section:
+            raise SchemaMigrationError("world_runtime section is empty")
+
+        _must_exec(conn, section, "apply world_runtime schema from database_schema.sql failed")
+        _try_exec(
+            conn,
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_world_install_jobs_running_action "
+            "ON world_install_jobs (world_id, action) WHERE status = 'running';",
+        )
+    finally:
+        conn.close()
+
+
+def ensure_content_visibility_backfill(engine) -> None:
+    """
+    Backfill semantic content visibility attributes for existing nodes.
+
+    - system_command_ability: entity_kind=ability, presentation_domains=[help,npc]
+    - system_bulletin_board: entity_kind=item, presentation_domains=[room]
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        _try_exec(
+            conn,
+            """
+UPDATE nodes
+SET attributes = COALESCE(attributes, '{}'::jsonb)
+    || '{"entity_kind":"ability","presentation_domains":["help","npc"],"access_locks":{"view":"all()","invoke":"all()"}}'::jsonb
+WHERE type_code = 'system_command_ability'
+  AND (
+    attributes IS NULL
+    OR NOT (attributes ? 'entity_kind')
+    OR NOT (attributes ? 'presentation_domains')
+    OR NOT (attributes ? 'access_locks')
+  );
+""".strip(),
+        )
+        _try_exec(
+            conn,
+            """
+UPDATE nodes
+SET attributes = COALESCE(attributes, '{}'::jsonb)
+    || '{"entity_kind":"item","presentation_domains":["room"],"access_locks":{"view":"all()","interact":"all()"}}'::jsonb
+WHERE type_code = 'system_bulletin_board'
+  AND (
+    attributes IS NULL
+    OR NOT (attributes ? 'entity_kind')
+    OR NOT (attributes ? 'presentation_domains')
+    OR NOT (attributes ? 'access_locks')
+  );
+""".strip(),
+        )
+    finally:
+        conn.close()

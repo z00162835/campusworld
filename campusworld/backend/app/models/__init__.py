@@ -11,7 +11,13 @@ from .user import User
 from .campus import Campus
 from .world import World, WorldObject
 from .room import Room, SingularityRoom
-from .system import BulletinBoard, SystemCommandAbility, SystemNotice
+from .system import (
+    BulletinBoard,
+    SystemCommandAbility,
+    SystemNotice,
+    WorldRuntimeState,
+    WorldInstallJob,
+)
 from .exit import Exit
 
 # 图数据结构系统
@@ -47,6 +53,8 @@ __all__ = [
     "BulletinBoard",
     "SystemCommandAbility",
     "SystemNotice",
+    "WorldRuntimeState",
+    "WorldInstallJob",
     "Exit",
     
     # 图数据结构系统

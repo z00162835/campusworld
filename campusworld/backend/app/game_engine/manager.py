@@ -10,7 +10,6 @@
 
 import logging
 from typing import Dict, List, Optional, Any
-from pathlib import Path
 
 from .base import GameEngine
 from .loader import GameLoader
@@ -45,22 +44,27 @@ class CampusWorldGameEngine(GameEngine):
     
     def stop(self) -> bool:
         """停止内容引擎"""
-        return super().stop();
+        return super().stop()
     
     def get_engine_info(self) -> Dict[str, Any]:
         """获取内容引擎详细信息"""
         info = super().get_status()
+        loaded = self.loader.get_loaded_games() if self.loader else []
+        runtime_states: Dict[str, Any] = {}
+        for game_name in loaded:
+            runtime_states[game_name] = self.loader.get_runtime_state(game_name)
         info.update({
             "loader_status": "running" if self.loader else "stopped",
             "interface_status": "running" if self.interface else "stopped",
             "available_games": self.loader.discover_games() if self.loader else [],
-            "loaded_games": self.loader.get_loaded_games() if self.loader else []
+            "loaded_games": loaded,
+            "runtime_states": runtime_states,
         })
         return info
 
     def stop_engine(self) -> bool:
         """停止内容引擎"""
-        return self.stop();
+        return self.stop()
     
 
 class GameEngineManager:
@@ -86,47 +90,44 @@ class GameEngineManager:
             if self.engine:
                 self.logger.warning("内容引擎已存在")
                 return True
-            
+
             self.engine = CampusWorldGameEngine()
-            self.logger.info("内容引擎初始化成功")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"初始化内容引擎失败: {e}")
             return False
-    
+
     def start_engine(self) -> bool:
         """启动内容引擎"""
         try:
             if not self.engine:
                 if not self.initialize_engine():
                     return False
-            
+
             if self.engine.start():
-                self.logger.info("内容引擎启动成功")
                 return True
             else:
                 self.logger.error("内容引擎启动失败")
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"启动内容引擎失败: {e}")
             return False
-    
+
     def stop_engine(self) -> bool:
         """停止内容引擎"""
         try:
             if not self.engine:
                 self.logger.warning("内容引擎不存在")
                 return True
-            
+
             if self.engine.stop():
-                self.logger.info("内容引擎停止成功")
                 return True
             else:
                 self.logger.error("内容引擎停止失败")
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"停止内容引擎失败: {e}")
             return False
@@ -142,44 +143,92 @@ class GameEngineManager:
         
         return self.engine.get_engine_info()
     
-    def load_game(self, game_name: str) -> Optional[Any]:
-        """加载内容"""
+    def load_game(self, game_name: str) -> Dict[str, Any]:
+        """加载内容（结构化返回）"""
         try:
             if not self.engine:
                 self.logger.error("内容引擎未初始化")
-                return None
+                return {
+                    "ok": False,
+                    "world_id": game_name,
+                    "status_before": "not_initialized",
+                    "status_after": "not_initialized",
+                    "error_code": "WORLD_INTERNAL_ERROR",
+                    "message": "engine not initialized",
+                    "details": {},
+                }
             
             return self.engine.loader.load_game(game_name)
             
         except Exception as e:
             self.logger.error(f"加载内容 '{game_name}' 失败: {e}")
-            return None
+            return {
+                "ok": False,
+                "world_id": game_name,
+                "status_before": "unknown",
+                "status_after": "broken",
+                "error_code": "WORLD_INTERNAL_ERROR",
+                "message": f"load exception: {e}",
+                "details": {},
+            }
     
-    def unload_game(self, game_name: str) -> bool:
-        """卸载内容"""
+    def unload_game(self, game_name: str) -> Dict[str, Any]:
+        """卸载内容（结构化返回）"""
         try:
             if not self.engine:
                 self.logger.error("内容引擎未初始化")
-                return False
+                return {
+                    "ok": False,
+                    "world_id": game_name,
+                    "status_before": "not_initialized",
+                    "status_after": "not_initialized",
+                    "error_code": "WORLD_INTERNAL_ERROR",
+                    "message": "engine not initialized",
+                    "details": {},
+                }
             
             return self.engine.loader.unload_game(game_name)
             
         except Exception as e:
             self.logger.error(f"卸载内容 '{game_name}' 失败: {e}")
-            return False
+            return {
+                "ok": False,
+                "world_id": game_name,
+                "status_before": "unknown",
+                "status_after": "broken",
+                "error_code": "WORLD_INTERNAL_ERROR",
+                "message": f"unload exception: {e}",
+                "details": {},
+            }
     
-    def reload_game(self, game_name: str) -> Optional[Any]:
-        """重新加载内容"""
+    def reload_game(self, game_name: str) -> Dict[str, Any]:
+        """重新加载内容（结构化返回）"""
         try:
             if not self.engine:
                 self.logger.error("内容引擎未初始化")
-                return None
+                return {
+                    "ok": False,
+                    "world_id": game_name,
+                    "status_before": "not_initialized",
+                    "status_after": "not_initialized",
+                    "error_code": "WORLD_INTERNAL_ERROR",
+                    "message": "engine not initialized",
+                    "details": {},
+                }
             
             return self.engine.loader.reload_game(game_name)
             
         except Exception as e:
             self.logger.error(f"重新加载内容 '{game_name}' 失败: {e}")
-            return None
+            return {
+                "ok": False,
+                "world_id": game_name,
+                "status_before": "unknown",
+                "status_after": "broken",
+                "error_code": "WORLD_INTERNAL_ERROR",
+                "message": f"reload exception: {e}",
+                "details": {},
+            }
     
     def list_games(self) -> List[str]:
         """列出所有内容"""

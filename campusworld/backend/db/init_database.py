@@ -73,10 +73,17 @@ def main():
             # 轻量 schema 兼容迁移（让旧库补齐新增字段）
             schema_ok = True
             try:
-                from db.schema_migrations import ensure_graph_schema, ensure_command_policy_schema
+                from db.schema_migrations import (
+                    ensure_graph_schema,
+                    ensure_command_policy_schema,
+                    ensure_world_runtime_schema,
+                    ensure_content_visibility_backfill,
+                )
 
                 ensure_graph_schema(engine)
                 ensure_command_policy_schema(engine)
+                ensure_world_runtime_schema(engine)
+                ensure_content_visibility_backfill(engine)
                 print("✅ schema 兼容迁移完成")
             except Exception as e:
                 schema_ok = False

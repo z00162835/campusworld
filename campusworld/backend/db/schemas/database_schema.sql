@@ -94,6 +94,10 @@ CREATE TABLE IF NOT EXISTS nodes (
     location_geom geometry(Geometry, 4326),
     home_geom geometry(Geometry, 4326),
     geom_geojson JSONB,
+    -- attributes 内约定扩展：
+    -- - entity_kind: item | ability | character | service | ui | hidden
+    -- - presentation_domains: ["room" | "inventory" | "help" | "npc" | ...]
+    -- - access_locks: {"view":"all()","interact":"perm(x)","invoke":"role(admin) OR perm(y)"}
     attributes JSONB NOT NULL DEFAULT '{}',
     tags JSONB NOT NULL DEFAULT '[]',
     semantic_embedding vector(1536),
@@ -166,6 +170,56 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_command_policy_command_name
 CREATE INDEX IF NOT EXISTS ix_command_policies_enabled
     ON command_policies (enabled);
 -- END command_policies
+
+-- ==================================================
+-- Control Plane: World runtime state & install jobs
+-- ==================================================
+-- BEGIN world_runtime
+CREATE TABLE IF NOT EXISTS world_runtime_states (
+    world_id VARCHAR(128) PRIMARY KEY,
+    status VARCHAR(32) NOT NULL,
+    version VARCHAR(64),
+    last_error_code VARCHAR(128),
+    last_error_message TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_by VARCHAR(128),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_world_runtime_states_status
+    ON world_runtime_states (status);
+CREATE INDEX IF NOT EXISTS ix_world_runtime_states_updated_at
+    ON world_runtime_states (updated_at);
+
+CREATE TABLE IF NOT EXISTS world_install_jobs (
+    job_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    world_id VARCHAR(128) NOT NULL,
+    action VARCHAR(32) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    requested_by VARCHAR(128),
+    request_fingerprint VARCHAR(255),
+    error_code VARCHAR(128),
+    event_log JSONB NOT NULL DEFAULT '[]'::jsonb,
+    summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    started_at TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS ix_world_install_jobs_world_id
+    ON world_install_jobs (world_id);
+CREATE INDEX IF NOT EXISTS ix_world_install_jobs_status
+    ON world_install_jobs (status);
+CREATE INDEX IF NOT EXISTS ix_world_install_jobs_created_at
+    ON world_install_jobs (created_at);
+CREATE INDEX IF NOT EXISTS ix_world_install_jobs_fingerprint
+    ON world_install_jobs (request_fingerprint);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_world_install_jobs_running_action
+    ON world_install_jobs (world_id, action)
+    WHERE status = 'running';
+-- END world_runtime
 
 -- ==================================================
 -- 第三阶段：索引（几何 / 向量 / 查询）
