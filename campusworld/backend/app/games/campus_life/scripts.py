@@ -16,7 +16,6 @@ class CampusLifeScripts:
         self.logger = logging.getLogger(f"game.{game.name}.scripts")
         self.is_running = False
         
-        self.logger.info("园区世界脚本系统初始化完成")
     
     def start(self):
         """启动脚本系统"""

@@ -30,7 +30,6 @@ class CampusLifeCommands:
             "i": self._cmd_inventory,  # 别名
         }
         
-        self.logger.info("园区世界命令系统初始化完成")
     
     def start(self):
         """启动命令系统"""
