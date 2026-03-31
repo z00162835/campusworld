@@ -350,7 +350,7 @@ class CampusWorldSSHServer:
 
         # 关闭线程池
         if self.executor:
-            self.executor.shutdown(wait=True)
+            self.executor.shutdown(wait=False)
             self.logger.info(f"SSH线程池已关闭", extra={
                 'event_type': 'ssh_executor_shutdown'
             })
