@@ -167,6 +167,37 @@ def log_database_operation(func):
     from .decorators import log_database_operation as _log_database_operation
     return _log_database_operation(func)
 
+
+# 延迟导入的上下文管理
+def get_logging_context():
+    """获取全局日志上下文"""
+    from .context import get_logging_context as _get_logging_context
+    return _get_logging_context()
+
+
+def set_logging_context(**kwargs):
+    """设置全局日志上下文"""
+    from .context import set_logging_context as _set_logging_context
+    return _set_logging_context(**kwargs)
+
+
+def get_logging_context_data():
+    """获取全局日志上下文数据"""
+    from .context import get_logging_context_data as _get_logging_context_data
+    return _get_logging_context_data()
+
+
+def clear_logging_context():
+    """清空全局日志上下文"""
+    from .context import clear_logging_context as _clear_logging_context
+    return _clear_logging_context()
+
+
+def with_logging_context(**kwargs):
+    """日志上下文装饰器"""
+    from .context import with_logging_context as _with_logging_context
+    return _with_logging_context(**kwargs)
+
 # 延迟导入的格式化器
 class JSONFormatter:
     """JSON格式化器（延迟加载）"""
@@ -180,31 +211,54 @@ class ColoredFormatter:
         from .formatters import ColoredFormatter as _ColoredFormatter
         return _ColoredFormatter(*args, **kwargs)
 
+
+class LoggingContext:
+    """日志上下文（延迟加载）"""
+    def __new__(cls, *args, **kwargs):
+        from .context import LoggingContext as _LoggingContext
+        return _LoggingContext(*args, **kwargs)
+
+
+class LoggingContextManager:
+    """日志上下文管理器（延迟加载）"""
+    def __new__(cls, *args, **kwargs):
+        from .context import LoggingContextManager as _LoggingContextManager
+        return _LoggingContextManager(*args, **kwargs)
+
 # 导出所有公共接口
 __all__ = [
     # 核心类
     'LoggingManager',
     'LoggingMiddleware',
-    
+
     # 装饰器
     'log_function_call',
     'log_execution_time',
     'log_ssh_command',
     'log_database_operation',
-    
+
     # 格式化器
     'JSONFormatter',
     'ColoredFormatter',
-    
+
+    # 上下文管理
+    'LoggingContext',
+    'LoggingContextManager',
+    'get_logging_context',
+    'set_logging_context',
+    'get_logging_context_data',
+    'clear_logging_context',
+    'with_logging_context',
+
     # 常量
     'LoggerNames',
-    
+
     # 核心函数
     'get_logging_manager',
     'get_logger',
     'setup_logging',
     'create_logging_middleware',
-    
+
     # 便捷日志器获取函数
     'get_app_logger',
     'get_ssh_logger',

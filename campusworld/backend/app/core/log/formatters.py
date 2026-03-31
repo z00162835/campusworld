@@ -10,45 +10,59 @@ from datetime import datetime
 
 class JSONFormatter(logging.Formatter):
     """JSON格式日志格式化器"""
-    
+
     def __init__(self, include_extra: bool = True):
         """
         初始化JSON格式化器
-        
+
         Args:
             include_extra: 是否包含额外字段
         """
         super().__init__()
         self.include_extra = include_extra
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """
         格式化日志记录
-        
+
         Args:
             record: 日志记录
-        
+
         Returns:
             str: 格式化后的日志字符串
         """
+        import os
         log_data = {
-            'timestamp': datetime.fromtimestamp(record.created).isoformat(),
+            'timestamp': datetime.fromtimestamp(record.created).isoformat() + 'Z',
             'level': record.levelname,
             'logger': record.name,
             'message': record.getMessage(),
             'module': record.module,
             'function': record.funcName,
-            'line': record.lineno
+            'line': record.lineno,
+            'process_id': record.process,
+            'thread_id': record.thread,
         }
-        
+
+        # 添加上下文字段（从 extra 获取）
+        context_fields = ['user_id', 'session_id', 'request_id', 'correlation_id', 'trace_id']
+        if self.include_extra and hasattr(record, 'extra'):
+            for field in context_fields:
+                if field in record.extra:
+                    log_data[field] = record.extra[field]
+            # 添加其他额外字段
+            for key, value in record.extra.items():
+                if key not in context_fields:
+                    log_data[key] = value
+
         # 添加异常信息
         if record.exc_info:
             log_data['exception'] = self.formatException(record.exc_info)
-        
-        # 添加额外字段
-        if self.include_extra and hasattr(record, 'extra'):
-            log_data.update(record.extra)
-        
+
+        # 添加堆栈信息（如果可用）
+        if record.stack_info:
+            log_data['stack_info'] = record.stack_info
+
         return json.dumps(log_data, ensure_ascii=False)
 
 class ColoredFormatter(logging.Formatter):

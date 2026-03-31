@@ -86,19 +86,43 @@ class LoggingManager:
         # 使用统一的路径管理
         logs_dir = get_logs_dir(self.config_manager)
         log_file = logs_dir / "campusworld.log"
-        
+
         # 创建日志目录
         logs_dir.mkdir(parents=True, exist_ok=True)
-        
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler(sys.stdout),
-                logging.FileHandler(log_file, encoding='utf-8')
-            ]
+
+        # 使用自定义格式化器，支持 ISO 8601 时间格式
+        class ISOFormatter(logging.Formatter):
+            """支持 ISO 8601 时间格式的格式化器"""
+
+            def format(self, record):
+                # 创建格式化时间
+                dt = datetime.fromtimestamp(record.created)
+                record.asctimeiso = dt.isoformat() + 'Z'
+                return super().format(record)
+
+        log_format = '%(asctimeiso)s | %(levelname)-8s | %(name)s | %(message)s'
+        formatter = ISOFormatter(log_format)
+
+        # 使用 RotatingFileHandler 进行日志轮转
+        rotating_handler = logging.handlers.RotatingFileHandler(
+            log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
+            encoding='utf-8'
         )
-        
+        rotating_handler.setFormatter(formatter)
+
+        # 配置根日志器
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+
+        # 控制台输出使用相同的格式化器
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+
+        root_logger.addHandler(console_handler)
+        root_logger.addHandler(rotating_handler)
+
         logger = logging.getLogger("campusworld.logging")
         logger.info(f"默认日志文件已配置: {log_file}")
     
