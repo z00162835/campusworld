@@ -22,21 +22,25 @@ class SSHSession:
     username: str
     user_id: int
     user_attrs: Dict[str, Any]
-    
+
     # 会话状态
     connected_at: datetime = field(default_factory=datetime.now)
     last_activity: datetime = field(default_factory=datetime.now)
     is_active: bool = True
-    
+    is_closing: bool = False  # 标记正在关闭
+
     # 用户信息
     roles: List[str] = field(default_factory=list)
     permissions: List[str] = field(default_factory=list)
     access_level: str = "normal"
     _user_object: Optional[Any] = field(default=None, init=False, repr=False)
-    
+
     # 控制台信息
     terminal_size: Optional[tuple] = None
     command_history: List[str] = field(default_factory=list)
+
+    # SSH channel 引用（用于强制关闭）
+    channel: Optional[Any] = field(default=None, init=False, repr=False)
     
     def __post_init__(self):
         """初始化后处理"""
@@ -82,9 +86,24 @@ class SSHSession:
     def cleanup(self):
         """清理会话资源"""
         self.is_active = False
+        self.is_closing = True
+        # 关闭SSH channel
+        self._close_channel()
         # 保存会话状态到数据库
         self._save_session_state()
-        # 这里可以添加其他清理逻辑，如保存会话日志等
+
+    def _close_channel(self):
+        """关闭SSH channel"""
+        if self.channel and not self.channel.closed:
+            try:
+                self.channel.close()
+            except Exception:
+                pass
+        self.channel = None
+
+    def set_channel(self, channel):
+        """设置SSH channel引用"""
+        self.channel = channel
     
     def _save_session_state(self):
         """保存会话状态到数据库"""
@@ -257,6 +276,16 @@ class SessionManager:
                 session.cleanup()
             self.sessions.clear()
             self.logger.info("All sessions cleaned up")
+
+    def force_close_all(self):
+        """强制关闭所有会话（参照 Evennia shutdown）"""
+        with self.lock:
+            for session in self.sessions.values():
+                session.is_closing = True
+                session._close_channel()
+                session.is_active = False
+            self.sessions.clear()
+            self.logger.warning("All sessions force closed")
     
     def _cleanup_worker(self):
         """清理工作线程"""

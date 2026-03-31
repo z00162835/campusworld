@@ -247,6 +247,7 @@ class CampusWorldSSHServer:
                     # 查找对应的会话
                     for session_id, session in self.ssh_interface.sessions.items():
                         if session.username == username:
+                            session.set_channel(channel)  # 存储 channel 引用
                             console.current_session = session
 
                             # 触发用户spawn到初始位置（Game Layer）
@@ -336,17 +337,35 @@ class CampusWorldSSHServer:
         except Exception as e:
             self.logger.error(f"清理SSH连接资源时出错: {e}")
 
-    def stop(self):
-        """停止SSH服务器"""
+    def stop(self, force: bool = True):
+        """停止SSH服务器
+
+        Args:
+            force: 是否强制关闭。True时立即关闭所有连接，False时优雅关闭（超时后强制）
+        """
         stop_start_time = time.time()
+
+        if hasattr(self, '_stopInitiated') and self._stopInitiated:
+            # 防止重复调用
+            return
+
+        self._stopInitiated = True
 
         self.logger.info(f"开始停止SSH服务器", extra={
             'host': self.host,
             'port': self.port,
+            'force': force,
             'event_type': 'ssh_server_stop_start'
         })
 
         self.running = False
+
+        # 强制关闭模式（参照 Evennia）
+        self.logger.warning("Force closing SSH server...")
+        try:
+            self.ssh_interface.session_manager.force_close_all()
+        except Exception as e:
+            self.logger.error(f"Force close sessions failed: {e}")
 
         # 关闭线程池
         if self.executor:

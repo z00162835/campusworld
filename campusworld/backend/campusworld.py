@@ -198,6 +198,10 @@ class CampusWorld:
     def stop(self) -> bool:
         """停止CampusWorld系统"""
         try:
+            if getattr(self, '_is_stopping', False):
+                return False  # 防止重复调用
+            self._is_stopping = True
+
             if not self.is_running:
                 return True
             self.logger.info("Stopping CampusWorld system...")
@@ -248,29 +252,22 @@ class CampusWorld:
             "is_running": self.is_running,
             "start_time": self.start_time,
             "runtime": time.time() - self.start_time if self.start_time else 0,
-            "ssh_server": {
-                "is_running": self.ssh_server.is_running if self.ssh_server else False,
-                "host": self.ssh_server.host if self.ssh_server else None,
-                "port": self.ssh_server.port if self.ssh_server else None,
-            } if self.ssh_server else None,
-            "config": {
-                "environment": self.config_manager.get_environment(),
-                "config_dir": str(self.config_manager.config_dir),
-                "loaded": self.config_manager.is_loaded()
-            }
+            "ssh_server": None,
         }
-        
-        # 添加场景状态 - 通过场景引擎管理器
-        try:
-            engine = self.game_engine_manager.get_engine()
-            if engine:
-                game_status = engine.interface.get_game_status('campus_life')
-                status["game"] = game_status
-            else:
-                status["game"] = {"error": "Game engine not initialized"}
-                
-        except Exception as e:
-            status["game"] = {"error": str(e)}
+        if self.ssh_server:
+            try:
+                status["ssh_server"] = {
+                    "is_running": self.ssh_server.running if hasattr(self.ssh_server, 'running') else False,
+                    "host": getattr(self.ssh_server, 'host', None),
+                    "port": getattr(self.ssh_server, 'port', None),
+                }
+            except Exception:
+                status["ssh_server"] = {"is_running": False, "error": "shutting_down"}
+        status["config"] = {
+            "environment": self.config_manager.get_environment(),
+            "config_dir": str(self.config_manager.config_dir),
+            "loaded": self.config_manager.is_loaded()
+        }
         
         return status
     
@@ -281,28 +278,24 @@ class CampusWorld:
             if not self.start():
                 self.logger.error("CampusWorld system start failed")
                 return False
-            
+
             # 显示系统状态
             self._display_status()
 
             # 保持运行
             try:
                 while self.is_running:
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                self.logger.info("Received interrupt signal, shutting down...")
-            
+                    time.sleep(0.1)
+                except KeyboardInterrupt:
+                self.logger.info("Keyboard interrupt received")
+
             return True
-            
+
         except Exception as e:
-            self.logger.error(f"运行CampusWorld系统失败: {e}", exc_info=True, extra={
-                "error_type": "system_run_error",
-                "error_message": str(e)
-            })
+            self.logger.error(f"Run failed: {e}", exc_info=True)
             return False
-        
+
         finally:
-            # 清理资源
             self.stop()
     
     def _display_status(self):
@@ -349,17 +342,17 @@ class CampusWorld:
 
 def signal_handler(signum, frame):
     """信号处理器"""
-    # 使用print确保用户能看到中断信息
-    print(f"\nReceived signal {signum}, shutting down CampusWorld system...")
-    
+    # 防止重复处理信号
+    if getattr(signal_handler, '_handling', False):
+        return
+    signal_handler._handling = True
+
     if hasattr(signal_handler, 'campusworld'):
         # 记录到日志
         campusworld = signal_handler.campusworld
         if hasattr(campusworld, 'logger'):
             campusworld.logger.info(f"Received signal {signum}, shutting down system")
         campusworld.stop()
-    
-    sys.exit(0)
 
 
 def main():
@@ -380,8 +373,7 @@ def main():
         
         # 运行系统
         success = campusworld.run()
-        
-        return success
+        os._exit(0 if success else 1)
         
     except Exception as e:
         # 使用print确保错误信息显示给用户
