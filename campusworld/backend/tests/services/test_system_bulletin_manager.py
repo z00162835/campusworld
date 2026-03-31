@@ -51,7 +51,7 @@ def test_validate_notice_content():
     assert not validate_notice_content(None)[0]
 
 
-@patch.object(SystemBulletinManager, "_fetch_notice_candidates")
+@patch.object(SystemBulletinManager, "_fetch_published_notice_candidates")
 def test_list_published_notices_sort_and_pagination(mock_fetch):
     mock_fetch.return_value = [
         _node(
@@ -63,10 +63,6 @@ def test_list_published_notices_sort_and_pagination(mock_fetch):
             id=2,
             attributes={"title": "a", "status": "published", "published_at": "2024-06-01T00:00:00"},
             created_at=datetime(2024, 6, 1, tzinfo=timezone.utc),
-        ),
-        _node(
-            id=3,
-            attributes={"title": "hidden", "status": "draft", "published_at": "2099-01-01T00:00:00"},
         ),
     ]
     mgr = SystemBulletinManager()
@@ -80,7 +76,7 @@ def test_list_published_notices_sort_and_pagination(mock_fetch):
     assert out2["items"][0]["title"] == "b"
 
 
-@patch.object(SystemBulletinManager, "_fetch_notice_candidates")
+@patch.object(SystemBulletinManager, "_fetch_published_notice_candidates")
 def test_get_notice_by_page_index(mock_fetch):
     n = _node(
         id=42,

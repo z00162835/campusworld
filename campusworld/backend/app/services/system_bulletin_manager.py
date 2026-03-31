@@ -95,21 +95,35 @@ class SystemBulletinManager:
     """Read/write `system_notice` rows under a bulletin board node."""
 
     def resolve_board_node_id(self, session: Session, root_node_id: int) -> Optional[int]:
-        row = (
-            session.query(Node)
-            .filter(
-                and_(
-                    Node.type_code == "system_bulletin_board",
-                    Node.location_id == root_node_id,
-                    Node.is_active == True,  # noqa: E712
-                    Node.attributes["board_key"].astext == BulletinBoard.DEFAULT_BOARD_KEY,
+        try:
+            rows = (
+                session.query(Node)
+                .filter(
+                    and_(
+                        Node.type_code == "system_bulletin_board",
+                        Node.location_id == root_node_id,
+                        Node.is_active == True,  # noqa: E712
+                        Node.attributes["board_key"].astext == BulletinBoard.DEFAULT_BOARD_KEY,
+                    )
                 )
+                .order_by(Node.created_at.asc())
+                .limit(2)
+                .all()
             )
-            .first()
-        )
-        return row.id if row else None
+            if not rows:
+                return None
+            if len(rows) > 1:
+                logger.warning(
+                    "duplicate system_bulletin_board detected under root=%s, keeping earliest id=%s",
+                    root_node_id,
+                    rows[0].id,
+                )
+            return rows[0].id
+        except Exception as e:
+            logger.error("resolve_board_node_id failed: %s", e)
+            return None
 
-    def _fetch_notice_candidates(self, session: Session, board_node_id: int) -> List[Node]:
+    def _fetch_published_notice_candidates(self, session: Session, board_node_id: int) -> List[Node]:
         return (
             session.query(Node)
             .filter(
@@ -117,6 +131,7 @@ class SystemBulletinManager:
                     Node.type_code == "system_notice",
                     Node.location_id == board_node_id,
                     Node.is_active == True,  # noqa: E712
+                    Node.attributes["status"].astext == "published",
                 )
             )
             .all()
@@ -135,7 +150,7 @@ class SystemBulletinManager:
             page_size = 10
 
         try:
-            candidates = self._fetch_notice_candidates(session, board_node_id)
+            candidates = self._fetch_published_notice_candidates(session, board_node_id)
             public = [n for n in candidates if _is_public_list_notice(n)]
             public.sort(key=_sort_key_notice, reverse=True)
             total = len(public)
@@ -221,29 +236,37 @@ class SystemBulletinManager:
         return self.get_notice_by_id(session, int(nid), board_node_id=board_node_id, public_only=True)
 
     def ensure_system_notice_type(self, session: Session) -> Optional[int]:
-        row = session.query(NodeType).filter(NodeType.type_code == "system_notice").first()
-        if row:
-            return row.id
-        nt = NodeType(
-            type_code="system_notice",
-            type_name="SystemNotice",
-            typeclass="app.models.system.system_notice.SystemNotice",
-            classname="SystemNotice",
-            module_path="app.models.system.system_notice",
-            description="System bulletin notice",
-            schema_definition={
-                "title": "string",
-                "content_md": "text",
-                "status": "string",
-                "is_active": "boolean",
-                "published_at": "string",
-            },
-            is_active=True,
-        )
-        session.add(nt)
-        session.commit()
-        session.refresh(nt)
-        return nt.id
+        try:
+            row = session.query(NodeType).filter(NodeType.type_code == "system_notice").first()
+            if row:
+                return row.id
+            nt = NodeType(
+                type_code="system_notice",
+                type_name="SystemNotice",
+                typeclass="app.models.system.system_notice.SystemNotice",
+                classname="SystemNotice",
+                module_path="app.models.system.system_notice",
+                description="System bulletin notice",
+                schema_definition={
+                    "title": "string",
+                    "content_md": "text",
+                    "status": "string",
+                    "is_active": "boolean",
+                    "published_at": "string",
+                },
+                is_active=True,
+            )
+            session.add(nt)
+            session.commit()
+            session.refresh(nt)
+            return nt.id
+        except Exception as e:
+            logger.error("ensure_system_notice_type failed: %s", e)
+            try:
+                session.rollback()
+            except Exception:
+                pass
+            return None
 
     def create_notice(
         self,
@@ -270,30 +293,38 @@ class SystemBulletinManager:
         if not type_id:
             return None
 
-        notice = SystemNotice(
-            title=title.strip(),
-            content_md=str(content_md),
-            status=status,
-            author_id=author_id,
-            notice_code=notice_code,
-            disable_auto_sync=True,
-            **kwargs,
-        )
-        node = Node(
-            uuid=notice._node_uuid,
-            type_id=type_id,
-            type_code="system_notice",
-            name=notice._node_name,
-            description=(notice._node_attributes or {}).get("title", ""),
-            is_active=True,
-            is_public=True,
-            access_level="normal",
-            location_id=board_node_id,
-            home_id=board_node_id,
-            attributes=notice._node_attributes,
-            tags=getattr(notice, "_node_tags", []) or [],
-        )
-        session.add(node)
-        session.commit()
-        session.refresh(node)
-        return node
+        try:
+            notice = SystemNotice(
+                title=title.strip(),
+                content_md=str(content_md),
+                status=status,
+                author_id=author_id,
+                notice_code=notice_code,
+                disable_auto_sync=True,
+                **kwargs,
+            )
+            node = Node(
+                uuid=notice._node_uuid,
+                type_id=type_id,
+                type_code="system_notice",
+                name=notice._node_name,
+                description=(notice._node_attributes or {}).get("title", ""),
+                is_active=True,
+                is_public=True,
+                access_level="normal",
+                location_id=board_node_id,
+                home_id=board_node_id,
+                attributes=notice._node_attributes,
+                tags=getattr(notice, "_node_tags", []) or [],
+            )
+            session.add(node)
+            session.commit()
+            session.refresh(node)
+            return node
+        except Exception as e:
+            logger.error("create_notice failed: %s", e)
+            try:
+                session.rollback()
+            except Exception:
+                pass
+            return None
