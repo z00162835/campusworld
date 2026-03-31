@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from sqlalchemy import text
 
 
@@ -24,7 +25,11 @@ def _try_exec(conn, sql: str) -> None:
 
 def _must_exec(conn, sql: str, err: str) -> None:
     try:
-        conn.execute(text(sql))
+        # Some SQL sections include multiple statements; split naively by ';'
+        # and execute non-empty statements.
+        statements = [s.strip() for s in sql.split(";") if s.strip()]
+        for stmt in statements:
+            conn.execute(text(stmt))
     except Exception as e:
         raise SchemaMigrationError(f"{e}") from e
 
@@ -90,5 +95,43 @@ def ensure_graph_schema(engine) -> None:
         _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS source_role VARCHAR(128);")
         _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS target_role VARCHAR(128);")
         _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS tags JSONB NOT NULL DEFAULT '[]'::jsonb;")
+    finally:
+        conn.close()
+
+
+def ensure_command_policy_schema(engine) -> None:
+    """
+    Ensure command policy schema exists for old databases.
+
+    Source of truth is `db/schemas/database_schema.sql` (command_policies section).
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        table_ok = bool(conn.execute(text("select to_regclass('public.command_policies');")).scalar())
+        col_ok = bool(
+            conn.execute(
+                text(
+                    "select 1 from information_schema.columns "
+                    "where table_schema='public' and table_name='command_policies' and column_name='policy_expr' "
+                    "limit 1;"
+                )
+            ).fetchone()
+        )
+        if table_ok and col_ok:
+            return
+
+        sql_path = Path(__file__).parent / "schemas" / "database_schema.sql"
+        schema_sql = sql_path.read_text(encoding="utf-8")
+        start = "-- BEGIN command_policies"
+        end = "-- END command_policies"
+        if start not in schema_sql or end not in schema_sql:
+            raise SchemaMigrationError("command_policies section not found in database_schema.sql")
+
+        section = schema_sql.split(start, 1)[1].split(end, 1)[0].strip()
+        if not section:
+            raise SchemaMigrationError("command_policies section is empty")
+
+        # Execute the section (should be idempotent via IF NOT EXISTS).
+        _must_exec(conn, section, "apply command_policies schema from database_schema.sql failed")
     finally:
         conn.close()

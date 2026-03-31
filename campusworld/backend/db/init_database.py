@@ -45,6 +45,7 @@ def main():
         try:
             # 关键：确保 ORM 模型被导入，从而注册到 Base.metadata
             import app.models  # noqa: F401
+            import app.commands.policy_store  # noqa: F401
 
             from app.core.database import init_db, engine
             print("✅ 数据库模块导入成功")
@@ -72,9 +73,10 @@ def main():
             # 轻量 schema 兼容迁移（让旧库补齐新增字段）
             schema_ok = True
             try:
-                from db.schema_migrations import ensure_graph_schema
+                from db.schema_migrations import ensure_graph_schema, ensure_command_policy_schema
 
                 ensure_graph_schema(engine)
+                ensure_command_policy_schema(engine)
                 print("✅ schema 兼容迁移完成")
             except Exception as e:
                 schema_ok = False

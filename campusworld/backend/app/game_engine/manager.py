@@ -26,8 +26,7 @@ class CampusWorldGameEngine(GameEngine):
         # 初始化组件
         self.loader = GameLoader(self)
         self.interface = GameInterface(self)
-
-        self.logger.info("CampusWorld内容引擎初始化完成")
+        # 初始化静默，启动成功由 campusworld.py 统一输出里程碑日志
 
     def start(self) -> bool:
         """启动内容引擎"""
@@ -35,10 +34,8 @@ class CampusWorldGameEngine(GameEngine):
             if not super().start():
                 return False
 
-            # 自动加载内容
+            # 自动加载内容 - 静默，结果由 get_engine_status() 查询
             loaded_games = self.loader.auto_load_games()
-            if loaded_games:
-                self.logger.info(f"自动加载了 {len(loaded_games)} 个内容: {loaded_games}")
 
             return True
 
@@ -81,7 +78,7 @@ class GameEngineManager:
             self.engine = None
             self.logger = logging.getLogger("game_engine.manager")
             self.initialized = True
-            self.logger.info("内容引擎管理器初始化完成")
+            # 初始化静默
     
     def initialize_engine(self) -> bool:
         """初始化内容引擎"""

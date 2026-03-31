@@ -30,14 +30,38 @@ class GameEngine(ABC):
         self.is_running = False
         self.start_time = None
         self.games: Dict[str, 'BaseGame'] = {}
-        
-        # 核心系统
-        self.object_manager = ObjectManager(self)
-        self.command_manager = CommandManager(self)
-        self.script_manager = ScriptManager(self)
-        self.hook_manager = HookManager(self)
-        
-        self.logger.info(f"场景引擎 '{name}' v{version} 初始化完成")
+
+        # 核心系统 - 延迟初始化
+        self._object_manager = None
+        self._command_manager = None
+        self._script_manager = None
+        self._hook_manager = None
+
+        # 关键里程碑由启动成功/失败状态体现，中间过程不输出日志
+
+    @property
+    def object_manager(self):
+        if self._object_manager is None:
+            self._object_manager = ObjectManager(self)
+        return self._object_manager
+
+    @property
+    def command_manager(self):
+        if self._command_manager is None:
+            self._command_manager = CommandManager(self)
+        return self._command_manager
+
+    @property
+    def script_manager(self):
+        if self._script_manager is None:
+            self._script_manager = ScriptManager(self)
+        return self._script_manager
+
+    @property
+    def hook_manager(self):
+        if self._hook_manager is None:
+            self._hook_manager = HookManager(self)
+        return self._hook_manager
     
     def start(self) -> bool:
         """启动场景引擎"""
@@ -98,30 +122,28 @@ class GameEngine(ABC):
         try:
             if game.name in self.games:
                 self.logger.warning(f"场景 '{game.name}' 已存在，将被覆盖")
-            
+
             self.games[game.name] = game
             game.engine = self
-            
-            self.logger.info(f"场景 '{game.name}' 注册成功")
+            # 注册成功静默，由 list_games() 查询
             return True
-            
+
         except Exception as e:
             self.logger.error(f"注册场景 '{game.name}' 失败: {e}")
             return False
-    
+
     def unregister_game(self, game_name: str) -> bool:
         """从引擎注销场景"""
         try:
             if game_name not in self.games:
                 self.logger.warning(f"场景 '{game_name}' 不存在")
                 return True
-            
+
             game = self.games.pop(game_name)
             game.engine = None
-            
-            self.logger.info(f"场景 '{game_name}' 注销成功")
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"注销场景 '{game_name}' 失败: {e}")
             return False
@@ -158,12 +180,12 @@ class ObjectManager:
     def start(self):
         """启动对象管理器"""
         self.is_running = True
-        self.logger.info("对象管理器启动成功")
-    
+        # 启动静默，状态通过 get_status() 查询
+
     def stop(self):
         """停止对象管理器"""
         self.is_running = False
-        self.logger.info("对象管理器已停止")
+        # 停止静默
     
     def register_object(self, obj_id: str, obj: Any) -> bool:
         """注册对象"""
@@ -192,12 +214,12 @@ class CommandManager:
     def start(self):
         """启动命令管理器"""
         self.is_running = True
-        self.logger.info("命令管理器启动成功")
-    
+        # 启动静默
+
     def stop(self):
         """停止命令管理器"""
         self.is_running = False
-        self.logger.info("命令管理器已停止")
+        # 停止静默
     
     def register_command(self, cmd_name: str, cmd_handler: Any) -> bool:
         """注册命令"""
@@ -222,12 +244,12 @@ class ScriptManager:
     def start(self):
         """启动脚本管理器"""
         self.is_running = True
-        self.logger.info("脚本管理器启动成功")
-    
+        # 启动静默
+
     def stop(self):
         """停止脚本管理器"""
         self.is_running = False
-        self.logger.info("脚本管理器已停止")
+        # 停止静默
 
 
 class HookManager:
@@ -242,12 +264,12 @@ class HookManager:
     def start(self):
         """启动钩子管理器"""
         self.is_running = True
-        self.logger.info("钩子管理器启动成功")
-    
+        # 启动静默
+
     def stop(self):
         """停止钩子管理器"""
         self.is_running = False
-        self.logger.info("钩子管理器已停止")
+        # 停止静默
     
     def register_hook(self, event_name: str, callback: Callable) -> bool:
         """注册事件钩子"""
@@ -287,11 +309,10 @@ class BaseGame(ABC):
         self.is_running = False
         self.start_time = None
         self.engine = None
-        
+
         # 日志
         self.logger = get_logger(LoggerNames.GAME)
-        
-        self.logger.info(f"场景 '{name}' v{version} 初始化完成")
+        # 初始化静默，由 start() 成功状态体现
     
     @abstractmethod
     def start(self) -> bool:

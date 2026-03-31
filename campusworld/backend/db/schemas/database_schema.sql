@@ -143,6 +143,31 @@ CREATE TABLE IF NOT EXISTS node_tag_indexes (
 );
 
 -- ==================================================
+-- Control Plane: Command authorization policies
+-- ==================================================
+-- BEGIN command_policies
+CREATE TABLE IF NOT EXISTS command_policies (
+    id SERIAL PRIMARY KEY,
+    command_name VARCHAR(128) NOT NULL,
+    required_permissions_any JSONB NOT NULL DEFAULT '[]'::jsonb,
+    required_permissions_all JSONB NOT NULL DEFAULT '[]'::jsonb,
+    required_roles_any JSONB NOT NULL DEFAULT '[]'::jsonb,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    scope VARCHAR(64) NOT NULL DEFAULT 'global',
+    version INTEGER NOT NULL DEFAULT 1,
+    updated_by VARCHAR(128),
+    policy_expr TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_command_policy_command_name
+    ON command_policies (command_name);
+CREATE INDEX IF NOT EXISTS ix_command_policies_enabled
+    ON command_policies (enabled);
+-- END command_policies
+
+-- ==================================================
 -- 第三阶段：索引（几何 / 向量 / 查询）
 -- ==================================================
 
@@ -212,51 +237,37 @@ CREATE INDEX IF NOT EXISTS idx_node_tag_indexes_tag ON node_tag_indexes (tag);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_node_tag_indexes_unique ON node_tag_indexes (node_id, tag);
 
 -- ==================================================
--- 第四阶段：触发器函数（属性/标签索引维护 - 增量更新优化）
+-- 第四阶段：触发器函数（属性/标签索引维护）
 -- ==================================================
 
--- 增量更新节点属性索引：只处理变化的属性
 CREATE OR REPLACE FUNCTION update_node_attribute_indexes()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- 只在attributes实际变化时更新索引
-    IF OLD.attributes IS DISTINCT FROM NEW.attributes THEN
-        -- 删除旧索引
-        DELETE FROM node_attribute_indexes WHERE node_id = NEW.id;
-
-        -- 增量插入新属性（仅当attributes不为空时）
-        IF NEW.attributes IS NOT NULL AND NEW.attributes <> '{}'::jsonb THEN
-            INSERT INTO node_attribute_indexes (node_id, attribute_key, attribute_value, attribute_type)
-            SELECT
-                NEW.id,
-                key,
-                CASE
-                    WHEN jsonb_typeof(value) = 'string' THEN trim(both '"' from value::text)
-                    WHEN jsonb_typeof(value) IN ('number', 'boolean') THEN value::text
-                    ELSE value::text
-                END,
-                jsonb_typeof(value)
-            FROM jsonb_each(NEW.attributes);
-        END IF;
+    DELETE FROM node_attribute_indexes WHERE node_id = NEW.id;
+    IF NEW.attributes IS NOT NULL AND NEW.attributes <> '{}'::jsonb THEN
+        INSERT INTO node_attribute_indexes (node_id, attribute_key, attribute_value, attribute_type)
+        SELECT
+            NEW.id,
+            key,
+            CASE
+                WHEN jsonb_typeof(value) = 'string' THEN trim(both '"' from value::text)
+                WHEN jsonb_typeof(value) IN ('number', 'boolean') THEN value::text
+                ELSE value::text
+            END,
+            jsonb_typeof(value)
+        FROM jsonb_each(NEW.attributes);
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- 增量更新节点标签索引：只在tags实际变化时更新
 CREATE OR REPLACE FUNCTION update_node_tag_indexes()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- 只在tags实际变化时更新索引
-    IF OLD.tags IS DISTINCT FROM NEW.tags THEN
-        -- 删除旧索引
-        DELETE FROM node_tag_indexes WHERE node_id = NEW.id;
-
-        -- 增量插入新标签（仅当tags不为空时）
-        IF NEW.tags IS NOT NULL AND jsonb_array_length(NEW.tags) > 0 THEN
-            INSERT INTO node_tag_indexes (node_id, tag)
-            SELECT NEW.id, jsonb_array_elements_text(NEW.tags);
-        END IF;
+    DELETE FROM node_tag_indexes WHERE node_id = NEW.id;
+    IF NEW.tags IS NOT NULL AND jsonb_array_length(NEW.tags) > 0 THEN
+        INSERT INTO node_tag_indexes (node_id, tag)
+        SELECT NEW.id, jsonb_array_elements_text(NEW.tags);
     END IF;
     RETURN NEW;
 END;
@@ -337,7 +348,7 @@ INSERT INTO node_types (
 ) VALUES
 ('user', NULL, '用户', 'app.models.user.User', 0, 'User', 'app.models.user', '系统用户',
  '{}', '{}', '{}', '[]', '{}'),
-('campus', NULL, '校园', 'app.models.campus.Campus', 0, 'Campus', 'app.models.campus', '校园实体',
+('campus', NULL, '园区', 'app.models.campus.Campus', 0, 'Campus', 'app.models.campus', '校园实体',
  '{}', '{}', '{}', '[]', '{}'),
 ('world', NULL, '世界', 'app.models.world.World', 0, 'World', 'app.models.world', '场景世界',
  '{}', '{}', '{}', '[]', '{}'),

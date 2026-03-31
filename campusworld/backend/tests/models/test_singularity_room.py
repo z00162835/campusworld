@@ -28,8 +28,11 @@ class TestSingularityRoom:
         """测试奇点房间创建"""
         from app.models.root_manager import root_manager
 
-        # 初始化根节点
-        success = root_manager.initialize_root_node(force_recreate=True)
+        # 先验证唯一性
+        assert root_manager.validate_root_node_uniqueness(), "根节点不唯一"
+
+        # 初始化根节点（不使用 force_recreate，避免产生脏数据）
+        success = root_manager.initialize_root_node(force_recreate=False)
         assert success is True, "奇点房间创建失败"
 
         # 获取根节点信息

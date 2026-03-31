@@ -6,18 +6,18 @@
 import json
 import ast
 from typing import List, Dict, Any, Optional, Type
-from app.commands.base import SystemCommand, CommandResult, CommandType
+from app.commands.base import BaseCommand, CommandResult, CommandType
 from app.commands.builder.model_discovery import model_discoverer
 from app.models.base import DefaultObject
 from app.core.log import get_logger, LoggerNames
 
-class CreateCommand(SystemCommand):
+class CreateCommand(BaseCommand):
     def __init__(self):
         super().__init__(
             name="create",
             description="创建对象 - create ClassName = {参数}",
             aliases=["spawn", "build", "make"],
-            command_type=CommandType.ADMIN
+            command_type=CommandType.ADMIN,
         )
         self.logger = get_logger(LoggerNames.COMMAND)
     
@@ -32,14 +32,6 @@ class CreateCommand(SystemCommand):
             return False
         
         return True
-    
-    def check_permission(self, context) -> bool:
-        """检查权限"""
-        # 只有管理员可以创建对象
-        caller = context.get_caller()
-        if not caller:
-            return False
-        return hasattr(caller, 'is_admin') and caller.is_admin
     
     def execute(self, context, args: List[str]) -> CommandResult:
         """执行创建命令"""
@@ -202,7 +194,7 @@ class CreateCommand(SystemCommand):
         return "create ClassName = {参数}"
 
 
-class CreateInfoCommand(SystemCommand):
+class CreateInfoCommand(BaseCommand):
     """
     创建信息命令 - 显示模型详细信息
     """
@@ -212,19 +204,12 @@ class CreateInfoCommand(SystemCommand):
             name="create_info",
             description="显示模型详细信息",
             aliases=["cinfo", "model_info"],
-            command_type=CommandType.ADMIN
+            command_type=CommandType.ADMIN,
         )
     
     def validate_args(self, args: List[str]) -> bool:
         """验证参数"""
         return len(args) == 1
-    
-    def check_permission(self, context) -> bool:
-        """检查权限"""
-        caller = context.get_caller()
-        if not caller:
-            return False
-        return hasattr(caller, 'is_admin') and caller.is_admin
     
     def execute(self, context, args: List[str]) -> CommandResult:
         """执行命令"""

@@ -19,6 +19,50 @@ from app.core.log import get_logger
 logger = get_logger("campusworld.db.seed")
 
 
+def ensure_command_policies_seed(session) -> bool:
+    """
+    Ensure minimal command policy rows exist (idempotent).
+
+    This seeds data only (DML). Schema must already exist.
+    """
+    from app.commands.base import CommandType
+    from app.commands.policy_bootstrap import policy_seed_for
+    from app.commands.policy_store import CommandPolicyRepository
+    from app.commands.system_commands import SYSTEM_COMMANDS
+    from app.commands.game import GAME_COMMANDS
+    from app.commands.builder import build_cmdset
+
+    repo = CommandPolicyRepository(session)
+    commands = list(SYSTEM_COMMANDS) + list(GAME_COMMANDS)
+    if build_cmdset:
+        commands.extend(list(build_cmdset.get_commands().values()))
+
+    created = 0
+    for cmd in commands:
+        if repo.get_policy(cmd.name) is not None:
+            continue
+        seed = policy_seed_for(cmd.name)
+        if (
+            not seed["required_permissions_any"]
+            and not seed["required_permissions_all"]
+            and not seed["required_roles_any"]
+            and getattr(cmd, "command_type", None) == CommandType.ADMIN
+        ):
+            seed["required_permissions_any"] = ["admin.*"]
+        repo.upsert_policy(
+            cmd.name,
+            required_permissions_any=seed["required_permissions_any"],
+            required_permissions_all=seed["required_permissions_all"],
+            required_roles_any=seed["required_roles_any"],
+            enabled=True,
+            updated_by="seed",
+        )
+        created += 1
+
+    logger.info("ensure_command_policies_seed created=%s", created)
+    return True
+
+
 def ensure_account_type(session) -> bool:
     """确保 account 类型存在。"""
     from app.models.graph import NodeType
@@ -174,6 +218,8 @@ def seed_minimal() -> bool:
             if not ensure_account_type(session):
                 return False
             if not ensure_default_accounts(session):
+                return False
+            if not ensure_command_policies_seed(session):
                 return False
 
         # 根节点初始化同样是幂等的

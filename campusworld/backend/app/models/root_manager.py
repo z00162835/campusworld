@@ -84,21 +84,45 @@ class RootNodeManager:
             return False
     
     def _get_existing_root_node(self, session: Session) -> Optional[Node]:
-        """获取现有的根节点"""
+        """获取现有的根节点（增强版：检测并处理重复）"""
         try:
-            # 查找标记为根节点的房间
-            root_node = session.query(Node).filter(
+            # 查找所有标记为根节点的房间
+            root_nodes = session.query(Node).filter(
                 and_(
                     Node.type_code == 'room',
                     Node.attributes['is_root'].astext == 'true'
                 )
-            ).first()
-            
-            return root_node
+            ).all()
+
+            # 检测重复根节点
+            if len(root_nodes) > 1:
+                self.logger.warning(f"检测到 {len(root_nodes)} 个根节点，数据不一致")
+
+                # 按创建时间排序，保留最新创建的，删除其他
+                root_nodes = sorted(
+                    root_nodes,
+                    key=lambda n: n.created_at or datetime.min,
+                    reverse=True
+                )
+
+                # 记录要保留的根节点
+                kept_node = root_nodes[0]
+                self.logger.info(f"保留根节点: ID={kept_node.id}, name={kept_node.name}")
+
+                # 删除重复的根节点
+                for node in root_nodes[1:]:
+                    self.logger.info(f"清理重复根节点: ID={node.id}, name={node.name}")
+                    session.delete(node)
+
+                session.commit()
+                return kept_node
+
+            return root_nodes[0] if root_nodes else None
+
         except Exception as e:
             self.logger.error(f"查找现有根节点失败: {e}")
             return None
-    
+
     def _create_singularity_room(self, session: Session) -> Optional[Node]:
         """创建奇点房间"""
         try:
@@ -285,6 +309,9 @@ class RootNodeManager:
         """确保根节点存在，如果不存在则创建"""
         try:
             with db_session_context() as session:
+                # 先清理重复根节点，确保唯一性
+                root_node = self._get_existing_root_node(session)
+
                 root_node = self.get_root_node(session)
                 if root_node:
                     self._ensure_bulletin_board_exists(session, root_node.id)
@@ -451,6 +478,35 @@ class RootNodeManager:
         except Exception as e:
             self.logger.error(f"获取根节点统计信息失败: {e}")
             return {}
+
+    def validate_root_node_uniqueness(self) -> bool:
+        """
+        验证根节点唯一性
+
+        Returns:
+            bool: True 表示根节点唯一，False 表示存在多个
+        """
+        try:
+            with db_session_context() as session:
+                count = session.query(Node).filter(
+                    and_(
+                        Node.type_code == 'room',
+                        Node.attributes['is_root'].astext == 'true'
+                    )
+                ).count()
+
+                if count > 1:
+                    self.logger.error(f"根节点不唯一: 发现 {count} 个根节点")
+                    return False
+                elif count == 0:
+                    self.logger.warning("根节点不存在")
+                    return False
+
+                return True
+
+        except Exception as e:
+            self.logger.error(f"验证根节点唯一性失败: {e}")
+            return False
 
 
 # 全局根节点管理器实例

@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.models.base import DefaultObject
+from app.core.log import get_logger, LoggerNames
 
 
 class BulletinBoard(DefaultObject):
@@ -21,6 +22,8 @@ class BulletinBoard(DefaultObject):
         "p": "prev",
         "previous": "prev",
     }
+    _LOOK_ALIASES = ["bulletin_board", "bulletin", "board"]
+    _logger = get_logger(LoggerNames.GAME)
 
     def __init__(self, name: str = "bulletin_board", config: Optional[Dict[str, Any]] = None, **kwargs):
         self._node_type = "system_bulletin_board"
@@ -32,13 +35,14 @@ class BulletinBoard(DefaultObject):
             "entry_room": "singularity_room",
             "is_system_singleton": True,
             "supports_markdown_notice": True,
+            "aliases": list(self._LOOK_ALIASES),
             "created_at": datetime.now().isoformat(),
         }
         if config and "attributes" in config:
             attrs.update(config["attributes"])
         attrs.update(kwargs)
 
-        tags = ["system", "bulletin_board", "singleton"]
+        tags = ["system", "bulletin_board", "singleton", "bulletin", "board"]
         if config and "tags" in config:
             tags.extend(config["tags"])
 
@@ -162,8 +166,8 @@ class BulletinBoard(DefaultObject):
             notice = service.get_notice_by_id(int(notice_id), public_only=True)
             if not notice:
                 return f"Notice not found: {notice_id}"
-            body = service.render_notice_md_to_terminal(notice.get("content_md", ""))
-            return self._render_detail_view(notice, body)
+            body_chunks = service.render_notice_md_to_terminal_chunks(notice.get("content_md", ""))
+            return self._render_detail_view(notice, body_chunks)
 
         if mode == "index":
             index = payload.get("index")
@@ -172,8 +176,8 @@ class BulletinBoard(DefaultObject):
             notice = service.get_notice_by_page_index(page=page, index=int(index), page_size=10)
             if not notice:
                 return f"Notice not found on page {page}: {index}"
-            body = service.render_notice_md_to_terminal(notice.get("content_md", ""))
-            return self._render_detail_view(notice, body)
+            body_chunks = service.render_notice_md_to_terminal_chunks(notice.get("content_md", ""))
+            return self._render_detail_view(notice, body_chunks)
 
         data = service.list_notices(page=page, page_size=10)
         return self._render_list_view(data)
@@ -200,14 +204,24 @@ class BulletinBoard(DefaultObject):
         lines.append("Usage: look bulletin_board <index> | look bulletin_board next | look bulletin_board prev | look bulletin_board page <n>")
         return "\n".join(lines).strip()
 
-    def _render_detail_view(self, notice: Dict[str, Any], body: str) -> str:
+    def _render_detail_view(self, notice: Dict[str, Any], body_chunks: List[str]) -> str:
         title = notice.get("title", "Untitled")
         published_at = notice.get("published_at") or ""
         header = [title, "-" * len(title)]
         if published_at:
             header.append(f"Published: {published_at}")
         header.append("")
-        header.append(body.strip())
+        if not body_chunks:
+            header.append("")
+        elif len(body_chunks) == 1:
+            header.append((body_chunks[0] or "").strip())
+        else:
+            total = len(body_chunks)
+            for i, chunk in enumerate(body_chunks, 1):
+                header.append(f"[Part {i}/{total}]")
+                header.append((chunk or "").strip())
+                if i < total:
+                    header.append("")
         header.append("")
         header.append("Back: look bulletin_board")
         return "\n".join(header).strip()

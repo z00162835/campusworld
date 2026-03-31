@@ -11,7 +11,7 @@ from .user import User
 from .campus import Campus
 from .world import World, WorldObject
 from .room import Room, SingularityRoom
-from .system import BulletinBoard, SystemNotice
+from .system import BulletinBoard, SystemCommandAbility, SystemNotice
 from .exit import Exit
 
 # 图数据结构系统
@@ -45,6 +45,7 @@ __all__ = [
     "Room",
     "SingularityRoom",
     "BulletinBoard",
+    "SystemCommandAbility",
     "SystemNotice",
     "Exit",
     
@@ -68,6 +69,7 @@ model_factory.register_model("world", World)
 model_factory.register_model("world_object", WorldObject)
 model_factory.register_model("room", Room)
 model_factory.register_model("system_bulletin_board", BulletinBoard)
+model_factory.register_model("system_command_ability", SystemCommandAbility)
 model_factory.register_model("system_notice", SystemNotice)
 model_factory.register_model("exit", Exit)
 

@@ -15,6 +15,7 @@ from app.protocols.ssh_handler import SSHHandler
 from app.commands.init_commands import initialize_commands
 from app.commands.base import CommandContext
 from app.commands.registry import command_registry
+from app.core.database import db_session_context
 from app.core.log import get_logger, LoggerNames
 
 class SSHConsole:
@@ -114,16 +115,17 @@ class SSHConsole:
         # 获取权限信息
         permissions = self.current_session.permissions if self.current_session else ["guest"]
 
-        # 创建命令上下文
-        context = CommandContext(
-            user_id=user_id,
-            username=username,
-            session_id=self.current_session.session_id if self.current_session else "guest_session",
-            permissions=permissions
-        )
-    
-        # 动态获取可用命令
-        available_commands = command_registry.get_available_commands(context)
+        with db_session_context() as db_session:
+            roles = list(self.current_session.roles) if self.current_session else []
+            context = CommandContext(
+                user_id=user_id,
+                username=username,
+                session_id=self.current_session.session_id if self.current_session else "guest_session",
+                permissions=permissions,
+                db_session=db_session,
+                roles=roles,
+            )
+            available_commands = command_registry.get_available_commands(context)
 
         # 构建欢迎信息
         welcome_lines = [

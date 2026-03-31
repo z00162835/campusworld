@@ -5,6 +5,7 @@
 
 from typing import Dict, List, Optional, Set, Any
 from .base import BaseCommand, CommandContext, CommandType
+from .policy import CommandPolicyEvaluator, AuthzDecision
 from app.core.log import get_logger, LoggerNames
 
 class CommandRegistry:
@@ -14,6 +15,7 @@ class CommandRegistry:
         self.logger = get_logger(LoggerNames.COMMAND)
         self.commands: Dict[str, BaseCommand] = {}
         self.aliases: Dict[str, str] = {}
+        self.policy_evaluator = CommandPolicyEvaluator()
         self.commands_by_type: Dict[CommandType, List[BaseCommand]] = {
             CommandType.SYSTEM: [],
             CommandType.GAME: [],
@@ -56,14 +58,13 @@ class CommandRegistry:
                 if group not in self.command_groups:
                     self.command_groups[group] = []
                 self.command_groups[group].append(command)
-            
-            self.logger.info(f"命令 '{command.name}' 注册成功 (类型: {command.command_type.value})")
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"注册命令 '{command.name}' 失败: {e}")
             return False
-    
+
     def unregister_command(self, command_name: str) -> bool:
         """注销命令"""
         try:
@@ -90,10 +91,9 @@ class CommandRegistry:
             
             # 移除命令
             del self.commands[command_name]
-            
-            self.logger.info(f"命令 '{command_name}' 已注销")
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"注销命令 '{command_name}' 失败: {e}")
             return False
@@ -123,10 +123,23 @@ class CommandRegistry:
         available_commands = []
         
         for command in self.commands.values():
-            if command.check_permission(context):
+            decision = self.policy_evaluator.evaluate(command, context)
+            if decision.allowed:
                 available_commands.append(command)
         
         return available_commands
+
+    def authorize_command(self, command: BaseCommand, context: CommandContext) -> AuthzDecision:
+        return self.policy_evaluator.evaluate(command, context)
+
+    def execute(self, command_name: str, context: CommandContext, args: List[str]):
+        command = self.get_command(command_name)
+        if not command:
+            return None
+        decision = self.authorize_command(command, context)
+        if not decision.allowed:
+            return None
+        return command.execute(context, args)
     
     def search_commands(self, keyword: str, context: Optional[CommandContext] = None) -> List[BaseCommand]:
         """搜索命令"""

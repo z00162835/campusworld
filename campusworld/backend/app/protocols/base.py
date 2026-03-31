@@ -6,9 +6,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from app.commands.base import CommandContext, CommandResult
-from app.core.database import SessionLocal
-from app.models.graph import Node
-from app.models.user import User
 from app.core.log import get_logger, LoggerNames
 logger = get_logger(LoggerNames.PROTOCOL)
 
@@ -33,18 +30,32 @@ class ProtocolHandler(ABC):
         pass
 
     
-    def create_context(self, user_id: str, username: str, session_id: str, permissions: List[str],session: Optional[Any] = None,
-                      game_state: Optional[Dict[str, Any]] = None) -> CommandContext:
+    def create_context(
+        self,
+        user_id: str,
+        username: str,
+        session_id: str,
+        permissions: List[str],
+        session: Optional[Any] = None,
+        game_state: Optional[Dict[str, Any]] = None,
+        db_session: Optional[Any] = None,
+        roles: Optional[List[str]] = None,
+    ) -> CommandContext:
         """创建命令上下文"""
         caller = None
         if session and hasattr(session, 'user_object'):
             caller = session.user_object
+        resolved_roles = list(roles or [])
+        if not resolved_roles and session and hasattr(session, "roles"):
+            resolved_roles = list(getattr(session, "roles", []) or [])
         return CommandContext(
             user_id=user_id,
             username=username,
             session_id=session_id,
             permissions=permissions,
             caller=caller,
-            game_state=game_state
+            game_state=game_state,
+            db_session=db_session,
+            roles=resolved_roles,
         )
     

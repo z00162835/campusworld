@@ -51,6 +51,24 @@ def initialize_commands(force_reinit: bool = False) -> bool:
                         build_success += 1
                     else:
                         logger.error(f"建造命令 '{command.name}' 注册失败")
+
+            try:
+                from app.core.database import db_session_context
+                from app.commands.policy_store import ensure_default_command_policies
+
+                with db_session_context() as session:
+                    ensure_default_command_policies(session)
+                    try:
+                        from app.commands.ability_sync import ensure_command_ability_nodes
+
+                        ensure_command_ability_nodes(session)
+                    except Exception as e:
+                        logger.error("command ability sync failed: %s", e)
+                        return False
+            except Exception as e:
+                logger.error("command policy bootstrap failed: %s", e)
+                return False
+
             # 显示注册摘要
             summary = command_registry.get_commands_summary()
             

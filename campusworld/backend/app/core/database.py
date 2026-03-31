@@ -138,6 +138,7 @@ def init_db() -> bool:
         # 关键：确保所有 ORM 模型已被导入并注册到 Base.metadata
         # 否则 Base.metadata 为空，create_all() 会“成功执行但不创建任何表”
         import app.models  # noqa: F401
+        import app.commands.policy_store  # noqa: F401 — command_policies table
 
         engine = _create_engine()
 

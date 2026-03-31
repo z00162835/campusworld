@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 from .base import ProtocolHandler
 from app.commands.registry import command_registry
 from app.commands.base import CommandContext, CommandResult
+from app.core.database import db_session_context
 
 
 class SSHHandler(ProtocolHandler):
@@ -32,23 +33,28 @@ class SSHHandler(ProtocolHandler):
             command_name = parts[0].lower()
             args = parts[1:] if len(parts) > 1 else []
             
-            # 创建命令上下文
-            context = self.create_context(user_id, username, session_id, permissions, session, game_state)
-            
-            # 查找命令
-            command = command_registry.get_command(command_name)
-            if not command:
-                return self._format_command_not_found(command_name)
-            
-            # 检查权限
-            if not command.check_permission(context):
-                return self._format_permission_denied(command_name)
-            
-            # 执行命令
-            result = command.execute(context, args)
-            
-            # 格式化结果
-            return self._format_command_result(result)
+            with db_session_context() as db_session:
+                context = self.create_context(
+                    user_id,
+                    username,
+                    session_id,
+                    permissions,
+                    session,
+                    game_state,
+                    db_session=db_session,
+                )
+
+                command = command_registry.get_command(command_name)
+                if not command:
+                    return self._format_command_not_found(command_name)
+
+                decision = command_registry.authorize_command(command, context)
+                if not decision.allowed:
+                    return self._format_permission_denied(command_name)
+
+                result = command.execute(context, args)
+
+                return self._format_command_result(result)
             
         except Exception as e:
             self.logger.error(f"命令执行错误: {e}")

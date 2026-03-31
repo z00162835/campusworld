@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 from .base import ProtocolHandler
 from app.commands.registry import command_registry
 from app.commands.base import CommandContext, CommandResult
+from app.core.database import db_session_context
 
 
 class HTTPHandler(ProtocolHandler):
@@ -31,34 +32,39 @@ class HTTPHandler(ProtocolHandler):
             command_name = parts[0].lower()
             args = parts[1:] if len(parts) > 1 else []
             
-            # 创建命令上下文
-            context = self.create_context(user_id, session_id, permissions, game_state)
-            
-            # 查找命令
-            command = command_registry.get_command(command_name)
-            if not command:
+            with db_session_context() as db_session:
+                context = self.create_context(
+                    user_id,
+                    str(user_id),
+                    session_id,
+                    permissions,
+                    None,
+                    game_state,
+                    db_session=db_session,
+                )
+
+                command = command_registry.get_command(command_name)
+                if not command:
+                    return json.dumps({
+                        "success": False,
+                        "error": f"Command '{command_name}' not found"
+                    })
+
+                decision = command_registry.authorize_command(command, context)
+                if not decision.allowed:
+                    return json.dumps({
+                        "success": False,
+                        "error": f"Permission denied for command '{command_name}'"
+                    })
+
+                result = command.execute(context, args)
+
                 return json.dumps({
-                    "success": False,
-                    "error": f"Command '{command_name}' not found"
+                    "success": result.success,
+                    "message": result.message,
+                    "data": result.data,
+                    "error": result.error
                 })
-            
-            # 检查权限
-            if not command.check_permission(context):
-                return json.dumps({
-                    "success": False,
-                    "error": f"Permission denied for command '{command_name}'"
-                })
-            
-            # 执行命令
-            result = command.execute(context, args)
-            
-            # 返回JSON格式结果
-            return json.dumps({
-                "success": result.success,
-                "message": result.message,
-                "data": result.data,
-                "error": result.error
-            })
             
         except Exception as e:
             self.logger.error(f"命令执行错误: {e}")

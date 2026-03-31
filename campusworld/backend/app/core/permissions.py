@@ -321,6 +321,7 @@ ROLE_STRING_PERMISSIONS: Dict[Role, List[str]] = {
         "world.*",
         "system.*",
         "admin.*",
+        "admin.system_notice",
     ],
     Role.OWNER: ["*"],
 }

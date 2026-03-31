@@ -6,11 +6,13 @@
 
 from .look_command import LookCommand
 from .enter_world_command import EnterWorldCommand
+from .notice_command import NoticeCommand
 
 # 场景命令列表
 GAME_COMMANDS = [
     LookCommand(),
     EnterWorldCommand(),
+    NoticeCommand(),
 ]
 
-__all__ = ['LookCommand', 'EnterWorldCommand', 'GAME_COMMANDS']
+__all__ = ['LookCommand', 'EnterWorldCommand', 'NoticeCommand', 'GAME_COMMANDS']

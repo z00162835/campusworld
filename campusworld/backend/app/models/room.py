@@ -18,8 +18,16 @@ class Room(DefaultObject):
     房间模型 - 纯图数据设计
 
     """
-    
+
     def __init__(self, name: str, config: Dict[str, Any] = None, **kwargs):
+        """
+        房间模型初始化。
+
+        注意：name 是必需参数，不提供默认值，避免意外创建与奇点屋同名的房间。
+        """
+        if not name or not name.strip():
+            raise ValueError("房间名称不能为空")
+
         # 设置房间特定的节点类型
         self._node_type = 'room'
 
