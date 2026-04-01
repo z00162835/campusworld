@@ -12,6 +12,7 @@ from typing import List, Optional, Dict, Any, Union
 from ..base import GameCommand, CommandResult, CommandContext
 from app.core.log import get_logger, LoggerNames
 from app.commands.policy_expr import evaluate_policy_expr, PolicyExprError
+from .direction_command import normalize_direction
 
 
 class LookCommand(GameCommand):
@@ -90,18 +91,23 @@ class LookCommand(GameCommand):
     def _get_current_room(self, context: CommandContext) -> Optional[Dict[str, Any]]:
         """获取当前房间信息 - 修复版本"""
         try:
-            # 从用户图数据获取当前位置
-            current_room_id = self._get_user_current_room_id(context)
-
-            # 如果场景中没有该房间，尝试从图数据获取
+            room_ref = self._get_user_current_room_ref(context)
+            if not room_ref:
+                return None
+            if room_ref.get("scope") == "world":
+                return self._get_world_room_from_graph_data(
+                    world_id=str(room_ref.get("world_id") or ""),
+                    room_package_id=str(room_ref.get("room_id") or ""),
+                )
+            current_room_id = str(room_ref.get("room_id") or "")
             return self._get_room_from_graph_data(context, current_room_id)
             
         except Exception as e:
             self.logger.error(f"获取当前房间失败: {e}")
             return None
 
-    def _get_user_current_room_id(self, context: CommandContext) -> Optional[str]:
-        """从用户图数据获取当前房间ID"""
+    def _get_user_current_room_ref(self, context: CommandContext) -> Optional[Dict[str, str]]:
+        """从用户图数据获取当前位置（支持世界内 room_package_id）。"""
         try:
             from app.core.database import db_session_context
             from app.models.graph import Node
@@ -118,7 +124,13 @@ class LookCommand(GameCommand):
                     self.logger.warning(f"未找到用户节点: {context.user_id}")
                     return None
                 
-                # 获取用户当前位置
+                attrs = dict(user_node.attributes or {})
+                active_world = str(attrs.get("active_world") or "").strip().lower()
+                world_location = str(attrs.get("world_location") or "").strip().lower()
+                if active_world and world_location:
+                    return {"scope": "world", "world_id": active_world, "room_id": world_location}
+
+                # 获取系统层当前位置
                 location_id = user_node.location_id
                 if location_id:
                     # 查找位置节点
@@ -129,12 +141,77 @@ class LookCommand(GameCommand):
                     
                     if location_node:
                         # 返回房间名称或ID
-                        return location_node.attributes.get('room_name', str(location_id))
+                        return {"scope": "system", "room_id": location_node.attributes.get('room_name', str(location_id))}
                 
                 return None
                 
         except Exception as e:
             self.logger.error(f"从图数据获取用户位置失败: {e}")
+            return None
+
+    def _get_world_room_from_graph_data(self, world_id: str, room_package_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            from app.core.database import db_session_context
+            from app.models.graph import Node, Relationship
+
+            with db_session_context() as session:
+                room_node = (
+                    session.query(Node)
+                    .filter(
+                        Node.type_code == "room",
+                        Node.attributes["world_id"].astext == str(world_id),
+                        Node.attributes["package_node_id"].astext == str(room_package_id),
+                        Node.is_active == True,  # noqa: E712
+                    )
+                    .first()
+                )
+                if not room_node:
+                    return None
+                attrs = dict(room_node.attributes or {})
+                outgoing = (
+                    session.query(Relationship, Node)
+                    .join(Node, Relationship.target_id == Node.id)
+                    .filter(
+                        Relationship.source_id == room_node.id,
+                        Relationship.type_code == "connects_to",
+                        Relationship.is_active == True,  # noqa: E712
+                        Node.is_active == True,  # noqa: E712
+                    )
+                    .all()
+                )
+                exits = []
+                for rel, _target in outgoing:
+                    rattrs = dict(rel.attributes or {})
+                    d = normalize_direction(str(rattrs.get("direction") or "").strip().lower())
+                    if d:
+                        exits.append(d)
+                    else:
+                        target_pkg = str((_target.attributes or {}).get("package_node_id") or "")
+                        if target_pkg:
+                            exits.append(target_pkg.lower())
+                contents = (
+                    session.query(Node)
+                    .filter(Node.location_id == room_node.id, Node.is_active == True)  # noqa: E712
+                    .all()
+                )
+                room_objects = []
+                for n in contents:
+                    if n.type_code in ("account", "user"):
+                        continue
+                    if not self._is_visible_in_room(None, n):
+                        continue
+                    room_objects.append(n.name)
+                return {
+                    "id": str(room_node.id),
+                    "name": attrs.get("package_node_id", room_node.name),
+                    "description": attrs.get("display_name", room_node.name),
+                    "exits": exits,
+                    "items": room_objects,
+                    "is_singularity": False,
+                    "is_home": False,
+                }
+        except Exception as e:
+            self.logger.error(f"从图数据获取世界房间失败: {e}")
             return None
 
     def _get_room_from_graph_data(self, context: CommandContext, room_id: str) -> Optional[Dict[str, Any]]:
@@ -190,7 +267,7 @@ class LookCommand(GameCommand):
             self.logger.error(f"从图数据获取房间信息失败: {e}")
             return None
 
-    def _is_visible_in_room(self, context: CommandContext, node: Any) -> bool:
+    def _is_visible_in_room(self, context: Optional[CommandContext], node: Any) -> bool:
         """
         Evennia-style visibility gate driven by model attributes.
         """
@@ -213,8 +290,8 @@ class LookCommand(GameCommand):
         try:
             return evaluate_policy_expr(
                 view_lock,
-                user_permissions=list(getattr(context, "permissions", []) or []),
-                user_roles=list(getattr(context, "roles", []) or []),
+                    user_permissions=list(getattr(context, "permissions", []) or []) if context else [],
+                    user_roles=list(getattr(context, "roles", []) or []) if context else [],
                 object_attrs=attrs,
             )
         except PolicyExprError:
@@ -315,12 +392,34 @@ class LookCommand(GameCommand):
                     Node.type_code == "account",
                     Node.is_active == True,
                 ).first()
-                if not user_node or not user_node.location_id:
+                if not user_node:
+                    return None
+
+                room_ref = self._get_user_current_room_ref(context)
+                room_node_id = None
+                if room_ref and room_ref.get("scope") == "world":
+                    world_id = str(room_ref.get("world_id") or "")
+                    room_pkg_id = str(room_ref.get("room_id") or "")
+                    world_room = (
+                        session.query(Node)
+                        .filter(
+                            Node.type_code == "room",
+                            Node.attributes["world_id"].astext == world_id,
+                            Node.attributes["package_node_id"].astext == room_pkg_id,
+                            Node.is_active == True,  # noqa: E712
+                        )
+                        .first()
+                    )
+                    room_node_id = world_room.id if world_room else None
+                else:
+                    room_node_id = user_node.location_id
+
+                if not room_node_id:
                     return None
 
                 # exact match by name
                 node = session.query(Node).filter(
-                    Node.location_id == user_node.location_id,
+                    Node.location_id == room_node_id,
                     Node.name == name,
                     Node.is_active == True,
                 ).first()
@@ -330,7 +429,7 @@ class LookCommand(GameCommand):
                     candidates = (
                         session.query(Node)
                         .filter(
-                            Node.location_id == user_node.location_id,
+                            Node.location_id == room_node_id,
                             Node.is_active == True,
                         )
                         .all()
@@ -355,6 +454,7 @@ class LookCommand(GameCommand):
                     "type": node.type_code,
                     "node_id": node.id,
                     "type_code": node.type_code,
+                    "description": node.description,
                     "attributes": dict(node.attributes or {}),
                 }
         except Exception:
@@ -415,7 +515,14 @@ class LookCommand(GameCommand):
                     pass
 
             obj_name = obj.get('name', obj.get('id', '未知物品'))
-            obj_desc = obj.get('description', '这看起来没什么特别的。')
+            attrs = dict(obj.get("attributes", {}) or {})
+            obj_desc = (
+                obj.get('description')
+                or attrs.get("description")
+                or attrs.get("entry_description")
+                or attrs.get("display_name")
+                or '这看起来没什么特别的。'
+            )
             obj_type = obj.get('type', '未知')
             obj_location = obj.get('location', '未知位置')
             
@@ -428,6 +535,9 @@ class LookCommand(GameCommand):
 类型: {obj_type}
 位置: {obj_location}
 """
+            if str(obj.get("type_code") or "") == "world":
+                world_id = str(attrs.get("world_id") or obj_name).lower()
+                description += f"\n提示: 输入 'enter {world_id}' 进入该世界。"
             
             # 添加物品状态信息
             obj_status = self._get_object_status(obj)

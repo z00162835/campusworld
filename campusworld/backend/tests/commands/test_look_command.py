@@ -17,15 +17,16 @@ def _build_context() -> CommandContext:
     )
 
 
-def test_look_command_requires_running_game():
+def test_look_command_works_without_running_game():
     from app.commands.game.look_command import LookCommand
 
     cmd = LookCommand()
     ctx = _build_context()
     ctx.game_state = {"is_running": False}
+    cmd._get_current_room = lambda _ctx: {"name": "Singularity", "description": "root", "items": [], "exits": []}
     result = cmd.execute(ctx, [])
-    assert not result.success
-    assert "场景未运行" in result.message
+    assert result.success
+    assert "Singularity" in result.message
 
 
 def test_look_command_forwards_target_args_to_object_appearance():
@@ -63,4 +64,39 @@ def test_look_command_returns_multiple_match_prompt():
     result = cmd.execute(ctx, ["board"])
     assert result.success
     assert "多个匹配" in result.message
+
+
+def test_look_command_world_object_shows_enter_hint():
+    from app.commands.game.look_command import LookCommand
+
+    cmd = LookCommand()
+    ctx = _build_context()
+    obj = {
+        "name": "hicampus",
+        "type_code": "world",
+        "attributes": {"world_id": "hicampus", "description": "HiCampus world"},
+    }
+    out = cmd._build_object_description(ctx, obj)
+    assert "HiCampus world" in out
+    assert "enter hicampus" in out
+
+
+def test_look_command_world_prefers_node_description_over_entry_text():
+    from app.commands.game.look_command import LookCommand
+
+    cmd = LookCommand()
+    ctx = _build_context()
+    obj = {
+        "name": "hicampus",
+        "type_code": "world",
+        "description": "WORLD NODE DESC",
+        "attributes": {
+            "world_id": "hicampus",
+            "description": "ATTR DESC",
+            "entry_description": "ENTRY DESC",
+        },
+    }
+    out = cmd._build_object_description(ctx, obj)
+    assert "WORLD NODE DESC" in out
+    assert "ENTRY DESC" not in out
 

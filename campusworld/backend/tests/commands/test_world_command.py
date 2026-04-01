@@ -103,10 +103,30 @@ def test_world_command_install_wraps_structured_result():
     }
     with patch("app.commands.game.world_command.game_engine_manager.load_game", return_value=structured):
         with patch("app.commands.game.world_command.game_engine_manager.get_engine", return_value=None):
-            out = cmd.execute(_ctx(["admin.world.manage"]), ["install", "hicampus"])
+            with patch("app.commands.game.world_command.world_entry_service.sync_world_entry_visibility") as m_sync:
+                out = cmd.execute(_ctx(["admin.world.manage"]), ["install", "hicampus"])
     assert out.success
     assert out.data["world_id"] == "hicampus"
     assert out.data["status_after"] == "installed"
+    m_sync.assert_called_once_with("hicampus", enabled=True)
+
+
+def test_world_command_uninstall_syncs_entry_hidden():
+    from unittest.mock import patch
+
+    cmd = WorldCommand()
+    structured = {
+        "ok": True,
+        "world_id": "hicampus",
+        "message": "world unloaded",
+        "details": {},
+    }
+    with patch("app.commands.game.world_command.game_engine_manager.unload_game", return_value=structured):
+        with patch("app.commands.game.world_command.game_engine_manager.get_engine", return_value=None):
+            with patch("app.commands.game.world_command.world_entry_service.sync_world_entry_visibility") as m_sync:
+                out = cmd.execute(_ctx(["admin.world.manage"]), ["uninstall", "hicampus"])
+    assert out.success
+    m_sync.assert_called_once_with("hicampus", enabled=False)
 
 
 def test_world_command_install_failure_keeps_structured_payload():

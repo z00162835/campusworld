@@ -11,6 +11,7 @@ from app.commands.base import AdminCommand, CommandContext, CommandResult
 from app.core.permissions import permission_checker
 from app.game_engine.manager import game_engine_manager
 from app.game_engine.topology_service import world_topology_service
+from app.game_engine.world_entry_service import world_entry_service
 
 
 class WorldCommand(AdminCommand):
@@ -145,6 +146,8 @@ class WorldCommand(AdminCommand):
             out.get("ok"),
             out.get("error_code"),
         )
+        if out.get("ok"):
+            world_entry_service.sync_world_entry_visibility(world_id, enabled=True)
         return self._from_world_result("world install", world_id, out)
 
     def _uninstall(self, context: CommandContext, args: List[str]) -> CommandResult:
@@ -159,6 +162,8 @@ class WorldCommand(AdminCommand):
             out.get("ok"),
             out.get("error_code"),
         )
+        if out.get("ok"):
+            world_entry_service.sync_world_entry_visibility(world_id, enabled=False)
         return self._from_world_result("world uninstall", world_id, out)
 
     def _reload(self, context: CommandContext, args: List[str]) -> CommandResult:
@@ -173,6 +178,8 @@ class WorldCommand(AdminCommand):
             out.get("ok"),
             out.get("error_code"),
         )
+        if out.get("ok"):
+            world_entry_service.sync_world_entry_visibility(world_id, enabled=True)
         return self._from_world_result("world reload", world_id, out)
 
     def _validate(self, context: CommandContext, args: List[str]) -> CommandResult:
