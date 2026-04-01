@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "campus"
+version = "1.0.0"
+description = "CampusWorld CLI Client - Enhanced terminal experience"
+authors = [{name = "CampusWorld Team"}]
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = [
+    "prompt_toolkit>=3.0.0",
+    "websockets>=10.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+campus = "campus.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["campus*"]
+
+[tool.setuptools.package-dir]
+"" = "campus"

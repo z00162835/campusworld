@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
 import Sidebar from '@/components/layout/Sidebar.vue'
@@ -38,12 +38,12 @@ import NavBar from '@/components/layout/NavBar.vue'
 import TabBar from '@/components/layout/TabBar.vue'
 import FooterComponent from '@/components/layout/Footer.vue'
 
-// 动态导入组件
-import Home from '@/views/Home.vue'
-import Spaces from '@/views/spaces/Spaces.vue'
-import Agents from '@/views/agents/Agents.vue'
-import Discovery from '@/views/discovery/Discovery.vue'
-import History from '@/views/history/History.vue'
+// 动态导入组件以支持代码分割
+const Home = defineAsyncComponent(() => import('@/views/Home.vue'))
+const Spaces = defineAsyncComponent(() => import('@/views/spaces/Spaces.vue'))
+const Agents = defineAsyncComponent(() => import('@/views/agents/Agents.vue'))
+const Discovery = defineAsyncComponent(() => import('@/views/discovery/Discovery.vue'))
+const History = defineAsyncComponent(() => import('@/views/history/History.vue'))
 
 const route = useRoute()
 const tabsStore = useTabsStore()

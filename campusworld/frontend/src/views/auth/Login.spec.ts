@@ -1,6 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
-import Login from '@/views/auth/Login.vue'
+import { describe, it, expect, vi } from 'vitest'
 
 // 模拟 api 模块
 vi.mock('@/api', () => ({
