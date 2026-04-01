@@ -1,5 +1,5 @@
 """
-F02 validator (L1-L5) for HiCampus data package.
+Layered validator (L1–L5) for HiCampus declarative world data package.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from .contracts import (
     ERROR_WORLD_DATA_UNAVAILABLE,
 )
 
-# HiCampus F02 schema supported by this validator (see package_meta.schema_version).
+# Schema versions supported by this validator (see package_meta.schema_version).
 SUPPORTED_SCHEMA_VERSIONS = frozenset({2})
 
 ALLOWED_REL_TYPE_CODES = frozenset(
@@ -44,6 +44,42 @@ ALLOWED_CONCEPT_SCOPES = frozenset(
 )
 
 ALLOWED_CONCEPT_TYPES = frozenset({"goal", "process", "rule", "behavior", "skill"})
+
+_BASELINE_PROFILE_PATH = Path(__file__).resolve().parent / "baseline_profile.yaml"
+
+
+def _load_l4_baseline() -> tuple[Dict[str, int], Set[str]]:
+    """L4 HiCampus spatial baseline: floors per building_code and required room ids."""
+    default_floors: Dict[str, int] = {
+        "F1": 23,
+        "F2": 3,
+        "F3": 6,
+        "F4": 7,
+        "F5": 3,
+        "F6": 9,
+    }
+    default_rooms: Set[str] = {"hicampus_gate", "hicampus_bridge", "hicampus_plaza"}
+    if not _BASELINE_PROFILE_PATH.is_file():
+        return default_floors, default_rooms
+    raw = yaml.safe_load(_BASELINE_PROFILE_PATH.read_text(encoding="utf-8")) or {}
+    fe = raw.get("floor_expect") or {}
+    if not isinstance(fe, dict):
+        fe = {}
+    floor_expect: Dict[str, int] = {}
+    for k, v in fe.items():
+        try:
+            floor_expect[str(k)] = int(v)
+        except (TypeError, ValueError):
+            continue
+    if not floor_expect:
+        floor_expect = default_floors
+    rr = raw.get("required_rooms") or []
+    if isinstance(rr, list) and rr:
+        required_rooms = {str(x) for x in rr}
+    else:
+        required_rooms = default_rooms
+    return floor_expect, required_rooms
+
 
 REQUIRED_FILES = [
     "world.yaml",
@@ -256,13 +292,12 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
         if src not in relationship_endpoint_ids or tgt not in relationship_endpoint_ids:
             raise DataPackageError(ERROR_WORLD_DATA_REFERENCE_BROKEN, f"broken relationship endpoints: {rid}")
 
-    # L4: baseline (HiCampus profile)
-    floor_expect = {"F1": 23, "F2": 3, "F3": 6, "F4": 7, "F5": 3, "F6": 9}
+    # L4: spatial baseline (HiCampus — package/baseline_profile.yaml)
+    floor_expect, required_rooms = _load_l4_baseline()
     for b in buildings:
         code = str(b.get("building_code", ""))
         if code in floor_expect and int(b.get("floors_total", 0)) != floor_expect[code]:
             raise DataPackageError(ERROR_WORLD_DATA_BASELINE_MISMATCH, f"floors mismatch: {code}")
-    required_rooms = {"hicampus_gate", "hicampus_bridge", "hicampus_plaza"}
     if not required_rooms.issubset(room_ids):
         raise DataPackageError(ERROR_WORLD_DATA_BASELINE_MISMATCH, "missing gate/bridge/plaza")
 

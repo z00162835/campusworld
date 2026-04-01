@@ -252,3 +252,20 @@ def test_run_with_job_integrity_error_returns_world_busy(monkeypatch):
     assert result.ok is False
     assert result.error_code == WorldErrorCode.WORLD_BUSY.value
     assert fake_session.rolled_back is True
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_manifest_graph_seed_toggle():
+    from app.game_engine.loader import GameLoader
+
+    assert GameLoader._manifest_graph_seed_enabled({}) is False
+    assert GameLoader._manifest_graph_seed_enabled({"graph_seed": False}) is False
+    assert GameLoader._manifest_graph_seed_enabled({"graph_seed": True}) is True
+    assert GameLoader._manifest_graph_seed_enabled(
+        {"features": {"graph_seed": {"enabled": True}}}
+    ) is True
+    assert GameLoader._manifest_graph_seed_strict({}) is False
+    assert GameLoader._manifest_graph_seed_strict(
+        {"features": {"graph_seed": {"strict_relationships": True}}}
+    ) is True

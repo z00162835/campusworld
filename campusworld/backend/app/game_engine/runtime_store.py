@@ -1,5 +1,5 @@
 """
-F01 V2 runtime persistence contracts for world packages.
+Runtime persistence contracts for world packages (status, jobs, structured errors).
 
 This module provides:
 - Runtime status and error code constants
@@ -54,6 +54,11 @@ class WorldErrorCode(str, Enum):
     WORLD_DATA_SEMANTIC_CONFLICT = "WORLD_DATA_SEMANTIC_CONFLICT"
     WORLD_BUSY = "WORLD_BUSY"
     WORLD_INTERNAL_ERROR = "WORLD_INTERNAL_ERROR"
+    # Graph seed / ontology alignment (GameLoader, pipeline, world graph_profile)
+    GRAPH_SEED_REFERENCE_BROKEN = "GRAPH_SEED_REFERENCE_BROKEN"
+    GRAPH_SEED_TYPE_UNKNOWN = "GRAPH_SEED_TYPE_UNKNOWN"
+    GRAPH_SEED_RELATIONSHIP_UNSUPPORTED = "GRAPH_SEED_RELATIONSHIP_UNSUPPORTED"
+    GRAPH_SEED_FAILED = "GRAPH_SEED_FAILED"
 
 
 @dataclass

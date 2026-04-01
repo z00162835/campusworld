@@ -74,12 +74,19 @@ games/hicampus/data/
 - 在 `contains/connects_to/located_in` 之外支持：
   - `governs`, `applies_to`, `enables`, `requires`, `executes`, `located_in_zone`
 
+### 关系类型：校验全集 vs F03 种子子集
+
+- **F02 validator** 对上述扩展 `rel_type_code` 做白名单与引用校验；数据包可以包含「治理/概念绑定」类关系。
+- **F03 `WorldGraphProfile.allowed_relationship_type_codes`**（HiCampus 当前为 `contains` / `connects_to` / `located_in`）决定**哪些关系会写入图库**；不在集合内的关系在默认模式下被**跳过**，并在 `run_graph_seed` 的 `details.relationships_ignored_*` 中计数。
+- 若 `manifest` 中 `features.graph_seed.strict_relationships: true`（或 pipeline 参数 `strict_relationships=True`），则任一未支持的关系类型会导致种子失败，错误码 `GRAPH_SEED_RELATIONSHIP_UNSUPPORTED`。
+- 扩展 F03 落库类型时：同步扩展 `relationship_types` 本体、`graph_profile` 白名单，并评估是否开启 strict。
+
 ## Validator Layers (L1-L5)
 
 - L1 文件存在性：空间层+实体层+概念层
 - L2 结构合法性：YAML/schema/required fields；**Entity/Concept 最小字段**（含 `presentation_domains`、`access_locks`、`source_ref`、`concept_type`、`definition` 等）
 - L3 引用完整性：楼层/房间/关系端点/概念绑定；**关系端点可包含空间节点、zone、NPC、物品及概念 id**
-- L4 业务基线：**HiCampus profile（写死校验）**：F1~F6 楼层数 `23/3/6/7/3/9`、`hicampus_gate` / `hicampus_bridge` / `hicampus_plaza` 必须存在；其他世界复用 F02 时应替换为可配置 profile 或独立 validator 模块
+- L4 业务基线：**HiCampus**：楼层数与必现房间从 `package/baseline_profile.yaml` 读取（缺文件时回退内置默认值）；其他世界复用 F02 时应替换为该文件或独立 validator 模块
 - L5 语义一致性：`rel_type_code` **白名单**（含 SPEC 所列扩展类型）；`scope: zone` 的概念应至少绑定一个 zone id；概念 `bindings` 可指向其他概念（如 skill → process）
 
 ## Schema Version Gate

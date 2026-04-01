@@ -1,0 +1,12 @@
+# HiCampus spatial baseline for layered validation (L4). Prefer editing here over validator.py.
+floor_expect:
+  F1: 23
+  F2: 3
+  F3: 6
+  F4: 7
+  F5: 3
+  F6: 9
+required_rooms:
+  - hicampus_gate
+  - hicampus_bridge
+  - hicampus_plaza

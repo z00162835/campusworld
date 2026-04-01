@@ -1,5 +1,5 @@
 """
-PackageSnapshotV2 loader for HiCampus F02 data package.
+PackageSnapshotV2 loader for HiCampus declarative data package.
 """
 
 from __future__ import annotations

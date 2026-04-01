@@ -1,5 +1,5 @@
 """
-F02 dual-model contracts for HiCampus world data package.
+Dual-model (entity + concept) contracts for HiCampus world data package.
 """
 
 from __future__ import annotations

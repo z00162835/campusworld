@@ -77,6 +77,8 @@
 
 ## Error Codes (minimum)
 
+**运行时 / 持久化**
+
 - `WORLD_NOT_FOUND`
 - `WORLD_NOT_INSTALLED`
 - `WORLD_MANIFEST_INVALID`
@@ -88,6 +90,25 @@
 - `WORLD_RELOAD_FAILED`
 - `WORLD_BUSY`
 - `WORLD_INTERNAL_ERROR`
+
+**F02 数据包（经 `validate_world_data_package` 映射）**
+
+- `WORLD_DATA_UNAVAILABLE` / `WORLD_DATA_INVALID` / `WORLD_DATA_SCHEMA_UNSUPPORTED`
+- `WORLD_DATA_REFERENCE_BROKEN` / `WORLD_DATA_BASELINE_MISMATCH` / `WORLD_DATA_SEMANTIC_CONFLICT`
+
+**F03 图种子（`manifest.graph_seed` 或 `features.graph_seed.enabled` 为真时）**
+
+- `GRAPH_SEED_REFERENCE_BROKEN` — 快照引用或 world_id 与 profile 不一致、关系端点缺失等
+- `GRAPH_SEED_TYPE_UNKNOWN` — 节点/边类型在 DB 本体或 profile 映射中不可解析
+- `GRAPH_SEED_RELATIONSHIP_UNSUPPORTED` — `strict_relationships` 下出现 profile 未允许的关系类型
+- `GRAPH_SEED_FAILED` — 非 PostgreSQL、缺少 snapshot/`get_graph_profile`、或其它未归类种子异常
+
+**选用规则**：能归类到 `GRAPH_SEED_*` 时优先使用，便于运维过滤；否则可退化为 `WORLD_LOAD_FAILED`（历史兼容路径除外）。
+
+## Manifest 可选字段（F03）
+
+- `graph_seed: true` 或 `features.graph_seed.enabled: true`：在 `load`/`reload` 中于实例化并注册游戏前执行 `run_graph_seed`（需 PostgreSQL，见 `F03_GRAPH_SEED_PIPELINE.md`）。
+- `features.graph_seed.strict_relationships: true`：关系类型必须与 `WorldGraphProfile` 白名单一致，否则加载失败。
 
 ## Dependencies
 

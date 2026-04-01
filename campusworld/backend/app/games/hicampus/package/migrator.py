@@ -1,5 +1,5 @@
 """
-World-scoped migration utilities for F02 data package.
+World-scoped migration utilities for declarative data package.
 """
 
 from __future__ import annotations

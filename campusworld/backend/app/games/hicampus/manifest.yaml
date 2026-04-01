@@ -3,3 +3,8 @@ version: 1.0.0
 api_version: v2
 data_dir: data
 
+# graph_seed: optional DB sync from package snapshot (PostgreSQL + ensure_graph_seed_ontology). false for tests/CI without PG.
+graph_seed: false
+# Alternative: features.graph_seed.enabled: true
+# Strict mode (fail if package has rel types not in graph profile): features.graph_seed.strict_relationships: true
+

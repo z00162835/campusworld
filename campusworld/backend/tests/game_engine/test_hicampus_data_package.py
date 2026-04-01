@@ -21,6 +21,15 @@ DATA_ROOT = Path(__file__).resolve().parents[2] / "app" / "games" / "hicampus" /
 
 @pytest.mark.game
 @pytest.mark.unit
+def test_hicampus_exports_get_graph_profile():
+    from app.games.hicampus import get_graph_profile
+
+    p = get_graph_profile({})
+    assert p.world_package_id == "hicampus"
+
+
+@pytest.mark.game
+@pytest.mark.unit
 def test_validate_data_package_success():
     payload = validate_data_package(DATA_ROOT)
     assert payload["world"]["world_id"] == "hicampus"

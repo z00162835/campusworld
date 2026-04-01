@@ -54,6 +54,23 @@ pytest
 conda run -n campusworld pytest
 ```
 
+### 验证分层与失败/超时说明
+
+| 场景 | 命令 | 说明 |
+|------|------|------|
+| **快速验证（无 PostgreSQL）** | `conda run -n campusworld pytest -m "not integration"` | 跳过 `@pytest.mark.integration`（如 `test_graph_seed_pipeline` 中需真实 PG 的用例、`test_database`、`test_singularity_room` 中部分用例），适合本地与 IDE 自动化，避免连库阻塞或超长等待。 |
+| **全量后端** | `conda run -n campusworld pytest` | 含集成测试；需 `app.core.database` 指向 **PostgreSQL**（见 `backend/config`），否则部分用例会 `skip` 或失败。 |
+| **最慢用例自检** | `conda run -n campusworld pytest --durations=15` | 列出耗时最长的 15 条，便于排查「超长」。 |
+
+**收集阶段失败（历史常见）**
+
+- **`InvalidRequestError: Attribute name 'metadata' is reserved`**：`Declarative` 模型类上不能使用 Python 属性名 `metadata`（与 `MetaData` 冲突）。`world_runtime_states` 表若列名为 `metadata`，应使用 `state_metadata = Column("metadata", ...)` 等形式映射。
+- **`Tuple` / 类型注解 `NameError`**：`typing` 中缺少 `Tuple` 等导入会导致整包收集失败；修复对应模块的 `from typing import ...` 即可。
+
+**IDE / CI 超时**
+
+- 全量用例数量较多时，单次 `pytest` 可能超过工具默认超时；可先跑 `-m "not integration"`，再在具备数据库的环境跑全量。
+
 ### 测试 Fixtures
 
 共享 fixtures 定义在 `backend/tests/conftest.py`:

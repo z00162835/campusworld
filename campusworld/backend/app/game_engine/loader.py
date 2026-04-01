@@ -1,5 +1,5 @@
 """
-Game package loader with F01 V2 runtime contracts.
+Game package loader: discovery, load/reload/unload, persistent runtime state, structured results.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 import sys
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
@@ -23,6 +23,11 @@ from .runtime_store import (
 )
 from app.core.paths import get_backend_root, get_project_root
 from .world_data_validate import WorldDataPackageError, validate_world_data_package
+
+
+def _strip_snapshot_from_package_info(info: Dict[str, Any]) -> Dict[str, Any]:
+    """Avoid persisting non-JSON snapshot objects on world_runtime_states.metadata."""
+    return {k: v for k, v in info.items() if k != "snapshot"}
 
 
 class GameLoader:
@@ -141,6 +146,7 @@ class GameLoader:
             "data_dir": str(data_root),
             "snapshot_loaded": True,
             "world_data_validated": True,
+            "snapshot": snapshot,
             "snapshot_meta": getattr(snapshot, "meta", {}),
             "snapshot_counts": {
                 "spatial": {
@@ -163,6 +169,90 @@ class GameLoader:
                 "relationships": len(getattr(snapshot, "relationships", [])),
             },
         }
+
+    @staticmethod
+    def _manifest_graph_seed_enabled(manifest: Dict[str, Any]) -> bool:
+        if manifest.get("graph_seed") is True:
+            return True
+        feat = manifest.get("features") or {}
+        if not isinstance(feat, dict):
+            return False
+        gs = feat.get("graph_seed") or {}
+        if not isinstance(gs, dict):
+            return False
+        return gs.get("enabled") is True
+
+    @staticmethod
+    def _manifest_graph_seed_strict(manifest: Dict[str, Any]) -> bool:
+        feat = manifest.get("features") or {}
+        if not isinstance(feat, dict):
+            return False
+        gs = feat.get("graph_seed") or {}
+        if not isinstance(gs, dict):
+            return False
+        return gs.get("strict_relationships") is True
+
+    def _try_run_graph_seed(
+        self,
+        game_name: str,
+        manifest: Dict[str, Any],
+        module: Any,
+        package_info: Dict[str, Any],
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[WorldErrorCode], str]:
+        if not self._manifest_graph_seed_enabled(manifest):
+            return None, None, ""
+        if not package_info.get("snapshot_loaded") or package_info.get("snapshot") is None:
+            return (
+                None,
+                WorldErrorCode.GRAPH_SEED_FAILED,
+                "graph_seed enabled but snapshot not loaded (requires load_package_snapshot)",
+            )
+        from app.core.database import db_session_context, engine
+        from app.game_engine.graph_seed.errors import GraphSeedError
+        from app.game_engine.graph_seed.pipeline import run_graph_seed
+        from db.schema_migrations import ensure_graph_seed_ontology
+
+        if engine is None or "postgresql" not in str(engine.url).lower():
+            return (
+                None,
+                WorldErrorCode.GRAPH_SEED_FAILED,
+                "graph seed requires a configured PostgreSQL database URL",
+            )
+        profile_fn = getattr(module, "get_graph_profile", None)
+        if not callable(profile_fn):
+            return (
+                None,
+                WorldErrorCode.GRAPH_SEED_FAILED,
+                "world package must export get_graph_profile() when graph_seed is enabled",
+            )
+        try:
+            profile = profile_fn(manifest)
+        except TypeError:
+            profile = profile_fn()
+        strict = self._manifest_graph_seed_strict(manifest)
+        try:
+            ensure_graph_seed_ontology(engine)
+            snapshot = package_info["snapshot"]
+            with db_session_context() as session:
+                out = run_graph_seed(
+                    session,
+                    game_name,
+                    snapshot,
+                    profile,
+                    strict_relationships=strict,
+                )
+                session.commit()
+            details = out.get("details")
+            return (details if isinstance(details, dict) else {}, None, "")
+        except GraphSeedError as e:
+            try:
+                code = WorldErrorCode(e.error_code)
+            except ValueError:
+                code = WorldErrorCode.GRAPH_SEED_FAILED
+            return None, code, str(e.message)
+        except Exception as e:
+            self.logger.exception("graph seed failed for %s", game_name)
+            return None, WorldErrorCode.GRAPH_SEED_FAILED, str(e)
 
     def _find_game_path(self, game_name: str) -> Optional[Path]:
         for search_path in self.search_paths:
@@ -314,6 +404,28 @@ class GameLoader:
                         f"world data package validation failed: {e}",
                         error_code,
                     )
+                seed_details, seed_err, seed_msg = self._try_run_graph_seed(
+                    game_name, manifest, module, package_info
+                )
+                if seed_err:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"graph seed failed: {seed_msg}",
+                        seed_err,
+                        details={
+                            "version": str(manifest.get("version")),
+                            "manifest": manifest,
+                            "package": _strip_snapshot_from_package_info(package_info),
+                            "graph_seed_error": seed_msg,
+                            "job_id": job_id,
+                        },
+                    )
+                if seed_details is not None:
+                    package_info = {**package_info, "graph_seed": seed_details}
+
                 game_instance = self._create_game_instance(game_name, module)
                 if not game_instance:
                     return self._result(
@@ -365,7 +477,7 @@ class GameLoader:
                     details={
                         "version": str(manifest.get("version")),
                         "manifest": manifest,
-                        "package": package_info,
+                        "package": _strip_snapshot_from_package_info(package_info),
                         "job_id": job_id,
                     },
                 )
@@ -568,6 +680,19 @@ class GameLoader:
                     package_info = self._load_world_package_snapshot(
                         game_name, game_path, manifest, module
                     )
+                except WorldDataPackageError as e:
+                    try:
+                        error_code = WorldErrorCode(e.error_code)
+                    except Exception:
+                        error_code = WorldErrorCode.WORLD_DATA_INVALID
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"world data package validation failed: {e.message}",
+                        error_code,
+                    )
                 except Exception as e:
                     code = getattr(e, "error_code", None) or WorldErrorCode.WORLD_DATA_INVALID.value
                     try:
@@ -582,6 +707,27 @@ class GameLoader:
                         f"world data package validation failed: {e}",
                         error_code,
                     )
+                seed_details, seed_err, seed_msg = self._try_run_graph_seed(
+                    game_name, manifest, module, package_info
+                )
+                if seed_err:
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"graph seed failed: {seed_msg}",
+                        seed_err,
+                        details={
+                            "job_id": job_id,
+                            "version": str(manifest.get("version")),
+                            "package": _strip_snapshot_from_package_info(package_info),
+                            "graph_seed_error": seed_msg,
+                        },
+                    )
+                if seed_details is not None:
+                    package_info = {**package_info, "graph_seed": seed_details}
+
                 instance = self._create_game_instance(game_name, module)
                 if not instance:
                     return self._result(
@@ -631,7 +777,7 @@ class GameLoader:
                     details={
                         "job_id": job_id,
                         "version": str(manifest.get("version")),
-                        "package": package_info,
+                        "package": _strip_snapshot_from_package_info(package_info),
                     },
                 )
 
