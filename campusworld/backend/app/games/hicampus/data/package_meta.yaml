@@ -1,0 +1,8 @@
+world_id: hicampus
+package_version: 1.0.0
+schema_version: 2
+compatible_api_versions:
+  - v2
+checksum_strategy: sha256
+generated_at: "2026-03-31T00:00:00Z"
+

@@ -1,0 +1,19 @@
+processes:
+  - id: hicampus_process_gate_checkin
+    world_id: hicampus
+    concept_type: process
+    name: Gate Checkin Process
+    scope: room
+    version: 1
+    definition:
+      steps:
+        - identify_visitor
+        - verify_access
+        - grant_entry
+    bindings:
+      - hicampus_gate
+      - hicampus_device_gate_terminal_01
+    attributes: {}
+    tags: ["concept", "process"]
+    source_ref: concepts/processes.yaml
+

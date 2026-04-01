@@ -1,0 +1,15 @@
+from_version: 0.0.0
+to_version: 1.0.0
+operations:
+  - op: add_room
+    id: hicampus_gate
+  - op: add_entity
+    id: hicampus_npc_security_01
+  - op: add_concept
+    id: hicampus_process_gate_checkin
+rollback:
+  - op: remove_concept
+    id: hicampus_process_gate_checkin
+  - op: remove_entity
+    id: hicampus_npc_security_01
+

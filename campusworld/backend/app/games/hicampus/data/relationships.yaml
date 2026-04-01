@@ -1,0 +1,38 @@
+relationships:
+  - id: rel_world_f1
+    rel_type_code: contains
+    source_id: hicampus_world
+    target_id: hicampus_f1
+    directed: true
+    attributes: {}
+  - id: rel_gate_bridge
+    rel_type_code: connects_to
+    source_id: hicampus_gate
+    target_id: hicampus_bridge
+    directed: true
+    attributes: {}
+  - id: rel_bridge_gate
+    rel_type_code: connects_to
+    source_id: hicampus_bridge
+    target_id: hicampus_gate
+    directed: true
+    attributes: {}
+  - id: rel_bridge_plaza
+    rel_type_code: connects_to
+    source_id: hicampus_bridge
+    target_id: hicampus_plaza
+    directed: true
+    attributes: {}
+  - id: rel_plaza_bridge
+    rel_type_code: connects_to
+    source_id: hicampus_plaza
+    target_id: hicampus_bridge
+    directed: true
+    attributes: {}
+  - id: rel_npc_located_in_gate
+    rel_type_code: located_in
+    source_id: hicampus_npc_security_01
+    target_id: hicampus_gate
+    directed: true
+    attributes: {}
+

@@ -1,0 +1,293 @@
+"""
+F02 validator (L1-L5) for HiCampus data package.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Dict, List, Set
+
+import yaml
+
+from .contracts import (
+    DataPackageError,
+    ERROR_WORLD_DATA_BASELINE_MISMATCH,
+    ERROR_WORLD_DATA_INVALID,
+    ERROR_WORLD_DATA_REFERENCE_BROKEN,
+    ERROR_WORLD_DATA_SCHEMA_UNSUPPORTED,
+    ERROR_WORLD_DATA_SEMANTIC_CONFLICT,
+    ERROR_WORLD_DATA_UNAVAILABLE,
+)
+
+# HiCampus F02 schema supported by this validator (see package_meta.schema_version).
+SUPPORTED_SCHEMA_VERSIONS = frozenset({2})
+
+ALLOWED_REL_TYPE_CODES = frozenset(
+    {
+        "contains",
+        "connects_to",
+        "located_in",
+        "has_entry",
+        "served_by",
+        "adjacent_to",
+        "governs",
+        "applies_to",
+        "enables",
+        "requires",
+        "executes",
+        "located_in_zone",
+    }
+)
+
+ALLOWED_CONCEPT_SCOPES = frozenset(
+    {"world", "room", "zone", "npc", "building", "floor", "global"}
+)
+
+ALLOWED_CONCEPT_TYPES = frozenset({"goal", "process", "rule", "behavior", "skill"})
+
+REQUIRED_FILES = [
+    "world.yaml",
+    "buildings.yaml",
+    "floors.yaml",
+    "rooms.yaml",
+    "relationships.yaml",
+    "package_meta.yaml",
+    "entities/npcs.yaml",
+    "entities/items.yaml",
+    "entities/zones.yaml",
+    "concepts/goals.yaml",
+    "concepts/processes.yaml",
+    "concepts/rules.yaml",
+    "concepts/behaviors.yaml",
+    "concepts/skills.yaml",
+]
+
+
+def _read_yaml(path: Path) -> Any:
+    try:
+        text = path.read_text(encoding="utf-8")
+        return yaml.safe_load(text) or {}
+    except Exception as exc:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"invalid yaml: {path.name} ({exc})") from exc
+
+
+def _require_list(doc: Dict[str, Any], key: str, file_name: str) -> List[Dict[str, Any]]:
+    value = doc.get(key, [])
+    if not isinstance(value, list):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"{file_name}.{key} must be list")
+    return value
+
+
+def _parse_schema_version(raw: Any) -> int:
+    if raw is None:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, "package_meta.schema_version is required")
+    try:
+        return int(raw)
+    except (TypeError, ValueError) as exc:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, "package_meta.schema_version must be int") from exc
+
+
+def _validate_entity_row(row: Dict[str, Any], bucket: str) -> None:
+    rid = row.get("id")
+    if not rid:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity id required in {bucket}")
+    if not row.get("type_code"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.type_code required: {rid}")
+    if not row.get("entity_kind"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.entity_kind required: {rid}")
+    if not row.get("display_name"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.display_name required: {rid}")
+    if not row.get("location_ref") and not row.get("zone_ref"):
+        raise DataPackageError(ERROR_WORLD_DATA_SEMANTIC_CONFLICT, f"entity must be locatable: {rid}")
+    tags = row.get("tags", [])
+    if not isinstance(tags, list):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.tags must be list: {rid}")
+    attrs = row.get("attributes", {})
+    if attrs is None:
+        attrs = {}
+    if not isinstance(attrs, dict):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.attributes must be dict: {rid}")
+    pd = row.get("presentation_domains")
+    if not isinstance(pd, list) or not pd:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.presentation_domains required: {rid}")
+    locks = row.get("access_locks")
+    if not isinstance(locks, dict):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.access_locks must be dict: {rid}")
+    if not row.get("source_ref"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity.source_ref required: {rid}")
+
+
+def _validate_concept_row(row: Dict[str, Any], family: str) -> None:
+    cid = row.get("id")
+    if not cid:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept id required in {family}")
+    ct = str(row.get("concept_type", "") or "").lower()
+    if ct not in ALLOWED_CONCEPT_TYPES:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.concept_type invalid: {cid}")
+    if not row.get("name"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.name required: {cid}")
+    scope = str(row.get("scope", "") or "").lower()
+    if scope not in ALLOWED_CONCEPT_SCOPES:
+        raise DataPackageError(ERROR_WORLD_DATA_SEMANTIC_CONFLICT, f"concept.scope invalid: {cid}")
+    if row.get("version") is None:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.version required: {cid}")
+    definition = row.get("definition")
+    if not isinstance(definition, dict):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.definition must be dict: {cid}")
+    bindings = row.get("bindings", [])
+    if not isinstance(bindings, list):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.bindings must be list: {cid}")
+    tags = row.get("tags", [])
+    if not isinstance(tags, list):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.tags must be list: {cid}")
+    attrs = row.get("attributes", {})
+    if attrs is None:
+        attrs = {}
+    if not isinstance(attrs, dict):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.attributes must be dict: {cid}")
+    if not row.get("source_ref"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept.source_ref required: {cid}")
+
+
+def validate_data_package(data_root: Path) -> Dict[str, Any]:
+    # L1: existence
+    if not data_root.exists():
+        raise DataPackageError(ERROR_WORLD_DATA_UNAVAILABLE, f"data directory not found: {data_root}")
+    missing = [f for f in REQUIRED_FILES if not (data_root / f).exists()]
+    if missing:
+        raise DataPackageError(ERROR_WORLD_DATA_UNAVAILABLE, f"required files missing: {missing}")
+
+    # L2: structure
+    world_doc = _read_yaml(data_root / "world.yaml")
+    buildings_doc = _read_yaml(data_root / "buildings.yaml")
+    floors_doc = _read_yaml(data_root / "floors.yaml")
+    rooms_doc = _read_yaml(data_root / "rooms.yaml")
+    rels_doc = _read_yaml(data_root / "relationships.yaml")
+    meta_doc = _read_yaml(data_root / "package_meta.yaml")
+    npcs_doc = _read_yaml(data_root / "entities/npcs.yaml")
+    items_doc = _read_yaml(data_root / "entities/items.yaml")
+    zones_doc = _read_yaml(data_root / "entities/zones.yaml")
+    goals_doc = _read_yaml(data_root / "concepts/goals.yaml")
+    processes_doc = _read_yaml(data_root / "concepts/processes.yaml")
+    rules_doc = _read_yaml(data_root / "concepts/rules.yaml")
+    behaviors_doc = _read_yaml(data_root / "concepts/behaviors.yaml")
+    skills_doc = _read_yaml(data_root / "concepts/skills.yaml")
+
+    world = world_doc.get("world", {})
+    if not isinstance(world, dict) or not world.get("id") or not world.get("world_id"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, "world.yaml.world requires id/world_id")
+
+    buildings = _require_list(buildings_doc, "buildings", "buildings.yaml")
+    floors = _require_list(floors_doc, "floors", "floors.yaml")
+    rooms = _require_list(rooms_doc, "rooms", "rooms.yaml")
+    relationships = _require_list(rels_doc, "relationships", "relationships.yaml")
+
+    entities = {
+        "npcs": _require_list(npcs_doc, "npcs", "entities/npcs.yaml"),
+        "items": _require_list(items_doc, "items", "entities/items.yaml"),
+        "zones": _require_list(zones_doc, "zones", "entities/zones.yaml"),
+    }
+    concepts = {
+        "goals": _require_list(goals_doc, "goals", "concepts/goals.yaml"),
+        "processes": _require_list(processes_doc, "processes", "concepts/processes.yaml"),
+        "rules": _require_list(rules_doc, "rules", "concepts/rules.yaml"),
+        "behaviors": _require_list(behaviors_doc, "behaviors", "concepts/behaviors.yaml"),
+        "skills": _require_list(skills_doc, "skills", "concepts/skills.yaml"),
+    }
+
+    if not isinstance(meta_doc, dict) or not meta_doc.get("package_version"):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, "package_meta.yaml requires package_version")
+
+    schema_ver = _parse_schema_version(meta_doc.get("schema_version"))
+    if schema_ver not in SUPPORTED_SCHEMA_VERSIONS:
+        raise DataPackageError(
+            ERROR_WORLD_DATA_SCHEMA_UNSUPPORTED,
+            f"schema_version {schema_ver} not in supported {sorted(SUPPORTED_SCHEMA_VERSIONS)}",
+        )
+
+    # Entity / concept row contracts (L2 + L5 prep)
+    for bucket, arr in entities.items():
+        for row in arr:
+            if not isinstance(row, dict):
+                raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"entity row must be object in {bucket}")
+            _validate_entity_row(row, bucket)
+
+    all_concept_ids: Set[str] = set()
+    for family, arr in concepts.items():
+        for row in arr:
+            if not isinstance(row, dict):
+                raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"concept row must be object in {family}")
+            _validate_concept_row(row, family)
+            all_concept_ids.add(str(row["id"]))
+
+    # L3: references
+    building_ids: Set[str] = {str(x.get("id")) for x in buildings if x.get("id")}
+    floor_ids: Set[str] = {str(x.get("id")) for x in floors if x.get("id")}
+    room_ids: Set[str] = {str(x.get("id")) for x in rooms if x.get("id")}
+    zone_ids: Set[str] = {str(x.get("id")) for x in entities["zones"] if x.get("id")}
+    npc_ids: Set[str] = {str(x.get("id")) for x in entities["npcs"] if x.get("id")}
+    item_ids: Set[str] = {str(x.get("id")) for x in entities["items"] if x.get("id")}
+    all_entity_ids: Set[str] = set().union(zone_ids, npc_ids, item_ids)
+
+    for floor in floors:
+        if str(floor.get("building_id")) not in building_ids:
+            raise DataPackageError(ERROR_WORLD_DATA_REFERENCE_BROKEN, f"broken floor.building_id: {floor.get('id')}")
+    for room in rooms:
+        if str(room.get("floor_id")) not in floor_ids:
+            raise DataPackageError(ERROR_WORLD_DATA_REFERENCE_BROKEN, f"broken room.floor_id: {room.get('id')}")
+
+    spatial_object_ids: Set[str] = {str(world["id"])} | building_ids | floor_ids | room_ids | zone_ids
+    relationship_endpoint_ids: Set[str] = spatial_object_ids | npc_ids | item_ids | all_concept_ids
+
+    for rel in relationships:
+        if not isinstance(rel, dict):
+            raise DataPackageError(ERROR_WORLD_DATA_INVALID, "relationship row must be object")
+        rid = rel.get("id")
+        rtc = str(rel.get("rel_type_code", "") or "")
+        if not rtc:
+            raise DataPackageError(ERROR_WORLD_DATA_INVALID, f"relationship.rel_type_code required: {rid}")
+        if rtc not in ALLOWED_REL_TYPE_CODES:
+            raise DataPackageError(
+                ERROR_WORLD_DATA_SEMANTIC_CONFLICT,
+                f"relationship.rel_type_code not allowed: {rid} ({rtc})",
+            )
+        src = str(rel.get("source_id", ""))
+        tgt = str(rel.get("target_id", ""))
+        if src not in relationship_endpoint_ids or tgt not in relationship_endpoint_ids:
+            raise DataPackageError(ERROR_WORLD_DATA_REFERENCE_BROKEN, f"broken relationship endpoints: {rid}")
+
+    # L4: baseline (HiCampus profile)
+    floor_expect = {"F1": 23, "F2": 3, "F3": 6, "F4": 7, "F5": 3, "F6": 9}
+    for b in buildings:
+        code = str(b.get("building_code", ""))
+        if code in floor_expect and int(b.get("floors_total", 0)) != floor_expect[code]:
+            raise DataPackageError(ERROR_WORLD_DATA_BASELINE_MISMATCH, f"floors mismatch: {code}")
+    required_rooms = {"hicampus_gate", "hicampus_bridge", "hicampus_plaza"}
+    if not required_rooms.issubset(room_ids):
+        raise DataPackageError(ERROR_WORLD_DATA_BASELINE_MISMATCH, "missing gate/bridge/plaza")
+
+    # L5: concept bindings (including concept-to-concept) and scope hints
+    bindable_ids = spatial_object_ids | all_entity_ids | all_concept_ids
+    for family, arr in concepts.items():
+        for row in arr:
+            cid = str(row["id"])
+            bindings = row.get("bindings", [])
+            for target in bindings:
+                if str(target) not in bindable_ids:
+                    raise DataPackageError(ERROR_WORLD_DATA_REFERENCE_BROKEN, f"broken concept binding: {cid}->{target}")
+            scope = str(row.get("scope", "") or "").lower()
+            if scope == "zone":
+                if zone_ids and not any(str(t) in zone_ids for t in bindings):
+                    raise DataPackageError(
+                        ERROR_WORLD_DATA_SEMANTIC_CONFLICT,
+                        f"concept.scope=zone should bind at least one zone id: {cid}",
+                    )
+
+    return {
+        "world": world,
+        "spatial": {"buildings": buildings, "floors": floors, "rooms": rooms},
+        "entities": entities,
+        "concepts": concepts,
+        "relationships": relationships,
+        "meta": meta_doc,
+    }

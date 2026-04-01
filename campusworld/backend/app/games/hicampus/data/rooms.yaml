@@ -1,0 +1,17 @@
+rooms:
+  - id: hicampus_gate
+    world_id: hicampus
+    floor_id: hicampus_f1_01f
+    type_code: room
+    display_name: HiCampus Gate
+  - id: hicampus_bridge
+    world_id: hicampus
+    floor_id: hicampus_f1_01f
+    type_code: room
+    display_name: HiCampus Bridge
+  - id: hicampus_plaza
+    world_id: hicampus
+    floor_id: hicampus_f1_01f
+    type_code: room
+    display_name: HiCampus Plaza
+

@@ -1,0 +1,44 @@
+buildings:
+  - id: hicampus_f1
+    world_id: hicampus
+    building_code: F1
+    type_code: building
+    display_name: F1 Office Tower
+    floors_total: 23
+    tags: ["building", "f1", "office"]
+  - id: hicampus_f2
+    world_id: hicampus
+    building_code: F2
+    type_code: building
+    display_name: F2 Canteen
+    floors_total: 3
+    tags: ["building", "f2", "canteen"]
+  - id: hicampus_f3
+    world_id: hicampus
+    building_code: F3
+    type_code: building
+    display_name: F3 Training Center
+    floors_total: 6
+    tags: ["building", "f3", "training"]
+  - id: hicampus_f4
+    world_id: hicampus
+    building_code: F4
+    type_code: building
+    display_name: F4 Lab
+    floors_total: 7
+    tags: ["building", "f4", "lab"]
+  - id: hicampus_f5
+    world_id: hicampus
+    building_code: F5
+    type_code: building
+    display_name: F5 Expo Hall
+    floors_total: 3
+    tags: ["building", "f5", "expo"]
+  - id: hicampus_f6
+    world_id: hicampus
+    building_code: F6
+    type_code: building
+    display_name: F6 Dormitory
+    floors_total: 9
+    tags: ["building", "f6", "dormitory"]
+

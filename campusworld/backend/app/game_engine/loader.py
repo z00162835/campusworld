@@ -22,6 +22,7 @@ from .runtime_store import (
     WorldRuntimeStatus,
 )
 from app.core.paths import get_backend_root, get_project_root
+from .world_data_validate import WorldDataPackageError, validate_world_data_package
 
 
 class GameLoader:
@@ -111,6 +112,57 @@ class GameLoader:
         except Exception as e:
             self.logger.error(f"读取 manifest 失败: {manifest_path} err={e}")
             return None
+
+    def _load_world_package_snapshot(
+        self, game_name: str, game_path: Path, manifest: Dict[str, Any], module: Any
+    ) -> Dict[str, Any]:
+        """
+        World declarative data package handshake:
+        - Validate files under manifest.data_dir (see world_data_validate).
+        - Optionally build a normalized snapshot via the world module's load_package_snapshot, when provided.
+        """
+        data_dir = str(manifest.get("data_dir", "") or "").strip()
+        if not data_dir:
+            raise ValueError("manifest.data_dir is empty")
+
+        data_root = game_path / data_dir
+        validate_world_data_package(game_name, data_root)
+
+        snapshot_loader = getattr(module, "load_package_snapshot", None)
+        if not callable(snapshot_loader):
+            return {
+                "data_dir": str(data_root),
+                "snapshot_loaded": False,
+                "world_data_validated": True,
+            }
+
+        snapshot = snapshot_loader(str(data_root))
+        return {
+            "data_dir": str(data_root),
+            "snapshot_loaded": True,
+            "world_data_validated": True,
+            "snapshot_meta": getattr(snapshot, "meta", {}),
+            "snapshot_counts": {
+                "spatial": {
+                    "buildings": len(getattr(snapshot, "spatial", {}).get("buildings", [])),
+                    "floors": len(getattr(snapshot, "spatial", {}).get("floors", [])),
+                    "rooms": len(getattr(snapshot, "spatial", {}).get("rooms", [])),
+                },
+                "entities": {
+                    "npcs": len(getattr(snapshot, "entities", {}).get("npcs", [])),
+                    "items": len(getattr(snapshot, "entities", {}).get("items", [])),
+                    "zones": len(getattr(snapshot, "entities", {}).get("zones", [])),
+                },
+                "concepts": {
+                    "goals": len(getattr(snapshot, "concepts", {}).get("goals", [])),
+                    "processes": len(getattr(snapshot, "concepts", {}).get("processes", [])),
+                    "rules": len(getattr(snapshot, "concepts", {}).get("rules", [])),
+                    "behaviors": len(getattr(snapshot, "concepts", {}).get("behaviors", [])),
+                    "skills": len(getattr(snapshot, "concepts", {}).get("skills", [])),
+                },
+                "relationships": len(getattr(snapshot, "relationships", [])),
+            },
+        }
 
     def _find_game_path(self, game_name: str) -> Optional[Path]:
         for search_path in self.search_paths:
@@ -231,6 +283,37 @@ class GameLoader:
                         "failed to import world module",
                         WorldErrorCode.WORLD_LOAD_FAILED,
                     )
+                try:
+                    package_info = self._load_world_package_snapshot(
+                        game_name, game_path, manifest, module
+                    )
+                except WorldDataPackageError as e:
+                    try:
+                        error_code = WorldErrorCode(e.error_code)
+                    except Exception:
+                        error_code = WorldErrorCode.WORLD_DATA_INVALID
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"world data package validation failed: {e.message}",
+                        error_code,
+                    )
+                except Exception as e:
+                    code = getattr(e, "error_code", None) or WorldErrorCode.WORLD_DATA_INVALID.value
+                    try:
+                        error_code = WorldErrorCode(code)
+                    except Exception:
+                        error_code = WorldErrorCode.WORLD_DATA_INVALID
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"world data package validation failed: {e}",
+                        error_code,
+                    )
                 game_instance = self._create_game_instance(game_name, module)
                 if not game_instance:
                     return self._result(
@@ -282,6 +365,7 @@ class GameLoader:
                     details={
                         "version": str(manifest.get("version")),
                         "manifest": manifest,
+                        "package": package_info,
                         "job_id": job_id,
                     },
                 )
@@ -480,6 +564,24 @@ class GameLoader:
                         "reload failed while importing world module",
                         WorldErrorCode.WORLD_RELOAD_FAILED,
                     )
+                try:
+                    package_info = self._load_world_package_snapshot(
+                        game_name, game_path, manifest, module
+                    )
+                except Exception as e:
+                    code = getattr(e, "error_code", None) or WorldErrorCode.WORLD_DATA_INVALID.value
+                    try:
+                        error_code = WorldErrorCode(code)
+                    except Exception:
+                        error_code = WorldErrorCode.WORLD_DATA_INVALID
+                    return self._result(
+                        False,
+                        game_name,
+                        state_before,
+                        WorldRuntimeStatus.FAILED.value,
+                        f"world data package validation failed: {e}",
+                        error_code,
+                    )
                 instance = self._create_game_instance(game_name, module)
                 if not instance:
                     return self._result(
@@ -526,7 +628,11 @@ class GameLoader:
                     state_before,
                     WorldRuntimeStatus.INSTALLED.value,
                     "world reloaded",
-                    details={"job_id": job_id, "version": str(manifest.get("version"))},
+                    details={
+                        "job_id": job_id,
+                        "version": str(manifest.get("version")),
+                        "package": package_info,
+                    },
                 )
 
             try:

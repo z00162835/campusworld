@@ -1,0 +1,15 @@
+rules:
+  - id: hicampus_rule_red_zone_access
+    world_id: hicampus
+    concept_type: rule
+    name: Red Zone Access Rule
+    scope: zone
+    version: 1
+    definition:
+      check_expr: "perm(security.zone.enter)"
+    bindings:
+      - hicampus_zone_red_security_gate
+    attributes: {}
+    tags: ["concept", "rule", "security"]
+    source_ref: concepts/rules.yaml
+

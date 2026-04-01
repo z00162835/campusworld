@@ -1,0 +1,16 @@
+goals:
+  - id: hicampus_goal_gate_security_uptime
+    world_id: hicampus
+    concept_type: goal
+    name: Gate Security Uptime
+    scope: world
+    version: 1
+    definition:
+      objective: keep gate security availability above 99.9%
+    bindings:
+      - hicampus_zone_red_security_gate
+      - hicampus_npc_security_01
+    attributes: {}
+    tags: ["concept", "goal", "security"]
+    source_ref: concepts/goals.yaml
+

@@ -1,0 +1,16 @@
+skills:
+  - id: hicampus_skill_access_audit
+    world_id: hicampus
+    concept_type: skill
+    name: Access Audit Skill
+    scope: npc
+    version: 1
+    definition:
+      capability: audit_access_events
+    bindings:
+      - hicampus_npc_security_01
+      - hicampus_process_gate_checkin
+    attributes: {}
+    tags: ["concept", "skill"]
+    source_ref: concepts/skills.yaml
+

@@ -183,8 +183,10 @@ chore: 构建/工具链变更
 
 测试工程化基于 pytest (后端) 和 vitest (前端)，详见 `docs/testing/SPEC/SPEC.md`。
 
+**后端 pytest 环境**：若使用 Conda 且已创建项目环境 `campusworld`，请先执行 `conda activate campusworld` 再进入 `backend` 运行 `pytest`，避免误用 base 环境（缺少依赖或 Python 版本不一致）。不激活时也可单次执行：`conda run -n campusworld pytest ...`（在 `backend` 目录下）。
+
 ```bash
-# 后端测试
+# 后端测试（建议已 conda activate campusworld）
 cd backend
 pytest                          # 运行所有测试
 pytest -m unit                  # 仅运行单元测试

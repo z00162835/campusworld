@@ -1,0 +1,32 @@
+floors:
+  - id: hicampus_f1_01f
+    world_id: hicampus
+    building_id: hicampus_f1
+    floor_no: 1
+    type_code: building_floor
+  - id: hicampus_f2_01f
+    world_id: hicampus
+    building_id: hicampus_f2
+    floor_no: 1
+    type_code: building_floor
+  - id: hicampus_f3_01f
+    world_id: hicampus
+    building_id: hicampus_f3
+    floor_no: 1
+    type_code: building_floor
+  - id: hicampus_f4_01f
+    world_id: hicampus
+    building_id: hicampus_f4
+    floor_no: 1
+    type_code: building_floor
+  - id: hicampus_f5_01f
+    world_id: hicampus
+    building_id: hicampus_f5
+    floor_no: 1
+    type_code: building_floor
+  - id: hicampus_f6_01f
+    world_id: hicampus
+    building_id: hicampus_f6
+    floor_no: 1
+    type_code: building_floor
+

@@ -1,0 +1,16 @@
+zones:
+  - id: hicampus_zone_red_security_gate
+    world_id: hicampus
+    type_code: logical_zone
+    entity_kind: zone
+    display_name: Gate Security Red Zone
+    zone_ref: hicampus_gate
+    attributes:
+      risk_level: red
+    presentation_domains: ["system"]
+    access_locks:
+      view: "perm(security.view_zone)"
+      interact: "perm(security.manage_zone)"
+    tags: ["zone", "security", "red"]
+    source_ref: entities/zones.yaml
+

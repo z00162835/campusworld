@@ -26,7 +26,8 @@ class WorldRuntimeState(Base):
     version = Column(String(64), nullable=True)
     last_error_code = Column(String(128), nullable=True)
     last_error_message = Column(Text, nullable=True)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    # DB column remains "metadata"; Python name avoids Declarative reserved `metadata`.
+    state_metadata = Column("metadata", JSONB, nullable=False, default=dict)
     updated_by = Column(String(128), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

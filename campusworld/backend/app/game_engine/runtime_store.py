@@ -46,6 +46,12 @@ class WorldErrorCode(str, Enum):
     WORLD_LOAD_FAILED = "WORLD_LOAD_FAILED"
     WORLD_UNLOAD_FAILED = "WORLD_UNLOAD_FAILED"
     WORLD_RELOAD_FAILED = "WORLD_RELOAD_FAILED"
+    WORLD_DATA_UNAVAILABLE = "WORLD_DATA_UNAVAILABLE"
+    WORLD_DATA_INVALID = "WORLD_DATA_INVALID"
+    WORLD_DATA_SCHEMA_UNSUPPORTED = "WORLD_DATA_SCHEMA_UNSUPPORTED"
+    WORLD_DATA_REFERENCE_BROKEN = "WORLD_DATA_REFERENCE_BROKEN"
+    WORLD_DATA_BASELINE_MISMATCH = "WORLD_DATA_BASELINE_MISMATCH"
+    WORLD_DATA_SEMANTIC_CONFLICT = "WORLD_DATA_SEMANTIC_CONFLICT"
     WORLD_BUSY = "WORLD_BUSY"
     WORLD_INTERNAL_ERROR = "WORLD_INTERNAL_ERROR"
 
@@ -102,7 +108,7 @@ class WorldRuntimeRepository:
                 "version": row.version,
                 "last_error_code": row.last_error_code,
                 "last_error_message": row.last_error_message,
-                "metadata": row.metadata or {},
+                "metadata": row.state_metadata or {},
                 "updated_at": row.updated_at,
             }
 
@@ -128,7 +134,7 @@ class WorldRuntimeRepository:
             "version": row.version,
             "last_error_code": row.last_error_code,
             "last_error_message": row.last_error_message,
-            "metadata": row.metadata or {},
+            "metadata": row.state_metadata or {},
             "updated_at": row.updated_at,
         }
 
@@ -155,7 +161,7 @@ class WorldRuntimeRepository:
                 version=version,
                 last_error_code=last_error_code,
                 last_error_message=last_error_message,
-                metadata=payload,
+                state_metadata=payload,
                 updated_by=updated_by,
             )
             stmt = stmt.on_conflict_do_update(
@@ -165,7 +171,7 @@ class WorldRuntimeRepository:
                     "version": stmt.excluded.version,
                     "last_error_code": stmt.excluded.last_error_code,
                     "last_error_message": stmt.excluded.last_error_message,
-                    "metadata": stmt.excluded.metadata,
+                    "metadata": stmt.excluded.state_metadata,
                     "updated_by": stmt.excluded.updated_by,
                     "updated_at": func.now(),
                 },

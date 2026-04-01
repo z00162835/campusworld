@@ -1,0 +1,17 @@
+npcs:
+  - id: hicampus_npc_security_01
+    world_id: hicampus
+    type_code: npc_agent
+    entity_kind: agent
+    display_name: Security Agent
+    location_ref: hicampus_gate
+    attributes:
+      role: security
+      behavior_profile: patrol_gate
+    presentation_domains: ["room", "npc"]
+    access_locks:
+      view: "all()"
+      interact: "perm(npc.interact)"
+    tags: ["npc", "agent", "security"]
+    source_ref: entities/npcs.yaml
+

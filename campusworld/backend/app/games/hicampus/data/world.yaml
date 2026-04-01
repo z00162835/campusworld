@@ -1,0 +1,14 @@
+world:
+  id: hicampus_world
+  world_id: hicampus
+  type_code: world
+  display_name: HiCampus
+  entry_room_id: hicampus_gate
+  attributes:
+    theme: high_tech_rd_park
+    presentation_domains: ["system"]
+    access_locks:
+      view: "all()"
+      interact: "perm(world.enter)"
+  tags: ["world", "hicampus"]
+

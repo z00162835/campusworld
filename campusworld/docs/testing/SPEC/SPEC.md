@@ -38,6 +38,22 @@ addopts = -v --tb=short --strict-markers
 asyncio_mode = auto
 ```
 
+### 后端 Python / Conda 环境
+
+本地执行后端 `pytest` 时，应使用与项目依赖一致的 Python 环境。若使用 Conda 且已创建环境 **`campusworld`**，推荐在运行测试前执行：
+
+```bash
+conda activate campusworld
+cd backend
+pytest
+```
+
+避免默认 shell 指向 Conda **base** 或其它环境，导致缺少 `pytest`、依赖版本与 `requirements` 不一致等问题。无需持久激活时，可在 `backend` 目录下单次执行：
+
+```bash
+conda run -n campusworld pytest
+```
+
 ### 测试 Fixtures
 
 共享 fixtures 定义在 `backend/tests/conftest.py`:

@@ -1,0 +1,18 @@
+behaviors:
+  - id: hicampus_behavior_security_patrol
+    world_id: hicampus
+    concept_type: behavior
+    name: Security Patrol Behavior
+    scope: npc
+    version: 1
+    definition:
+      mode: patrol
+      interval_sec: 60
+    bindings:
+      - hicampus_npc_security_01
+      - hicampus_gate
+      - hicampus_bridge
+    attributes: {}
+    tags: ["concept", "behavior"]
+    source_ref: concepts/behaviors.yaml
+

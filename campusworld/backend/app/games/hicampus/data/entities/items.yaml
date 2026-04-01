@@ -1,0 +1,31 @@
+items:
+  - id: hicampus_device_gate_terminal_01
+    world_id: hicampus
+    type_code: access_terminal
+    entity_kind: item
+    display_name: Gate Access Terminal
+    location_ref: hicampus_gate
+    attributes:
+      item_kind: device
+      status: active
+    presentation_domains: ["room"]
+    access_locks:
+      view: "all()"
+      interact: "perm(access.terminal.use)"
+    tags: ["item", "device", "terminal"]
+    source_ref: entities/items.yaml
+  - id: hicampus_furniture_bench_01
+    world_id: hicampus
+    type_code: world_object
+    entity_kind: item
+    display_name: Plaza Bench
+    location_ref: hicampus_plaza
+    attributes:
+      item_kind: furniture
+    presentation_domains: ["room"]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+    tags: ["item", "furniture"]
+    source_ref: entities/items.yaml
+
