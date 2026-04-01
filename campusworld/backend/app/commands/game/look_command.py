@@ -27,12 +27,12 @@ class LookCommand(GameCommand):
         self.logger = get_logger(LoggerNames.COMMAND)
     
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
-        """执行look命令"""
+        """执行look命令
+
+        注意：look命令不依赖游戏场景运行状态，用户在奇点屋登录后即可查看周围环境。
+        世界数据（图数据中的房间、实体）独立于游戏场景存在。
+        """
         try:
-            # 检查场景是否运行
-            if not self.is_game_running(context):
-                return CommandResult.error_result("场景未运行，无法执行look命令")
-            
             if not args:
                 # 没有参数，查看当前环境
                 return self._look_room(context)
