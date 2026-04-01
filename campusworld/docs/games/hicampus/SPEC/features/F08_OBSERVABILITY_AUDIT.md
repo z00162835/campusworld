@@ -10,6 +10,35 @@
 - world 入口行为日志
 - 审计字段标准化（operator/world_id/action/timestamp）
 
+## World Command Audit Events (minimum)
+
+事件名：
+- `world.list`
+- `world.status`
+- `world.install`
+- `world.uninstall`
+- `world.reload`
+- `world.validate`
+- `world.repair`
+
+最小字段：
+- `operator`
+- `world_id`（`list` 可为空或按 item 记录）
+- `action`
+- `timestamp`
+- `result`
+- `error_code`
+
+建议附加字段：
+- `job_id`
+- `resolved_path`
+- `source_type`
+- `dry_run`
+- `force`
+- `issues_count`
+- `planned_count`
+- `applied_count`
+
 ## Out of Scope
 
 - 业务告警平台接入

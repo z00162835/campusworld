@@ -34,6 +34,13 @@ def _must_exec(conn, sql: str, err: str) -> None:
         raise SchemaMigrationError(f"{e}") from e
 
 
+def _try_exec_mapped(conn, sql: str, params: dict) -> None:
+    try:
+        conn.execute(text(sql), params)
+    except Exception:
+        pass
+
+
 def ensure_graph_schema(engine) -> None:
     """
     对 graph schema 做最小增量迁移：
@@ -215,5 +222,110 @@ WHERE type_code = 'system_bulletin_board'
   );
 """.strip(),
         )
+    finally:
+        conn.close()
+
+
+def ensure_graph_seed_ontology(engine) -> None:
+    """
+    Ensure minimal ontology rows required by graph seed pipeline.
+
+    This keeps integration tests and runtime graph seeding stable on old databases
+    where these rows may be missing.
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        node_rows = [
+            ("world", None, "世界", "app.models.world.World", "World", "app.models.world"),
+            ("world_object", None, "世界对象", "app.models.world.WorldObject", "WorldObject", "app.models.world"),
+            ("building", "world_object", "建筑", "app.models.building.Building", "Building", "app.models.building"),
+            ("building_floor", "world_object", "楼层", "app.models.floor.BuildingFloor", "BuildingFloor", "app.models.floor"),
+            ("room", "world_object", "房间", "app.models.room.Room", "Room", "app.models.room"),
+            ("npc_agent", "world_object", "NPC代理", "app.models.things.agents.NpcAgent", "NpcAgent", "app.models.things.agents"),
+            (
+                "access_terminal",
+                "world_object",
+                "访问终端",
+                "app.models.things.terminals.AccessTerminal",
+                "AccessTerminal",
+                "app.models.things.terminals",
+            ),
+            (
+                "logical_zone",
+                "world_object",
+                "逻辑分区",
+                "app.models.things.zones.LogicalZone",
+                "LogicalZone",
+                "app.models.things.zones",
+            ),
+            (
+                "furniture",
+                "world_object",
+                "家具",
+                "app.models.things.furniture.Furniture",
+                "Furniture",
+                "app.models.things.furniture",
+            ),
+        ]
+        for type_code, parent_code, type_name, typeclass, classname, module_path in node_rows:
+            _try_exec_mapped(
+                conn,
+                """
+                INSERT INTO node_types (
+                    type_code, parent_type_code, type_name, typeclass, status, classname, module_path, description,
+                    schema_definition, schema_default, inferred_rules, tags, ui_config
+                )
+                VALUES (
+                    :type_code, :parent_type_code, :type_name, :typeclass, 0, :classname, :module_path, :description,
+                    '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '[]'::jsonb, '{}'::jsonb
+                )
+                ON CONFLICT (type_code) DO UPDATE SET
+                    parent_type_code = EXCLUDED.parent_type_code,
+                    type_name = EXCLUDED.type_name,
+                    typeclass = EXCLUDED.typeclass,
+                    classname = EXCLUDED.classname,
+                    module_path = EXCLUDED.module_path;
+                """,
+                {
+                    "type_code": type_code,
+                    "parent_type_code": parent_code,
+                    "type_name": type_name,
+                    "typeclass": typeclass,
+                    "classname": classname,
+                    "module_path": module_path,
+                    "description": f"graph seed ontology ensured: {type_code}",
+                },
+            )
+
+        rel_rows = [
+            ("connects_to", "连接到", "app.models.relationships.LocationRelationship"),
+            ("contains", "包含", "app.models.relationships.LocationRelationship"),
+            ("located_in", "位于", "app.models.relationships.LocationRelationship"),
+        ]
+        for type_code, type_name, typeclass in rel_rows:
+            _try_exec_mapped(
+                conn,
+                """
+                INSERT INTO relationship_types (
+                    type_code, type_name, typeclass, status, description,
+                    constraints, schema_definition, inferred_rules, tags, ui_config,
+                    is_directed, is_symmetric, is_transitive
+                )
+                VALUES (
+                    :type_code, :type_name, :typeclass, 0, :description,
+                    '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '[]'::jsonb, '{}'::jsonb,
+                    TRUE, FALSE, FALSE
+                )
+                ON CONFLICT (type_code) DO UPDATE SET
+                    type_name = EXCLUDED.type_name,
+                    typeclass = EXCLUDED.typeclass;
+                """,
+                {
+                    "type_code": type_code,
+                    "type_name": type_name,
+                    "typeclass": typeclass,
+                    "description": f"graph seed ontology ensured: {type_code}",
+                },
+            )
     finally:
         conn.close()

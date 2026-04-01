@@ -14,6 +14,7 @@ from typing import Optional, Dict, Any
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
+import threading
 from app.ssh.server import CampusWorldSSHServer
 from app.core.config_manager import get_setting, get_config
 from app.core.log import (
@@ -24,6 +25,7 @@ from app.core.log import (
 from app.core.log.manager import get_logging_manager
 from app.core.paths import get_logs_dir
 from app.game_engine.manager import game_engine_manager
+from app.api.server import HTTPServer
 
 class CampusWorld:
     """CampusWorld主程序类"""
@@ -44,10 +46,11 @@ class CampusWorld:
         
         # 核心组件
         self.ssh_server = None
-        
+        self.http_server = None
+
         # 使用场景引擎管理器而不是直接实例
         self.game_engine_manager = game_engine_manager
-        
+
         self.logger.info("CampusWorld main program initialization completed")
     
     def _setup_logging(self):
@@ -150,6 +153,36 @@ class CampusWorld:
                 "error_message": str(e)
             })
             return False
+
+    def initialize_http_server(self) -> bool:
+        """初始化HTTP/WebSocket服务器"""
+        try:
+            self.logger.info("Initializing HTTP/WebSocket server...")
+
+            # 从配置获取服务器设置
+            server_config = self.config_manager.get_server_config()
+            host = server_config.get('host', '0.0.0.0')
+            port = server_config.get('port', 8000)
+
+            # 使用模块化的 HTTPServer
+            self.http_server = HTTPServer(host=host, port=port)
+
+            self.logger.info(f"HTTP server initialized: {host}:{port}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"HTTP服务器初始化失败: {e}", exc_info=True, extra={
+                "error_type": "http_init_error",
+                "error_message": str(e)
+            })
+            return False
+
+    def start_http_server(self) -> bool:
+        """启动HTTP/WebSocket服务器"""
+        if not self.http_server:
+            self.logger.error("HTTP server not initialized")
+            return False
+        return self.http_server.start()
     
     def start(self) -> bool:
         """启动CampusWorld系统"""
@@ -175,7 +208,15 @@ class CampusWorld:
                 self.logger.error("Engine start failed")
                 return False
 
-            # 3. 初始化并启动SSH服务器
+            # 3. 初始化HTTP/WebSocket服务器
+            if not self.initialize_http_server():
+                self.logger.error("HTTP server initialization failed")
+                return False
+            if not self.start_http_server():
+                self.logger.error("HTTP server start failed")
+                return False
+
+            # 4. 初始化并启动SSH服务器
             ssh_config = self.config_manager.get_ssh_config()
             host = ssh_config.get('host', '0.0.0.0')
             port = ssh_config.get('port', 2222)

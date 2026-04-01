@@ -10,6 +10,48 @@
 - 修复计划生成（dry-run）
 - 自动修复执行与报告
 
+## Current Rule Set (v1)
+
+- `CORE_NODE_MISSING`：核心房间缺失（`hicampus_gate` / `hicampus_bridge` / `hicampus_plaza`）。
+- `CONNECTS_TO_REVERSE_MISSING`：存在 `A -> B` 但缺失 `B -> A`。
+- `FLOOR_COUNT_MISMATCH`：`building.floors_total` 与 `building_floor` 节点数不一致。
+
+## Repair Actions (v1)
+
+- `create_reverse_connects_to`
+  - 触发条件：`CONNECTS_TO_REVERSE_MISSING`
+  - `dry-run`: 仅计划，不写库
+  - 执行条件：`force=true`
+  - 执行结果：记录到 `applied_actions` 或 `skipped_actions`
+
+## Validate / Repair Report Contract
+
+`validate` 报告：
+
+```json
+{
+  "world_id": "hicampus",
+  "ok": false,
+  "issue_count": 2,
+  "issues": [{"code": "...", "message": "...", "details": {}}]
+}
+```
+
+`repair` 报告：
+
+```json
+{
+  "world_id": "hicampus",
+  "dry_run": true,
+  "force": false,
+  "issues_count": 2,
+  "planned_actions": [],
+  "applied_actions": [],
+  "skipped_actions": [],
+  "ok": false
+}
+```
+
 ## Out of Scope
 
 - 命令前端语法（见 `F04`）

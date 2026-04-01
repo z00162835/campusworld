@@ -50,3 +50,20 @@ def test_npc_gateway_allows_help_by_default(monkeypatch):
     assert res.success
     assert "Available commands" in res.message
 
+
+def test_npc_gateway_allows_world_list_with_admin_world_permission(monkeypatch):
+    assert initialize_commands(force_reinit=True)
+
+    with patch.object(CommandPolicyRepository, "get_policy", return_value=_policy(any_perms=["admin.world.*"])):
+        with patch("app.commands.game.world_command.game_engine_manager.list_games", return_value=["hicampus"]):
+            with patch("app.commands.game.world_command.game_engine_manager.get_engine", return_value=None):
+                res = invoke_command_line(
+                    actor_id="npc1",
+                    actor_name="npc_admin",
+                    permissions=["admin.world.*"],
+                    command_line="world list",
+                    game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
+                )
+    assert res.success
+    assert "world list ok" in res.message
+

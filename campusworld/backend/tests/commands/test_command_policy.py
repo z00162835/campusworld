@@ -123,6 +123,7 @@ def test_policy_evaluator_policy_expr_allows_and_denies():
 def test_policy_seed_for_known_and_unknown_commands():
     # Most user-facing commands should be allowed by default.
     assert policy_seed_for("look")["required_permissions_any"] == []
+    assert policy_seed_for("world")["required_permissions_any"] == ["admin.world.*"]
     assert policy_seed_for("help") == {
         "required_permissions_any": [],
         "required_permissions_all": [],

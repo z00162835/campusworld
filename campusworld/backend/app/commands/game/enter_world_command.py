@@ -11,9 +11,9 @@ class EnterWorldCommand(GameCommand):
     def __init__(self):
         super().__init__(
             name="enter",
-            description="从奇点屋进入指定世界",
-            aliases=["world", "enterworld"],
-            game_name="campus_life",
+            description="进入指定世界（通用命令）",
+            aliases=[],
+            game_name="",
         )
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:

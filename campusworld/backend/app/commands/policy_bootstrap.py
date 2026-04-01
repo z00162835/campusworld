@@ -21,6 +21,7 @@ DEFAULT_COMMAND_POLICIES: Dict[str, PolicySeed] = {
     # Most user-facing commands should be available by default (empty policy == allow).
     # Game/world constraints should be enforced by command execution logic, not authz.
     "notice": {"required_permissions_any": ["admin.system_notice"]},
+    "world": {"required_permissions_any": ["admin.world.*"]},
     "create": {"required_permissions_any": ["admin.*"]},
     "create_info": {"required_permissions_any": ["admin.*"]},
 }
