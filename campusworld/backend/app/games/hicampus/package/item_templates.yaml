@@ -1,0 +1,204 @@
+# Templates for entity_item_generate: keys referenced by item_placement_rules.yaml
+version: 1
+templates:
+  wifi_ap:
+    type_code: network_access_point
+    display_name_tpl: "{room_name} · 无线接入点"
+    attributes:
+      item_kind: device
+      device_role: wifi_ap
+      controllable: true
+      status: "on"
+      network:
+        mode: ap
+        bands: ["2.4g", "5g"]
+        ssid: "HiCampus"
+        encryption: "wpa2"
+        ip_mode: "dhcp"
+      telemetry:
+        rssi_dbm: null
+        clients: 0
+        uplink_mbps: null
+    tags: [item, device, controllable, network]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  lighting_fixture:
+    type_code: lighting_fixture
+    display_name_tpl: "{room_name} · 照明回路"
+    attributes:
+      item_kind: device
+      device_role: lighting
+      controllable: true
+      status: "on"
+      lighting:
+        brightness_pct: 80
+        color_temp_k: 4000
+        scene: "work"
+      telemetry:
+        power_w: null
+    tags: [item, device, controllable, lighting]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  av_display:
+    type_code: av_display
+    display_name_tpl: "{room_name} · 会议大屏"
+    attributes:
+      item_kind: device
+      device_role: display
+      controllable: true
+      status: "on"
+      av:
+        kind: "display"
+        resolution: "4k"
+        inputs: ["hdmi", "wireless_cast"]
+        audio_out: true
+        volume_pct: 30
+      telemetry:
+        temperature_c: null
+    tags: [item, device, controllable, av]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "perm(room.av.use)"
+
+  conference_seating:
+    type_code: conference_seating
+    display_name_tpl: "{room_name} · 会议座椅"
+    attributes:
+      item_kind: furniture
+      furniture_role: conference_seating
+      seat_count: 8
+      layout: "u_shape"
+      material: "fabric"
+    tags: [item, furniture, seating]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  lounge_furniture:
+    type_code: lounge_furniture
+    display_name_tpl: "{room_name} · 沙发与等候座"
+    attributes:
+      item_kind: furniture
+      furniture_role: lounge
+      pieces:
+        sofa_count: 2
+        chair_count: 4
+        table_count: 1
+    tags: [item, furniture, lounge]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_dining:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 餐桌椅"
+    attributes:
+      item_kind: furniture
+      furniture_role: dining
+      capacity: 16
+    tags: [item, furniture, dining]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_classroom:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 课桌椅组"
+    attributes:
+      item_kind: furniture
+      furniture_role: classroom
+      seat_count: 24
+      has_power_outlets: true
+    tags: [item, furniture, classroom]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_manager:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 办公家具组"
+    attributes:
+      item_kind: furniture
+      furniture_role: manager_office
+      includes: ["desk", "bookshelf", "sofa"]
+    tags: [item, furniture, office]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_pantry:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 吧台与高脚凳"
+    attributes:
+      item_kind: furniture
+      furniture_role: pantry
+      includes: ["bar_counter", "stools"]
+    tags: [item, furniture, pantry]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_dorm:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 起居家具组"
+    attributes:
+      item_kind: furniture
+      furniture_role: dorm
+      includes: ["bed", "wardrobe", "desk"]
+    tags: [item, furniture, dorm]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_lab:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 实验台与储物"
+    attributes:
+      item_kind: furniture
+      furniture_role: lab
+      includes: ["workbench", "cabinet"]
+    tags: [item, furniture, lab]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_storage:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 货架组"
+    attributes:
+      item_kind: furniture
+      furniture_role: storage
+      includes: ["shelf"]
+    tags: [item, furniture, storage]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"
+
+  furniture_expo:
+    type_code: furniture
+    display_name_tpl: "{room_name} · 展陈家具"
+    attributes:
+      item_kind: furniture
+      furniture_role: expo
+      includes: ["display_stand", "signage"]
+    tags: [item, furniture, expo]
+    presentation_domains: [room]
+    access_locks:
+      view: "all()"
+      interact: "all()"

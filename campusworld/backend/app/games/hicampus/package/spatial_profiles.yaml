@@ -1,0 +1,109 @@
+# HiCampus spatial generation: per-building floor ranges → room_mix (counts per archetype).
+# Sum of room_mix per row = slots generated on each floor in that range.
+# Archetype keys must exist in spatial_archetypes.ARCHETYPES.
+
+version: 1
+buildings:
+  F1:
+    templates:
+      - range: [1, 1]
+        layer_role: lobby
+        floor_tags: ["floor", "f1", "lobby", "layer:public"]
+        room_mix:
+          restroom: 1
+          circulation: 1
+          electrical: 1
+      - range: [2, 8]
+        layer_role: office_open
+        floor_tags: ["floor", "f1", "office", "layer:standard"]
+        room_mix:
+          office: 2
+          meeting: 1
+          restroom: 1
+          pantry: 1
+      - range: [9, 16]
+        layer_role: office_mixed
+        floor_tags: ["floor", "f1", "office", "layer:mid"]
+        room_mix:
+          office: 2
+          meeting: 2
+          restroom: 1
+      - range: [17, 20]
+        layer_role: meeting_heavy
+        floor_tags: ["floor", "f1", "office", "layer:collab"]
+        room_mix:
+          meeting: 2
+          office: 1
+          manager: 1
+          restroom: 1
+      - range: [21, 23]
+        layer_role: executive
+        floor_tags: ["floor", "f1", "office", "layer:executive"]
+        room_mix:
+          manager: 2
+          meeting: 2
+          office: 1
+  F2:
+    templates:
+      - range: [1, 3]
+        layer_role: canteen
+        floor_tags: ["floor", "f2", "canteen"]
+        room_mix:
+          canteen_dining: 2
+          kitchen: 1
+          restroom: 1
+          storage: 1
+  F3:
+    templates:
+      - range: [1, 2]
+        layer_role: training_entry
+        floor_tags: ["floor", "f3", "training", "layer:entry"]
+        room_mix:
+          classroom: 2
+          circulation: 1
+          restroom: 1
+          office: 1
+      - range: [3, 6]
+        layer_role: training_upper
+        floor_tags: ["floor", "f3", "training", "layer:upper"]
+        room_mix:
+          classroom: 2
+          meeting: 1
+          lab: 1
+          restroom: 1
+  F4:
+    templates:
+      - range: [1, 2]
+        layer_role: lab_service
+        floor_tags: ["floor", "f4", "lab", "layer:service"]
+        room_mix:
+          prep_lab: 2
+          storage: 1
+          electrical: 1
+          monitoring: 1
+      - range: [3, 7]
+        layer_role: lab_zone
+        floor_tags: ["floor", "f4", "lab", "layer:research"]
+        room_mix:
+          lab: 3
+          prep_lab: 1
+          restroom: 1
+  F5:
+    templates:
+      - range: [1, 3]
+        layer_role: expo
+        floor_tags: ["floor", "f5", "expo"]
+        room_mix:
+          expo_hall: 2
+          meeting: 1
+          restroom: 1
+          av_room: 1
+  F6:
+    templates:
+      - range: [1, 9]
+        layer_role: dorm
+        floor_tags: ["floor", "f6", "dormitory", "layer:residential"]
+        room_mix:
+          dorm_unit: 2
+          lounge: 1
+          restroom: 1

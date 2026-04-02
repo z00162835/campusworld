@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from app.commands.base import AdminCommand, CommandContext, CommandResult
+from app.core.database import db_session_context
 from app.core.permissions import permission_checker
 from app.game_engine.manager import game_engine_manager
 from app.game_engine.topology_service import world_topology_service
@@ -17,6 +18,12 @@ from app.game_engine.world_bridge_service import (
     world_bridge_service,
 )
 from app.game_engine.world_entry_service import world_entry_service
+from app.games.hicampus.package.content_overlay import (
+    apply_spatial_content_overlay,
+    content_validate_report,
+    diff_spatial_vs_db,
+)
+from app.games.hicampus.package.contracts import DataPackageError
 
 
 class WorldCommand(AdminCommand):
@@ -30,12 +37,13 @@ class WorldCommand(AdminCommand):
         "reload": "admin.world.manage",
         "validate": "admin.world.maintain",
         "repair": "admin.world.maintain",
+        "content": "admin.world.maintain",
     }
 
     def __init__(self):
         super().__init__(
             name="world",
-            description="世界包管理（list/install/uninstall/reload/status/validate/repair）",
+            description="世界包管理（list/install/uninstall/reload/status/validate/repair/content）",
             aliases=["worlds"],
         )
 
@@ -45,6 +53,8 @@ class WorldCommand(AdminCommand):
         action = str(args[0]).lower().strip()
         if action == "bridge":
             return self._bridge(context, args[1:])
+        if action == "content":
+            return self._content(context, args[1:])
         if action not in self._SUB_PERM:
             return CommandResult.error_result(f"未知 world 子命令: {action}")
         if not self._has_sub_permission(context, action):
@@ -68,7 +78,8 @@ class WorldCommand(AdminCommand):
 
     def get_usage(self) -> str:
         return (
-            "用法: world <list|install|uninstall|reload|status|validate|repair> [world_id] [--dry-run] [--force]; "
+            "用法: world <list|install|uninstall|reload|status|validate|repair|content> ...; "
+            "world content <validate|diff|apply> <world_id> [--report] [--dry-run] [--no-snapshot]; "
             "world bridge <add|remove|list|validate> ... [--dry-run] [--two-way] [--bridge-type portal|gate|transit]"
         )
 
@@ -291,6 +302,97 @@ class WorldCommand(AdminCommand):
             )
 
         return CommandResult.error_result("internal: bridge routing", error=WORLD_BRIDGE_INVALID_ARGUMENT)
+
+    def _resolve_data_root(self, world_id: str) -> Optional[Path]:
+        info = self._resolve_world_path(world_id)
+        p = info.get("resolved_path")
+        if not p:
+            return None
+        d = Path(p) / "data"
+        return d if d.is_dir() else None
+
+    def _content_flags(self, tokens: List[str]) -> tuple[List[str], Dict[str, Any]]:
+        flags: Dict[str, Any] = {"dry_run": False, "report": False, "no_snapshot": False}
+        rest: List[str] = []
+        for t in tokens:
+            if t == "--dry-run":
+                flags["dry_run"] = True
+            elif t == "--report":
+                flags["report"] = True
+            elif t == "--no-snapshot":
+                flags["no_snapshot"] = True
+            else:
+                rest.append(t)
+        return rest, flags
+
+    def _content(self, context: CommandContext, args: List[str]) -> CommandResult:
+        if not args:
+            return CommandResult.error_result(
+                "用法: world content <validate|diff|apply> <world_id> [--report] [--dry-run] [--no-snapshot]"
+            )
+        sub = str(args[0]).lower().strip()
+        rest, flags = self._content_flags(args[1:])
+        if not rest:
+            return CommandResult.error_result("缺少 world_id")
+        world_id = str(rest[0]).strip()
+        if not self._has_sub_permission(context, "content"):
+            return CommandResult.error_result("Permission denied for world content", error="WORLD_FORBIDDEN")
+
+        data_root = self._resolve_data_root(world_id)
+        if not data_root:
+            return CommandResult.error_result(
+                f"未找到世界数据目录: {world_id}（期望 <game_root>/data）",
+                error="WORLD_DATA_UNAVAILABLE",
+            )
+
+        self.logger.info(
+            "AUDIT world.content.%s operator=%s world_id=%s",
+            sub,
+            context.username,
+            world_id,
+        )
+
+        if sub == "validate":
+            try:
+                from app.games.hicampus.package.validator import validate_data_package as _vp
+
+                _vp(data_root)
+            except DataPackageError as e:
+                return CommandResult.error_result(str(e), error=str(e.error_code or "WORLD_DATA_INVALID"))
+            except Exception as e:
+                return CommandResult.error_result(str(e), error="WORLD_DATA_INVALID")
+            payload: Dict[str, Any] = {"world_id": world_id, "package_ok": True}
+            if flags.get("report"):
+                payload["completeness"] = content_validate_report(data_root)
+            return CommandResult.success_result(
+                f"world content validate ok: {world_id}",
+                data=payload,
+                command_type=self.command_type,
+            )
+
+        if sub == "diff":
+            with db_session_context() as session:
+                out = diff_spatial_vs_db(session, world_id, data_root)
+            msg = f"world content diff: {out['diff_count']} mismatch(es)"
+            return CommandResult.success_result(msg, data=out, command_type=self.command_type)
+
+        if sub == "apply":
+            with db_session_context() as session:
+                out = apply_spatial_content_overlay(
+                    session,
+                    world_id,
+                    data_root,
+                    dry_run=bool(flags.get("dry_run")),
+                    write_revision_snapshot=not bool(flags.get("no_snapshot")),
+                )
+            msg = (
+                f"world content apply dry-run: would touch {len(out.get('applied_node_ids', []))} nodes"
+                if out.get("dry_run")
+                else f"world content apply ok: updated {len(out.get('applied_node_ids', []))} nodes"
+            )
+            return CommandResult.success_result(msg, data=out, command_type=self.command_type)
+
+        return CommandResult.error_result(f"未知 content 子命令: {sub}")
 
     def _resolve_world_path(self, world_id: str) -> Dict[str, Optional[str]]:
         engine = game_engine_manager.get_engine()

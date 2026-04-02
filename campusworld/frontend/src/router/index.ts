@@ -24,7 +24,7 @@ const routes: RouteRecordRaw[] = [
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/Profile.vue'),
-    meta: { title: '个人资料' }
+    meta: { title: '个人资料', requiresAuth: true }
   },
   {
     path: '/works',
@@ -55,6 +55,12 @@ const routes: RouteRecordRaw[] = [
     name: 'History',
     component: () => import('@/views/history/History.vue'),
     meta: { title: 'History' }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFound.vue'),
+    meta: { title: '404' }
   }
 ]
 
@@ -63,10 +69,13 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard - 已禁用认证要求，直接允许访问
-router.beforeEach((_to, _from, next) => {
-  // 屏蔽登录要求，直接允许访问所有页面
-  next()
+// Navigation guard - check authentication
+router.beforeEach((to, _from, next) => {
+  if (to.meta.requiresAuth && !localStorage.getItem('access_token')) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router

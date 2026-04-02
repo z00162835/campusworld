@@ -6,11 +6,12 @@ CampusWorld 终端 - 基于 Textual 框架
 import asyncio
 from difflib import SequenceMatcher
 from typing import Optional, Callable, List, AsyncIterator
+from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.command import CommandPalette, Provider, Hit, Hits
-from textual.containers import Container
+from textual.containers import Container, Horizontal
 from textual.screen import Screen
-from textual.widgets import Header, Input, Static, Log
+from textual.widgets import Input, Static, Log
 from textual.binding import Binding
 from textual.suggester import Suggester
 from textual.style import Style
@@ -71,7 +72,8 @@ class CampusCommandProvider(Provider):
         Yields:
             匹配的 Hit 对象
         """
-        app = self.app
+        # 获取 CampusTerminal 实例
+        app = self.screen.app
 
         # 获取所有候选命令
         all_commands = list(app._completions)
@@ -83,7 +85,7 @@ class CampusCommandProvider(Provider):
                 yield Hit(
                     score=1.0,
                     match_display=cmd,
-                    command=lambda c=cmd: app.execute_from_provider(c),
+                    command=lambda c=cmd: app.call_later(app.execute_from_provider, c),
                     text=cmd,
                     help=f"执行命令: {cmd}",
                 )
@@ -92,7 +94,7 @@ class CampusCommandProvider(Provider):
                 yield Hit(
                     score=1.0,
                     match_display=agent_cmd,
-                    command=lambda a=agent_name: app.enter_agent(a),
+                    command=lambda a=agent_name: app.call_later(app.enter_agent, a),
                     text=agent_cmd,
                     help=f"进入 {agent_name} 环境",
                 )
@@ -104,7 +106,7 @@ class CampusCommandProvider(Provider):
                     yield Hit(
                         score=matcher.match(cmd) or 0.0,
                         match_display=cmd,
-                        command=lambda c=cmd: app.execute_from_provider(c),
+                        command=lambda c=cmd: app.call_later(app.execute_from_provider, c),
                         text=cmd,
                         help=f"执行命令: {cmd}",
                     )
@@ -114,7 +116,7 @@ class CampusCommandProvider(Provider):
                     yield Hit(
                         score=matcher.match(agent_cmd) or 0.0,
                         match_display=agent_cmd,
-                        command=lambda a=agent_name: app.enter_agent(a),
+                        command=lambda a=agent_name: app.call_later(app.enter_agent, a),
                         text=agent_cmd,
                         help=f"进入 {agent_name} 环境",
                     )
@@ -128,41 +130,48 @@ class CampusTerminal(App):
 
     CSS = """
     Screen {
-        background: $surface;
+        background: #1a1a2e;
     }
 
     #output-container {
         height: 1fr;
-        border: solid $primary;
-        margin: 1;
-        padding: 1;
+        margin: 0;
+        background: #1a1a2e;
     }
 
     #output {
         height: 100%;
         border: none;
-        padding: 0;
+        padding: 1 2;
+        background: #1a1a2e;
     }
 
-    #input-container {
-        height: 3;
-        border: solid $primary;
-        margin: 0 1 1 1;
-        padding: 1;
-        background: $surface;
-    }
-
-    #status-bar {
-        height: 1;
-        dock: top;
-        background: $primary;
-        color: $text;
-        text-align: center;
+    #input-line {
+        dock: bottom;
+        background: #16161e;
         padding: 0 1;
+        height: 2;
+    }
+
+    #prompt {
+        width: auto;
+        color: #79d4ff;
+        padding-left: 1;
+    }
+
+    #command-input {
+        width: 1fr;
+        background: #16161e;
+        color: #ffffff;
+    }
+
+    #command-input::placeholder {
+        color: #666;
     }
     """
 
     BINDINGS = [
+        Binding("/", "open_command_palette", "Commands", show=False),
         Binding("escape", "cancel_input", "Cancel", show=False),
         Binding("ctrl+c", "quit", "Quit", show=False),
         Binding("tab", "complete_command", "Complete", show=False),
@@ -182,35 +191,38 @@ class CampusTerminal(App):
         self._history_index: int = -1  # 历史索引
         self._connection = None  # WebSocket 连接
 
-    def get_default_provider(self) -> Provider:
-        """返回命令提供者"""
-        return CampusCommandProvider(self)
-
     def compose(self) -> ComposeResult:
         """构建 UI"""
-        yield Header()
-        yield Static("Ctrl+C 退出", id="status-bar")
         with Container(id="output-container"):
             yield Log(id="output")
-        with Container(id="input-container"):
+        with Horizontal(id="input-line"):
+            yield Static("❯ ", id="prompt")
             yield Input(
-                placeholder="输入命令，按 Tab 补全",
+                placeholder="输入命令",
                 id="command-input",
                 suggester=self._suggester
             )
+
+    @on(Input.Changed)
+    async def on_input_changed(self, event: Input.Changed) -> None:
+        """监听输入变化，当输入 / 时打开命令面板"""
+        if event.value == "/":
+            # 清空输入并打开命令面板
+            event.input.value = ""
+            self.app.push_screen(CommandPalette())
 
     async def on_mount(self) -> None:
         """应用挂载"""
         self.title = "CampusWorld CLI"
         self.sub_title = "CampusWorld Terminal"
 
-        # 显示欢迎信息
+        # 显示欢迎信息 - 使用纯字符串，Log 会自动处理显示
         output = self.query_one("#output", Log)
-        output.write_line("[bold green]========================================[/bold green]")
-        output.write_line("[bold green]  Welcome to CampusWorld CLI[/bold green]")
-        output.write_line("[bold green]  Type / to select commands or enter agent mode[/bold green]")
-        output.write_line("[bold green]  Type @<id> to interact with agent instance[/bold green]")
-        output.write_line("[bold green]========================================[/bold green]")
+        output.write_line("========================================")
+        output.write_line("  Welcome to CampusWorld CLI")
+        output.write_line("  Type / to select commands or enter agent mode")
+        output.write_line("  Type @<id> to interact with agent instance")
+        output.write_line("========================================")
         output.write_line("")
 
         # 聚焦输入框
@@ -245,6 +257,15 @@ class CampusTerminal(App):
             if agent_name:
                 await self.enter_agent(agent_name)
                 return
+            else:
+                # 只输入 / 时，显示可用 agents
+                if self._agents:
+                    output.write_line(Text.from_markup("[bold]可用 Agent:[/bold]"))
+                    for agent in self._agents:
+                        output.write_line(Text.from_markup(f"  /{agent}"))
+                else:
+                    output.write_line(Text.from_markup("[dim]暂无可用 Agent[/dim]"))
+                return
         elif command.startswith("@"):
             agent_id = command[1:].strip()
             if agent_id and self._current_agent:
@@ -252,10 +273,10 @@ class CampusTerminal(App):
                 return
 
         # 添加命令到输出
-        prompt = f"[bold cyan]❯[/bold cyan]"
+        prompt = "❯"
         if self._current_agent:
-            prompt = f"[bold magenta][{self._current_agent}]❯[/bold magenta]"
-        output.write_line(f"{prompt} {command}")
+            prompt = f"[{self._current_agent}]❯"
+        output.write_line(Text.from_markup(f"[bold cyan]{prompt}[/bold cyan] {command}"))
 
         # 调用命令回调
         if self._on_command:
@@ -281,7 +302,7 @@ class CampusTerminal(App):
                 return
 
         # 回退到本地模式（服务端不支持时）
-        output.write_line(f"[bold magenta]进入 {agent_name} 环境 (本地模式)[/bold magenta]")
+        output.write_line(Text.from_markup(f"[bold magenta]进入 {agent_name} 环境 (本地模式)[/bold magenta]"))
         output.write_line("可用命令:")
         output.write_line("  ls      - 列出所有 agent 实例")
         output.write_line("  @<id>   - 进入指定的 agent 实例")
@@ -292,8 +313,8 @@ class CampusTerminal(App):
     async def enter_agent_instance(self, instance_id: str) -> None:
         """进入特定的 Agent 实例"""
         output = self.query_one("#output", Log)
-        output.write_line(f"[bold magenta]进入 agent 实例 {instance_id}[/bold magenta]")
-        output.write_line(f"[dim]提示：此 agent 提供 check 命令可用[/dim]")
+        output.write_line(Text.from_markup(f"[bold magenta]进入 agent 实例 {instance_id}[/bold magenta]"))
+        output.write_line(Text.from_markup(f"[dim]提示：此 agent 提供 check 命令可用[/dim]"))
 
     async def exit_agent(self) -> None:
         """退出 Agent 环境"""
@@ -301,22 +322,13 @@ class CampusTerminal(App):
             if self._connection:
                 await self._connection.agent_exit()
             output = self.query_one("#output", Log)
-            output.write_line(f"[bold magenta]退出 {self._current_agent} 环境[/bold magenta]")
+            output.write_line(Text.from_markup(f"[bold magenta]退出 {self._current_agent} 环境[/bold magenta]"))
             self._current_agent = None
             self.update_status()
 
-    def action_toggle_command_palette(self) -> None:
-        """切换命令面板 - 使用 push_screen 打开/关闭"""
-        if CommandPalette.is_open(self.app):
-            # 已经在打开状态，找到并关闭它
-            # CommandPalette 关闭时会从 screen stack 中移除
-            for screen in self.app.screen_stack:
-                if isinstance(screen, CommandPalette):
-                    screen.dismiss()
-                    break
-        else:
-            # 打开命令面板 - Provider 从 App.COMMANDS 自动发现
-            self.app.push_screen(CommandPalette())
+    def action_open_command_palette(self) -> None:
+        """打开命令面板"""
+        self.app.push_screen(CommandPalette())
 
     def action_cancel_input(self) -> None:
         """取消输入 / 退出 Agent 环境"""
@@ -347,7 +359,7 @@ class CampusTerminal(App):
         elif len(matches) > 1:
             # 多个匹配，显示选项
             output = self.query_one("#output", Log)
-            output.write_line("[dim]可能的补全:[/dim] " + ", ".join(matches))
+            output.write_line(Text.from_markup("[dim]可能的补全:[/dim] ") + ", ".join(matches))
 
     def action_history_up(self) -> None:
         """历史上一条命令"""
@@ -371,17 +383,11 @@ class CampusTerminal(App):
     def append_output(self, text: str, style: str = "") -> None:
         """追加输出"""
         output = self.query_one("#output", Log)
-        if style:
-            output.write_line(f"[{style}]{text}[/{style}]")
-        else:
-            output.write_line(text)
+        output.write_line(text)
 
     def update_status(self) -> None:
-        """更新状态栏"""
-        status = "Ctrl+C 退出"
-        if self._current_agent:
-            status = f"[Agent: {self._current_agent}] | Ctrl+C 退出"
-        self.query_one("#status-bar", Static).update(status)
+        """更新提示符 - 不再使用状态栏"""
+        pass
 
     def update_completions(self, completions: List[str]) -> None:
         """更新命令列表"""

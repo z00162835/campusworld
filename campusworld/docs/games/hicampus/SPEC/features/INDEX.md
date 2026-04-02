@@ -16,8 +16,8 @@
   `F05_WORLD_ENTRY_INTEGRATION.md`
 - `F06` Topology Validate & Repair  
   `F06_TOPOLOGY_VALIDATE_REPAIR.md`
-- `F07` MUD Description Content Pack  
-  `F07_MUD_DESCRIPTION_CONTENT_PACK.md`
+- `F07` Spatial Narrative & Description Content Pack  
+  `F07_SPATIAL_DESCRIPTION_CONTENT_PACK.md`
 - `F08` Observability & Audit  
   `F08_OBSERVABILITY_AUDIT.md`
 

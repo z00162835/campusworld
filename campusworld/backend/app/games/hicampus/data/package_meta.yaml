@@ -1,5 +1,6 @@
 world_id: hicampus
 package_version: 1.0.0
+content_revision: 1
 schema_version: 2
 compatible_api_versions:
   - v2

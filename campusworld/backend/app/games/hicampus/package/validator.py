@@ -18,6 +18,8 @@ from .contracts import (
     ERROR_WORLD_DATA_SEMANTIC_CONFLICT,
     ERROR_WORLD_DATA_UNAVAILABLE,
 )
+from .content_merge import merge_description_sidecars, normalize_spatial_rows, validate_spatial_p0
+from .graph_profile import _PACKAGE_TO_DB_NODE_TYPE
 
 # Schema versions supported by this validator (see package_meta.schema_version).
 SUPPORTED_SCHEMA_VERSIONS = frozenset({2})
@@ -272,6 +274,39 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
         if str(room.get("floor_id")) not in floor_ids:
             raise DataPackageError(ERROR_WORLD_DATA_REFERENCE_BROKEN, f"broken room.floor_id: {room.get('id')}")
 
+    allowed_pkg_types = frozenset(_PACKAGE_TO_DB_NODE_TYPE.keys())
+    for bucket, arr in entities.items():
+        for row in arr:
+            eid = row.get("id")
+            tc = str(row.get("type_code", "") or "")
+            if tc not in allowed_pkg_types:
+                raise DataPackageError(
+                    ERROR_WORLD_DATA_REFERENCE_BROKEN,
+                    f"entity type_code not mapped for graph profile: {bucket} {eid} ({tc})",
+                )
+            loc = row.get("location_ref")
+            if loc and str(loc) not in room_ids:
+                raise DataPackageError(
+                    ERROR_WORLD_DATA_REFERENCE_BROKEN,
+                    f"entity location_ref not a room id: {bucket} {eid} -> {loc}",
+                )
+            zref = row.get("zone_ref")
+            if not zref:
+                continue
+            # Zones use zone_ref as their spatial anchor (often a room id).
+            if bucket == "zones":
+                if str(zref) not in room_ids:
+                    raise DataPackageError(
+                        ERROR_WORLD_DATA_REFERENCE_BROKEN,
+                        f"zone.zone_ref not a room id: {eid} -> {zref}",
+                    )
+            else:
+                if str(zref) not in zone_ids:
+                    raise DataPackageError(
+                        ERROR_WORLD_DATA_REFERENCE_BROKEN,
+                        f"entity zone_ref not a zone id: {bucket} {eid} -> {zref}",
+                    )
+
     spatial_object_ids: Set[str] = {str(world["id"])} | building_ids | floor_ids | room_ids | zone_ids
     relationship_endpoint_ids: Set[str] = spatial_object_ids | npc_ids | item_ids | all_concept_ids
 
@@ -301,7 +336,13 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
     if not required_rooms.issubset(room_ids):
         raise DataPackageError(ERROR_WORLD_DATA_BASELINE_MISMATCH, "missing gate/bridge/plaza")
 
-    # L5: concept bindings (including concept-to-concept) and scope hints
+    # L5a: optional description sidecars + row normalization + spatial P0 (F07)
+    spatial_pre = {"buildings": buildings, "floors": floors, "rooms": rooms}
+    merge_description_sidecars(data_root, spatial_pre)
+    normalize_spatial_rows(spatial_pre)
+    validate_spatial_p0(spatial_pre, required_room_ids=required_rooms)
+
+    # L5b: concept bindings (including concept-to-concept) and scope hints
     bindable_ids = spatial_object_ids | all_entity_ids | all_concept_ids
     for family, arr in concepts.items():
         for row in arr:

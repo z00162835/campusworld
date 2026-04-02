@@ -1,44 +1,47 @@
 <template>
-  <div id="app">
-    <el-header class="app-header" v-if="showHeader">
-      <nav-bar />
-    </el-header>
-    <sidebar v-if="showSidebar" />
-    <tab-bar v-if="showSidebar" />
-    <div :class="['app-wrapper', { 'with-sidebar': showSidebar }]">
-      <el-container class="app-container">
-        <el-main class="app-main">
-          <router-view v-if="route.path === '/login' || route.path === '/register' || route.path === '/profile'" />
-          <div v-else-if="showSidebar" class="tab-content">
-            <component
-              v-if="activeTab"
-              :is="getComponent(activeTab.component)"
-              :key="activeTab.id"
-            />
-            <div v-else class="empty-tab">
-              <p>Welcome to CampusWorld</p>
+  <error-boundary>
+    <div id="app">
+      <el-header class="app-header" v-if="showHeader">
+        <nav-bar />
+      </el-header>
+      <sidebar v-if="showSidebar" />
+      <tab-bar v-if="showSidebar" />
+      <div :class="['app-wrapper', { 'with-sidebar': showSidebar }]">
+        <el-container class="app-container">
+          <el-main class="app-main">
+            <router-view v-if="route.path === '/login' || route.path === '/register' || route.path === '/profile'" />
+            <div v-else-if="showSidebar" class="tab-content">
+              <component
+                v-if="activeTab"
+                :is="getComponent(activeTab.component)"
+                :key="activeTab.id"
+              />
+              <div v-else class="empty-tab">
+                <p>Welcome to CampusWorld</p>
+              </div>
             </div>
-          </div>
-        </el-main>
-        
-        <el-footer class="app-footer" v-if="showFooter">
-          <footer-component />
-        </el-footer>
-      </el-container>
+          </el-main>
+
+          <el-footer class="app-footer" v-if="showFooter">
+            <footer-component />
+          </el-footer>
+        </el-container>
+      </div>
     </div>
-  </div>
+  </error-boundary>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTabsStore } from '@/stores/tabs'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import TabBar from '@/components/layout/TabBar.vue'
 import FooterComponent from '@/components/layout/Footer.vue'
 
-// 动态导入组件以支持代码分割
+// Dynamic imports for code splitting
 const Home = defineAsyncComponent(() => import('@/views/Home.vue'))
 const Spaces = defineAsyncComponent(() => import('@/views/spaces/Spaces.vue'))
 const Agents = defineAsyncComponent(() => import('@/views/agents/Agents.vue'))

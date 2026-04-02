@@ -5,6 +5,8 @@ from .terminals import AccessTerminal
 from .agents import NpcAgent
 from .zones import LogicalZone
 from .furniture import Furniture
+from .devices import AvDisplay, LightingFixture, NetworkAccessPoint
+from .seating import ConferenceSeating, LoungeFurniture
 
 __all__ = [
     "WorldThing",
@@ -12,4 +14,9 @@ __all__ = [
     "NpcAgent",
     "LogicalZone",
     "Furniture",
+    "NetworkAccessPoint",
+    "AvDisplay",
+    "LightingFixture",
+    "ConferenceSeating",
+    "LoungeFurniture",
 ]

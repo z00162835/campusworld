@@ -4,10 +4,9 @@
 """
 
 import os
-import yaml
+import json
 from pathlib import Path
 from typing import Optional, Dict, Any
-import shutil
 
 
 class Config:
@@ -56,11 +55,11 @@ class Config:
             self._load_from_file(self.config_path)
         else:
             # 尝试默认位置
-            local_config = Path("./campus.yaml")
+            local_config = Path("./campus.json")
             if local_config.exists():
                 self._load_from_file(str(local_config))
             else:
-                user_config = Path(os.path.expanduser("~/.config/campus/config.yaml"))
+                user_config = Path(os.path.expanduser("~/.config/campus/config.json"))
                 if user_config.exists():
                     self._load_from_file(str(user_config))
                 else:
@@ -71,9 +70,12 @@ class Config:
         """从文件加载配置"""
         try:
             with open(path, 'r') as f:
-                loaded = yaml.safe_load(f) or {}
+                loaded = json.load(f) or {}
                 # 深度合并默认配置
                 self.config = self._merge_config(self.DEFAULT_CONFIG.copy(), loaded)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse config from {path}: {e}")
+            self.config = self.DEFAULT_CONFIG.copy()
         except Exception as e:
             print(f"Failed to load config from {path}: {e}")
             self.config = self.DEFAULT_CONFIG.copy()
@@ -125,12 +127,12 @@ class Config:
 def create_default_config(path: Optional[str] = None) -> Config:
     """创建默认配置文件"""
     if path is None:
-        path = os.path.expanduser("~/.config/campus/config.yaml")
+        path = os.path.expanduser("~/.config/campus/config.json")
 
     config_dir = Path(path).parent
     config_dir.mkdir(parents=True, exist_ok=True)
 
     with open(path, 'w') as f:
-        yaml.dump(Config.DEFAULT_CONFIG, f, default_flow_style=False)
+        json.dump(Config.DEFAULT_CONFIG, f, indent=2)
 
     return Config(path)

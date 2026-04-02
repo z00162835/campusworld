@@ -18,6 +18,11 @@ _PACKAGE_TO_DB_NODE_TYPE = {
     "access_terminal": "access_terminal",
     "world_object": "world_object",
     "furniture": "furniture",
+    "network_access_point": "network_access_point",
+    "av_display": "av_display",
+    "lighting_fixture": "lighting_fixture",
+    "conference_seating": "conference_seating",
+    "lounge_furniture": "lounge_furniture",
     "logical_zone": "logical_zone",
 }
 

@@ -44,7 +44,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import { authApi } from '@/api/auth'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()
@@ -87,17 +87,16 @@ const rules = reactive<FormRules>({
 
 const handleRegister = async () => {
   if (!registerFormRef.value) return
-  
+
   await registerFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
-        await axios.post('/api/v1/auth/register', {
+        await authApi.register({
           username: registerForm.username,
-          email: registerForm.email,
           password: registerForm.password
         })
-        
+
         ElMessage.success('注册成功，请登录')
         router.push('/login')
       } catch (error: any) {

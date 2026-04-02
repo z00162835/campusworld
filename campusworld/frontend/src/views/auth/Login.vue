@@ -33,7 +33,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import { authApi } from '@/api/auth'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()
@@ -57,18 +57,14 @@ const rules = reactive<FormRules>({
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
-  
+
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
-        const response = await axios.post('/api/v1/auth/login', {
-          username: loginForm.username,
-          password: loginForm.password
-        })
-        
-        if (response.data.access_token) {
-          localStorage.setItem('access_token', response.data.access_token)
+        const { data } = await authApi.login(loginForm)
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token)
           ElMessage.success('登录成功')
           router.push('/')
         }

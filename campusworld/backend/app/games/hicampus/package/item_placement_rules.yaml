@@ -1,0 +1,84 @@
+# Placement rules for entity_item_generate (ordered furniture_rules: first match wins).
+version: 1
+device_rules:
+  - id: base_ap_light
+    match: {}
+    add_templates:
+      - template_id: wifi_ap
+        count: 1
+      - template_id: lighting_fixture
+        count: 1
+  - id: meeting_display
+    match:
+      require_tags_any: [space:meeting]
+    add_templates:
+      - template_id: av_display
+        count: 1
+
+furniture_rules:
+  - id: meeting_seating
+    match:
+      require_tags_any: [space:meeting]
+    add_templates:
+      - template_id: conference_seating
+        count: 1
+  - id: lounge_lounge
+    match:
+      require_tags_any: [space:lounge]
+    add_templates:
+      - template_id: lounge_furniture
+        count: 1
+  - id: lounge_circulation
+    match:
+      require_tags_any: [space:circulation]
+    add_templates:
+      - template_id: lounge_furniture
+        count: 1
+  - id: dining
+    match:
+      require_tags_any: [space:dining]
+    add_templates:
+      - template_id: furniture_dining
+        count: 1
+  - id: classroom
+    match:
+      require_tags_any: [space:classroom]
+    add_templates:
+      - template_id: furniture_classroom
+        count: 1
+  - id: manager_office
+    match:
+      require_tags_any: [function:manager]
+    add_templates:
+      - template_id: furniture_manager
+        count: 1
+  - id: pantry
+    match:
+      require_tags_any: [space:pantry]
+    add_templates:
+      - template_id: furniture_pantry
+        count: 1
+  - id: dorm
+    match:
+      require_tags_any: [space:dorm]
+    add_templates:
+      - template_id: furniture_dorm
+        count: 1
+  - id: lab
+    match:
+      require_tags_any: [space:lab]
+    add_templates:
+      - template_id: furniture_lab
+        count: 1
+  - id: storage
+    match:
+      require_tags_any: [space:storage]
+    add_templates:
+      - template_id: furniture_storage
+        count: 1
+  - id: expo
+    match:
+      require_tags_any: [space:expo]
+    add_templates:
+      - template_id: furniture_expo
+        count: 1

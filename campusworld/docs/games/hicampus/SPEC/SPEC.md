@@ -814,17 +814,17 @@ hint: run `world repair hicampus --dry-run`
   - 能识别并修复缺失边、错向边、缺失核心节点
   - 修复过程可审计且支持 dry-run
 
-### F07 - MUD Description Content Pack（描述内容包）
+### F07 - Spatial Narrative & Description Content Pack（空间叙事与描述内容包）
 
-- **目标**: 将楼栋/楼层/房间描述从代码中抽离，形成可迭代内容资产。
+- **目标**: 将楼栋/楼层/房间展示文案从代码中抽离，形成可迭代内容资产，键名对齐 `Room` / `Building` / `BuildingFloor` 语义模型。
 - **边界**:
-  - 文案模板与多层描述策略（brief/short/look/ambient）
-  - 不耦合具体命令执行代码
+  - 分层描述策略（主叙述、短描、氛围；建筑 `building_tagline` 等）
+  - 不修改图结构主键与关系（仅 `attributes` 与可选侧车）
 - **主要产物**:
-  - 房间描述模板库（MUD 风格）
-  - 内容版本管理与回滚策略
+  - HiCampus 包内 YAML 与可选 `content/descriptions/` 侧车
+  - 内容版本与回滚策略（Git + 可选应用前快照）
 - **验收重点**:
-  - 描述可批量应用到节点实例
+  - 描述可经图种子或 `world content apply` 批量更新节点
   - 文案升级不影响图结构与关系稳定性
 
 ### F08 - Observability & Audit（观测与审计）
@@ -869,6 +869,6 @@ hint: run `world repair hicampus --dry-run`
 - `docs/games/hicampus/SPEC/features/F04_WORLD_MANAGEMENT_COMMANDS.md`
 - `docs/games/hicampus/SPEC/features/F05_WORLD_ENTRY_INTEGRATION.md`
 - `docs/games/hicampus/SPEC/features/F06_TOPOLOGY_VALIDATE_REPAIR.md`
-- `docs/games/hicampus/SPEC/features/F07_MUD_DESCRIPTION_CONTENT_PACK.md`
+- `docs/games/hicampus/SPEC/features/F07_SPATIAL_DESCRIPTION_CONTENT_PACK.md`
 - `docs/games/hicampus/SPEC/features/F08_OBSERVABILITY_AUDIT.md`
 - 索引：`docs/games/hicampus/SPEC/features/INDEX.md`

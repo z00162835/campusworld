@@ -20,7 +20,7 @@
 ## Out of Scope
 
 - 命令层入口与权限
-- 文案模板维护流程
+- 空间叙事与描述内容包维护流程（见 `F07`）
 - **ConceptModel** 节点落库（goals/rules/skills 等）——当前**不**为概念行创建 `Node`；概念数据仅随 snapshot 供上层服务使用；若未来落库需新增 `node_types` 行与 profile 映射（见下文「概念层策略」）。
 
 ## Inputs

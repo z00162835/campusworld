@@ -201,10 +201,14 @@ class LookCommand(GameCommand):
                     if not self._is_visible_in_room(None, n):
                         continue
                     room_objects.append(n.name)
+                rname = attrs.get("room_name") or attrs.get("display_name") or room_node.name
+                rdesc = (attrs.get("room_description") or "").strip() or attrs.get("display_name") or room_node.name
                 return {
                     "id": str(room_node.id),
-                    "name": attrs.get("package_node_id", room_node.name),
-                    "description": attrs.get("display_name", room_node.name),
+                    "name": rname,
+                    "description": rdesc,
+                    "short_description": (attrs.get("room_short_description") or "").strip(),
+                    "ambiance": (attrs.get("room_ambiance") or "").strip(),
                     "exits": exits,
                     "items": room_objects,
                     "is_singularity": False,
@@ -251,14 +255,22 @@ class LookCommand(GameCommand):
                         if not self._is_visible_in_room(context, n):
                             continue
                         room_objects.append(n.name)
+                    rname = attrs.get("room_name") or attrs.get("display_name") or room_node.name
+                    rdesc = (attrs.get("room_description") or "").strip() or attrs.get(
+                        "display_name"
+                    ) or "这里没有什么特别的。"
                     return {
-                        'id': str(room_node.id),
-                        'name': attrs.get('room_name', room_node.name),
-                        'description': attrs.get('room_description', '这里没有什么特别的。'),
-                        'exits': attrs.get('room_exits', {}).keys() if attrs.get('room_exits') else [],
-                        'items': room_objects,
-                        'is_singularity': attrs.get('is_root', False),
-                        'is_home': attrs.get('is_home', False)
+                        "id": str(room_node.id),
+                        "name": rname,
+                        "description": rdesc,
+                        "short_description": (attrs.get("room_short_description") or "").strip(),
+                        "ambiance": (attrs.get("room_ambiance") or "").strip(),
+                        "exits": list(attrs.get("room_exits", {}).keys())
+                        if isinstance(attrs.get("room_exits"), dict)
+                        else [],
+                        "items": room_objects,
+                        "is_singularity": attrs.get("is_root", False),
+                        "is_home": attrs.get("is_home", False),
                     }
                 
                 return None
@@ -300,18 +312,23 @@ class LookCommand(GameCommand):
     def _build_room_description(self, context: CommandContext, room: Dict[str, Any]) -> str:
         """构建房间描述"""
         try:
-            room_name = room.get('name', '未知房间')
-            room_desc = room.get('description', '这里没有什么特别的。')
-            exits = room.get('exits', [])
-            items = room.get('items', [])
-            
-            # 构建基本描述
+            room_name = room.get("name", "未知房间")
+            room_desc = room.get("description", "这里没有什么特别的。")
+            short_line = (room.get("short_description") or "").strip()
+            ambiance = (room.get("ambiance") or "").strip()
+            exits = room.get("exits", [])
+            items = room.get("items", [])
+
+            # 主叙述以 room_description 为准（已在 dict 中解析）；短描/氛围为补充行
             description = f"""
 {room_name}
 {'=' * len(room_name)}
-
-{room_desc}
 """
+            if short_line:
+                description += f"\n{short_line}\n"
+            description += f"\n{room_desc}\n"
+            if ambiance:
+                description += f"\n氛围：{ambiance}\n"
             
             # 添加出口信息
             if exits:

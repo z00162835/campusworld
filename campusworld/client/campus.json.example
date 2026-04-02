@@ -1,0 +1,29 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 8000,
+    "use_ssl": false
+  },
+  "auth": {
+    "token_file": "~/.config/campus/token",
+    "default_user": "guest"
+  },
+  "terminal": {
+    "theme": "default",
+    "font_size": 14,
+    "font_family": "monospace"
+  },
+  "completion": {
+    "enabled": true,
+    "fuzzy_match": true
+  },
+  "history": {
+    "enabled": true,
+    "size": 1000,
+    "file": "~/.local/share/campus/history"
+  },
+  "logging": {
+    "level": "info",
+    "file": "~/.local/share/campus/logs/campus.log"
+  }
+}

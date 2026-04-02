@@ -1,32 +1,965 @@
 floors:
-  - id: hicampus_f1_01f
-    world_id: hicampus
-    building_id: hicampus_f1
-    floor_no: 1
-    type_code: building_floor
-  - id: hicampus_f2_01f
-    world_id: hicampus
-    building_id: hicampus_f2
-    floor_no: 1
-    type_code: building_floor
-  - id: hicampus_f3_01f
-    world_id: hicampus
-    building_id: hicampus_f3
-    floor_no: 1
-    type_code: building_floor
-  - id: hicampus_f4_01f
-    world_id: hicampus
-    building_id: hicampus_f4
-    floor_no: 1
-    type_code: building_floor
-  - id: hicampus_f5_01f
-    world_id: hicampus
-    building_id: hicampus_f5
-    floor_no: 1
-    type_code: building_floor
-  - id: hicampus_f6_01f
-    world_id: hicampus
-    building_id: hicampus_f6
-    floor_no: 1
-    type_code: building_floor
-
+- id: hicampus_f1_01f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 1
+  floor_number: 1
+  type_code: building_floor
+  display_name: F1 · 首层
+  floor_name: 首层
+  floor_code: hicampus_F1_L01
+  uns: hicampus/F1/L01
+  floor_description: F1 办公楼的首层（lobby）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 首层，lobby。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - lobby
+  - layer:public
+  - layer_role:lobby
+- id: hicampus_f1_02f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 2
+  floor_number: 2
+  type_code: building_floor
+  display_name: F1 · 第2层
+  floor_name: 第2层
+  floor_code: hicampus_F1_L02
+  uns: hicampus/F1/L02
+  floor_description: F1 办公楼的第2层（office_open）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第2层，office_open。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+- id: hicampus_f1_03f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 3
+  floor_number: 3
+  type_code: building_floor
+  display_name: F1 · 第3层
+  floor_name: 第3层
+  floor_code: hicampus_F1_L03
+  uns: hicampus/F1/L03
+  floor_description: F1 办公楼的第3层（office_open）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第3层，office_open。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+- id: hicampus_f1_04f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 4
+  floor_number: 4
+  type_code: building_floor
+  display_name: F1 · 第4层
+  floor_name: 第4层
+  floor_code: hicampus_F1_L04
+  uns: hicampus/F1/L04
+  floor_description: F1 办公楼的第4层（office_open）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第4层，office_open。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+- id: hicampus_f1_05f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 5
+  floor_number: 5
+  type_code: building_floor
+  display_name: F1 · 第5层
+  floor_name: 第5层
+  floor_code: hicampus_F1_L05
+  uns: hicampus/F1/L05
+  floor_description: F1 办公楼的第5层（office_open）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第5层，office_open。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+- id: hicampus_f1_06f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 6
+  floor_number: 6
+  type_code: building_floor
+  display_name: F1 · 第6层
+  floor_name: 第6层
+  floor_code: hicampus_F1_L06
+  uns: hicampus/F1/L06
+  floor_description: F1 办公楼的第6层（office_open）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第6层，office_open。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+- id: hicampus_f1_07f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 7
+  floor_number: 7
+  type_code: building_floor
+  display_name: F1 · 第7层
+  floor_name: 第7层
+  floor_code: hicampus_F1_L07
+  uns: hicampus/F1/L07
+  floor_description: F1 办公楼的第7层（office_open）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第7层，office_open。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+- id: hicampus_f1_08f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 8
+  floor_number: 8
+  type_code: building_floor
+  display_name: F1 · 第8层
+  floor_name: 第8层
+  floor_code: hicampus_F1_L08
+  uns: hicampus/F1/L08
+  floor_description: F1 办公楼的第8层（office_open）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第8层，office_open。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+- id: hicampus_f1_09f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 9
+  floor_number: 9
+  type_code: building_floor
+  display_name: F1 · 第9层
+  floor_name: 第9层
+  floor_code: hicampus_F1_L09
+  uns: hicampus/F1/L09
+  floor_description: F1 办公楼的第9层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第9层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_10f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 10
+  floor_number: 10
+  type_code: building_floor
+  display_name: F1 · 第10层
+  floor_name: 第10层
+  floor_code: hicampus_F1_L10
+  uns: hicampus/F1/L10
+  floor_description: F1 办公楼的第10层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第10层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_11f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 11
+  floor_number: 11
+  type_code: building_floor
+  display_name: F1 · 第11层
+  floor_name: 第11层
+  floor_code: hicampus_F1_L11
+  uns: hicampus/F1/L11
+  floor_description: F1 办公楼的第11层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第11层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_12f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 12
+  floor_number: 12
+  type_code: building_floor
+  display_name: F1 · 第12层
+  floor_name: 第12层
+  floor_code: hicampus_F1_L12
+  uns: hicampus/F1/L12
+  floor_description: F1 办公楼的第12层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第12层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_13f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 13
+  floor_number: 13
+  type_code: building_floor
+  display_name: F1 · 第13层
+  floor_name: 第13层
+  floor_code: hicampus_F1_L13
+  uns: hicampus/F1/L13
+  floor_description: F1 办公楼的第13层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第13层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_14f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 14
+  floor_number: 14
+  type_code: building_floor
+  display_name: F1 · 第14层
+  floor_name: 第14层
+  floor_code: hicampus_F1_L14
+  uns: hicampus/F1/L14
+  floor_description: F1 办公楼的第14层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第14层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_15f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 15
+  floor_number: 15
+  type_code: building_floor
+  display_name: F1 · 第15层
+  floor_name: 第15层
+  floor_code: hicampus_F1_L15
+  uns: hicampus/F1/L15
+  floor_description: F1 办公楼的第15层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第15层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_16f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 16
+  floor_number: 16
+  type_code: building_floor
+  display_name: F1 · 第16层
+  floor_name: 第16层
+  floor_code: hicampus_F1_L16
+  uns: hicampus/F1/L16
+  floor_description: F1 办公楼的第16层（office_mixed）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第16层，office_mixed。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - layer_role:office_mixed
+- id: hicampus_f1_17f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 17
+  floor_number: 17
+  type_code: building_floor
+  display_name: F1 · 第17层
+  floor_name: 第17层
+  floor_code: hicampus_F1_L17
+  uns: hicampus/F1/L17
+  floor_description: F1 办公楼的第17层（meeting_heavy）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第17层，meeting_heavy。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - layer_role:meeting_heavy
+- id: hicampus_f1_18f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 18
+  floor_number: 18
+  type_code: building_floor
+  display_name: F1 · 第18层
+  floor_name: 第18层
+  floor_code: hicampus_F1_L18
+  uns: hicampus/F1/L18
+  floor_description: F1 办公楼的第18层（meeting_heavy）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第18层，meeting_heavy。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - layer_role:meeting_heavy
+- id: hicampus_f1_19f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 19
+  floor_number: 19
+  type_code: building_floor
+  display_name: F1 · 第19层
+  floor_name: 第19层
+  floor_code: hicampus_F1_L19
+  uns: hicampus/F1/L19
+  floor_description: F1 办公楼的第19层（meeting_heavy）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第19层，meeting_heavy。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - layer_role:meeting_heavy
+- id: hicampus_f1_20f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 20
+  floor_number: 20
+  type_code: building_floor
+  display_name: F1 · 第20层
+  floor_name: 第20层
+  floor_code: hicampus_F1_L20
+  uns: hicampus/F1/L20
+  floor_description: F1 办公楼的第20层（meeting_heavy）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第20层，meeting_heavy。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - layer_role:meeting_heavy
+- id: hicampus_f1_21f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 21
+  floor_number: 21
+  type_code: building_floor
+  display_name: F1 · 第21层
+  floor_name: 第21层
+  floor_code: hicampus_F1_L21
+  uns: hicampus/F1/L21
+  floor_description: F1 办公楼的第21层（executive）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第21层，executive。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - layer_role:executive
+- id: hicampus_f1_22f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 22
+  floor_number: 22
+  type_code: building_floor
+  display_name: F1 · 第22层
+  floor_name: 第22层
+  floor_code: hicampus_F1_L22
+  uns: hicampus/F1/L22
+  floor_description: F1 办公楼的第22层（executive）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第22层，executive。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - layer_role:executive
+- id: hicampus_f1_23f
+  world_id: hicampus
+  building_id: hicampus_f1
+  floor_no: 23
+  floor_number: 23
+  type_code: building_floor
+  display_name: F1 · 第23层
+  floor_name: 第23层
+  floor_code: hicampus_F1_L23
+  uns: hicampus/F1/L23
+  floor_description: F1 办公楼的第23层（executive）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F1 第23层，executive。
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - layer_role:executive
+- id: hicampus_f2_01f
+  world_id: hicampus
+  building_id: hicampus_f2
+  floor_no: 1
+  floor_number: 1
+  type_code: building_floor
+  display_name: F2 · 首层
+  floor_name: 首层
+  floor_code: hicampus_F2_L01
+  uns: hicampus/F2/L01
+  floor_description: F2 餐饮中心的首层（canteen）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F2 首层，canteen。
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - layer_role:canteen
+- id: hicampus_f2_02f
+  world_id: hicampus
+  building_id: hicampus_f2
+  floor_no: 2
+  floor_number: 2
+  type_code: building_floor
+  display_name: F2 · 第2层
+  floor_name: 第2层
+  floor_code: hicampus_F2_L02
+  uns: hicampus/F2/L02
+  floor_description: F2 餐饮中心的第2层（canteen）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F2 第2层，canteen。
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - layer_role:canteen
+- id: hicampus_f2_03f
+  world_id: hicampus
+  building_id: hicampus_f2
+  floor_no: 3
+  floor_number: 3
+  type_code: building_floor
+  display_name: F2 · 第3层
+  floor_name: 第3层
+  floor_code: hicampus_F2_L03
+  uns: hicampus/F2/L03
+  floor_description: F2 餐饮中心的第3层（canteen）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F2 第3层，canteen。
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - layer_role:canteen
+- id: hicampus_f3_01f
+  world_id: hicampus
+  building_id: hicampus_f3
+  floor_no: 1
+  floor_number: 1
+  type_code: building_floor
+  display_name: F3 · 首层
+  floor_name: 首层
+  floor_code: hicampus_F3_L01
+  uns: hicampus/F3/L01
+  floor_description: F3 培训中心的首层（training_entry）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F3 首层，training_entry。
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - layer_role:training_entry
+- id: hicampus_f3_02f
+  world_id: hicampus
+  building_id: hicampus_f3
+  floor_no: 2
+  floor_number: 2
+  type_code: building_floor
+  display_name: F3 · 第2层
+  floor_name: 第2层
+  floor_code: hicampus_F3_L02
+  uns: hicampus/F3/L02
+  floor_description: F3 培训中心的第2层（training_entry）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F3 第2层，training_entry。
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - layer_role:training_entry
+- id: hicampus_f3_03f
+  world_id: hicampus
+  building_id: hicampus_f3
+  floor_no: 3
+  floor_number: 3
+  type_code: building_floor
+  display_name: F3 · 第3层
+  floor_name: 第3层
+  floor_code: hicampus_F3_L03
+  uns: hicampus/F3/L03
+  floor_description: F3 培训中心的第3层（training_upper）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F3 第3层，training_upper。
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - layer_role:training_upper
+- id: hicampus_f3_04f
+  world_id: hicampus
+  building_id: hicampus_f3
+  floor_no: 4
+  floor_number: 4
+  type_code: building_floor
+  display_name: F3 · 第4层
+  floor_name: 第4层
+  floor_code: hicampus_F3_L04
+  uns: hicampus/F3/L04
+  floor_description: F3 培训中心的第4层（training_upper）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F3 第4层，training_upper。
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - layer_role:training_upper
+- id: hicampus_f3_05f
+  world_id: hicampus
+  building_id: hicampus_f3
+  floor_no: 5
+  floor_number: 5
+  type_code: building_floor
+  display_name: F3 · 第5层
+  floor_name: 第5层
+  floor_code: hicampus_F3_L05
+  uns: hicampus/F3/L05
+  floor_description: F3 培训中心的第5层（training_upper）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F3 第5层，training_upper。
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - layer_role:training_upper
+- id: hicampus_f3_06f
+  world_id: hicampus
+  building_id: hicampus_f3
+  floor_no: 6
+  floor_number: 6
+  type_code: building_floor
+  display_name: F3 · 第6层
+  floor_name: 第6层
+  floor_code: hicampus_F3_L06
+  uns: hicampus/F3/L06
+  floor_description: F3 培训中心的第6层（training_upper）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F3 第6层，training_upper。
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - layer_role:training_upper
+- id: hicampus_f4_01f
+  world_id: hicampus
+  building_id: hicampus_f4
+  floor_no: 1
+  floor_number: 1
+  type_code: building_floor
+  display_name: F4 · 首层
+  floor_name: 首层
+  floor_code: hicampus_F4_L01
+  uns: hicampus/F4/L01
+  floor_description: F4 实验楼的首层（lab_service）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F4 首层，lab_service。
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - layer_role:lab_service
+- id: hicampus_f4_02f
+  world_id: hicampus
+  building_id: hicampus_f4
+  floor_no: 2
+  floor_number: 2
+  type_code: building_floor
+  display_name: F4 · 第2层
+  floor_name: 第2层
+  floor_code: hicampus_F4_L02
+  uns: hicampus/F4/L02
+  floor_description: F4 实验楼的第2层（lab_service）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F4 第2层，lab_service。
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - layer_role:lab_service
+- id: hicampus_f4_03f
+  world_id: hicampus
+  building_id: hicampus_f4
+  floor_no: 3
+  floor_number: 3
+  type_code: building_floor
+  display_name: F4 · 第3层
+  floor_name: 第3层
+  floor_code: hicampus_F4_L03
+  uns: hicampus/F4/L03
+  floor_description: F4 实验楼的第3层（lab_zone）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F4 第3层，lab_zone。
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - layer_role:lab_zone
+- id: hicampus_f4_04f
+  world_id: hicampus
+  building_id: hicampus_f4
+  floor_no: 4
+  floor_number: 4
+  type_code: building_floor
+  display_name: F4 · 第4层
+  floor_name: 第4层
+  floor_code: hicampus_F4_L04
+  uns: hicampus/F4/L04
+  floor_description: F4 实验楼的第4层（lab_zone）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F4 第4层，lab_zone。
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - layer_role:lab_zone
+- id: hicampus_f4_05f
+  world_id: hicampus
+  building_id: hicampus_f4
+  floor_no: 5
+  floor_number: 5
+  type_code: building_floor
+  display_name: F4 · 第5层
+  floor_name: 第5层
+  floor_code: hicampus_F4_L05
+  uns: hicampus/F4/L05
+  floor_description: F4 实验楼的第5层（lab_zone）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F4 第5层，lab_zone。
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - layer_role:lab_zone
+- id: hicampus_f4_06f
+  world_id: hicampus
+  building_id: hicampus_f4
+  floor_no: 6
+  floor_number: 6
+  type_code: building_floor
+  display_name: F4 · 第6层
+  floor_name: 第6层
+  floor_code: hicampus_F4_L06
+  uns: hicampus/F4/L06
+  floor_description: F4 实验楼的第6层（lab_zone）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F4 第6层，lab_zone。
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - layer_role:lab_zone
+- id: hicampus_f4_07f
+  world_id: hicampus
+  building_id: hicampus_f4
+  floor_no: 7
+  floor_number: 7
+  type_code: building_floor
+  display_name: F4 · 第7层
+  floor_name: 第7层
+  floor_code: hicampus_F4_L07
+  uns: hicampus/F4/L07
+  floor_description: F4 实验楼的第7层（lab_zone）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F4 第7层，lab_zone。
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - layer_role:lab_zone
+- id: hicampus_f5_01f
+  world_id: hicampus
+  building_id: hicampus_f5
+  floor_no: 1
+  floor_number: 1
+  type_code: building_floor
+  display_name: F5 · 首层
+  floor_name: 首层
+  floor_code: hicampus_F5_L01
+  uns: hicampus/F5/L01
+  floor_description: F5 展厅的首层（expo）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F5 首层，expo。
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - layer_role:expo
+- id: hicampus_f5_02f
+  world_id: hicampus
+  building_id: hicampus_f5
+  floor_no: 2
+  floor_number: 2
+  type_code: building_floor
+  display_name: F5 · 第2层
+  floor_name: 第2层
+  floor_code: hicampus_F5_L02
+  uns: hicampus/F5/L02
+  floor_description: F5 展厅的第2层（expo）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F5 第2层，expo。
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - layer_role:expo
+- id: hicampus_f5_03f
+  world_id: hicampus
+  building_id: hicampus_f5
+  floor_no: 3
+  floor_number: 3
+  type_code: building_floor
+  display_name: F5 · 第3层
+  floor_name: 第3层
+  floor_code: hicampus_F5_L03
+  uns: hicampus/F5/L03
+  floor_description: F5 展厅的第3层（expo）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F5 第3层，expo。
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - layer_role:expo
+- id: hicampus_f6_01f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 1
+  floor_number: 1
+  type_code: building_floor
+  display_name: F6 · 首层
+  floor_name: 首层
+  floor_code: hicampus_F6_L01
+  uns: hicampus/F6/L01
+  floor_description: F6 公寓的首层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 首层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_02f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 2
+  floor_number: 2
+  type_code: building_floor
+  display_name: F6 · 第2层
+  floor_name: 第2层
+  floor_code: hicampus_F6_L02
+  uns: hicampus/F6/L02
+  floor_description: F6 公寓的第2层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第2层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_03f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 3
+  floor_number: 3
+  type_code: building_floor
+  display_name: F6 · 第3层
+  floor_name: 第3层
+  floor_code: hicampus_F6_L03
+  uns: hicampus/F6/L03
+  floor_description: F6 公寓的第3层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第3层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_04f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 4
+  floor_number: 4
+  type_code: building_floor
+  display_name: F6 · 第4层
+  floor_name: 第4层
+  floor_code: hicampus_F6_L04
+  uns: hicampus/F6/L04
+  floor_description: F6 公寓的第4层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第4层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_05f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 5
+  floor_number: 5
+  type_code: building_floor
+  display_name: F6 · 第5层
+  floor_name: 第5层
+  floor_code: hicampus_F6_L05
+  uns: hicampus/F6/L05
+  floor_description: F6 公寓的第5层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第5层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_06f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 6
+  floor_number: 6
+  type_code: building_floor
+  display_name: F6 · 第6层
+  floor_name: 第6层
+  floor_code: hicampus_F6_L06
+  uns: hicampus/F6/L06
+  floor_description: F6 公寓的第6层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第6层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_07f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 7
+  floor_number: 7
+  type_code: building_floor
+  display_name: F6 · 第7层
+  floor_name: 第7层
+  floor_code: hicampus_F6_L07
+  uns: hicampus/F6/L07
+  floor_description: F6 公寓的第7层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第7层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_08f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 8
+  floor_number: 8
+  type_code: building_floor
+  display_name: F6 · 第8层
+  floor_name: 第8层
+  floor_code: hicampus_F6_L08
+  uns: hicampus/F6/L08
+  floor_description: F6 公寓的第8层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第8层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm
+- id: hicampus_f6_09f
+  world_id: hicampus
+  building_id: hicampus_f6
+  floor_no: 9
+  floor_number: 9
+  type_code: building_floor
+  display_name: F6 · 第9层
+  floor_name: 第9层
+  floor_code: hicampus_F6_L09
+  uns: hicampus/F6/L09
+  floor_description: F6 公寓的第9层（dorm）。动线与消防分区符合园区标准；本层由空间生成器按 profile 生成配套房间。
+  floor_short_description: F6 第9层，dorm。
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - layer_role:dorm

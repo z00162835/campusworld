@@ -66,6 +66,8 @@ class Building(DefaultObject):
             "building_name": "示例教学楼",
             "building_name_en": "Example Academic Building",
             "building_abbreviation": "EAB",
+            "building_description": "",
+            "building_tagline": "",
             
             # ==================== 位置信息 ====================
             "building_address": "深圳市龙岗区坂田街道",
@@ -254,6 +256,8 @@ class BuildingFloor(DefaultObject):
             'floor_rooms': 0,
             'floor_rooms_list': [],
             'floor_dtmodels': {}, # 数字孪生模型信息
+            'floor_description': '',
+            'floor_short_description': '',
         }
         
         # 设置默认标签

@@ -6,6 +6,18 @@ buildings:
     display_name: F1 Office Tower
     floors_total: 23
     tags: ["building", "f1", "office"]
+    building_type: administrative
+    building_status: active
+    building_class: class_a
+    uns: hicampus/F1
+    building_name: F1 办公楼
+    building_name_en: F1 Office Tower
+    building_abbreviation: F1
+    building_description: |
+      F1 是 HiCampus 园区的地标塔楼，汇集研发办公与协作空间。玻璃幕墙与空中连廊将自然光引入室内，
+      首层与园区门户、连桥、广场无缝衔接，是访客与员工进入园区后的第一视觉锚点。
+    building_tagline: 园区主塔 · 研发办公核心
+    building_floors: 23
   - id: hicampus_f2
     world_id: hicampus
     building_code: F2
@@ -13,6 +25,18 @@ buildings:
     display_name: F2 Canteen
     floors_total: 3
     tags: ["building", "f2", "canteen"]
+    building_type: dining
+    building_status: active
+    building_class: class_b
+    uns: hicampus/F2
+    building_name: F2 餐饮中心
+    building_name_en: F2 Canteen
+    building_abbreviation: F2
+    building_description: |
+      F2 提供多风味档口与集中就餐区，服务园区日常餐饮与小型活动配餐。建筑体量紧凑，
+      与周边道路和广场形成便捷的步行就餐动线。
+    building_tagline: 园区餐饮与社交聚点
+    building_floors: 3
   - id: hicampus_f3
     world_id: hicampus
     building_code: F3
@@ -20,6 +44,17 @@ buildings:
     display_name: F3 Training Center
     floors_total: 6
     tags: ["building", "f3", "training"]
+    building_type: academic
+    building_status: active
+    building_class: class_b
+    uns: hicampus/F3
+    building_name: F3 培训中心
+    building_name_en: F3 Training Center
+    building_abbreviation: F3
+    building_description: |
+      F3 承载课程实训、报告厅与小组研讨空间，楼层按功能分区，支持从百人讲座到分组工作坊的弹性使用。
+    building_tagline: 学习与实训综合馆
+    building_floors: 6
   - id: hicampus_f4
     world_id: hicampus
     building_code: F4
@@ -27,6 +62,18 @@ buildings:
     display_name: F4 Lab
     floors_total: 7
     tags: ["building", "f4", "lab"]
+    building_type: research
+    building_status: active
+    building_class: class_a
+    uns: hicampus/F4
+    building_name: F4 实验楼
+    building_name_en: F4 Lab
+    building_abbreviation: F4
+    building_description: |
+      F4 为实验与原型验证空间，强调动线分流与安全分区。标准实验室与共享仪器区并列，
+      便于研发迭代与跨组协作。
+    building_tagline: 研发实验与原型验证基地
+    building_floors: 7
   - id: hicampus_f5
     world_id: hicampus
     building_code: F5
@@ -34,6 +81,17 @@ buildings:
     display_name: F5 Expo Hall
     floors_total: 3
     tags: ["building", "f5", "expo"]
+    building_type: commercial
+    building_status: active
+    building_class: class_b
+    uns: hicampus/F5
+    building_name: F5 展厅
+    building_name_en: F5 Expo Hall
+    building_abbreviation: F5
+    building_description: |
+      F5 提供可分隔的展陈与活动大厅，适合产品发布、开放日与行业交流。层高与荷载按临展与轻装置优化。
+    building_tagline: 展陈与活动弹性大厅
+    building_floors: 3
   - id: hicampus_f6
     world_id: hicampus
     building_code: F6
@@ -41,4 +99,14 @@ buildings:
     display_name: F6 Dormitory
     floors_total: 9
     tags: ["building", "f6", "dormitory"]
-
+    building_type: residential
+    building_status: active
+    building_class: class_b
+    uns: hicampus/F6
+    building_name: F6 公寓
+    building_name_en: F6 Dormitory
+    building_abbreviation: F6
+    building_description: |
+      F6 为园区配套住宿，单元与公共休闲区结合，靠近生活配套动线，缩短通勤与生活半径。
+    building_tagline: 园区配套住宿与生活支持
+    building_floors: 9

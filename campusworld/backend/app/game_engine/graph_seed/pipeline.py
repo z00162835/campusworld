@@ -17,6 +17,35 @@ from app.game_engine.graph_seed.profile import WorldGraphProfile
 from app.game_engine.runtime_store import WorldErrorCode
 from app.models.graph import Node, NodeType, Relationship, RelationshipType
 
+# node_types.type_code: entities that may be placed inside a room (Evennia: obj.location = room).
+_LOCATABLE_IN_ROOM_TYPES = frozenset(
+    {
+        "npc_agent",
+        "access_terminal",
+        "world_object",
+        "furniture",
+        "network_access_point",
+        "av_display",
+        "lighting_fixture",
+        "conference_seating",
+        "lounge_furniture",
+    }
+)
+
+
+def _sync_location_from_located_in(session: Session, source: Node, target: Node) -> None:
+    """
+    Scheme A: treat package ``located_in`` as the authority for room membership.
+    Set SQL ``nodes.location_id`` so commands that query contents by location_id (e.g. look) work.
+    """
+    if str(target.type_code or "") != "room":
+        return
+    if str(source.type_code or "") not in _LOCATABLE_IN_ROOM_TYPES:
+        return
+    if source.location_id != target.id:
+        source.location_id = target.id
+        session.flush()
+
 
 @dataclass
 class _NodeSpec:
@@ -327,6 +356,8 @@ def run_graph_seed(
             rtc,
             dict(rel.get("attributes") or {}),
         )
+        if rtc == "located_in":
+            _sync_location_from_located_in(session, src_n, tgt_n)
         if st == "created":
             rels_created += 1
         else:

@@ -1,42 +1,4857 @@
 relationships:
-  - id: rel_world_f1
-    rel_type_code: contains
-    source_id: hicampus_world
-    target_id: hicampus_f1
-    directed: true
-    attributes: {}
-  - id: rel_gate_bridge
-    rel_type_code: connects_to
-    source_id: hicampus_gate
-    target_id: hicampus_bridge
-    directed: true
-    attributes:
-      direction: north
-  - id: rel_bridge_gate
-    rel_type_code: connects_to
-    source_id: hicampus_bridge
-    target_id: hicampus_gate
-    directed: true
-    attributes:
-      direction: south
-  - id: rel_bridge_plaza
-    rel_type_code: connects_to
-    source_id: hicampus_bridge
-    target_id: hicampus_plaza
-    directed: true
-    attributes:
-      direction: north
-  - id: rel_plaza_bridge
-    rel_type_code: connects_to
-    source_id: hicampus_plaza
-    target_id: hicampus_bridge
-    directed: true
-    attributes:
-      direction: south
-  - id: rel_npc_located_in_gate
-    rel_type_code: located_in
-    source_id: hicampus_npc_security_01
-    target_id: hicampus_gate
-    directed: true
-    attributes: {}
-
+- id: rel_world_f1
+  rel_type_code: contains
+  source_id: hicampus_world
+  target_id: hicampus_f1
+  directed: true
+  attributes: {}
+- id: rel_gate_bridge
+  rel_type_code: connects_to
+  source_id: hicampus_gate
+  target_id: hicampus_bridge
+  directed: true
+  attributes:
+    direction: north
+- id: rel_bridge_gate
+  rel_type_code: connects_to
+  source_id: hicampus_bridge
+  target_id: hicampus_gate
+  directed: true
+  attributes:
+    direction: south
+- id: rel_bridge_plaza
+  rel_type_code: connects_to
+  source_id: hicampus_bridge
+  target_id: hicampus_plaza
+  directed: true
+  attributes:
+    direction: north
+- id: rel_plaza_bridge
+  rel_type_code: connects_to
+  source_id: hicampus_plaza
+  target_id: hicampus_bridge
+  directed: true
+  attributes:
+    direction: south
+- id: rel_npc_located_in_gate
+  rel_type_code: located_in
+  source_id: hicampus_npc_security_01
+  target_id: hicampus_gate
+  directed: true
+  attributes: {}
+- id: rel_item_located_in_1abe265b1c
+  rel_type_code: located_in
+  source_id: hicampus_bridge_lighting_fixture_01
+  target_id: hicampus_bridge
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ca365d7a3b
+  rel_type_code: located_in
+  source_id: hicampus_bridge_wifi_ap_01
+  target_id: hicampus_bridge
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e5671cd9eb
+  rel_type_code: located_in
+  source_id: hicampus_f1_01f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4413057e9b
+  rel_type_code: located_in
+  source_id: hicampus_f1_01f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b17256abcf
+  rel_type_code: located_in
+  source_id: hicampus_f1_01f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e255092f14
+  rel_type_code: located_in
+  source_id: hicampus_f1_01f_electrical_01_lighting_fixture_01
+  target_id: hicampus_f1_01f_electrical_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3f610d632a
+  rel_type_code: located_in
+  source_id: hicampus_f1_01f_electrical_01_wifi_ap_01
+  target_id: hicampus_f1_01f_electrical_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_caed9aa8a4
+  rel_type_code: located_in
+  source_id: hicampus_f1_01f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_42a3e17f41
+  rel_type_code: located_in
+  source_id: hicampus_f1_01f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_72c40497a7
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_meeting_01_av_display_01
+  target_id: hicampus_f1_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_90ca907869
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_817176d2b7
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_11d9e4fb11
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e25a7510e1
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_02f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_88756098c2
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_office_01_wifi_ap_01
+  target_id: hicampus_f1_02f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_37bbd447e9
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_02f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2fb6f0436e
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_office_02_wifi_ap_01
+  target_id: hicampus_f1_02f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_11b6533c02
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_pantry_01_furniture_pantry_01
+  target_id: hicampus_f1_02f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cc8a994f8a
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_pantry_01_lighting_fixture_01
+  target_id: hicampus_f1_02f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_465440de91
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_pantry_01_wifi_ap_01
+  target_id: hicampus_f1_02f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6319ca348f
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1f658740db
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f9f320445d
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_meeting_01_av_display_01
+  target_id: hicampus_f1_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f5a1ccc640
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e59c3e5804
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_034712eee5
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b3fa79efbb
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_03f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ac58b3ae35
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_office_01_wifi_ap_01
+  target_id: hicampus_f1_03f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b3ea7a2626
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_03f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5aa3bbd142
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_office_02_wifi_ap_01
+  target_id: hicampus_f1_03f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_27d19f59c6
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_pantry_01_furniture_pantry_01
+  target_id: hicampus_f1_03f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_295c7c8e8e
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_pantry_01_lighting_fixture_01
+  target_id: hicampus_f1_03f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_21c3c5b14d
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_pantry_01_wifi_ap_01
+  target_id: hicampus_f1_03f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e024ae76d2
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8c1cabcd17
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_acc7833b17
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_meeting_01_av_display_01
+  target_id: hicampus_f1_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6d78510c94
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5c3415e25f
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0697a4245c
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f6128fc0ed
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_04f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_51fd374f98
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_office_01_wifi_ap_01
+  target_id: hicampus_f1_04f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4faaf26422
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_04f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0911853dda
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_office_02_wifi_ap_01
+  target_id: hicampus_f1_04f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_af58917006
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_pantry_01_furniture_pantry_01
+  target_id: hicampus_f1_04f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e4aad656ff
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_pantry_01_lighting_fixture_01
+  target_id: hicampus_f1_04f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_88f2713f40
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_pantry_01_wifi_ap_01
+  target_id: hicampus_f1_04f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3faed63328
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5ced8caf06
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dd5ccab4f0
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_meeting_01_av_display_01
+  target_id: hicampus_f1_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_954cf1168b
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_175157b122
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dc5c0caad1
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f7735cfdb8
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_05f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4f9d226e49
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_office_01_wifi_ap_01
+  target_id: hicampus_f1_05f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_72229e8805
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_05f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_abe98d555f
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_office_02_wifi_ap_01
+  target_id: hicampus_f1_05f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7992424c77
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_pantry_01_furniture_pantry_01
+  target_id: hicampus_f1_05f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_96b181b1cc
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_pantry_01_lighting_fixture_01
+  target_id: hicampus_f1_05f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6e469e748c
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_pantry_01_wifi_ap_01
+  target_id: hicampus_f1_05f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_faf3a8c3b9
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_832768d8d9
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eace4f5a08
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_meeting_01_av_display_01
+  target_id: hicampus_f1_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0168f902b0
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cf6f7082f9
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2a23661861
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0d96a80cc9
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_06f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6641df2cbe
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_office_01_wifi_ap_01
+  target_id: hicampus_f1_06f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cfa06cfb90
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_06f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_730dea81bf
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_office_02_wifi_ap_01
+  target_id: hicampus_f1_06f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_66eee71605
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_pantry_01_furniture_pantry_01
+  target_id: hicampus_f1_06f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_59da152ade
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_pantry_01_lighting_fixture_01
+  target_id: hicampus_f1_06f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cd75b2cad6
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_pantry_01_wifi_ap_01
+  target_id: hicampus_f1_06f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_812350c225
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_94d4f2ec66
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1a88ad270e
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_meeting_01_av_display_01
+  target_id: hicampus_f1_07f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ba87362abf
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_07f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5e183f5ccf
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_07f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ba62c152a8
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_07f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8b3efd1047
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_07f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c067753f7f
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_office_01_wifi_ap_01
+  target_id: hicampus_f1_07f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0ce011b5cc
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_07f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_564c6acd64
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_office_02_wifi_ap_01
+  target_id: hicampus_f1_07f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_812e775bf1
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_pantry_01_furniture_pantry_01
+  target_id: hicampus_f1_07f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ba7f09d6c8
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_pantry_01_lighting_fixture_01
+  target_id: hicampus_f1_07f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5b292a7a85
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_pantry_01_wifi_ap_01
+  target_id: hicampus_f1_07f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_74c85870e8
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_07f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_82fbb630cd
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_07f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0885b69702
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_meeting_01_av_display_01
+  target_id: hicampus_f1_08f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_db093c76c3
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_08f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8e057e01a3
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_08f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_279d43a3d0
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_08f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c62424a014
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_08f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a51866e585
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_office_01_wifi_ap_01
+  target_id: hicampus_f1_08f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_70484184e8
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_08f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1196272f75
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_office_02_wifi_ap_01
+  target_id: hicampus_f1_08f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f6c07cb47e
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_pantry_01_furniture_pantry_01
+  target_id: hicampus_f1_08f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_503c97f9e6
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_pantry_01_lighting_fixture_01
+  target_id: hicampus_f1_08f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3fbe9067cc
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_pantry_01_wifi_ap_01
+  target_id: hicampus_f1_08f_pantry_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c71bc9ed56
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_08f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c4c9454f30
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_08f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3137fc1732
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_01_av_display_01
+  target_id: hicampus_f1_09f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_39138ff9c5
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_09f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_787ff726df
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_09f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_aea9ec0164
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_09f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cbdd281db1
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_02_av_display_01
+  target_id: hicampus_f1_09f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e82dc834a0
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_09f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3148dfd6b3
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_09f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c6b7d216f6
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_09f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_39ce08ee52
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_09f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c8bbbc62f5
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_office_01_wifi_ap_01
+  target_id: hicampus_f1_09f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_66b9d5ac5b
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_09f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4db11e6679
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_office_02_wifi_ap_01
+  target_id: hicampus_f1_09f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7d851525b0
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_09f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_38a6be91f0
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_09f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0c10b61d5d
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_01_av_display_01
+  target_id: hicampus_f1_10f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_402ba33226
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_10f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_313f740568
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_10f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_073f09a4ca
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_10f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a2b7c7f0ac
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_02_av_display_01
+  target_id: hicampus_f1_10f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_20affb8969
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_10f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7138fd0e2f
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_10f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0b95e86eca
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_10f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_53fdb7f0ef
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_10f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_98c0631df3
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_office_01_wifi_ap_01
+  target_id: hicampus_f1_10f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_444f9a494f
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_10f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_af4cc32481
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_office_02_wifi_ap_01
+  target_id: hicampus_f1_10f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9278313900
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_10f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_85a6263bdb
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_10f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b5a251c52f
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_01_av_display_01
+  target_id: hicampus_f1_11f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a6eaa3e0b8
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_11f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7c8adcf595
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_11f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c4e9d0630b
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_11f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e7c9a54d46
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_02_av_display_01
+  target_id: hicampus_f1_11f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_64d3e9ac48
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_11f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eda4596781
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_11f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5edbcc9241
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_11f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_960b6650bb
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_11f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e4b6d42b0f
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_office_01_wifi_ap_01
+  target_id: hicampus_f1_11f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_194a1abd72
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_11f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_57cb456511
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_office_02_wifi_ap_01
+  target_id: hicampus_f1_11f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c0e79dcd38
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_11f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_582dfb3ca2
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_11f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5dc9070820
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_01_av_display_01
+  target_id: hicampus_f1_12f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4698cea3ed
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_12f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c6441123d2
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_12f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0fde4c2d92
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_12f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2bbbd66ca9
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_02_av_display_01
+  target_id: hicampus_f1_12f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_abdeb13e07
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_12f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_07decee074
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_12f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_49587b7301
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_12f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_665f0dfcdf
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_12f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0d98da7c92
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_office_01_wifi_ap_01
+  target_id: hicampus_f1_12f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c3442f103a
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_12f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1babd8e78d
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_office_02_wifi_ap_01
+  target_id: hicampus_f1_12f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2f07d7c3ac
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_12f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b9ae91b4cc
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_12f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_573510252a
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_01_av_display_01
+  target_id: hicampus_f1_13f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f3fcb97051
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_13f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_89107414c2
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_13f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_112b5b079b
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_13f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0abdf66d4e
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_02_av_display_01
+  target_id: hicampus_f1_13f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_45ad36a547
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_13f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ccc2f3710d
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_13f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_47721f48c6
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_13f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a06e42282b
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_13f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_09d1ba75da
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_office_01_wifi_ap_01
+  target_id: hicampus_f1_13f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f60bb6c6d8
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_13f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ee0ee7bf89
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_office_02_wifi_ap_01
+  target_id: hicampus_f1_13f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ea13fbc9e5
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_13f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4b4f5c676a
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_13f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_91c54e4c2a
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_01_av_display_01
+  target_id: hicampus_f1_14f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9e1bf1a415
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_14f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4f41fc8ed4
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_14f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a83237d404
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_14f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a253bfa89a
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_02_av_display_01
+  target_id: hicampus_f1_14f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_047ac71157
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_14f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_25b15576f9
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_14f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_236f4cf1fa
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_14f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eb6334c542
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_14f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_31f94c161c
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_office_01_wifi_ap_01
+  target_id: hicampus_f1_14f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5eabc2de74
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_14f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_de8e47044a
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_office_02_wifi_ap_01
+  target_id: hicampus_f1_14f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_20bbe70338
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_14f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_53959244e5
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_14f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_693297622b
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_01_av_display_01
+  target_id: hicampus_f1_15f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_67a3c11ca1
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_15f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ff0b7be8c8
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_15f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_775d266971
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_15f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b7c5504544
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_02_av_display_01
+  target_id: hicampus_f1_15f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_90fb092ca6
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_15f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e54a8d3259
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_15f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bee14209f2
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_15f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_838199f1eb
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_15f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a79cba39b3
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_office_01_wifi_ap_01
+  target_id: hicampus_f1_15f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7101c4824f
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_15f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_badbfdc0d7
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_office_02_wifi_ap_01
+  target_id: hicampus_f1_15f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_606b6edcf4
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_15f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_05d4ffb6d9
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_15f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a69a77295a
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_01_av_display_01
+  target_id: hicampus_f1_16f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4a7bd033d4
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_16f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0797672560
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_16f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1aff997d4a
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_16f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fcd1d2e8b1
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_02_av_display_01
+  target_id: hicampus_f1_16f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0ccf122d89
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_16f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1089d0b683
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_16f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7fa39c03f1
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_16f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3e330e80b7
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_16f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b84fe09e82
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_office_01_wifi_ap_01
+  target_id: hicampus_f1_16f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ce7ec29773
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_office_02_lighting_fixture_01
+  target_id: hicampus_f1_16f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eccca1b62e
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_office_02_wifi_ap_01
+  target_id: hicampus_f1_16f_office_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_10f7babee1
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_16f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_19ebe1026b
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_16f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8876e42539
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_manager_01_furniture_manager_01
+  target_id: hicampus_f1_17f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8b18a3052f
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_manager_01_lighting_fixture_01
+  target_id: hicampus_f1_17f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_49c9dc8553
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_manager_01_wifi_ap_01
+  target_id: hicampus_f1_17f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bee9ce6499
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_01_av_display_01
+  target_id: hicampus_f1_17f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_098613f2c5
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_17f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cf7e14f36b
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_17f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_234ec1d640
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_17f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0bc933be58
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_02_av_display_01
+  target_id: hicampus_f1_17f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_effac37d5c
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_17f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d7328d2edd
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_17f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_984b6d8396
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_17f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_04c2e9489c
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_17f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4e4308d996
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_office_01_wifi_ap_01
+  target_id: hicampus_f1_17f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dfff79cbd8
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_17f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_84c2691bb9
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_17f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fa22b034c6
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_manager_01_furniture_manager_01
+  target_id: hicampus_f1_18f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_531779cce9
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_manager_01_lighting_fixture_01
+  target_id: hicampus_f1_18f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6a9f152ee0
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_manager_01_wifi_ap_01
+  target_id: hicampus_f1_18f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_268eac9080
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_01_av_display_01
+  target_id: hicampus_f1_18f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_532a9faf1b
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_18f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_af24e7eb23
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_18f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fc5d40d6f1
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_18f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e9d01b4cc6
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_02_av_display_01
+  target_id: hicampus_f1_18f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bbed355be5
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_18f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8a066d5eb6
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_18f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_177a1eb360
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_18f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f80c5dfc38
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_18f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1606961964
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_office_01_wifi_ap_01
+  target_id: hicampus_f1_18f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e26284d6cd
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_18f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fba47879ec
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_18f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3ee2831935
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_manager_01_furniture_manager_01
+  target_id: hicampus_f1_19f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_62025f7af7
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_manager_01_lighting_fixture_01
+  target_id: hicampus_f1_19f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cda07738b4
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_manager_01_wifi_ap_01
+  target_id: hicampus_f1_19f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ab14e88467
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_01_av_display_01
+  target_id: hicampus_f1_19f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2665ca0210
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_19f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9b9a88228d
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_19f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_61029d7bab
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_19f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_064f0b50bc
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_02_av_display_01
+  target_id: hicampus_f1_19f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8a9be0164e
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_19f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f6ea9fcbdf
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_19f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8639b13c3c
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_19f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_de13f73185
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_19f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a47fe52c39
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_office_01_wifi_ap_01
+  target_id: hicampus_f1_19f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e2a731fa03
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_19f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1383a4888c
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_19f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1833c5acc2
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_manager_01_furniture_manager_01
+  target_id: hicampus_f1_20f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_170aee2964
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_manager_01_lighting_fixture_01
+  target_id: hicampus_f1_20f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7c48dcdc32
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_manager_01_wifi_ap_01
+  target_id: hicampus_f1_20f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b3e09887ea
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_01_av_display_01
+  target_id: hicampus_f1_20f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dabd5feeaa
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_20f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_93e036035b
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_20f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d864cbbeb9
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_20f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_39c3c5511e
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_02_av_display_01
+  target_id: hicampus_f1_20f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6ea62203ff
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_20f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8dca52d987
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_20f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_42ac3d9d03
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_20f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cc283e6862
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_20f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_93865b37d4
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_office_01_wifi_ap_01
+  target_id: hicampus_f1_20f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1c0c10937b
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f1_20f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2617ffbb24
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_restroom_01_wifi_ap_01
+  target_id: hicampus_f1_20f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d328097255
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_manager_01_furniture_manager_01
+  target_id: hicampus_f1_21f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7f0b632e7e
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_manager_01_lighting_fixture_01
+  target_id: hicampus_f1_21f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a03e7ddf42
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_manager_01_wifi_ap_01
+  target_id: hicampus_f1_21f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fdc220b47a
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_manager_02_furniture_manager_01
+  target_id: hicampus_f1_21f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e624ee2635
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_manager_02_lighting_fixture_01
+  target_id: hicampus_f1_21f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7f6a2d326f
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_manager_02_wifi_ap_01
+  target_id: hicampus_f1_21f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5bcfcdcab2
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_01_av_display_01
+  target_id: hicampus_f1_21f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e437ae4f87
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_21f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_73a5abb1aa
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_21f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_58d70d6fd0
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_21f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_85fedf455a
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_02_av_display_01
+  target_id: hicampus_f1_21f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2ee2fcc83b
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_21f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_139e6bc73a
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_21f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3de7d8f264
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_21f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b67f94a604
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_21f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_80b3d975b1
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_office_01_wifi_ap_01
+  target_id: hicampus_f1_21f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_222fae47e3
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_manager_01_furniture_manager_01
+  target_id: hicampus_f1_22f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b44c1a3eeb
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_manager_01_lighting_fixture_01
+  target_id: hicampus_f1_22f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_94d50f5e70
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_manager_01_wifi_ap_01
+  target_id: hicampus_f1_22f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7f149cc448
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_manager_02_furniture_manager_01
+  target_id: hicampus_f1_22f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c665e7aba2
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_manager_02_lighting_fixture_01
+  target_id: hicampus_f1_22f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f6648588ae
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_manager_02_wifi_ap_01
+  target_id: hicampus_f1_22f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c5a5b4e442
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_01_av_display_01
+  target_id: hicampus_f1_22f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e12a133c87
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_22f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_715cf9941e
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_22f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d44fdf8d2b
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_22f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_17f04385d3
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_02_av_display_01
+  target_id: hicampus_f1_22f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_01fc59a2be
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_22f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2aad3c6f89
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_22f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_90c1bbedf5
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_22f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_877ec4d909
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_22f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fd1f125ef1
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_office_01_wifi_ap_01
+  target_id: hicampus_f1_22f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1da561b41f
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_manager_01_furniture_manager_01
+  target_id: hicampus_f1_23f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7c741210c0
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_manager_01_lighting_fixture_01
+  target_id: hicampus_f1_23f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_837799f5c7
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_manager_01_wifi_ap_01
+  target_id: hicampus_f1_23f_manager_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f776f8204a
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_manager_02_furniture_manager_01
+  target_id: hicampus_f1_23f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c0c9923ab8
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_manager_02_lighting_fixture_01
+  target_id: hicampus_f1_23f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_621516e652
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_manager_02_wifi_ap_01
+  target_id: hicampus_f1_23f_manager_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5f6f1461a0
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_01_av_display_01
+  target_id: hicampus_f1_23f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e2a825c752
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_01_conference_seating_01
+  target_id: hicampus_f1_23f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_61fd699d38
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f1_23f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e41f25ae43
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_01_wifi_ap_01
+  target_id: hicampus_f1_23f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d174de90be
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_02_av_display_01
+  target_id: hicampus_f1_23f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dc9af67c15
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_02_conference_seating_01
+  target_id: hicampus_f1_23f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8a8c04a795
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_02_lighting_fixture_01
+  target_id: hicampus_f1_23f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c72e93e8fb
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_meeting_02_wifi_ap_01
+  target_id: hicampus_f1_23f_meeting_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9527dbfff5
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_office_01_lighting_fixture_01
+  target_id: hicampus_f1_23f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f27db47be0
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_office_01_wifi_ap_01
+  target_id: hicampus_f1_23f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_54b1043844
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_canteen_dining_01_furniture_dining_01
+  target_id: hicampus_f2_01f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f02454c2fe
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_canteen_dining_01_lighting_fixture_01
+  target_id: hicampus_f2_01f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_10cf4773f1
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_canteen_dining_01_wifi_ap_01
+  target_id: hicampus_f2_01f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1875a4f20c
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_canteen_dining_02_furniture_dining_01
+  target_id: hicampus_f2_01f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9773de89e2
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_canteen_dining_02_lighting_fixture_01
+  target_id: hicampus_f2_01f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1293fd85c0
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_canteen_dining_02_wifi_ap_01
+  target_id: hicampus_f2_01f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_100dd1b401
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_kitchen_01_lighting_fixture_01
+  target_id: hicampus_f2_01f_kitchen_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a4690da5a2
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_kitchen_01_wifi_ap_01
+  target_id: hicampus_f2_01f_kitchen_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_127ac1241a
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f2_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bd281c9217
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_restroom_01_wifi_ap_01
+  target_id: hicampus_f2_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_48fc2c015e
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_storage_01_furniture_storage_01
+  target_id: hicampus_f2_01f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1eae7ad265
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_storage_01_lighting_fixture_01
+  target_id: hicampus_f2_01f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5418741afb
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_storage_01_wifi_ap_01
+  target_id: hicampus_f2_01f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2e4ae5c0e6
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_canteen_dining_01_furniture_dining_01
+  target_id: hicampus_f2_02f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_18c60d8174
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_canteen_dining_01_lighting_fixture_01
+  target_id: hicampus_f2_02f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0872253b1a
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_canteen_dining_01_wifi_ap_01
+  target_id: hicampus_f2_02f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a381325d38
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_canteen_dining_02_furniture_dining_01
+  target_id: hicampus_f2_02f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c132e40f3a
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_canteen_dining_02_lighting_fixture_01
+  target_id: hicampus_f2_02f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f9d9e4bb3a
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_canteen_dining_02_wifi_ap_01
+  target_id: hicampus_f2_02f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ea025bb080
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_kitchen_01_lighting_fixture_01
+  target_id: hicampus_f2_02f_kitchen_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_554c377522
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_kitchen_01_wifi_ap_01
+  target_id: hicampus_f2_02f_kitchen_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6bd65e58c8
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f2_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7837fa25eb
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_restroom_01_wifi_ap_01
+  target_id: hicampus_f2_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7c43557707
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_storage_01_furniture_storage_01
+  target_id: hicampus_f2_02f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3a181808c3
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_storage_01_lighting_fixture_01
+  target_id: hicampus_f2_02f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_82090d5905
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_storage_01_wifi_ap_01
+  target_id: hicampus_f2_02f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2d7e4a0a44
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_canteen_dining_01_furniture_dining_01
+  target_id: hicampus_f2_03f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_99d44bfc8e
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_canteen_dining_01_lighting_fixture_01
+  target_id: hicampus_f2_03f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ee4bd6ceec
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_canteen_dining_01_wifi_ap_01
+  target_id: hicampus_f2_03f_canteen_dining_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_33858a71ba
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_canteen_dining_02_furniture_dining_01
+  target_id: hicampus_f2_03f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_85f082fefa
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_canteen_dining_02_lighting_fixture_01
+  target_id: hicampus_f2_03f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b569d7da40
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_canteen_dining_02_wifi_ap_01
+  target_id: hicampus_f2_03f_canteen_dining_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d3d1d91bf1
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_kitchen_01_lighting_fixture_01
+  target_id: hicampus_f2_03f_kitchen_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_822ca6c92d
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_kitchen_01_wifi_ap_01
+  target_id: hicampus_f2_03f_kitchen_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d176521a93
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f2_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c369506932
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_restroom_01_wifi_ap_01
+  target_id: hicampus_f2_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_735317f954
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_storage_01_furniture_storage_01
+  target_id: hicampus_f2_03f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_900bfb0430
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_storage_01_lighting_fixture_01
+  target_id: hicampus_f2_03f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6407c5fa3e
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_storage_01_wifi_ap_01
+  target_id: hicampus_f2_03f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_55fdaa196a
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7bbff81e53
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_10af14a7fa
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_circulation_01_wifi_ap_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8fcef18026
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_classroom_01_furniture_classroom_01
+  target_id: hicampus_f3_01f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_36456152ae
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_classroom_01_lighting_fixture_01
+  target_id: hicampus_f3_01f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_04c23ccff7
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_classroom_01_wifi_ap_01
+  target_id: hicampus_f3_01f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2e948c6232
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_classroom_02_furniture_classroom_01
+  target_id: hicampus_f3_01f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bba9dc21cd
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_classroom_02_lighting_fixture_01
+  target_id: hicampus_f3_01f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_43c7436b40
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_classroom_02_wifi_ap_01
+  target_id: hicampus_f3_01f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0616fc9514
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_office_01_lighting_fixture_01
+  target_id: hicampus_f3_01f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_46b3e45452
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_office_01_wifi_ap_01
+  target_id: hicampus_f3_01f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_26a1b7e3d7
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f3_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_20e4fb731c
+  rel_type_code: located_in
+  source_id: hicampus_f3_01f_restroom_01_wifi_ap_01
+  target_id: hicampus_f3_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_334305d394
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4b77e91359
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_649ee1b989
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_circulation_01_wifi_ap_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a2f2b533ee
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_classroom_01_furniture_classroom_01
+  target_id: hicampus_f3_02f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_31c9da4af5
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_classroom_01_lighting_fixture_01
+  target_id: hicampus_f3_02f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_47b5b6e05c
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_classroom_01_wifi_ap_01
+  target_id: hicampus_f3_02f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4580f6e335
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_classroom_02_furniture_classroom_01
+  target_id: hicampus_f3_02f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eb14ad58e9
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_classroom_02_lighting_fixture_01
+  target_id: hicampus_f3_02f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ee65cd4ab9
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_classroom_02_wifi_ap_01
+  target_id: hicampus_f3_02f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ee490484e5
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_office_01_lighting_fixture_01
+  target_id: hicampus_f3_02f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f547503ba0
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_office_01_wifi_ap_01
+  target_id: hicampus_f3_02f_office_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c13577a4f4
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f3_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_32b4d2160f
+  rel_type_code: located_in
+  source_id: hicampus_f3_02f_restroom_01_wifi_ap_01
+  target_id: hicampus_f3_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_be5519e362
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_classroom_01_furniture_classroom_01
+  target_id: hicampus_f3_03f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_24f69fb2f3
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_classroom_01_lighting_fixture_01
+  target_id: hicampus_f3_03f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a28ed1a9a3
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_classroom_01_wifi_ap_01
+  target_id: hicampus_f3_03f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7fcb79d61e
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_classroom_02_furniture_classroom_01
+  target_id: hicampus_f3_03f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c7ea81fb52
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_classroom_02_lighting_fixture_01
+  target_id: hicampus_f3_03f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_065ed3517a
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_classroom_02_wifi_ap_01
+  target_id: hicampus_f3_03f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bde0ba68f3
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_lab_01_furniture_lab_01
+  target_id: hicampus_f3_03f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7f84b7b87a
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_lab_01_lighting_fixture_01
+  target_id: hicampus_f3_03f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d2f793f098
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_lab_01_wifi_ap_01
+  target_id: hicampus_f3_03f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f86f71ae25
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_meeting_01_av_display_01
+  target_id: hicampus_f3_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e4926fa8cf
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_meeting_01_conference_seating_01
+  target_id: hicampus_f3_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a929dd644e
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f3_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cd955769be
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_meeting_01_wifi_ap_01
+  target_id: hicampus_f3_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e475af94f1
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f3_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6885ca89ab
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_restroom_01_wifi_ap_01
+  target_id: hicampus_f3_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_24177ddf27
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_classroom_01_furniture_classroom_01
+  target_id: hicampus_f3_04f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3e94b44981
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_classroom_01_lighting_fixture_01
+  target_id: hicampus_f3_04f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_588e0ab2f8
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_classroom_01_wifi_ap_01
+  target_id: hicampus_f3_04f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fe52a40131
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_classroom_02_furniture_classroom_01
+  target_id: hicampus_f3_04f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1c5a2d2c0a
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_classroom_02_lighting_fixture_01
+  target_id: hicampus_f3_04f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b9d57f8dea
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_classroom_02_wifi_ap_01
+  target_id: hicampus_f3_04f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_91a9b8015b
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_lab_01_furniture_lab_01
+  target_id: hicampus_f3_04f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7ca3f3b12b
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_lab_01_lighting_fixture_01
+  target_id: hicampus_f3_04f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4d2298d47b
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_lab_01_wifi_ap_01
+  target_id: hicampus_f3_04f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a73b552182
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_meeting_01_av_display_01
+  target_id: hicampus_f3_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_29dd74f040
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_meeting_01_conference_seating_01
+  target_id: hicampus_f3_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2d30affd97
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f3_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_093fd54e8c
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_meeting_01_wifi_ap_01
+  target_id: hicampus_f3_04f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f0848896f9
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f3_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8679d75c39
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_restroom_01_wifi_ap_01
+  target_id: hicampus_f3_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9e56f70bf0
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_classroom_01_furniture_classroom_01
+  target_id: hicampus_f3_05f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3ba32e0656
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_classroom_01_lighting_fixture_01
+  target_id: hicampus_f3_05f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_67f781ae23
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_classroom_01_wifi_ap_01
+  target_id: hicampus_f3_05f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a1adae2810
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_classroom_02_furniture_classroom_01
+  target_id: hicampus_f3_05f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c9b911fbf2
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_classroom_02_lighting_fixture_01
+  target_id: hicampus_f3_05f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7f35915c32
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_classroom_02_wifi_ap_01
+  target_id: hicampus_f3_05f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_53e433ffbb
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_lab_01_furniture_lab_01
+  target_id: hicampus_f3_05f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_14059a03ca
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_lab_01_lighting_fixture_01
+  target_id: hicampus_f3_05f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c8baca11fc
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_lab_01_wifi_ap_01
+  target_id: hicampus_f3_05f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_98462d542e
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_meeting_01_av_display_01
+  target_id: hicampus_f3_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f3fef3c751
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_meeting_01_conference_seating_01
+  target_id: hicampus_f3_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cb40949b3b
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f3_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7f505f659b
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_meeting_01_wifi_ap_01
+  target_id: hicampus_f3_05f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2bc2d4e987
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f3_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2e0cd31624
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_restroom_01_wifi_ap_01
+  target_id: hicampus_f3_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_92a415cdef
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_classroom_01_furniture_classroom_01
+  target_id: hicampus_f3_06f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_494ca73c90
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_classroom_01_lighting_fixture_01
+  target_id: hicampus_f3_06f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_84f7cb5d5c
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_classroom_01_wifi_ap_01
+  target_id: hicampus_f3_06f_classroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9f285b1b77
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_classroom_02_furniture_classroom_01
+  target_id: hicampus_f3_06f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_505f31e2b1
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_classroom_02_lighting_fixture_01
+  target_id: hicampus_f3_06f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_20e36e72e1
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_classroom_02_wifi_ap_01
+  target_id: hicampus_f3_06f_classroom_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_015bd8a057
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_lab_01_furniture_lab_01
+  target_id: hicampus_f3_06f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1ae03fd8c4
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_lab_01_lighting_fixture_01
+  target_id: hicampus_f3_06f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_795e396af3
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_lab_01_wifi_ap_01
+  target_id: hicampus_f3_06f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8beb4ee46f
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_meeting_01_av_display_01
+  target_id: hicampus_f3_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ce1c8320f0
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_meeting_01_conference_seating_01
+  target_id: hicampus_f3_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c3f9d7bb10
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f3_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e7b2f6ac94
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_meeting_01_wifi_ap_01
+  target_id: hicampus_f3_06f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_acc616a504
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f3_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ac16ffa2d5
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_restroom_01_wifi_ap_01
+  target_id: hicampus_f3_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ed4621294b
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_electrical_01_lighting_fixture_01
+  target_id: hicampus_f4_01f_electrical_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a513d1116d
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_electrical_01_wifi_ap_01
+  target_id: hicampus_f4_01f_electrical_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3587787a35
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_monitoring_01_lighting_fixture_01
+  target_id: hicampus_f4_01f_monitoring_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4155ebecca
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_monitoring_01_wifi_ap_01
+  target_id: hicampus_f4_01f_monitoring_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fc33716c5b
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_prep_lab_01_furniture_lab_01
+  target_id: hicampus_f4_01f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_47bb4f2aa6
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_prep_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_01f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_69e9084ec1
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_prep_lab_01_wifi_ap_01
+  target_id: hicampus_f4_01f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_69d1cc6b1f
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_prep_lab_02_furniture_lab_01
+  target_id: hicampus_f4_01f_prep_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_52ccd4ac82
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_prep_lab_02_lighting_fixture_01
+  target_id: hicampus_f4_01f_prep_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7439c59dd1
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_prep_lab_02_wifi_ap_01
+  target_id: hicampus_f4_01f_prep_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_94349f04f5
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_storage_01_furniture_storage_01
+  target_id: hicampus_f4_01f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d71f9dd4fc
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_storage_01_lighting_fixture_01
+  target_id: hicampus_f4_01f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7d692bc3c7
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_storage_01_wifi_ap_01
+  target_id: hicampus_f4_01f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eb16c63bac
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_electrical_01_lighting_fixture_01
+  target_id: hicampus_f4_02f_electrical_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d397d05379
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_electrical_01_wifi_ap_01
+  target_id: hicampus_f4_02f_electrical_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b60efcb893
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_monitoring_01_lighting_fixture_01
+  target_id: hicampus_f4_02f_monitoring_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_77fd53e1e6
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_monitoring_01_wifi_ap_01
+  target_id: hicampus_f4_02f_monitoring_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c6865ae1bb
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_prep_lab_01_furniture_lab_01
+  target_id: hicampus_f4_02f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e91ccb0769
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_prep_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_02f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b895c10b47
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_prep_lab_01_wifi_ap_01
+  target_id: hicampus_f4_02f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1cebd9bfbb
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_prep_lab_02_furniture_lab_01
+  target_id: hicampus_f4_02f_prep_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6ac4b077d8
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_prep_lab_02_lighting_fixture_01
+  target_id: hicampus_f4_02f_prep_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9072d57a93
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_prep_lab_02_wifi_ap_01
+  target_id: hicampus_f4_02f_prep_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_802abfd075
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_storage_01_furniture_storage_01
+  target_id: hicampus_f4_02f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1b8e9f3640
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_storage_01_lighting_fixture_01
+  target_id: hicampus_f4_02f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e726c2f199
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_storage_01_wifi_ap_01
+  target_id: hicampus_f4_02f_storage_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_08125216d3
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_01_furniture_lab_01
+  target_id: hicampus_f4_03f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0ba309d880
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_03f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_67b59794f5
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_01_wifi_ap_01
+  target_id: hicampus_f4_03f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_01ee07c6b8
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_02_furniture_lab_01
+  target_id: hicampus_f4_03f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_59ec5e0715
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_02_lighting_fixture_01
+  target_id: hicampus_f4_03f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b9fadb8614
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_02_wifi_ap_01
+  target_id: hicampus_f4_03f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0a1fe88aa4
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_03_furniture_lab_01
+  target_id: hicampus_f4_03f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ce38326a42
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_03_lighting_fixture_01
+  target_id: hicampus_f4_03f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_004ae2fa8b
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_lab_03_wifi_ap_01
+  target_id: hicampus_f4_03f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0c8dd9a3ce
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_prep_lab_01_furniture_lab_01
+  target_id: hicampus_f4_03f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0dc3a0f013
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_prep_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_03f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c7da0f12d6
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_prep_lab_01_wifi_ap_01
+  target_id: hicampus_f4_03f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_33bd02c9b0
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f4_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a02d0bb542
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_restroom_01_wifi_ap_01
+  target_id: hicampus_f4_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eb81ebaedf
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_01_furniture_lab_01
+  target_id: hicampus_f4_04f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_52dd1ec84f
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_04f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_473f8ec68d
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_01_wifi_ap_01
+  target_id: hicampus_f4_04f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7b4101b630
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_02_furniture_lab_01
+  target_id: hicampus_f4_04f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9b08c56bca
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_02_lighting_fixture_01
+  target_id: hicampus_f4_04f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fcf1dd99b3
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_02_wifi_ap_01
+  target_id: hicampus_f4_04f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f93c826a27
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_03_furniture_lab_01
+  target_id: hicampus_f4_04f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a15102f1c3
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_03_lighting_fixture_01
+  target_id: hicampus_f4_04f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_91acb33b3b
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_lab_03_wifi_ap_01
+  target_id: hicampus_f4_04f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_db51c43cff
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_prep_lab_01_furniture_lab_01
+  target_id: hicampus_f4_04f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_917730a3ee
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_prep_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_04f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9fea1dcbf4
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_prep_lab_01_wifi_ap_01
+  target_id: hicampus_f4_04f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ff001e6ae3
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f4_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e61453e684
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_restroom_01_wifi_ap_01
+  target_id: hicampus_f4_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_353ece6d8c
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_01_furniture_lab_01
+  target_id: hicampus_f4_05f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f4282da0ed
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_05f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8f000eb6c9
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_01_wifi_ap_01
+  target_id: hicampus_f4_05f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4f15a23365
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_02_furniture_lab_01
+  target_id: hicampus_f4_05f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e642571fb6
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_02_lighting_fixture_01
+  target_id: hicampus_f4_05f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9372ea7f5c
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_02_wifi_ap_01
+  target_id: hicampus_f4_05f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0c936f065d
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_03_furniture_lab_01
+  target_id: hicampus_f4_05f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dfb945fb36
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_03_lighting_fixture_01
+  target_id: hicampus_f4_05f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6e8a3eb226
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_lab_03_wifi_ap_01
+  target_id: hicampus_f4_05f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c57eaad8f0
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_prep_lab_01_furniture_lab_01
+  target_id: hicampus_f4_05f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9c39f8ed1b
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_prep_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_05f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_de6fc65cce
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_prep_lab_01_wifi_ap_01
+  target_id: hicampus_f4_05f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_aad6a8d692
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f4_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ccc171ef9b
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_restroom_01_wifi_ap_01
+  target_id: hicampus_f4_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_65c8fdf7eb
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_01_furniture_lab_01
+  target_id: hicampus_f4_06f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b9e5ced775
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_06f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_038d1d204b
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_01_wifi_ap_01
+  target_id: hicampus_f4_06f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c79991e67f
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_02_furniture_lab_01
+  target_id: hicampus_f4_06f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7816948471
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_02_lighting_fixture_01
+  target_id: hicampus_f4_06f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_48ca2adc03
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_02_wifi_ap_01
+  target_id: hicampus_f4_06f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_027fdc65f4
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_03_furniture_lab_01
+  target_id: hicampus_f4_06f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bbd0af220d
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_03_lighting_fixture_01
+  target_id: hicampus_f4_06f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2e4aa9495b
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_lab_03_wifi_ap_01
+  target_id: hicampus_f4_06f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a9b3df0b6b
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_prep_lab_01_furniture_lab_01
+  target_id: hicampus_f4_06f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1af875a1fa
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_prep_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_06f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_13d7dc5887
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_prep_lab_01_wifi_ap_01
+  target_id: hicampus_f4_06f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ae7d195d1f
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f4_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fa14c3ef6e
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_restroom_01_wifi_ap_01
+  target_id: hicampus_f4_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cede8961c6
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_01_furniture_lab_01
+  target_id: hicampus_f4_07f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a166069cb2
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_07f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5e1b2fde49
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_01_wifi_ap_01
+  target_id: hicampus_f4_07f_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e30e8c6007
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_02_furniture_lab_01
+  target_id: hicampus_f4_07f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2780b458ee
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_02_lighting_fixture_01
+  target_id: hicampus_f4_07f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_258fb1a74e
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_02_wifi_ap_01
+  target_id: hicampus_f4_07f_lab_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_13842c1782
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_03_furniture_lab_01
+  target_id: hicampus_f4_07f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_41e746d89b
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_03_lighting_fixture_01
+  target_id: hicampus_f4_07f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_164e16f0aa
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_lab_03_wifi_ap_01
+  target_id: hicampus_f4_07f_lab_03
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_329daf1f65
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_prep_lab_01_furniture_lab_01
+  target_id: hicampus_f4_07f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_41b89b3cc5
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_prep_lab_01_lighting_fixture_01
+  target_id: hicampus_f4_07f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1e7c73b439
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_prep_lab_01_wifi_ap_01
+  target_id: hicampus_f4_07f_prep_lab_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_00d312feb6
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f4_07f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b1c9a3a4c5
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_restroom_01_wifi_ap_01
+  target_id: hicampus_f4_07f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4039299939
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_av_room_01_lighting_fixture_01
+  target_id: hicampus_f5_01f_av_room_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3b826fa218
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_av_room_01_wifi_ap_01
+  target_id: hicampus_f5_01f_av_room_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6b6c3b1768
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_expo_hall_01_furniture_expo_01
+  target_id: hicampus_f5_01f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a8e5fd35cd
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_expo_hall_01_lighting_fixture_01
+  target_id: hicampus_f5_01f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8b9e0101f7
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_expo_hall_01_wifi_ap_01
+  target_id: hicampus_f5_01f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_88e4cee107
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_expo_hall_02_furniture_expo_01
+  target_id: hicampus_f5_01f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_51ce4a31bb
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_expo_hall_02_lighting_fixture_01
+  target_id: hicampus_f5_01f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5bf4da3ea1
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_expo_hall_02_wifi_ap_01
+  target_id: hicampus_f5_01f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4b0ecfe73c
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_meeting_01_av_display_01
+  target_id: hicampus_f5_01f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_14892652cd
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_meeting_01_conference_seating_01
+  target_id: hicampus_f5_01f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7991cf7803
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f5_01f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5ef71a7666
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_meeting_01_wifi_ap_01
+  target_id: hicampus_f5_01f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d562de770f
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f5_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_64da911248
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_restroom_01_wifi_ap_01
+  target_id: hicampus_f5_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ee52d0a2be
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_av_room_01_lighting_fixture_01
+  target_id: hicampus_f5_02f_av_room_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_815f67eaaf
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_av_room_01_wifi_ap_01
+  target_id: hicampus_f5_02f_av_room_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a7be2f23bb
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_expo_hall_01_furniture_expo_01
+  target_id: hicampus_f5_02f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_db71e2340b
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_expo_hall_01_lighting_fixture_01
+  target_id: hicampus_f5_02f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4437e691f1
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_expo_hall_01_wifi_ap_01
+  target_id: hicampus_f5_02f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2facfb7d3a
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_expo_hall_02_furniture_expo_01
+  target_id: hicampus_f5_02f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a87ef1848a
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_expo_hall_02_lighting_fixture_01
+  target_id: hicampus_f5_02f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6dc03633d9
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_expo_hall_02_wifi_ap_01
+  target_id: hicampus_f5_02f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_daf52e91da
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_meeting_01_av_display_01
+  target_id: hicampus_f5_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6c31756a73
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_meeting_01_conference_seating_01
+  target_id: hicampus_f5_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_18eef89cf8
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f5_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e289173b14
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_meeting_01_wifi_ap_01
+  target_id: hicampus_f5_02f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7fc7fa67f7
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f5_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6dc4d03a1b
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_restroom_01_wifi_ap_01
+  target_id: hicampus_f5_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ce737f8928
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_av_room_01_lighting_fixture_01
+  target_id: hicampus_f5_03f_av_room_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a1c57019bf
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_av_room_01_wifi_ap_01
+  target_id: hicampus_f5_03f_av_room_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0ad47f4be3
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_expo_hall_01_furniture_expo_01
+  target_id: hicampus_f5_03f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b4d4744176
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_expo_hall_01_lighting_fixture_01
+  target_id: hicampus_f5_03f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_57f338618a
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_expo_hall_01_wifi_ap_01
+  target_id: hicampus_f5_03f_expo_hall_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b7d6f99f13
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_expo_hall_02_furniture_expo_01
+  target_id: hicampus_f5_03f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fe1d45361d
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_expo_hall_02_lighting_fixture_01
+  target_id: hicampus_f5_03f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_10b005c404
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_expo_hall_02_wifi_ap_01
+  target_id: hicampus_f5_03f_expo_hall_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c61ce03434
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_meeting_01_av_display_01
+  target_id: hicampus_f5_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8ac9088d54
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_meeting_01_conference_seating_01
+  target_id: hicampus_f5_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c014020f63
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_meeting_01_lighting_fixture_01
+  target_id: hicampus_f5_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6744da5469
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_meeting_01_wifi_ap_01
+  target_id: hicampus_f5_03f_meeting_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4d62c7e3a7
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f5_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a2a651703f
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_restroom_01_wifi_ap_01
+  target_id: hicampus_f5_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7d6d220a7a
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_01f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e4f396ac07
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_01f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2a767ccebc
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_01f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_25a3bd9d1c
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_01f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d5e7a54d73
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_01f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_046742b367
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_01f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eb075a9677
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_01f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8eed253b48
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_01f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_aed1b9cb62
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_01f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ddf6abc82d
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f92c01a9b0
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_01f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bb48cc2629
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_02f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a2104fa468
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_02f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1df14b9735
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_02f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_770a51095d
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_02f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_df08559afd
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_02f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e2c5e32a86
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_02f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1df7363739
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_02f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_362440f356
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_02f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fefcfc5b30
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_02f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_056bf894aa
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1e8fb95e11
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_02f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c31fba1213
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_03f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2abab2293f
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_03f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_89365a43a8
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_03f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f8d3c2b8fe
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_03f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f3210fadb6
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_03f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5d47cccd46
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_03f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7c9c073cfc
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_03f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_290f5b3834
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_03f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_86cb90014b
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_03f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8c402a9f66
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ec9ba36fb5
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_03f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f1ed9fce2b
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_04f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_eafc10fbd1
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_04f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c3ed449043
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_04f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_96323609e7
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_04f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c68a8a3a2a
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_04f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c5f1ded561
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_04f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8423995b48
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_04f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a1763be1e5
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_04f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_77226664e8
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_04f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2eda1ba3f1
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_67d5cc17aa
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_04f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_38683555bf
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_05f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5d5c7a8f05
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_05f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fb7ca87e3b
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_05f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9b57d6ecfc
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_05f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_26170eecfb
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_05f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ad0221d636
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_05f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_933544ab9f
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_05f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cf502f3e39
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_05f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7e4361cc96
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_05f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f9fb8faa8e
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7e3cab9548
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_05f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bea1acbef9
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_06f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cfbf32732e
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_06f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6e3235f48b
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_06f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_79983e2b10
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_06f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2d752f6c26
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_06f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_516a8832cd
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_06f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_355111ddf7
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_06f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2db0257e70
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_06f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ac63bdeeb8
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_06f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_abe77aaf66
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_624b65bce6
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_06f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9d0762a706
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_07f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2dd78e13d5
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_07f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0eeeb5b431
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_07f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e41b44d0ea
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_07f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_22fe3a956e
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_07f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b9768bf8a1
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_07f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_04a7ff2ab2
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_07f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_845e12c7aa
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_07f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_332dc92f25
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_07f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fb675080a0
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_07f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e2c96c3c87
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_07f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c7de029ef0
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_08f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7b80679a51
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_08f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_296b344f0f
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_08f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f08ef1075b
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_08f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0a159b9f42
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_08f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b6abb205a7
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_08f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8b92323b16
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_08f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4c8ddc1bff
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_08f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6b742459eb
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_08f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_92cc07d890
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_08f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d9c73ae09c
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_08f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ec66a03fa3
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_dorm_unit_01_furniture_dorm_01
+  target_id: hicampus_f6_09f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_13329676e6
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_dorm_unit_01_lighting_fixture_01
+  target_id: hicampus_f6_09f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e50f1d5efd
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_dorm_unit_01_wifi_ap_01
+  target_id: hicampus_f6_09f_dorm_unit_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b8f27e56f7
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_dorm_unit_02_furniture_dorm_01
+  target_id: hicampus_f6_09f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_637054fc90
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_dorm_unit_02_lighting_fixture_01
+  target_id: hicampus_f6_09f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6bf21678ad
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_dorm_unit_02_wifi_ap_01
+  target_id: hicampus_f6_09f_dorm_unit_02
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4430ada1bc
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_lounge_01_lighting_fixture_01
+  target_id: hicampus_f6_09f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c041b86c08
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_lounge_01_lounge_furniture_01
+  target_id: hicampus_f6_09f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_078d386b59
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_lounge_01_wifi_ap_01
+  target_id: hicampus_f6_09f_lounge_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b8d064e651
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_restroom_01_lighting_fixture_01
+  target_id: hicampus_f6_09f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1e804155e4
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_restroom_01_wifi_ap_01
+  target_id: hicampus_f6_09f_restroom_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_07fe8a3585
+  rel_type_code: located_in
+  source_id: hicampus_device_gate_terminal_01
+  target_id: hicampus_gate
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_916663c75e
+  rel_type_code: located_in
+  source_id: hicampus_gate_lighting_fixture_01
+  target_id: hicampus_gate
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b371c02412
+  rel_type_code: located_in
+  source_id: hicampus_gate_wifi_ap_01
+  target_id: hicampus_gate
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4615ee5e6c
+  rel_type_code: located_in
+  source_id: hicampus_furniture_bench_01
+  target_id: hicampus_plaza
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ded0a59d4b
+  rel_type_code: located_in
+  source_id: hicampus_plaza_lighting_fixture_01
+  target_id: hicampus_plaza
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dcb7b1bc24
+  rel_type_code: located_in
+  source_id: hicampus_plaza_wifi_ap_01
+  target_id: hicampus_plaza
+  directed: true
+  attributes:
+    source_kind: item

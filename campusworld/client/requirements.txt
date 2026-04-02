@@ -3,7 +3,6 @@
 # 核心依赖
 textual>=0.50.0
 websockets>=10.0
-pyyaml>=6.0
 
 # 开发依赖
 pytest>=7.0

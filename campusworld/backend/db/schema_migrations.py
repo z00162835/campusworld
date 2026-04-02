@@ -266,6 +266,46 @@ def ensure_graph_seed_ontology(engine) -> None:
                 "Furniture",
                 "app.models.things.furniture",
             ),
+            (
+                "network_access_point",
+                "world_object",
+                "无线接入点",
+                "app.models.things.devices.NetworkAccessPoint",
+                "NetworkAccessPoint",
+                "app.models.things.devices",
+            ),
+            (
+                "av_display",
+                "world_object",
+                "音视频大屏",
+                "app.models.things.devices.AvDisplay",
+                "AvDisplay",
+                "app.models.things.devices",
+            ),
+            (
+                "lighting_fixture",
+                "world_object",
+                "照明灯具",
+                "app.models.things.devices.LightingFixture",
+                "LightingFixture",
+                "app.models.things.devices",
+            ),
+            (
+                "conference_seating",
+                "world_object",
+                "会议座椅",
+                "app.models.things.seating.ConferenceSeating",
+                "ConferenceSeating",
+                "app.models.things.seating",
+            ),
+            (
+                "lounge_furniture",
+                "world_object",
+                "休闲家具",
+                "app.models.things.seating.LoungeFurniture",
+                "LoungeFurniture",
+                "app.models.things.seating",
+            ),
         ]
         for type_code, parent_code, type_name, typeclass, classname, module_path in node_rows:
             _try_exec_mapped(

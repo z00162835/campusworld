@@ -1,17 +1,5983 @@
 rooms:
-  - id: hicampus_gate
-    world_id: hicampus
-    floor_id: hicampus_f1_01f
-    type_code: room
-    display_name: HiCampus Gate
-  - id: hicampus_bridge
-    world_id: hicampus
-    floor_id: hicampus_f1_01f
-    type_code: room
-    display_name: HiCampus Bridge
-  - id: hicampus_plaza
-    world_id: hicampus
-    floor_id: hicampus_f1_01f
-    type_code: room
-    display_name: HiCampus Plaza
+- id: hicampus_bridge
+  world_id: hicampus
+  floor_id: hicampus_f1_01f
+  type_code: room
+  display_name: HiCampus Bridge
+  room_name: HiCampus 连桥
+  room_name_en: HiCampus Bridge
+  room_type: circulation
+  room_code: BRIDGE01
+  uns: hicampus/F1/L01/BRIDGE01
+  room_short_description: 架空连桥，连接主楼与相邻街区与广场。
+  room_description: '连桥架空于园区道路之上，两侧玻璃栏板外可见车行与人行动线。桥面铺设有导向带与应急疏散指示，
 
+    晴天时光影在地面移动；这里承担高峰通勤的通过性空间，也是雨天不湿鞋的关键路径。
+
+    '
+  room_ambiance: 脚步与行李箱滚轮声交替，晚高峰略嘈杂。
+  room_floor: 1
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - room
+  - hicampus
+  - space:core
+  - circulation
+  - layer:connector
+- id: hicampus_f1_01f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_01f
+  type_code: room
+  display_name: F1 办公楼 · 首层 交通核 1
+  room_name: F1 办公楼 · 首层 交通核 1
+  room_name_en: Circulation Core F1L01COR01
+  room_type: circulation
+  room_code: F1L01COR01
+  uns: hicampus/F1/L01/F1L01COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 1
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - lobby
+  - layer:public
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_01f_electrical_01
+  world_id: hicampus
+  floor_id: hicampus_f1_01f
+  type_code: room
+  display_name: F1 办公楼 · 首层 配电间 1
+  room_name: F1 办公楼 · 首层 配电间 1
+  room_name_en: Electrical Room F1L01ELE01
+  room_type: special
+  room_code: F1L01ELE01
+  uns: hicampus/F1/L01/F1L01ELE01
+  room_short_description: 楼层配电与分闸。
+  room_description: 金属门常闭，内部为配电柜与标签清晰的回路标识；仅授权人员进入维护。
+  room_ambiance: 设备低鸣，温度略高。
+  room_floor: 1
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - lobby
+  - layer:public
+  - space:electrical
+  - function:infrastructure
+  - access:staff
+- id: hicampus_f1_01f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_01f
+  type_code: room
+  display_name: F1 办公楼 · 首层 卫生间 1
+  room_name: F1 办公楼 · 首层 卫生间 1
+  room_name_en: Restroom F1L01WCR01
+  room_type: normal
+  room_code: F1L01WCR01
+  uns: hicampus/F1/L01/F1L01WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 1
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - lobby
+  - layer:public
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_gate
+  world_id: hicampus
+  floor_id: hicampus_f1_01f
+  type_code: room
+  display_name: HiCampus Gate
+  room_name: HiCampus 门户厅
+  room_name_en: HiCampus Gate
+  room_type: landmark
+  room_code: GATE01
+  uns: hicampus/F1/L01/GATE01
+  room_short_description: 园区主入口门厅，接待与安检动线起点。
+  room_description: '你站在 HiCampus 的主入口门厅。通透的玻璃与导向标识将人流引向闸机与前台；
+
+    一侧是通往室外广场的出口，另一侧连向室内连桥与塔楼竖向交通。这里既是物理边界，
+
+    也是数字孪生世界中「进入园区」语义的原点。
+
+    '
+  room_ambiance: 灯光明亮，背景音乐轻快，偶有访客咨询与闸机提示音。
+  room_floor: 1
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - room
+  - hicampus
+  - space:core
+  - landmark
+  - layer:entry
+- id: hicampus_plaza
+  world_id: hicampus
+  floor_id: hicampus_f1_01f
+  type_code: room
+  display_name: HiCampus Plaza
+  room_name: HiCampus 广场
+  room_name_en: HiCampus Plaza
+  room_type: plaza
+  room_code: PLAZA01
+  uns: hicampus/F1/L01/PLAZA01
+  room_short_description: 首层户外广场，活动与集散空间。
+  room_description: '广场铺地划分通行区与停留区，中央可布置临展或市集。建筑立面在此退让形成灰空间，
+
+    连桥与地面层出入口在此交汇；傍晚常有员工散步与驻留，是园区公共生活的开放舞台。
+
+    '
+  room_ambiance: 风声与远处城市底噪，活动时人声明显。
+  room_floor: 1
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - room
+  - hicampus
+  - space:core
+  - plaza
+  - layer:public
+- id: hicampus_f1_02f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_02f
+  type_code: room
+  display_name: F1 办公楼 · 第2层 会议室 1
+  room_name: F1 办公楼 · 第2层 会议室 1
+  room_name_en: Meeting Room F1L02MTG01
+  room_type: special
+  room_code: F1L02MTG01
+  uns: hicampus/F1/L02/F1L02MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 2
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_02f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_02f
+  type_code: room
+  display_name: F1 办公楼 · 第2层 开放办公区 1
+  room_name: F1 办公楼 · 第2层 开放办公区 1
+  room_name_en: Open Office F1L02OFF01
+  room_type: office
+  room_code: F1L02OFF01
+  uns: hicampus/F1/L02/F1L02OFF01
+  room_short_description: 第2层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 2
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_02f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_02f
+  type_code: room
+  display_name: F1 办公楼 · 第2层 开放办公区 2
+  room_name: F1 办公楼 · 第2层 开放办公区 2
+  room_name_en: Open Office F1L02OFF02
+  room_type: office
+  room_code: F1L02OFF02
+  uns: hicampus/F1/L02/F1L02OFF02
+  room_short_description: 第2层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 2
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_02f_pantry_01
+  world_id: hicampus
+  floor_id: hicampus_f1_02f
+  type_code: room
+  display_name: F1 办公楼 · 第2层 茶水间 1
+  room_name: F1 办公楼 · 第2层 茶水间 1
+  room_name_en: Pantry F1L02PAN01
+  room_type: normal
+  room_code: F1L02PAN01
+  uns: hicampus/F1/L02/F1L02PAN01
+  room_short_description: 饮水、简餐与微波炉区。
+  room_description: 台面与洗池便于清洗杯具；冰箱与咖啡机共享使用，高峰略拥挤。
+  room_ambiance: 咖啡机蒸汽与闲聊。
+  room_floor: 2
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:pantry
+  - zone:staff
+- id: hicampus_f1_02f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_02f
+  type_code: room
+  display_name: F1 办公楼 · 第2层 卫生间 1
+  room_name: F1 办公楼 · 第2层 卫生间 1
+  room_name_en: Restroom F1L02WCR01
+  room_type: normal
+  room_code: F1L02WCR01
+  uns: hicampus/F1/L02/F1L02WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 2
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_03f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_03f
+  type_code: room
+  display_name: F1 办公楼 · 第3层 会议室 1
+  room_name: F1 办公楼 · 第3层 会议室 1
+  room_name_en: Meeting Room F1L03MTG01
+  room_type: special
+  room_code: F1L03MTG01
+  uns: hicampus/F1/L03/F1L03MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 3
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_03f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_03f
+  type_code: room
+  display_name: F1 办公楼 · 第3层 开放办公区 1
+  room_name: F1 办公楼 · 第3层 开放办公区 1
+  room_name_en: Open Office F1L03OFF01
+  room_type: office
+  room_code: F1L03OFF01
+  uns: hicampus/F1/L03/F1L03OFF01
+  room_short_description: 第3层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 3
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_03f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_03f
+  type_code: room
+  display_name: F1 办公楼 · 第3层 开放办公区 2
+  room_name: F1 办公楼 · 第3层 开放办公区 2
+  room_name_en: Open Office F1L03OFF02
+  room_type: office
+  room_code: F1L03OFF02
+  uns: hicampus/F1/L03/F1L03OFF02
+  room_short_description: 第3层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 3
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_03f_pantry_01
+  world_id: hicampus
+  floor_id: hicampus_f1_03f
+  type_code: room
+  display_name: F1 办公楼 · 第3层 茶水间 1
+  room_name: F1 办公楼 · 第3层 茶水间 1
+  room_name_en: Pantry F1L03PAN01
+  room_type: normal
+  room_code: F1L03PAN01
+  uns: hicampus/F1/L03/F1L03PAN01
+  room_short_description: 饮水、简餐与微波炉区。
+  room_description: 台面与洗池便于清洗杯具；冰箱与咖啡机共享使用，高峰略拥挤。
+  room_ambiance: 咖啡机蒸汽与闲聊。
+  room_floor: 3
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:pantry
+  - zone:staff
+- id: hicampus_f1_03f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_03f
+  type_code: room
+  display_name: F1 办公楼 · 第3层 卫生间 1
+  room_name: F1 办公楼 · 第3层 卫生间 1
+  room_name_en: Restroom F1L03WCR01
+  room_type: normal
+  room_code: F1L03WCR01
+  uns: hicampus/F1/L03/F1L03WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 3
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_04f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_04f
+  type_code: room
+  display_name: F1 办公楼 · 第4层 会议室 1
+  room_name: F1 办公楼 · 第4层 会议室 1
+  room_name_en: Meeting Room F1L04MTG01
+  room_type: special
+  room_code: F1L04MTG01
+  uns: hicampus/F1/L04/F1L04MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 4
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_04f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_04f
+  type_code: room
+  display_name: F1 办公楼 · 第4层 开放办公区 1
+  room_name: F1 办公楼 · 第4层 开放办公区 1
+  room_name_en: Open Office F1L04OFF01
+  room_type: office
+  room_code: F1L04OFF01
+  uns: hicampus/F1/L04/F1L04OFF01
+  room_short_description: 第4层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 4
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_04f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_04f
+  type_code: room
+  display_name: F1 办公楼 · 第4层 开放办公区 2
+  room_name: F1 办公楼 · 第4层 开放办公区 2
+  room_name_en: Open Office F1L04OFF02
+  room_type: office
+  room_code: F1L04OFF02
+  uns: hicampus/F1/L04/F1L04OFF02
+  room_short_description: 第4层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 4
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_04f_pantry_01
+  world_id: hicampus
+  floor_id: hicampus_f1_04f
+  type_code: room
+  display_name: F1 办公楼 · 第4层 茶水间 1
+  room_name: F1 办公楼 · 第4层 茶水间 1
+  room_name_en: Pantry F1L04PAN01
+  room_type: normal
+  room_code: F1L04PAN01
+  uns: hicampus/F1/L04/F1L04PAN01
+  room_short_description: 饮水、简餐与微波炉区。
+  room_description: 台面与洗池便于清洗杯具；冰箱与咖啡机共享使用，高峰略拥挤。
+  room_ambiance: 咖啡机蒸汽与闲聊。
+  room_floor: 4
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:pantry
+  - zone:staff
+- id: hicampus_f1_04f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_04f
+  type_code: room
+  display_name: F1 办公楼 · 第4层 卫生间 1
+  room_name: F1 办公楼 · 第4层 卫生间 1
+  room_name_en: Restroom F1L04WCR01
+  room_type: normal
+  room_code: F1L04WCR01
+  uns: hicampus/F1/L04/F1L04WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 4
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_05f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_05f
+  type_code: room
+  display_name: F1 办公楼 · 第5层 会议室 1
+  room_name: F1 办公楼 · 第5层 会议室 1
+  room_name_en: Meeting Room F1L05MTG01
+  room_type: special
+  room_code: F1L05MTG01
+  uns: hicampus/F1/L05/F1L05MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 5
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_05f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_05f
+  type_code: room
+  display_name: F1 办公楼 · 第5层 开放办公区 1
+  room_name: F1 办公楼 · 第5层 开放办公区 1
+  room_name_en: Open Office F1L05OFF01
+  room_type: office
+  room_code: F1L05OFF01
+  uns: hicampus/F1/L05/F1L05OFF01
+  room_short_description: 第5层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 5
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_05f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_05f
+  type_code: room
+  display_name: F1 办公楼 · 第5层 开放办公区 2
+  room_name: F1 办公楼 · 第5层 开放办公区 2
+  room_name_en: Open Office F1L05OFF02
+  room_type: office
+  room_code: F1L05OFF02
+  uns: hicampus/F1/L05/F1L05OFF02
+  room_short_description: 第5层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 5
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_05f_pantry_01
+  world_id: hicampus
+  floor_id: hicampus_f1_05f
+  type_code: room
+  display_name: F1 办公楼 · 第5层 茶水间 1
+  room_name: F1 办公楼 · 第5层 茶水间 1
+  room_name_en: Pantry F1L05PAN01
+  room_type: normal
+  room_code: F1L05PAN01
+  uns: hicampus/F1/L05/F1L05PAN01
+  room_short_description: 饮水、简餐与微波炉区。
+  room_description: 台面与洗池便于清洗杯具；冰箱与咖啡机共享使用，高峰略拥挤。
+  room_ambiance: 咖啡机蒸汽与闲聊。
+  room_floor: 5
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:pantry
+  - zone:staff
+- id: hicampus_f1_05f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_05f
+  type_code: room
+  display_name: F1 办公楼 · 第5层 卫生间 1
+  room_name: F1 办公楼 · 第5层 卫生间 1
+  room_name_en: Restroom F1L05WCR01
+  room_type: normal
+  room_code: F1L05WCR01
+  uns: hicampus/F1/L05/F1L05WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 5
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_06f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_06f
+  type_code: room
+  display_name: F1 办公楼 · 第6层 会议室 1
+  room_name: F1 办公楼 · 第6层 会议室 1
+  room_name_en: Meeting Room F1L06MTG01
+  room_type: special
+  room_code: F1L06MTG01
+  uns: hicampus/F1/L06/F1L06MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 6
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_06f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_06f
+  type_code: room
+  display_name: F1 办公楼 · 第6层 开放办公区 1
+  room_name: F1 办公楼 · 第6层 开放办公区 1
+  room_name_en: Open Office F1L06OFF01
+  room_type: office
+  room_code: F1L06OFF01
+  uns: hicampus/F1/L06/F1L06OFF01
+  room_short_description: 第6层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 6
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_06f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_06f
+  type_code: room
+  display_name: F1 办公楼 · 第6层 开放办公区 2
+  room_name: F1 办公楼 · 第6层 开放办公区 2
+  room_name_en: Open Office F1L06OFF02
+  room_type: office
+  room_code: F1L06OFF02
+  uns: hicampus/F1/L06/F1L06OFF02
+  room_short_description: 第6层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 6
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_06f_pantry_01
+  world_id: hicampus
+  floor_id: hicampus_f1_06f
+  type_code: room
+  display_name: F1 办公楼 · 第6层 茶水间 1
+  room_name: F1 办公楼 · 第6层 茶水间 1
+  room_name_en: Pantry F1L06PAN01
+  room_type: normal
+  room_code: F1L06PAN01
+  uns: hicampus/F1/L06/F1L06PAN01
+  room_short_description: 饮水、简餐与微波炉区。
+  room_description: 台面与洗池便于清洗杯具；冰箱与咖啡机共享使用，高峰略拥挤。
+  room_ambiance: 咖啡机蒸汽与闲聊。
+  room_floor: 6
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:pantry
+  - zone:staff
+- id: hicampus_f1_06f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_06f
+  type_code: room
+  display_name: F1 办公楼 · 第6层 卫生间 1
+  room_name: F1 办公楼 · 第6层 卫生间 1
+  room_name_en: Restroom F1L06WCR01
+  room_type: normal
+  room_code: F1L06WCR01
+  uns: hicampus/F1/L06/F1L06WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 6
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_07f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_07f
+  type_code: room
+  display_name: F1 办公楼 · 第7层 会议室 1
+  room_name: F1 办公楼 · 第7层 会议室 1
+  room_name_en: Meeting Room F1L07MTG01
+  room_type: special
+  room_code: F1L07MTG01
+  uns: hicampus/F1/L07/F1L07MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 7
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_07f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_07f
+  type_code: room
+  display_name: F1 办公楼 · 第7层 开放办公区 1
+  room_name: F1 办公楼 · 第7层 开放办公区 1
+  room_name_en: Open Office F1L07OFF01
+  room_type: office
+  room_code: F1L07OFF01
+  uns: hicampus/F1/L07/F1L07OFF01
+  room_short_description: 第7层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 7
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_07f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_07f
+  type_code: room
+  display_name: F1 办公楼 · 第7层 开放办公区 2
+  room_name: F1 办公楼 · 第7层 开放办公区 2
+  room_name_en: Open Office F1L07OFF02
+  room_type: office
+  room_code: F1L07OFF02
+  uns: hicampus/F1/L07/F1L07OFF02
+  room_short_description: 第7层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 7
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_07f_pantry_01
+  world_id: hicampus
+  floor_id: hicampus_f1_07f
+  type_code: room
+  display_name: F1 办公楼 · 第7层 茶水间 1
+  room_name: F1 办公楼 · 第7层 茶水间 1
+  room_name_en: Pantry F1L07PAN01
+  room_type: normal
+  room_code: F1L07PAN01
+  uns: hicampus/F1/L07/F1L07PAN01
+  room_short_description: 饮水、简餐与微波炉区。
+  room_description: 台面与洗池便于清洗杯具；冰箱与咖啡机共享使用，高峰略拥挤。
+  room_ambiance: 咖啡机蒸汽与闲聊。
+  room_floor: 7
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:pantry
+  - zone:staff
+- id: hicampus_f1_07f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_07f
+  type_code: room
+  display_name: F1 办公楼 · 第7层 卫生间 1
+  room_name: F1 办公楼 · 第7层 卫生间 1
+  room_name_en: Restroom F1L07WCR01
+  room_type: normal
+  room_code: F1L07WCR01
+  uns: hicampus/F1/L07/F1L07WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 7
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_08f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_08f
+  type_code: room
+  display_name: F1 办公楼 · 第8层 会议室 1
+  room_name: F1 办公楼 · 第8层 会议室 1
+  room_name_en: Meeting Room F1L08MTG01
+  room_type: special
+  room_code: F1L08MTG01
+  uns: hicampus/F1/L08/F1L08MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 8
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_08f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_08f
+  type_code: room
+  display_name: F1 办公楼 · 第8层 开放办公区 1
+  room_name: F1 办公楼 · 第8层 开放办公区 1
+  room_name_en: Open Office F1L08OFF01
+  room_type: office
+  room_code: F1L08OFF01
+  uns: hicampus/F1/L08/F1L08OFF01
+  room_short_description: 第8层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 8
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_08f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_08f
+  type_code: room
+  display_name: F1 办公楼 · 第8层 开放办公区 2
+  room_name: F1 办公楼 · 第8层 开放办公区 2
+  room_name_en: Open Office F1L08OFF02
+  room_type: office
+  room_code: F1L08OFF02
+  uns: hicampus/F1/L08/F1L08OFF02
+  room_short_description: 第8层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 8
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:office
+  - function:work
+- id: hicampus_f1_08f_pantry_01
+  world_id: hicampus
+  floor_id: hicampus_f1_08f
+  type_code: room
+  display_name: F1 办公楼 · 第8层 茶水间 1
+  room_name: F1 办公楼 · 第8层 茶水间 1
+  room_name_en: Pantry F1L08PAN01
+  room_type: normal
+  room_code: F1L08PAN01
+  uns: hicampus/F1/L08/F1L08PAN01
+  room_short_description: 饮水、简餐与微波炉区。
+  room_description: 台面与洗池便于清洗杯具；冰箱与咖啡机共享使用，高峰略拥挤。
+  room_ambiance: 咖啡机蒸汽与闲聊。
+  room_floor: 8
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:pantry
+  - zone:staff
+- id: hicampus_f1_08f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_08f
+  type_code: room
+  display_name: F1 办公楼 · 第8层 卫生间 1
+  room_name: F1 办公楼 · 第8层 卫生间 1
+  room_name_en: Restroom F1L08WCR01
+  room_type: normal
+  room_code: F1L08WCR01
+  uns: hicampus/F1/L08/F1L08WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 8
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_09f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_09f
+  type_code: room
+  display_name: F1 办公楼 · 第9层 会议室 1
+  room_name: F1 办公楼 · 第9层 会议室 1
+  room_name_en: Meeting Room F1L09MTG01
+  room_type: special
+  room_code: F1L09MTG01
+  uns: hicampus/F1/L09/F1L09MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 9
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_09f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_09f
+  type_code: room
+  display_name: F1 办公楼 · 第9层 会议室 2
+  room_name: F1 办公楼 · 第9层 会议室 2
+  room_name_en: Meeting Room F1L09MTG02
+  room_type: special
+  room_code: F1L09MTG02
+  uns: hicampus/F1/L09/F1L09MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 9
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_09f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_09f
+  type_code: room
+  display_name: F1 办公楼 · 第9层 开放办公区 1
+  room_name: F1 办公楼 · 第9层 开放办公区 1
+  room_name_en: Open Office F1L09OFF01
+  room_type: office
+  room_code: F1L09OFF01
+  uns: hicampus/F1/L09/F1L09OFF01
+  room_short_description: 第9层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 9
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_09f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_09f
+  type_code: room
+  display_name: F1 办公楼 · 第9层 开放办公区 2
+  room_name: F1 办公楼 · 第9层 开放办公区 2
+  room_name_en: Open Office F1L09OFF02
+  room_type: office
+  room_code: F1L09OFF02
+  uns: hicampus/F1/L09/F1L09OFF02
+  room_short_description: 第9层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 9
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_09f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_09f
+  type_code: room
+  display_name: F1 办公楼 · 第9层 卫生间 1
+  room_name: F1 办公楼 · 第9层 卫生间 1
+  room_name_en: Restroom F1L09WCR01
+  room_type: normal
+  room_code: F1L09WCR01
+  uns: hicampus/F1/L09/F1L09WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 9
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_10f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_10f
+  type_code: room
+  display_name: F1 办公楼 · 第10层 会议室 1
+  room_name: F1 办公楼 · 第10层 会议室 1
+  room_name_en: Meeting Room F1L10MTG01
+  room_type: special
+  room_code: F1L10MTG01
+  uns: hicampus/F1/L10/F1L10MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 10
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_10f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_10f
+  type_code: room
+  display_name: F1 办公楼 · 第10层 会议室 2
+  room_name: F1 办公楼 · 第10层 会议室 2
+  room_name_en: Meeting Room F1L10MTG02
+  room_type: special
+  room_code: F1L10MTG02
+  uns: hicampus/F1/L10/F1L10MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 10
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_10f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_10f
+  type_code: room
+  display_name: F1 办公楼 · 第10层 开放办公区 1
+  room_name: F1 办公楼 · 第10层 开放办公区 1
+  room_name_en: Open Office F1L10OFF01
+  room_type: office
+  room_code: F1L10OFF01
+  uns: hicampus/F1/L10/F1L10OFF01
+  room_short_description: 第10层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 10
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_10f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_10f
+  type_code: room
+  display_name: F1 办公楼 · 第10层 开放办公区 2
+  room_name: F1 办公楼 · 第10层 开放办公区 2
+  room_name_en: Open Office F1L10OFF02
+  room_type: office
+  room_code: F1L10OFF02
+  uns: hicampus/F1/L10/F1L10OFF02
+  room_short_description: 第10层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 10
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_10f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_10f
+  type_code: room
+  display_name: F1 办公楼 · 第10层 卫生间 1
+  room_name: F1 办公楼 · 第10层 卫生间 1
+  room_name_en: Restroom F1L10WCR01
+  room_type: normal
+  room_code: F1L10WCR01
+  uns: hicampus/F1/L10/F1L10WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 10
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_11f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_11f
+  type_code: room
+  display_name: F1 办公楼 · 第11层 会议室 1
+  room_name: F1 办公楼 · 第11层 会议室 1
+  room_name_en: Meeting Room F1L11MTG01
+  room_type: special
+  room_code: F1L11MTG01
+  uns: hicampus/F1/L11/F1L11MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 11
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_11f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_11f
+  type_code: room
+  display_name: F1 办公楼 · 第11层 会议室 2
+  room_name: F1 办公楼 · 第11层 会议室 2
+  room_name_en: Meeting Room F1L11MTG02
+  room_type: special
+  room_code: F1L11MTG02
+  uns: hicampus/F1/L11/F1L11MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 11
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_11f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_11f
+  type_code: room
+  display_name: F1 办公楼 · 第11层 开放办公区 1
+  room_name: F1 办公楼 · 第11层 开放办公区 1
+  room_name_en: Open Office F1L11OFF01
+  room_type: office
+  room_code: F1L11OFF01
+  uns: hicampus/F1/L11/F1L11OFF01
+  room_short_description: 第11层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 11
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_11f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_11f
+  type_code: room
+  display_name: F1 办公楼 · 第11层 开放办公区 2
+  room_name: F1 办公楼 · 第11层 开放办公区 2
+  room_name_en: Open Office F1L11OFF02
+  room_type: office
+  room_code: F1L11OFF02
+  uns: hicampus/F1/L11/F1L11OFF02
+  room_short_description: 第11层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 11
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_11f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_11f
+  type_code: room
+  display_name: F1 办公楼 · 第11层 卫生间 1
+  room_name: F1 办公楼 · 第11层 卫生间 1
+  room_name_en: Restroom F1L11WCR01
+  room_type: normal
+  room_code: F1L11WCR01
+  uns: hicampus/F1/L11/F1L11WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 11
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_12f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_12f
+  type_code: room
+  display_name: F1 办公楼 · 第12层 会议室 1
+  room_name: F1 办公楼 · 第12层 会议室 1
+  room_name_en: Meeting Room F1L12MTG01
+  room_type: special
+  room_code: F1L12MTG01
+  uns: hicampus/F1/L12/F1L12MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 12
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_12f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_12f
+  type_code: room
+  display_name: F1 办公楼 · 第12层 会议室 2
+  room_name: F1 办公楼 · 第12层 会议室 2
+  room_name_en: Meeting Room F1L12MTG02
+  room_type: special
+  room_code: F1L12MTG02
+  uns: hicampus/F1/L12/F1L12MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 12
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_12f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_12f
+  type_code: room
+  display_name: F1 办公楼 · 第12层 开放办公区 1
+  room_name: F1 办公楼 · 第12层 开放办公区 1
+  room_name_en: Open Office F1L12OFF01
+  room_type: office
+  room_code: F1L12OFF01
+  uns: hicampus/F1/L12/F1L12OFF01
+  room_short_description: 第12层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 12
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_12f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_12f
+  type_code: room
+  display_name: F1 办公楼 · 第12层 开放办公区 2
+  room_name: F1 办公楼 · 第12层 开放办公区 2
+  room_name_en: Open Office F1L12OFF02
+  room_type: office
+  room_code: F1L12OFF02
+  uns: hicampus/F1/L12/F1L12OFF02
+  room_short_description: 第12层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 12
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_12f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_12f
+  type_code: room
+  display_name: F1 办公楼 · 第12层 卫生间 1
+  room_name: F1 办公楼 · 第12层 卫生间 1
+  room_name_en: Restroom F1L12WCR01
+  room_type: normal
+  room_code: F1L12WCR01
+  uns: hicampus/F1/L12/F1L12WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 12
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_13f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_13f
+  type_code: room
+  display_name: F1 办公楼 · 第13层 会议室 1
+  room_name: F1 办公楼 · 第13层 会议室 1
+  room_name_en: Meeting Room F1L13MTG01
+  room_type: special
+  room_code: F1L13MTG01
+  uns: hicampus/F1/L13/F1L13MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 13
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_13f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_13f
+  type_code: room
+  display_name: F1 办公楼 · 第13层 会议室 2
+  room_name: F1 办公楼 · 第13层 会议室 2
+  room_name_en: Meeting Room F1L13MTG02
+  room_type: special
+  room_code: F1L13MTG02
+  uns: hicampus/F1/L13/F1L13MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 13
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_13f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_13f
+  type_code: room
+  display_name: F1 办公楼 · 第13层 开放办公区 1
+  room_name: F1 办公楼 · 第13层 开放办公区 1
+  room_name_en: Open Office F1L13OFF01
+  room_type: office
+  room_code: F1L13OFF01
+  uns: hicampus/F1/L13/F1L13OFF01
+  room_short_description: 第13层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 13
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_13f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_13f
+  type_code: room
+  display_name: F1 办公楼 · 第13层 开放办公区 2
+  room_name: F1 办公楼 · 第13层 开放办公区 2
+  room_name_en: Open Office F1L13OFF02
+  room_type: office
+  room_code: F1L13OFF02
+  uns: hicampus/F1/L13/F1L13OFF02
+  room_short_description: 第13层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 13
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_13f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_13f
+  type_code: room
+  display_name: F1 办公楼 · 第13层 卫生间 1
+  room_name: F1 办公楼 · 第13层 卫生间 1
+  room_name_en: Restroom F1L13WCR01
+  room_type: normal
+  room_code: F1L13WCR01
+  uns: hicampus/F1/L13/F1L13WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 13
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_14f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_14f
+  type_code: room
+  display_name: F1 办公楼 · 第14层 会议室 1
+  room_name: F1 办公楼 · 第14层 会议室 1
+  room_name_en: Meeting Room F1L14MTG01
+  room_type: special
+  room_code: F1L14MTG01
+  uns: hicampus/F1/L14/F1L14MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 14
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_14f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_14f
+  type_code: room
+  display_name: F1 办公楼 · 第14层 会议室 2
+  room_name: F1 办公楼 · 第14层 会议室 2
+  room_name_en: Meeting Room F1L14MTG02
+  room_type: special
+  room_code: F1L14MTG02
+  uns: hicampus/F1/L14/F1L14MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 14
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_14f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_14f
+  type_code: room
+  display_name: F1 办公楼 · 第14层 开放办公区 1
+  room_name: F1 办公楼 · 第14层 开放办公区 1
+  room_name_en: Open Office F1L14OFF01
+  room_type: office
+  room_code: F1L14OFF01
+  uns: hicampus/F1/L14/F1L14OFF01
+  room_short_description: 第14层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 14
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_14f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_14f
+  type_code: room
+  display_name: F1 办公楼 · 第14层 开放办公区 2
+  room_name: F1 办公楼 · 第14层 开放办公区 2
+  room_name_en: Open Office F1L14OFF02
+  room_type: office
+  room_code: F1L14OFF02
+  uns: hicampus/F1/L14/F1L14OFF02
+  room_short_description: 第14层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 14
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_14f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_14f
+  type_code: room
+  display_name: F1 办公楼 · 第14层 卫生间 1
+  room_name: F1 办公楼 · 第14层 卫生间 1
+  room_name_en: Restroom F1L14WCR01
+  room_type: normal
+  room_code: F1L14WCR01
+  uns: hicampus/F1/L14/F1L14WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 14
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_15f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_15f
+  type_code: room
+  display_name: F1 办公楼 · 第15层 会议室 1
+  room_name: F1 办公楼 · 第15层 会议室 1
+  room_name_en: Meeting Room F1L15MTG01
+  room_type: special
+  room_code: F1L15MTG01
+  uns: hicampus/F1/L15/F1L15MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 15
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_15f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_15f
+  type_code: room
+  display_name: F1 办公楼 · 第15层 会议室 2
+  room_name: F1 办公楼 · 第15层 会议室 2
+  room_name_en: Meeting Room F1L15MTG02
+  room_type: special
+  room_code: F1L15MTG02
+  uns: hicampus/F1/L15/F1L15MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 15
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_15f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_15f
+  type_code: room
+  display_name: F1 办公楼 · 第15层 开放办公区 1
+  room_name: F1 办公楼 · 第15层 开放办公区 1
+  room_name_en: Open Office F1L15OFF01
+  room_type: office
+  room_code: F1L15OFF01
+  uns: hicampus/F1/L15/F1L15OFF01
+  room_short_description: 第15层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 15
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_15f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_15f
+  type_code: room
+  display_name: F1 办公楼 · 第15层 开放办公区 2
+  room_name: F1 办公楼 · 第15层 开放办公区 2
+  room_name_en: Open Office F1L15OFF02
+  room_type: office
+  room_code: F1L15OFF02
+  uns: hicampus/F1/L15/F1L15OFF02
+  room_short_description: 第15层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 15
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_15f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_15f
+  type_code: room
+  display_name: F1 办公楼 · 第15层 卫生间 1
+  room_name: F1 办公楼 · 第15层 卫生间 1
+  room_name_en: Restroom F1L15WCR01
+  room_type: normal
+  room_code: F1L15WCR01
+  uns: hicampus/F1/L15/F1L15WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 15
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_16f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_16f
+  type_code: room
+  display_name: F1 办公楼 · 第16层 会议室 1
+  room_name: F1 办公楼 · 第16层 会议室 1
+  room_name_en: Meeting Room F1L16MTG01
+  room_type: special
+  room_code: F1L16MTG01
+  uns: hicampus/F1/L16/F1L16MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 16
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_16f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_16f
+  type_code: room
+  display_name: F1 办公楼 · 第16层 会议室 2
+  room_name: F1 办公楼 · 第16层 会议室 2
+  room_name_en: Meeting Room F1L16MTG02
+  room_type: special
+  room_code: F1L16MTG02
+  uns: hicampus/F1/L16/F1L16MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 16
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_16f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_16f
+  type_code: room
+  display_name: F1 办公楼 · 第16层 开放办公区 1
+  room_name: F1 办公楼 · 第16层 开放办公区 1
+  room_name_en: Open Office F1L16OFF01
+  room_type: office
+  room_code: F1L16OFF01
+  uns: hicampus/F1/L16/F1L16OFF01
+  room_short_description: 第16层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 16
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_16f_office_02
+  world_id: hicampus
+  floor_id: hicampus_f1_16f
+  type_code: room
+  display_name: F1 办公楼 · 第16层 开放办公区 2
+  room_name: F1 办公楼 · 第16层 开放办公区 2
+  room_name_en: Open Office F1L16OFF02
+  room_type: office
+  room_code: F1L16OFF02
+  uns: hicampus/F1/L16/F1L16OFF02
+  room_short_description: 第16层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 16
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:office
+  - function:work
+- id: hicampus_f1_16f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_16f
+  type_code: room
+  display_name: F1 办公楼 · 第16层 卫生间 1
+  room_name: F1 办公楼 · 第16层 卫生间 1
+  room_name_en: Restroom F1L16WCR01
+  room_type: normal
+  room_code: F1L16WCR01
+  uns: hicampus/F1/L16/F1L16WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 16
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_17f_manager_01
+  world_id: hicampus
+  floor_id: hicampus_f1_17f
+  type_code: room
+  display_name: F1 办公楼 · 第17层 经理室 1
+  room_name: F1 办公楼 · 第17层 经理室 1
+  room_name_en: Manager Office F1L17MGR01
+  room_type: office
+  room_code: F1L17MGR01
+  uns: hicampus/F1/L17/F1L17MGR01
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 17
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_17f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_17f
+  type_code: room
+  display_name: F1 办公楼 · 第17层 会议室 1
+  room_name: F1 办公楼 · 第17层 会议室 1
+  room_name_en: Meeting Room F1L17MTG01
+  room_type: special
+  room_code: F1L17MTG01
+  uns: hicampus/F1/L17/F1L17MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 17
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_17f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_17f
+  type_code: room
+  display_name: F1 办公楼 · 第17层 会议室 2
+  room_name: F1 办公楼 · 第17层 会议室 2
+  room_name_en: Meeting Room F1L17MTG02
+  room_type: special
+  room_code: F1L17MTG02
+  uns: hicampus/F1/L17/F1L17MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 17
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_17f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_17f
+  type_code: room
+  display_name: F1 办公楼 · 第17层 开放办公区 1
+  room_name: F1 办公楼 · 第17层 开放办公区 1
+  room_name_en: Open Office F1L17OFF01
+  room_type: office
+  room_code: F1L17OFF01
+  uns: hicampus/F1/L17/F1L17OFF01
+  room_short_description: 第17层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 17
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:work
+- id: hicampus_f1_17f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_17f
+  type_code: room
+  display_name: F1 办公楼 · 第17层 卫生间 1
+  room_name: F1 办公楼 · 第17层 卫生间 1
+  room_name_en: Restroom F1L17WCR01
+  room_type: normal
+  room_code: F1L17WCR01
+  uns: hicampus/F1/L17/F1L17WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 17
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_18f_manager_01
+  world_id: hicampus
+  floor_id: hicampus_f1_18f
+  type_code: room
+  display_name: F1 办公楼 · 第18层 经理室 1
+  room_name: F1 办公楼 · 第18层 经理室 1
+  room_name_en: Manager Office F1L18MGR01
+  room_type: office
+  room_code: F1L18MGR01
+  uns: hicampus/F1/L18/F1L18MGR01
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 18
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_18f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_18f
+  type_code: room
+  display_name: F1 办公楼 · 第18层 会议室 1
+  room_name: F1 办公楼 · 第18层 会议室 1
+  room_name_en: Meeting Room F1L18MTG01
+  room_type: special
+  room_code: F1L18MTG01
+  uns: hicampus/F1/L18/F1L18MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 18
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_18f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_18f
+  type_code: room
+  display_name: F1 办公楼 · 第18层 会议室 2
+  room_name: F1 办公楼 · 第18层 会议室 2
+  room_name_en: Meeting Room F1L18MTG02
+  room_type: special
+  room_code: F1L18MTG02
+  uns: hicampus/F1/L18/F1L18MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 18
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_18f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_18f
+  type_code: room
+  display_name: F1 办公楼 · 第18层 开放办公区 1
+  room_name: F1 办公楼 · 第18层 开放办公区 1
+  room_name_en: Open Office F1L18OFF01
+  room_type: office
+  room_code: F1L18OFF01
+  uns: hicampus/F1/L18/F1L18OFF01
+  room_short_description: 第18层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 18
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:work
+- id: hicampus_f1_18f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_18f
+  type_code: room
+  display_name: F1 办公楼 · 第18层 卫生间 1
+  room_name: F1 办公楼 · 第18层 卫生间 1
+  room_name_en: Restroom F1L18WCR01
+  room_type: normal
+  room_code: F1L18WCR01
+  uns: hicampus/F1/L18/F1L18WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 18
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_19f_manager_01
+  world_id: hicampus
+  floor_id: hicampus_f1_19f
+  type_code: room
+  display_name: F1 办公楼 · 第19层 经理室 1
+  room_name: F1 办公楼 · 第19层 经理室 1
+  room_name_en: Manager Office F1L19MGR01
+  room_type: office
+  room_code: F1L19MGR01
+  uns: hicampus/F1/L19/F1L19MGR01
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 19
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_19f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_19f
+  type_code: room
+  display_name: F1 办公楼 · 第19层 会议室 1
+  room_name: F1 办公楼 · 第19层 会议室 1
+  room_name_en: Meeting Room F1L19MTG01
+  room_type: special
+  room_code: F1L19MTG01
+  uns: hicampus/F1/L19/F1L19MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 19
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_19f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_19f
+  type_code: room
+  display_name: F1 办公楼 · 第19层 会议室 2
+  room_name: F1 办公楼 · 第19层 会议室 2
+  room_name_en: Meeting Room F1L19MTG02
+  room_type: special
+  room_code: F1L19MTG02
+  uns: hicampus/F1/L19/F1L19MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 19
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_19f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_19f
+  type_code: room
+  display_name: F1 办公楼 · 第19层 开放办公区 1
+  room_name: F1 办公楼 · 第19层 开放办公区 1
+  room_name_en: Open Office F1L19OFF01
+  room_type: office
+  room_code: F1L19OFF01
+  uns: hicampus/F1/L19/F1L19OFF01
+  room_short_description: 第19层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 19
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:work
+- id: hicampus_f1_19f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_19f
+  type_code: room
+  display_name: F1 办公楼 · 第19层 卫生间 1
+  room_name: F1 办公楼 · 第19层 卫生间 1
+  room_name_en: Restroom F1L19WCR01
+  room_type: normal
+  room_code: F1L19WCR01
+  uns: hicampus/F1/L19/F1L19WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 19
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_20f_manager_01
+  world_id: hicampus
+  floor_id: hicampus_f1_20f
+  type_code: room
+  display_name: F1 办公楼 · 第20层 经理室 1
+  room_name: F1 办公楼 · 第20层 经理室 1
+  room_name_en: Manager Office F1L20MGR01
+  room_type: office
+  room_code: F1L20MGR01
+  uns: hicampus/F1/L20/F1L20MGR01
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 20
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_20f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_20f
+  type_code: room
+  display_name: F1 办公楼 · 第20层 会议室 1
+  room_name: F1 办公楼 · 第20层 会议室 1
+  room_name_en: Meeting Room F1L20MTG01
+  room_type: special
+  room_code: F1L20MTG01
+  uns: hicampus/F1/L20/F1L20MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 20
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_20f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_20f
+  type_code: room
+  display_name: F1 办公楼 · 第20层 会议室 2
+  room_name: F1 办公楼 · 第20层 会议室 2
+  room_name_en: Meeting Room F1L20MTG02
+  room_type: special
+  room_code: F1L20MTG02
+  uns: hicampus/F1/L20/F1L20MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 20
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_20f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_20f
+  type_code: room
+  display_name: F1 办公楼 · 第20层 开放办公区 1
+  room_name: F1 办公楼 · 第20层 开放办公区 1
+  room_name_en: Open Office F1L20OFF01
+  room_type: office
+  room_code: F1L20OFF01
+  uns: hicampus/F1/L20/F1L20OFF01
+  room_short_description: 第20层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 20
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:office
+  - function:work
+- id: hicampus_f1_20f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f1_20f
+  type_code: room
+  display_name: F1 办公楼 · 第20层 卫生间 1
+  room_name: F1 办公楼 · 第20层 卫生间 1
+  room_name_en: Restroom F1L20WCR01
+  room_type: normal
+  room_code: F1L20WCR01
+  uns: hicampus/F1/L20/F1L20WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 20
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f1_21f_manager_01
+  world_id: hicampus
+  floor_id: hicampus_f1_21f
+  type_code: room
+  display_name: F1 办公楼 · 第21层 经理室 1
+  room_name: F1 办公楼 · 第21层 经理室 1
+  room_name_en: Manager Office F1L21MGR01
+  room_type: office
+  room_code: F1L21MGR01
+  uns: hicampus/F1/L21/F1L21MGR01
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 21
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_21f_manager_02
+  world_id: hicampus
+  floor_id: hicampus_f1_21f
+  type_code: room
+  display_name: F1 办公楼 · 第21层 经理室 2
+  room_name: F1 办公楼 · 第21层 经理室 2
+  room_name_en: Manager Office F1L21MGR02
+  room_type: office
+  room_code: F1L21MGR02
+  uns: hicampus/F1/L21/F1L21MGR02
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 21
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_21f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_21f
+  type_code: room
+  display_name: F1 办公楼 · 第21层 会议室 1
+  room_name: F1 办公楼 · 第21层 会议室 1
+  room_name_en: Meeting Room F1L21MTG01
+  room_type: special
+  room_code: F1L21MTG01
+  uns: hicampus/F1/L21/F1L21MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 21
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_21f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_21f
+  type_code: room
+  display_name: F1 办公楼 · 第21层 会议室 2
+  room_name: F1 办公楼 · 第21层 会议室 2
+  room_name_en: Meeting Room F1L21MTG02
+  room_type: special
+  room_code: F1L21MTG02
+  uns: hicampus/F1/L21/F1L21MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 21
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_21f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_21f
+  type_code: room
+  display_name: F1 办公楼 · 第21层 开放办公区 1
+  room_name: F1 办公楼 · 第21层 开放办公区 1
+  room_name_en: Open Office F1L21OFF01
+  room_type: office
+  room_code: F1L21OFF01
+  uns: hicampus/F1/L21/F1L21OFF01
+  room_short_description: 第21层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 21
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:work
+- id: hicampus_f1_22f_manager_01
+  world_id: hicampus
+  floor_id: hicampus_f1_22f
+  type_code: room
+  display_name: F1 办公楼 · 第22层 经理室 1
+  room_name: F1 办公楼 · 第22层 经理室 1
+  room_name_en: Manager Office F1L22MGR01
+  room_type: office
+  room_code: F1L22MGR01
+  uns: hicampus/F1/L22/F1L22MGR01
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 22
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_22f_manager_02
+  world_id: hicampus
+  floor_id: hicampus_f1_22f
+  type_code: room
+  display_name: F1 办公楼 · 第22层 经理室 2
+  room_name: F1 办公楼 · 第22层 经理室 2
+  room_name_en: Manager Office F1L22MGR02
+  room_type: office
+  room_code: F1L22MGR02
+  uns: hicampus/F1/L22/F1L22MGR02
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 22
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_22f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_22f
+  type_code: room
+  display_name: F1 办公楼 · 第22层 会议室 1
+  room_name: F1 办公楼 · 第22层 会议室 1
+  room_name_en: Meeting Room F1L22MTG01
+  room_type: special
+  room_code: F1L22MTG01
+  uns: hicampus/F1/L22/F1L22MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 22
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_22f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_22f
+  type_code: room
+  display_name: F1 办公楼 · 第22层 会议室 2
+  room_name: F1 办公楼 · 第22层 会议室 2
+  room_name_en: Meeting Room F1L22MTG02
+  room_type: special
+  room_code: F1L22MTG02
+  uns: hicampus/F1/L22/F1L22MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 22
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_22f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_22f
+  type_code: room
+  display_name: F1 办公楼 · 第22层 开放办公区 1
+  room_name: F1 办公楼 · 第22层 开放办公区 1
+  room_name_en: Open Office F1L22OFF01
+  room_type: office
+  room_code: F1L22OFF01
+  uns: hicampus/F1/L22/F1L22OFF01
+  room_short_description: 第22层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 22
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:work
+- id: hicampus_f1_23f_manager_01
+  world_id: hicampus
+  floor_id: hicampus_f1_23f
+  type_code: room
+  display_name: F1 办公楼 · 第23层 经理室 1
+  room_name: F1 办公楼 · 第23层 经理室 1
+  room_name_en: Manager Office F1L23MGR01
+  room_type: office
+  room_code: F1L23MGR01
+  uns: hicampus/F1/L23/F1L23MGR01
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 23
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_23f_manager_02
+  world_id: hicampus
+  floor_id: hicampus_f1_23f
+  type_code: room
+  display_name: F1 办公楼 · 第23层 经理室 2
+  room_name: F1 办公楼 · 第23层 经理室 2
+  room_name_en: Manager Office F1L23MGR02
+  room_type: office
+  room_code: F1L23MGR02
+  uns: hicampus/F1/L23/F1L23MGR02
+  room_short_description: 独立办公与小型会谈。
+  room_description: 独立隔间，配小型沙发与书柜；窗外为园区或内院景观，适合一对一沟通。
+  room_ambiance: 相对安静，偶有电话铃。
+  room_floor: 23
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:manager
+  - access:staff
+- id: hicampus_f1_23f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f1_23f
+  type_code: room
+  display_name: F1 办公楼 · 第23层 会议室 1
+  room_name: F1 办公楼 · 第23层 会议室 1
+  room_name_en: Meeting Room F1L23MTG01
+  room_type: special
+  room_code: F1L23MTG01
+  uns: hicampus/F1/L23/F1L23MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 23
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_23f_meeting_02
+  world_id: hicampus
+  floor_id: hicampus_f1_23f
+  type_code: room
+  display_name: F1 办公楼 · 第23层 会议室 2
+  room_name: F1 办公楼 · 第23层 会议室 2
+  room_name_en: Meeting Room F1L23MTG02
+  room_type: special
+  room_code: F1L23MTG02
+  uns: hicampus/F1/L23/F1L23MTG02
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 23
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f1_23f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f1_23f
+  type_code: room
+  display_name: F1 办公楼 · 第23层 开放办公区 1
+  room_name: F1 办公楼 · 第23层 开放办公区 1
+  room_name_en: Open Office F1L23OFF01
+  room_type: office
+  room_code: F1L23OFF01
+  uns: hicampus/F1/L23/F1L23OFF01
+  room_short_description: 第23层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 23
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:office
+  - function:work
+- id: hicampus_f2_01f_canteen_dining_01
+  world_id: hicampus
+  floor_id: hicampus_f2_01f
+  type_code: room
+  display_name: F2 餐饮中心 · 首层 就餐区 1
+  room_name: F2 餐饮中心 · 首层 就餐区 1
+  room_name_en: Dining Area F2L01DIN01
+  room_type: normal
+  room_code: F2L01DIN01
+  uns: hicampus/F2/L01/F2L01DIN01
+  room_short_description: 集中就餐与回收动线。
+  room_description: 餐桌分区布置，收餐口与垃圾分类点就近设置；餐峰人流大、需排队。
+  room_ambiance: 餐盘碰撞声与交谈嘈杂。
+  room_floor: 1
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:dining
+  - function:canteen
+  - zone:public
+- id: hicampus_f2_01f_canteen_dining_02
+  world_id: hicampus
+  floor_id: hicampus_f2_01f
+  type_code: room
+  display_name: F2 餐饮中心 · 首层 就餐区 2
+  room_name: F2 餐饮中心 · 首层 就餐区 2
+  room_name_en: Dining Area F2L01DIN02
+  room_type: normal
+  room_code: F2L01DIN02
+  uns: hicampus/F2/L01/F2L01DIN02
+  room_short_description: 集中就餐与回收动线。
+  room_description: 餐桌分区布置，收餐口与垃圾分类点就近设置；餐峰人流大、需排队。
+  room_ambiance: 餐盘碰撞声与交谈嘈杂。
+  room_floor: 1
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:dining
+  - function:canteen
+  - zone:public
+- id: hicampus_f2_01f_kitchen_01
+  world_id: hicampus
+  floor_id: hicampus_f2_01f
+  type_code: room
+  display_name: F2 餐饮中心 · 首层 备餐间 1
+  room_name: F2 餐饮中心 · 首层 备餐间 1
+  room_name_en: Kitchen Back F2L01KIT01
+  room_type: special
+  room_code: F2L01KIT01
+  uns: hicampus/F2/L01/F2L01KIT01
+  room_short_description: 后厨与备餐通道。
+  room_description: 不锈钢操作台与排烟系统；与就餐区通过传菜口或独立门分隔。
+  room_ambiance: 油烟机与设备运转声。
+  room_floor: 1
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:kitchen
+  - function:canteen
+  - access:staff
+- id: hicampus_f2_01f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f2_01f
+  type_code: room
+  display_name: F2 餐饮中心 · 首层 卫生间 1
+  room_name: F2 餐饮中心 · 首层 卫生间 1
+  room_name_en: Restroom F2L01WCR01
+  room_type: normal
+  room_code: F2L01WCR01
+  uns: hicampus/F2/L01/F2L01WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 1
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f2_01f_storage_01
+  world_id: hicampus
+  floor_id: hicampus_f2_01f
+  type_code: room
+  display_name: F2 餐饮中心 · 首层 库房 1
+  room_name: F2 餐饮中心 · 首层 库房 1
+  room_name_en: Storage F2L01STO01
+  room_type: normal
+  room_code: F2L01STO01
+  uns: hicampus/F2/L01/F2L01STO01
+  room_short_description: 杂物与耗材暂存。
+  room_description: 货架与托盘位，温湿度按物资要求管理；需登记领用。
+  room_ambiance: 安静，偶有推车声。
+  room_floor: 1
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:storage
+  - function:logistics
+- id: hicampus_f2_02f_canteen_dining_01
+  world_id: hicampus
+  floor_id: hicampus_f2_02f
+  type_code: room
+  display_name: F2 餐饮中心 · 第2层 就餐区 1
+  room_name: F2 餐饮中心 · 第2层 就餐区 1
+  room_name_en: Dining Area F2L02DIN01
+  room_type: normal
+  room_code: F2L02DIN01
+  uns: hicampus/F2/L02/F2L02DIN01
+  room_short_description: 集中就餐与回收动线。
+  room_description: 餐桌分区布置，收餐口与垃圾分类点就近设置；餐峰人流大、需排队。
+  room_ambiance: 餐盘碰撞声与交谈嘈杂。
+  room_floor: 2
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:dining
+  - function:canteen
+  - zone:public
+- id: hicampus_f2_02f_canteen_dining_02
+  world_id: hicampus
+  floor_id: hicampus_f2_02f
+  type_code: room
+  display_name: F2 餐饮中心 · 第2层 就餐区 2
+  room_name: F2 餐饮中心 · 第2层 就餐区 2
+  room_name_en: Dining Area F2L02DIN02
+  room_type: normal
+  room_code: F2L02DIN02
+  uns: hicampus/F2/L02/F2L02DIN02
+  room_short_description: 集中就餐与回收动线。
+  room_description: 餐桌分区布置，收餐口与垃圾分类点就近设置；餐峰人流大、需排队。
+  room_ambiance: 餐盘碰撞声与交谈嘈杂。
+  room_floor: 2
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:dining
+  - function:canteen
+  - zone:public
+- id: hicampus_f2_02f_kitchen_01
+  world_id: hicampus
+  floor_id: hicampus_f2_02f
+  type_code: room
+  display_name: F2 餐饮中心 · 第2层 备餐间 1
+  room_name: F2 餐饮中心 · 第2层 备餐间 1
+  room_name_en: Kitchen Back F2L02KIT01
+  room_type: special
+  room_code: F2L02KIT01
+  uns: hicampus/F2/L02/F2L02KIT01
+  room_short_description: 后厨与备餐通道。
+  room_description: 不锈钢操作台与排烟系统；与就餐区通过传菜口或独立门分隔。
+  room_ambiance: 油烟机与设备运转声。
+  room_floor: 2
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:kitchen
+  - function:canteen
+  - access:staff
+- id: hicampus_f2_02f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f2_02f
+  type_code: room
+  display_name: F2 餐饮中心 · 第2层 卫生间 1
+  room_name: F2 餐饮中心 · 第2层 卫生间 1
+  room_name_en: Restroom F2L02WCR01
+  room_type: normal
+  room_code: F2L02WCR01
+  uns: hicampus/F2/L02/F2L02WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 2
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f2_02f_storage_01
+  world_id: hicampus
+  floor_id: hicampus_f2_02f
+  type_code: room
+  display_name: F2 餐饮中心 · 第2层 库房 1
+  room_name: F2 餐饮中心 · 第2层 库房 1
+  room_name_en: Storage F2L02STO01
+  room_type: normal
+  room_code: F2L02STO01
+  uns: hicampus/F2/L02/F2L02STO01
+  room_short_description: 杂物与耗材暂存。
+  room_description: 货架与托盘位，温湿度按物资要求管理；需登记领用。
+  room_ambiance: 安静，偶有推车声。
+  room_floor: 2
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:storage
+  - function:logistics
+- id: hicampus_f2_03f_canteen_dining_01
+  world_id: hicampus
+  floor_id: hicampus_f2_03f
+  type_code: room
+  display_name: F2 餐饮中心 · 第3层 就餐区 1
+  room_name: F2 餐饮中心 · 第3层 就餐区 1
+  room_name_en: Dining Area F2L03DIN01
+  room_type: normal
+  room_code: F2L03DIN01
+  uns: hicampus/F2/L03/F2L03DIN01
+  room_short_description: 集中就餐与回收动线。
+  room_description: 餐桌分区布置，收餐口与垃圾分类点就近设置；餐峰人流大、需排队。
+  room_ambiance: 餐盘碰撞声与交谈嘈杂。
+  room_floor: 3
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:dining
+  - function:canteen
+  - zone:public
+- id: hicampus_f2_03f_canteen_dining_02
+  world_id: hicampus
+  floor_id: hicampus_f2_03f
+  type_code: room
+  display_name: F2 餐饮中心 · 第3层 就餐区 2
+  room_name: F2 餐饮中心 · 第3层 就餐区 2
+  room_name_en: Dining Area F2L03DIN02
+  room_type: normal
+  room_code: F2L03DIN02
+  uns: hicampus/F2/L03/F2L03DIN02
+  room_short_description: 集中就餐与回收动线。
+  room_description: 餐桌分区布置，收餐口与垃圾分类点就近设置；餐峰人流大、需排队。
+  room_ambiance: 餐盘碰撞声与交谈嘈杂。
+  room_floor: 3
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:dining
+  - function:canteen
+  - zone:public
+- id: hicampus_f2_03f_kitchen_01
+  world_id: hicampus
+  floor_id: hicampus_f2_03f
+  type_code: room
+  display_name: F2 餐饮中心 · 第3层 备餐间 1
+  room_name: F2 餐饮中心 · 第3层 备餐间 1
+  room_name_en: Kitchen Back F2L03KIT01
+  room_type: special
+  room_code: F2L03KIT01
+  uns: hicampus/F2/L03/F2L03KIT01
+  room_short_description: 后厨与备餐通道。
+  room_description: 不锈钢操作台与排烟系统；与就餐区通过传菜口或独立门分隔。
+  room_ambiance: 油烟机与设备运转声。
+  room_floor: 3
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:kitchen
+  - function:canteen
+  - access:staff
+- id: hicampus_f2_03f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f2_03f
+  type_code: room
+  display_name: F2 餐饮中心 · 第3层 卫生间 1
+  room_name: F2 餐饮中心 · 第3层 卫生间 1
+  room_name_en: Restroom F2L03WCR01
+  room_type: normal
+  room_code: F2L03WCR01
+  uns: hicampus/F2/L03/F2L03WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 3
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f2_03f_storage_01
+  world_id: hicampus
+  floor_id: hicampus_f2_03f
+  type_code: room
+  display_name: F2 餐饮中心 · 第3层 库房 1
+  room_name: F2 餐饮中心 · 第3层 库房 1
+  room_name_en: Storage F2L03STO01
+  room_type: normal
+  room_code: F2L03STO01
+  uns: hicampus/F2/L03/F2L03STO01
+  room_short_description: 杂物与耗材暂存。
+  room_description: 货架与托盘位，温湿度按物资要求管理；需登记领用。
+  room_ambiance: 安静，偶有推车声。
+  room_floor: 3
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:storage
+  - function:logistics
+- id: hicampus_f3_01f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f3_01f
+  type_code: room
+  display_name: F3 培训中心 · 首层 交通核 1
+  room_name: F3 培训中心 · 首层 交通核 1
+  room_name_en: Circulation Core F3L01COR01
+  room_type: circulation
+  room_code: F3L01COR01
+  uns: hicampus/F3/L01/F3L01COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 1
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:circulation
+  - zone:public
+- id: hicampus_f3_01f_classroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_01f
+  type_code: room
+  display_name: F3 培训中心 · 首层 教室 1
+  room_name: F3 培训中心 · 首层 教室 1
+  room_name_en: Classroom F3L01CLS01
+  room_type: classroom
+  room_code: F3L01CLS01
+  uns: hicampus/F3/L01/F3L01CLS01
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 1
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:classroom
+  - function:training
+- id: hicampus_f3_01f_classroom_02
+  world_id: hicampus
+  floor_id: hicampus_f3_01f
+  type_code: room
+  display_name: F3 培训中心 · 首层 教室 2
+  room_name: F3 培训中心 · 首层 教室 2
+  room_name_en: Classroom F3L01CLS02
+  room_type: classroom
+  room_code: F3L01CLS02
+  uns: hicampus/F3/L01/F3L01CLS02
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 1
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:classroom
+  - function:training
+- id: hicampus_f3_01f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f3_01f
+  type_code: room
+  display_name: F3 培训中心 · 首层 开放办公区 1
+  room_name: F3 培训中心 · 首层 开放办公区 1
+  room_name_en: Open Office F3L01OFF01
+  room_type: office
+  room_code: F3L01OFF01
+  uns: hicampus/F3/L01/F3L01OFF01
+  room_short_description: 首层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 1
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:office
+  - function:work
+- id: hicampus_f3_01f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_01f
+  type_code: room
+  display_name: F3 培训中心 · 首层 卫生间 1
+  room_name: F3 培训中心 · 首层 卫生间 1
+  room_name_en: Restroom F3L01WCR01
+  room_type: normal
+  room_code: F3L01WCR01
+  uns: hicampus/F3/L01/F3L01WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 1
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f3_02f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f3_02f
+  type_code: room
+  display_name: F3 培训中心 · 第2层 交通核 1
+  room_name: F3 培训中心 · 第2层 交通核 1
+  room_name_en: Circulation Core F3L02COR01
+  room_type: circulation
+  room_code: F3L02COR01
+  uns: hicampus/F3/L02/F3L02COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 2
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:circulation
+  - zone:public
+- id: hicampus_f3_02f_classroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_02f
+  type_code: room
+  display_name: F3 培训中心 · 第2层 教室 1
+  room_name: F3 培训中心 · 第2层 教室 1
+  room_name_en: Classroom F3L02CLS01
+  room_type: classroom
+  room_code: F3L02CLS01
+  uns: hicampus/F3/L02/F3L02CLS01
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 2
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:classroom
+  - function:training
+- id: hicampus_f3_02f_classroom_02
+  world_id: hicampus
+  floor_id: hicampus_f3_02f
+  type_code: room
+  display_name: F3 培训中心 · 第2层 教室 2
+  room_name: F3 培训中心 · 第2层 教室 2
+  room_name_en: Classroom F3L02CLS02
+  room_type: classroom
+  room_code: F3L02CLS02
+  uns: hicampus/F3/L02/F3L02CLS02
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 2
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:classroom
+  - function:training
+- id: hicampus_f3_02f_office_01
+  world_id: hicampus
+  floor_id: hicampus_f3_02f
+  type_code: room
+  display_name: F3 培训中心 · 第2层 开放办公区 1
+  room_name: F3 培训中心 · 第2层 开放办公区 1
+  room_name_en: Open Office F3L02OFF01
+  room_type: office
+  room_code: F3L02OFF01
+  uns: hicampus/F3/L02/F3L02OFF01
+  room_short_description: 第2层开放工位与协作位。
+  room_description: 工位分区清晰，靠窗侧采光良好；白板与储物柜沿墙布置，适合日常研发与站会。
+  room_ambiance: 键盘声与简短讨论交替。
+  room_floor: 2
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:office
+  - function:work
+- id: hicampus_f3_02f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_02f
+  type_code: room
+  display_name: F3 培训中心 · 第2层 卫生间 1
+  room_name: F3 培训中心 · 第2层 卫生间 1
+  room_name_en: Restroom F3L02WCR01
+  room_type: normal
+  room_code: F3L02WCR01
+  uns: hicampus/F3/L02/F3L02WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 2
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:entry
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f3_03f_classroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_03f
+  type_code: room
+  display_name: F3 培训中心 · 第3层 教室 1
+  room_name: F3 培训中心 · 第3层 教室 1
+  room_name_en: Classroom F3L03CLS01
+  room_type: classroom
+  room_code: F3L03CLS01
+  uns: hicampus/F3/L03/F3L03CLS01
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 3
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_03f_classroom_02
+  world_id: hicampus
+  floor_id: hicampus_f3_03f
+  type_code: room
+  display_name: F3 培训中心 · 第3层 教室 2
+  room_name: F3 培训中心 · 第3层 教室 2
+  room_name_en: Classroom F3L03CLS02
+  room_type: classroom
+  room_code: F3L03CLS02
+  uns: hicampus/F3/L03/F3L03CLS02
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 3
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_03f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f3_03f
+  type_code: room
+  display_name: F3 培训中心 · 第3层 实验室 1
+  room_name: F3 培训中心 · 第3层 实验室 1
+  room_name_en: Laboratory F3L03LAB01
+  room_type: lab
+  room_code: F3L03LAB01
+  uns: hicampus/F3/L03/F3L03LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 3
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:lab
+  - function:research
+- id: hicampus_f3_03f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f3_03f
+  type_code: room
+  display_name: F3 培训中心 · 第3层 会议室 1
+  room_name: F3 培训中心 · 第3层 会议室 1
+  room_name_en: Meeting Room F3L03MTG01
+  room_type: special
+  room_code: F3L03MTG01
+  uns: hicampus/F3/L03/F3L03MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 3
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f3_03f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_03f
+  type_code: room
+  display_name: F3 培训中心 · 第3层 卫生间 1
+  room_name: F3 培训中心 · 第3层 卫生间 1
+  room_name_en: Restroom F3L03WCR01
+  room_type: normal
+  room_code: F3L03WCR01
+  uns: hicampus/F3/L03/F3L03WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 3
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f3_04f_classroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_04f
+  type_code: room
+  display_name: F3 培训中心 · 第4层 教室 1
+  room_name: F3 培训中心 · 第4层 教室 1
+  room_name_en: Classroom F3L04CLS01
+  room_type: classroom
+  room_code: F3L04CLS01
+  uns: hicampus/F3/L04/F3L04CLS01
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 4
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_04f_classroom_02
+  world_id: hicampus
+  floor_id: hicampus_f3_04f
+  type_code: room
+  display_name: F3 培训中心 · 第4层 教室 2
+  room_name: F3 培训中心 · 第4层 教室 2
+  room_name_en: Classroom F3L04CLS02
+  room_type: classroom
+  room_code: F3L04CLS02
+  uns: hicampus/F3/L04/F3L04CLS02
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 4
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_04f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f3_04f
+  type_code: room
+  display_name: F3 培训中心 · 第4层 实验室 1
+  room_name: F3 培训中心 · 第4层 实验室 1
+  room_name_en: Laboratory F3L04LAB01
+  room_type: lab
+  room_code: F3L04LAB01
+  uns: hicampus/F3/L04/F3L04LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 4
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:lab
+  - function:research
+- id: hicampus_f3_04f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f3_04f
+  type_code: room
+  display_name: F3 培训中心 · 第4层 会议室 1
+  room_name: F3 培训中心 · 第4层 会议室 1
+  room_name_en: Meeting Room F3L04MTG01
+  room_type: special
+  room_code: F3L04MTG01
+  uns: hicampus/F3/L04/F3L04MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 4
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f3_04f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_04f
+  type_code: room
+  display_name: F3 培训中心 · 第4层 卫生间 1
+  room_name: F3 培训中心 · 第4层 卫生间 1
+  room_name_en: Restroom F3L04WCR01
+  room_type: normal
+  room_code: F3L04WCR01
+  uns: hicampus/F3/L04/F3L04WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 4
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f3_05f_classroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_05f
+  type_code: room
+  display_name: F3 培训中心 · 第5层 教室 1
+  room_name: F3 培训中心 · 第5层 教室 1
+  room_name_en: Classroom F3L05CLS01
+  room_type: classroom
+  room_code: F3L05CLS01
+  uns: hicampus/F3/L05/F3L05CLS01
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 5
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_05f_classroom_02
+  world_id: hicampus
+  floor_id: hicampus_f3_05f
+  type_code: room
+  display_name: F3 培训中心 · 第5层 教室 2
+  room_name: F3 培训中心 · 第5层 教室 2
+  room_name_en: Classroom F3L05CLS02
+  room_type: classroom
+  room_code: F3L05CLS02
+  uns: hicampus/F3/L05/F3L05CLS02
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 5
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_05f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f3_05f
+  type_code: room
+  display_name: F3 培训中心 · 第5层 实验室 1
+  room_name: F3 培训中心 · 第5层 实验室 1
+  room_name_en: Laboratory F3L05LAB01
+  room_type: lab
+  room_code: F3L05LAB01
+  uns: hicampus/F3/L05/F3L05LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 5
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:lab
+  - function:research
+- id: hicampus_f3_05f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f3_05f
+  type_code: room
+  display_name: F3 培训中心 · 第5层 会议室 1
+  room_name: F3 培训中心 · 第5层 会议室 1
+  room_name_en: Meeting Room F3L05MTG01
+  room_type: special
+  room_code: F3L05MTG01
+  uns: hicampus/F3/L05/F3L05MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 5
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f3_05f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_05f
+  type_code: room
+  display_name: F3 培训中心 · 第5层 卫生间 1
+  room_name: F3 培训中心 · 第5层 卫生间 1
+  room_name_en: Restroom F3L05WCR01
+  room_type: normal
+  room_code: F3L05WCR01
+  uns: hicampus/F3/L05/F3L05WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 5
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f3_06f_classroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_06f
+  type_code: room
+  display_name: F3 培训中心 · 第6层 教室 1
+  room_name: F3 培训中心 · 第6层 教室 1
+  room_name_en: Classroom F3L06CLS01
+  room_type: classroom
+  room_code: F3L06CLS01
+  uns: hicampus/F3/L06/F3L06CLS01
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 6
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_06f_classroom_02
+  world_id: hicampus
+  floor_id: hicampus_f3_06f
+  type_code: room
+  display_name: F3 培训中心 · 第6层 教室 2
+  room_name: F3 培训中心 · 第6层 教室 2
+  room_name_en: Classroom F3L06CLS02
+  room_type: classroom
+  room_code: F3L06CLS02
+  uns: hicampus/F3/L06/F3L06CLS02
+  room_short_description: 授课与上机实训。
+  room_description: 投影或智慧黑板、可移动桌椅；后排插座便于笔记本使用。
+  room_ambiance: 讲课声与键盘练习声。
+  room_floor: 6
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:classroom
+  - function:training
+- id: hicampus_f3_06f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f3_06f
+  type_code: room
+  display_name: F3 培训中心 · 第6层 实验室 1
+  room_name: F3 培训中心 · 第6层 实验室 1
+  room_name_en: Laboratory F3L06LAB01
+  room_type: lab
+  room_code: F3L06LAB01
+  uns: hicampus/F3/L06/F3L06LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 6
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:lab
+  - function:research
+- id: hicampus_f3_06f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f3_06f
+  type_code: room
+  display_name: F3 培训中心 · 第6层 会议室 1
+  room_name: F3 培训中心 · 第6层 会议室 1
+  room_name_en: Meeting Room F3L06MTG01
+  room_type: special
+  room_code: F3L06MTG01
+  uns: hicampus/F3/L06/F3L06MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 6
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f3_06f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f3_06f
+  type_code: room
+  display_name: F3 培训中心 · 第6层 卫生间 1
+  room_name: F3 培训中心 · 第6层 卫生间 1
+  room_name_en: Restroom F3L06WCR01
+  room_type: normal
+  room_code: F3L06WCR01
+  uns: hicampus/F3/L06/F3L06WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 6
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f4_01f_electrical_01
+  world_id: hicampus
+  floor_id: hicampus_f4_01f
+  type_code: room
+  display_name: F4 实验楼 · 首层 配电间 1
+  room_name: F4 实验楼 · 首层 配电间 1
+  room_name_en: Electrical Room F4L01ELE01
+  room_type: special
+  room_code: F4L01ELE01
+  uns: hicampus/F4/L01/F4L01ELE01
+  room_short_description: 楼层配电与分闸。
+  room_description: 金属门常闭，内部为配电柜与标签清晰的回路标识；仅授权人员进入维护。
+  room_ambiance: 设备低鸣，温度略高。
+  room_floor: 1
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:electrical
+  - function:infrastructure
+  - access:staff
+- id: hicampus_f4_01f_monitoring_01
+  world_id: hicampus
+  floor_id: hicampus_f4_01f
+  type_code: room
+  display_name: F4 实验楼 · 首层 监控室 1
+  room_name: F4 实验楼 · 首层 监控室 1
+  room_name_en: Security Monitoring F4L01SEC01
+  room_type: special
+  room_code: F4L01SEC01
+  uns: hicampus/F4/L01/F4L01SEC01
+  room_short_description: 安防与消防值班监视终端。
+  room_description: 多屏显示公区与出入口画面，与消控策略联动；24 小时或分时值守。
+  room_ambiance: 显示器风扇声与偶尔对讲。
+  room_floor: 1
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:monitoring
+  - function:security
+  - access:staff
+- id: hicampus_f4_01f_prep_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_01f
+  type_code: room
+  display_name: F4 实验楼 · 首层 实验准备室 1
+  room_name: F4 实验楼 · 首层 实验准备室 1
+  room_name_en: Lab Prep F4L01PRE01
+  room_type: lab
+  room_code: F4L01PRE01
+  uns: hicampus/F4/L01/F4L01PRE01
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 1
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:lab
+  - function:prep
+- id: hicampus_f4_01f_prep_lab_02
+  world_id: hicampus
+  floor_id: hicampus_f4_01f
+  type_code: room
+  display_name: F4 实验楼 · 首层 实验准备室 2
+  room_name: F4 实验楼 · 首层 实验准备室 2
+  room_name_en: Lab Prep F4L01PRE02
+  room_type: lab
+  room_code: F4L01PRE02
+  uns: hicampus/F4/L01/F4L01PRE02
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 1
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:lab
+  - function:prep
+- id: hicampus_f4_01f_storage_01
+  world_id: hicampus
+  floor_id: hicampus_f4_01f
+  type_code: room
+  display_name: F4 实验楼 · 首层 库房 1
+  room_name: F4 实验楼 · 首层 库房 1
+  room_name_en: Storage F4L01STO01
+  room_type: normal
+  room_code: F4L01STO01
+  uns: hicampus/F4/L01/F4L01STO01
+  room_short_description: 杂物与耗材暂存。
+  room_description: 货架与托盘位，温湿度按物资要求管理；需登记领用。
+  room_ambiance: 安静，偶有推车声。
+  room_floor: 1
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:storage
+  - function:logistics
+- id: hicampus_f4_02f_electrical_01
+  world_id: hicampus
+  floor_id: hicampus_f4_02f
+  type_code: room
+  display_name: F4 实验楼 · 第2层 配电间 1
+  room_name: F4 实验楼 · 第2层 配电间 1
+  room_name_en: Electrical Room F4L02ELE01
+  room_type: special
+  room_code: F4L02ELE01
+  uns: hicampus/F4/L02/F4L02ELE01
+  room_short_description: 楼层配电与分闸。
+  room_description: 金属门常闭，内部为配电柜与标签清晰的回路标识；仅授权人员进入维护。
+  room_ambiance: 设备低鸣，温度略高。
+  room_floor: 2
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:electrical
+  - function:infrastructure
+  - access:staff
+- id: hicampus_f4_02f_monitoring_01
+  world_id: hicampus
+  floor_id: hicampus_f4_02f
+  type_code: room
+  display_name: F4 实验楼 · 第2层 监控室 1
+  room_name: F4 实验楼 · 第2层 监控室 1
+  room_name_en: Security Monitoring F4L02SEC01
+  room_type: special
+  room_code: F4L02SEC01
+  uns: hicampus/F4/L02/F4L02SEC01
+  room_short_description: 安防与消防值班监视终端。
+  room_description: 多屏显示公区与出入口画面，与消控策略联动；24 小时或分时值守。
+  room_ambiance: 显示器风扇声与偶尔对讲。
+  room_floor: 2
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:monitoring
+  - function:security
+  - access:staff
+- id: hicampus_f4_02f_prep_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_02f
+  type_code: room
+  display_name: F4 实验楼 · 第2层 实验准备室 1
+  room_name: F4 实验楼 · 第2层 实验准备室 1
+  room_name_en: Lab Prep F4L02PRE01
+  room_type: lab
+  room_code: F4L02PRE01
+  uns: hicampus/F4/L02/F4L02PRE01
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 2
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:lab
+  - function:prep
+- id: hicampus_f4_02f_prep_lab_02
+  world_id: hicampus
+  floor_id: hicampus_f4_02f
+  type_code: room
+  display_name: F4 实验楼 · 第2层 实验准备室 2
+  room_name: F4 实验楼 · 第2层 实验准备室 2
+  room_name_en: Lab Prep F4L02PRE02
+  room_type: lab
+  room_code: F4L02PRE02
+  uns: hicampus/F4/L02/F4L02PRE02
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 2
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:lab
+  - function:prep
+- id: hicampus_f4_02f_storage_01
+  world_id: hicampus
+  floor_id: hicampus_f4_02f
+  type_code: room
+  display_name: F4 实验楼 · 第2层 库房 1
+  room_name: F4 实验楼 · 第2层 库房 1
+  room_name_en: Storage F4L02STO01
+  room_type: normal
+  room_code: F4L02STO01
+  uns: hicampus/F4/L02/F4L02STO01
+  room_short_description: 杂物与耗材暂存。
+  room_description: 货架与托盘位，温湿度按物资要求管理；需登记领用。
+  room_ambiance: 安静，偶有推车声。
+  room_floor: 2
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:storage
+  - function:logistics
+- id: hicampus_f4_03f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_03f
+  type_code: room
+  display_name: F4 实验楼 · 第3层 实验室 1
+  room_name: F4 实验楼 · 第3层 实验室 1
+  room_name_en: Laboratory F4L03LAB01
+  room_type: lab
+  room_code: F4L03LAB01
+  uns: hicampus/F4/L03/F4L03LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 3
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_03f_lab_02
+  world_id: hicampus
+  floor_id: hicampus_f4_03f
+  type_code: room
+  display_name: F4 实验楼 · 第3层 实验室 2
+  room_name: F4 实验楼 · 第3层 实验室 2
+  room_name_en: Laboratory F4L03LAB02
+  room_type: lab
+  room_code: F4L03LAB02
+  uns: hicampus/F4/L03/F4L03LAB02
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 3
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_03f_lab_03
+  world_id: hicampus
+  floor_id: hicampus_f4_03f
+  type_code: room
+  display_name: F4 实验楼 · 第3层 实验室 3
+  room_name: F4 实验楼 · 第3层 实验室 3
+  room_name_en: Laboratory F4L03LAB03
+  room_type: lab
+  room_code: F4L03LAB03
+  uns: hicampus/F4/L03/F4L03LAB03
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 3
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_03f_prep_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_03f
+  type_code: room
+  display_name: F4 实验楼 · 第3层 实验准备室 1
+  room_name: F4 实验楼 · 第3层 实验准备室 1
+  room_name_en: Lab Prep F4L03PRE01
+  room_type: lab
+  room_code: F4L03PRE01
+  uns: hicampus/F4/L03/F4L03PRE01
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 3
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:prep
+- id: hicampus_f4_03f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f4_03f
+  type_code: room
+  display_name: F4 实验楼 · 第3层 卫生间 1
+  room_name: F4 实验楼 · 第3层 卫生间 1
+  room_name_en: Restroom F4L03WCR01
+  room_type: normal
+  room_code: F4L03WCR01
+  uns: hicampus/F4/L03/F4L03WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 3
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f4_04f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_04f
+  type_code: room
+  display_name: F4 实验楼 · 第4层 实验室 1
+  room_name: F4 实验楼 · 第4层 实验室 1
+  room_name_en: Laboratory F4L04LAB01
+  room_type: lab
+  room_code: F4L04LAB01
+  uns: hicampus/F4/L04/F4L04LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 4
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_04f_lab_02
+  world_id: hicampus
+  floor_id: hicampus_f4_04f
+  type_code: room
+  display_name: F4 实验楼 · 第4层 实验室 2
+  room_name: F4 实验楼 · 第4层 实验室 2
+  room_name_en: Laboratory F4L04LAB02
+  room_type: lab
+  room_code: F4L04LAB02
+  uns: hicampus/F4/L04/F4L04LAB02
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 4
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_04f_lab_03
+  world_id: hicampus
+  floor_id: hicampus_f4_04f
+  type_code: room
+  display_name: F4 实验楼 · 第4层 实验室 3
+  room_name: F4 实验楼 · 第4层 实验室 3
+  room_name_en: Laboratory F4L04LAB03
+  room_type: lab
+  room_code: F4L04LAB03
+  uns: hicampus/F4/L04/F4L04LAB03
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 4
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_04f_prep_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_04f
+  type_code: room
+  display_name: F4 实验楼 · 第4层 实验准备室 1
+  room_name: F4 实验楼 · 第4层 实验准备室 1
+  room_name_en: Lab Prep F4L04PRE01
+  room_type: lab
+  room_code: F4L04PRE01
+  uns: hicampus/F4/L04/F4L04PRE01
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 4
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:prep
+- id: hicampus_f4_04f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f4_04f
+  type_code: room
+  display_name: F4 实验楼 · 第4层 卫生间 1
+  room_name: F4 实验楼 · 第4层 卫生间 1
+  room_name_en: Restroom F4L04WCR01
+  room_type: normal
+  room_code: F4L04WCR01
+  uns: hicampus/F4/L04/F4L04WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 4
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f4_05f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_05f
+  type_code: room
+  display_name: F4 实验楼 · 第5层 实验室 1
+  room_name: F4 实验楼 · 第5层 实验室 1
+  room_name_en: Laboratory F4L05LAB01
+  room_type: lab
+  room_code: F4L05LAB01
+  uns: hicampus/F4/L05/F4L05LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 5
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_05f_lab_02
+  world_id: hicampus
+  floor_id: hicampus_f4_05f
+  type_code: room
+  display_name: F4 实验楼 · 第5层 实验室 2
+  room_name: F4 实验楼 · 第5层 实验室 2
+  room_name_en: Laboratory F4L05LAB02
+  room_type: lab
+  room_code: F4L05LAB02
+  uns: hicampus/F4/L05/F4L05LAB02
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 5
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_05f_lab_03
+  world_id: hicampus
+  floor_id: hicampus_f4_05f
+  type_code: room
+  display_name: F4 实验楼 · 第5层 实验室 3
+  room_name: F4 实验楼 · 第5层 实验室 3
+  room_name_en: Laboratory F4L05LAB03
+  room_type: lab
+  room_code: F4L05LAB03
+  uns: hicampus/F4/L05/F4L05LAB03
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 5
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_05f_prep_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_05f
+  type_code: room
+  display_name: F4 实验楼 · 第5层 实验准备室 1
+  room_name: F4 实验楼 · 第5层 实验准备室 1
+  room_name_en: Lab Prep F4L05PRE01
+  room_type: lab
+  room_code: F4L05PRE01
+  uns: hicampus/F4/L05/F4L05PRE01
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 5
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:prep
+- id: hicampus_f4_05f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f4_05f
+  type_code: room
+  display_name: F4 实验楼 · 第5层 卫生间 1
+  room_name: F4 实验楼 · 第5层 卫生间 1
+  room_name_en: Restroom F4L05WCR01
+  room_type: normal
+  room_code: F4L05WCR01
+  uns: hicampus/F4/L05/F4L05WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 5
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f4_06f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_06f
+  type_code: room
+  display_name: F4 实验楼 · 第6层 实验室 1
+  room_name: F4 实验楼 · 第6层 实验室 1
+  room_name_en: Laboratory F4L06LAB01
+  room_type: lab
+  room_code: F4L06LAB01
+  uns: hicampus/F4/L06/F4L06LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 6
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_06f_lab_02
+  world_id: hicampus
+  floor_id: hicampus_f4_06f
+  type_code: room
+  display_name: F4 实验楼 · 第6层 实验室 2
+  room_name: F4 实验楼 · 第6层 实验室 2
+  room_name_en: Laboratory F4L06LAB02
+  room_type: lab
+  room_code: F4L06LAB02
+  uns: hicampus/F4/L06/F4L06LAB02
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 6
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_06f_lab_03
+  world_id: hicampus
+  floor_id: hicampus_f4_06f
+  type_code: room
+  display_name: F4 实验楼 · 第6层 实验室 3
+  room_name: F4 实验楼 · 第6层 实验室 3
+  room_name_en: Laboratory F4L06LAB03
+  room_type: lab
+  room_code: F4L06LAB03
+  uns: hicampus/F4/L06/F4L06LAB03
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 6
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_06f_prep_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_06f
+  type_code: room
+  display_name: F4 实验楼 · 第6层 实验准备室 1
+  room_name: F4 实验楼 · 第6层 实验准备室 1
+  room_name_en: Lab Prep F4L06PRE01
+  room_type: lab
+  room_code: F4L06PRE01
+  uns: hicampus/F4/L06/F4L06PRE01
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 6
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:prep
+- id: hicampus_f4_06f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f4_06f
+  type_code: room
+  display_name: F4 实验楼 · 第6层 卫生间 1
+  room_name: F4 实验楼 · 第6层 卫生间 1
+  room_name_en: Restroom F4L06WCR01
+  room_type: normal
+  room_code: F4L06WCR01
+  uns: hicampus/F4/L06/F4L06WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 6
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f4_07f_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_07f
+  type_code: room
+  display_name: F4 实验楼 · 第7层 实验室 1
+  room_name: F4 实验楼 · 第7层 实验室 1
+  room_name_en: Laboratory F4L07LAB01
+  room_type: lab
+  room_code: F4L07LAB01
+  uns: hicampus/F4/L07/F4L07LAB01
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 7
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_07f_lab_02
+  world_id: hicampus
+  floor_id: hicampus_f4_07f
+  type_code: room
+  display_name: F4 实验楼 · 第7层 实验室 2
+  room_name: F4 实验楼 · 第7层 实验室 2
+  room_name_en: Laboratory F4L07LAB02
+  room_type: lab
+  room_code: F4L07LAB02
+  uns: hicampus/F4/L07/F4L07LAB02
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 7
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_07f_lab_03
+  world_id: hicampus
+  floor_id: hicampus_f4_07f
+  type_code: room
+  display_name: F4 实验楼 · 第7层 实验室 3
+  room_name: F4 实验楼 · 第7层 实验室 3
+  room_name_en: Laboratory F4L07LAB03
+  room_type: lab
+  room_code: F4L07LAB03
+  uns: hicampus/F4/L07/F4L07LAB03
+  room_short_description: 通用实验与测试台位。
+  room_description: 通风柜与气瓶间分区；安全淋浴与洗眼器按规范布置，入口张贴 MSDS 索引。
+  room_ambiance: 通风设备持续运行。
+  room_floor: 7
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:research
+- id: hicampus_f4_07f_prep_lab_01
+  world_id: hicampus
+  floor_id: hicampus_f4_07f
+  type_code: room
+  display_name: F4 实验楼 · 第7层 实验准备室 1
+  room_name: F4 实验楼 · 第7层 实验准备室 1
+  room_name_en: Lab Prep F4L07PRE01
+  room_type: lab
+  room_code: F4L07PRE01
+  uns: hicampus/F4/L07/F4L07PRE01
+  room_short_description: 试剂与样品准备。
+  room_description: 操作台与冷藏柜；与主实验室通过缓冲间相连，减少交叉污染。
+  room_ambiance: 低温设备间歇启停。
+  room_floor: 7
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:lab
+  - function:prep
+- id: hicampus_f4_07f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f4_07f
+  type_code: room
+  display_name: F4 实验楼 · 第7层 卫生间 1
+  room_name: F4 实验楼 · 第7层 卫生间 1
+  room_name_en: Restroom F4L07WCR01
+  room_type: normal
+  room_code: F4L07WCR01
+  uns: hicampus/F4/L07/F4L07WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 7
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f5_01f_av_room_01
+  world_id: hicampus
+  floor_id: hicampus_f5_01f
+  type_code: room
+  display_name: F5 展厅 · 首层 音控室 1
+  room_name: F5 展厅 · 首层 音控室 1
+  room_name_en: AV Control F5L01AVC01
+  room_type: special
+  room_code: F5L01AVC01
+  uns: hicampus/F5/L01/F5L01AVC01
+  room_short_description: 灯光音响与播控。
+  room_description: 机柜与调音台，信号送至展厅扬声器与大屏；活动时专人值守。
+  room_ambiance: 设备散热风扇声。
+  room_floor: 1
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:av
+  - function:events
+  - access:staff
+- id: hicampus_f5_01f_expo_hall_01
+  world_id: hicampus
+  floor_id: hicampus_f5_01f
+  type_code: room
+  display_name: F5 展厅 · 首层 展陈空间 1
+  room_name: F5 展厅 · 首层 展陈空间 1
+  room_name_en: Exhibition Space F5L01EXP01
+  room_type: special
+  room_code: F5L01EXP01
+  uns: hicampus/F5/L01/F5L01EXP01
+  room_short_description: 临展与活动大空间。
+  room_description: 可拆装展墙与吊装锚点；地面荷载满足装置与人流集散要求。
+  room_ambiance: 布展期工具声与讲解试音。
+  room_floor: 1
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:expo
+  - function:exhibition
+- id: hicampus_f5_01f_expo_hall_02
+  world_id: hicampus
+  floor_id: hicampus_f5_01f
+  type_code: room
+  display_name: F5 展厅 · 首层 展陈空间 2
+  room_name: F5 展厅 · 首层 展陈空间 2
+  room_name_en: Exhibition Space F5L01EXP02
+  room_type: special
+  room_code: F5L01EXP02
+  uns: hicampus/F5/L01/F5L01EXP02
+  room_short_description: 临展与活动大空间。
+  room_description: 可拆装展墙与吊装锚点；地面荷载满足装置与人流集散要求。
+  room_ambiance: 布展期工具声与讲解试音。
+  room_floor: 1
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:expo
+  - function:exhibition
+- id: hicampus_f5_01f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f5_01f
+  type_code: room
+  display_name: F5 展厅 · 首层 会议室 1
+  room_name: F5 展厅 · 首层 会议室 1
+  room_name_en: Meeting Room F5L01MTG01
+  room_type: special
+  room_code: F5L01MTG01
+  uns: hicampus/F5/L01/F5L01MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 1
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f5_01f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f5_01f
+  type_code: room
+  display_name: F5 展厅 · 首层 卫生间 1
+  room_name: F5 展厅 · 首层 卫生间 1
+  room_name_en: Restroom F5L01WCR01
+  room_type: normal
+  room_code: F5L01WCR01
+  uns: hicampus/F5/L01/F5L01WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 1
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f5_02f_av_room_01
+  world_id: hicampus
+  floor_id: hicampus_f5_02f
+  type_code: room
+  display_name: F5 展厅 · 第2层 音控室 1
+  room_name: F5 展厅 · 第2层 音控室 1
+  room_name_en: AV Control F5L02AVC01
+  room_type: special
+  room_code: F5L02AVC01
+  uns: hicampus/F5/L02/F5L02AVC01
+  room_short_description: 灯光音响与播控。
+  room_description: 机柜与调音台，信号送至展厅扬声器与大屏；活动时专人值守。
+  room_ambiance: 设备散热风扇声。
+  room_floor: 2
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:av
+  - function:events
+  - access:staff
+- id: hicampus_f5_02f_expo_hall_01
+  world_id: hicampus
+  floor_id: hicampus_f5_02f
+  type_code: room
+  display_name: F5 展厅 · 第2层 展陈空间 1
+  room_name: F5 展厅 · 第2层 展陈空间 1
+  room_name_en: Exhibition Space F5L02EXP01
+  room_type: special
+  room_code: F5L02EXP01
+  uns: hicampus/F5/L02/F5L02EXP01
+  room_short_description: 临展与活动大空间。
+  room_description: 可拆装展墙与吊装锚点；地面荷载满足装置与人流集散要求。
+  room_ambiance: 布展期工具声与讲解试音。
+  room_floor: 2
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:expo
+  - function:exhibition
+- id: hicampus_f5_02f_expo_hall_02
+  world_id: hicampus
+  floor_id: hicampus_f5_02f
+  type_code: room
+  display_name: F5 展厅 · 第2层 展陈空间 2
+  room_name: F5 展厅 · 第2层 展陈空间 2
+  room_name_en: Exhibition Space F5L02EXP02
+  room_type: special
+  room_code: F5L02EXP02
+  uns: hicampus/F5/L02/F5L02EXP02
+  room_short_description: 临展与活动大空间。
+  room_description: 可拆装展墙与吊装锚点；地面荷载满足装置与人流集散要求。
+  room_ambiance: 布展期工具声与讲解试音。
+  room_floor: 2
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:expo
+  - function:exhibition
+- id: hicampus_f5_02f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f5_02f
+  type_code: room
+  display_name: F5 展厅 · 第2层 会议室 1
+  room_name: F5 展厅 · 第2层 会议室 1
+  room_name_en: Meeting Room F5L02MTG01
+  room_type: special
+  room_code: F5L02MTG01
+  uns: hicampus/F5/L02/F5L02MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 2
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f5_02f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f5_02f
+  type_code: room
+  display_name: F5 展厅 · 第2层 卫生间 1
+  room_name: F5 展厅 · 第2层 卫生间 1
+  room_name_en: Restroom F5L02WCR01
+  room_type: normal
+  room_code: F5L02WCR01
+  uns: hicampus/F5/L02/F5L02WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 2
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f5_03f_av_room_01
+  world_id: hicampus
+  floor_id: hicampus_f5_03f
+  type_code: room
+  display_name: F5 展厅 · 第3层 音控室 1
+  room_name: F5 展厅 · 第3层 音控室 1
+  room_name_en: AV Control F5L03AVC01
+  room_type: special
+  room_code: F5L03AVC01
+  uns: hicampus/F5/L03/F5L03AVC01
+  room_short_description: 灯光音响与播控。
+  room_description: 机柜与调音台，信号送至展厅扬声器与大屏；活动时专人值守。
+  room_ambiance: 设备散热风扇声。
+  room_floor: 3
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:av
+  - function:events
+  - access:staff
+- id: hicampus_f5_03f_expo_hall_01
+  world_id: hicampus
+  floor_id: hicampus_f5_03f
+  type_code: room
+  display_name: F5 展厅 · 第3层 展陈空间 1
+  room_name: F5 展厅 · 第3层 展陈空间 1
+  room_name_en: Exhibition Space F5L03EXP01
+  room_type: special
+  room_code: F5L03EXP01
+  uns: hicampus/F5/L03/F5L03EXP01
+  room_short_description: 临展与活动大空间。
+  room_description: 可拆装展墙与吊装锚点；地面荷载满足装置与人流集散要求。
+  room_ambiance: 布展期工具声与讲解试音。
+  room_floor: 3
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:expo
+  - function:exhibition
+- id: hicampus_f5_03f_expo_hall_02
+  world_id: hicampus
+  floor_id: hicampus_f5_03f
+  type_code: room
+  display_name: F5 展厅 · 第3层 展陈空间 2
+  room_name: F5 展厅 · 第3层 展陈空间 2
+  room_name_en: Exhibition Space F5L03EXP02
+  room_type: special
+  room_code: F5L03EXP02
+  uns: hicampus/F5/L03/F5L03EXP02
+  room_short_description: 临展与活动大空间。
+  room_description: 可拆装展墙与吊装锚点；地面荷载满足装置与人流集散要求。
+  room_ambiance: 布展期工具声与讲解试音。
+  room_floor: 3
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:expo
+  - function:exhibition
+- id: hicampus_f5_03f_meeting_01
+  world_id: hicampus
+  floor_id: hicampus_f5_03f
+  type_code: room
+  display_name: F5 展厅 · 第3层 会议室 1
+  room_name: F5 展厅 · 第3层 会议室 1
+  room_name_en: Meeting Room F5L03MTG01
+  room_type: special
+  room_code: F5L03MTG01
+  uns: hicampus/F5/L03/F5L03MTG01
+  room_short_description: 中小型会议与视频会议空间。
+  room_description: 会议桌居中，墙面预留投屏接口；隔音门降低走廊干扰，适合评审与对齐。
+  room_ambiance: 投屏提示音与通话回声偶尔可闻。
+  room_floor: 3
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:meeting
+  - function:collaboration
+- id: hicampus_f5_03f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f5_03f
+  type_code: room
+  display_name: F5 展厅 · 第3层 卫生间 1
+  room_name: F5 展厅 · 第3层 卫生间 1
+  room_name_en: Restroom F5L03WCR01
+  room_type: normal
+  room_code: F5L03WCR01
+  uns: hicampus/F5/L03/F5L03WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 3
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_01f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_01f
+  type_code: room
+  display_name: F6 公寓 · 首层 公寓单元 1
+  room_name: F6 公寓 · 首层 公寓单元 1
+  room_name_en: Dorm Unit F6L01DRM01
+  room_type: normal
+  room_code: F6L01DRM01
+  uns: hicampus/F6/L01/F6L01DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 1
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_01f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_01f
+  type_code: room
+  display_name: F6 公寓 · 首层 公寓单元 2
+  room_name: F6 公寓 · 首层 公寓单元 2
+  room_name_en: Dorm Unit F6L01DRM02
+  room_type: normal
+  room_code: F6L01DRM02
+  uns: hicampus/F6/L01/F6L01DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 1
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_01f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_01f
+  type_code: room
+  display_name: F6 公寓 · 首层 公共休闲区 1
+  room_name: F6 公寓 · 首层 公共休闲区 1
+  room_name_en: Lounge F6L01LNG01
+  room_type: normal
+  room_code: F6L01LNG01
+  uns: hicampus/F6/L01/F6L01LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 1
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_01f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_01f
+  type_code: room
+  display_name: F6 公寓 · 首层 卫生间 1
+  room_name: F6 公寓 · 首层 卫生间 1
+  room_name_en: Restroom F6L01WCR01
+  room_type: normal
+  room_code: F6L01WCR01
+  uns: hicampus/F6/L01/F6L01WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 1
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_02f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_02f
+  type_code: room
+  display_name: F6 公寓 · 第2层 公寓单元 1
+  room_name: F6 公寓 · 第2层 公寓单元 1
+  room_name_en: Dorm Unit F6L02DRM01
+  room_type: normal
+  room_code: F6L02DRM01
+  uns: hicampus/F6/L02/F6L02DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 2
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_02f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_02f
+  type_code: room
+  display_name: F6 公寓 · 第2层 公寓单元 2
+  room_name: F6 公寓 · 第2层 公寓单元 2
+  room_name_en: Dorm Unit F6L02DRM02
+  room_type: normal
+  room_code: F6L02DRM02
+  uns: hicampus/F6/L02/F6L02DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 2
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_02f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_02f
+  type_code: room
+  display_name: F6 公寓 · 第2层 公共休闲区 1
+  room_name: F6 公寓 · 第2层 公共休闲区 1
+  room_name_en: Lounge F6L02LNG01
+  room_type: normal
+  room_code: F6L02LNG01
+  uns: hicampus/F6/L02/F6L02LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 2
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_02f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_02f
+  type_code: room
+  display_name: F6 公寓 · 第2层 卫生间 1
+  room_name: F6 公寓 · 第2层 卫生间 1
+  room_name_en: Restroom F6L02WCR01
+  room_type: normal
+  room_code: F6L02WCR01
+  uns: hicampus/F6/L02/F6L02WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 2
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_03f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_03f
+  type_code: room
+  display_name: F6 公寓 · 第3层 公寓单元 1
+  room_name: F6 公寓 · 第3层 公寓单元 1
+  room_name_en: Dorm Unit F6L03DRM01
+  room_type: normal
+  room_code: F6L03DRM01
+  uns: hicampus/F6/L03/F6L03DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 3
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_03f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_03f
+  type_code: room
+  display_name: F6 公寓 · 第3层 公寓单元 2
+  room_name: F6 公寓 · 第3层 公寓单元 2
+  room_name_en: Dorm Unit F6L03DRM02
+  room_type: normal
+  room_code: F6L03DRM02
+  uns: hicampus/F6/L03/F6L03DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 3
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_03f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_03f
+  type_code: room
+  display_name: F6 公寓 · 第3层 公共休闲区 1
+  room_name: F6 公寓 · 第3层 公共休闲区 1
+  room_name_en: Lounge F6L03LNG01
+  room_type: normal
+  room_code: F6L03LNG01
+  uns: hicampus/F6/L03/F6L03LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 3
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_03f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_03f
+  type_code: room
+  display_name: F6 公寓 · 第3层 卫生间 1
+  room_name: F6 公寓 · 第3层 卫生间 1
+  room_name_en: Restroom F6L03WCR01
+  room_type: normal
+  room_code: F6L03WCR01
+  uns: hicampus/F6/L03/F6L03WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 3
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_04f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_04f
+  type_code: room
+  display_name: F6 公寓 · 第4层 公寓单元 1
+  room_name: F6 公寓 · 第4层 公寓单元 1
+  room_name_en: Dorm Unit F6L04DRM01
+  room_type: normal
+  room_code: F6L04DRM01
+  uns: hicampus/F6/L04/F6L04DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 4
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_04f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_04f
+  type_code: room
+  display_name: F6 公寓 · 第4层 公寓单元 2
+  room_name: F6 公寓 · 第4层 公寓单元 2
+  room_name_en: Dorm Unit F6L04DRM02
+  room_type: normal
+  room_code: F6L04DRM02
+  uns: hicampus/F6/L04/F6L04DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 4
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_04f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_04f
+  type_code: room
+  display_name: F6 公寓 · 第4层 公共休闲区 1
+  room_name: F6 公寓 · 第4层 公共休闲区 1
+  room_name_en: Lounge F6L04LNG01
+  room_type: normal
+  room_code: F6L04LNG01
+  uns: hicampus/F6/L04/F6L04LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 4
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_04f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_04f
+  type_code: room
+  display_name: F6 公寓 · 第4层 卫生间 1
+  room_name: F6 公寓 · 第4层 卫生间 1
+  room_name_en: Restroom F6L04WCR01
+  room_type: normal
+  room_code: F6L04WCR01
+  uns: hicampus/F6/L04/F6L04WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 4
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_05f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_05f
+  type_code: room
+  display_name: F6 公寓 · 第5层 公寓单元 1
+  room_name: F6 公寓 · 第5层 公寓单元 1
+  room_name_en: Dorm Unit F6L05DRM01
+  room_type: normal
+  room_code: F6L05DRM01
+  uns: hicampus/F6/L05/F6L05DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 5
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_05f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_05f
+  type_code: room
+  display_name: F6 公寓 · 第5层 公寓单元 2
+  room_name: F6 公寓 · 第5层 公寓单元 2
+  room_name_en: Dorm Unit F6L05DRM02
+  room_type: normal
+  room_code: F6L05DRM02
+  uns: hicampus/F6/L05/F6L05DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 5
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_05f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_05f
+  type_code: room
+  display_name: F6 公寓 · 第5层 公共休闲区 1
+  room_name: F6 公寓 · 第5层 公共休闲区 1
+  room_name_en: Lounge F6L05LNG01
+  room_type: normal
+  room_code: F6L05LNG01
+  uns: hicampus/F6/L05/F6L05LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 5
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_05f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_05f
+  type_code: room
+  display_name: F6 公寓 · 第5层 卫生间 1
+  room_name: F6 公寓 · 第5层 卫生间 1
+  room_name_en: Restroom F6L05WCR01
+  room_type: normal
+  room_code: F6L05WCR01
+  uns: hicampus/F6/L05/F6L05WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 5
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_06f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_06f
+  type_code: room
+  display_name: F6 公寓 · 第6层 公寓单元 1
+  room_name: F6 公寓 · 第6层 公寓单元 1
+  room_name_en: Dorm Unit F6L06DRM01
+  room_type: normal
+  room_code: F6L06DRM01
+  uns: hicampus/F6/L06/F6L06DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 6
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_06f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_06f
+  type_code: room
+  display_name: F6 公寓 · 第6层 公寓单元 2
+  room_name: F6 公寓 · 第6层 公寓单元 2
+  room_name_en: Dorm Unit F6L06DRM02
+  room_type: normal
+  room_code: F6L06DRM02
+  uns: hicampus/F6/L06/F6L06DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 6
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_06f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_06f
+  type_code: room
+  display_name: F6 公寓 · 第6层 公共休闲区 1
+  room_name: F6 公寓 · 第6层 公共休闲区 1
+  room_name_en: Lounge F6L06LNG01
+  room_type: normal
+  room_code: F6L06LNG01
+  uns: hicampus/F6/L06/F6L06LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 6
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_06f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_06f
+  type_code: room
+  display_name: F6 公寓 · 第6层 卫生间 1
+  room_name: F6 公寓 · 第6层 卫生间 1
+  room_name_en: Restroom F6L06WCR01
+  room_type: normal
+  room_code: F6L06WCR01
+  uns: hicampus/F6/L06/F6L06WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 6
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_07f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_07f
+  type_code: room
+  display_name: F6 公寓 · 第7层 公寓单元 1
+  room_name: F6 公寓 · 第7层 公寓单元 1
+  room_name_en: Dorm Unit F6L07DRM01
+  room_type: normal
+  room_code: F6L07DRM01
+  uns: hicampus/F6/L07/F6L07DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 7
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_07f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_07f
+  type_code: room
+  display_name: F6 公寓 · 第7层 公寓单元 2
+  room_name: F6 公寓 · 第7层 公寓单元 2
+  room_name_en: Dorm Unit F6L07DRM02
+  room_type: normal
+  room_code: F6L07DRM02
+  uns: hicampus/F6/L07/F6L07DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 7
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_07f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_07f
+  type_code: room
+  display_name: F6 公寓 · 第7层 公共休闲区 1
+  room_name: F6 公寓 · 第7层 公共休闲区 1
+  room_name_en: Lounge F6L07LNG01
+  room_type: normal
+  room_code: F6L07LNG01
+  uns: hicampus/F6/L07/F6L07LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 7
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_07f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_07f
+  type_code: room
+  display_name: F6 公寓 · 第7层 卫生间 1
+  room_name: F6 公寓 · 第7层 卫生间 1
+  room_name_en: Restroom F6L07WCR01
+  room_type: normal
+  room_code: F6L07WCR01
+  uns: hicampus/F6/L07/F6L07WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 7
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_08f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_08f
+  type_code: room
+  display_name: F6 公寓 · 第8层 公寓单元 1
+  room_name: F6 公寓 · 第8层 公寓单元 1
+  room_name_en: Dorm Unit F6L08DRM01
+  room_type: normal
+  room_code: F6L08DRM01
+  uns: hicampus/F6/L08/F6L08DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 8
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_08f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_08f
+  type_code: room
+  display_name: F6 公寓 · 第8层 公寓单元 2
+  room_name: F6 公寓 · 第8层 公寓单元 2
+  room_name_en: Dorm Unit F6L08DRM02
+  room_type: normal
+  room_code: F6L08DRM02
+  uns: hicampus/F6/L08/F6L08DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 8
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_08f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_08f
+  type_code: room
+  display_name: F6 公寓 · 第8层 公共休闲区 1
+  room_name: F6 公寓 · 第8层 公共休闲区 1
+  room_name_en: Lounge F6L08LNG01
+  room_type: normal
+  room_code: F6L08LNG01
+  uns: hicampus/F6/L08/F6L08LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 8
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_08f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_08f
+  type_code: room
+  display_name: F6 公寓 · 第8层 卫生间 1
+  room_name: F6 公寓 · 第8层 卫生间 1
+  room_name_en: Restroom F6L08WCR01
+  room_type: normal
+  room_code: F6L08WCR01
+  uns: hicampus/F6/L08/F6L08WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 8
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public
+- id: hicampus_f6_09f_dorm_unit_01
+  world_id: hicampus
+  floor_id: hicampus_f6_09f
+  type_code: room
+  display_name: F6 公寓 · 第9层 公寓单元 1
+  room_name: F6 公寓 · 第9层 公寓单元 1
+  room_name_en: Dorm Unit F6L09DRM01
+  room_type: normal
+  room_code: F6L09DRM01
+  uns: hicampus/F6/L09/F6L09DRM01
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 9
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_09f_dorm_unit_02
+  world_id: hicampus
+  floor_id: hicampus_f6_09f
+  type_code: room
+  display_name: F6 公寓 · 第9层 公寓单元 2
+  room_name: F6 公寓 · 第9层 公寓单元 2
+  room_name_en: Dorm Unit F6L09DRM02
+  room_type: normal
+  room_code: F6L09DRM02
+  uns: hicampus/F6/L09/F6L09DRM02
+  room_short_description: 配套住宿单元。
+  room_description: 独立卫浴与简易厨台；采光窗朝向内院或慢行系统，强调安静与隐私。
+  room_ambiance: 夜间安静，偶有水声。
+  room_floor: 9
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:dorm
+  - function:residential
+- id: hicampus_f6_09f_lounge_01
+  world_id: hicampus
+  floor_id: hicampus_f6_09f
+  type_code: room
+  display_name: F6 公寓 · 第9层 公共休闲区 1
+  room_name: F6 公寓 · 第9层 公共休闲区 1
+  room_name_en: Lounge F6L09LNG01
+  room_type: normal
+  room_code: F6L09LNG01
+  uns: hicampus/F6/L09/F6L09LNG01
+  room_short_description: 沙发与阅读角。
+  room_description: 软装配低噪活动区，与走廊用家具软分隔；适合短暂休息与等候。
+  room_ambiance: 背景音乐轻柔。
+  room_floor: 9
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:lounge
+  - zone:public
+- id: hicampus_f6_09f_restroom_01
+  world_id: hicampus
+  floor_id: hicampus_f6_09f
+  type_code: room
+  display_name: F6 公寓 · 第9层 卫生间 1
+  room_name: F6 公寓 · 第9层 卫生间 1
+  room_name_en: Restroom F6L09WCR01
+  room_type: normal
+  room_code: F6L09WCR01
+  uns: hicampus/F6/L09/F6L09WCR01
+  room_short_description: 公共卫生间。
+  room_description: 洁具与无障碍设施按标准配置；保洁动线独立，高峰时段需短暂排队。
+  room_ambiance: 排风低频运行。
+  room_floor: 9
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:restroom
+  - function:sanitary
+  - zone:public

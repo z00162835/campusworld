@@ -21,8 +21,13 @@ from .system import (
 from .exit import Exit
 from .things import (
     AccessTerminal,
+    AvDisplay,
+    ConferenceSeating,
     Furniture,
+    LightingFixture,
     LogicalZone,
+    LoungeFurniture,
+    NetworkAccessPoint,
     NpcAgent,
     WorldThing,
 )
@@ -64,8 +69,13 @@ __all__ = [
     "WorldInstallJob",
     "Exit",
     "AccessTerminal",
+    "AvDisplay",
+    "ConferenceSeating",
     "Furniture",
+    "LightingFixture",
     "LogicalZone",
+    "LoungeFurniture",
+    "NetworkAccessPoint",
     "NpcAgent",
     "WorldThing",
     
@@ -92,6 +102,11 @@ model_factory.register_model("system_bulletin_board", BulletinBoard)
 model_factory.register_model("system_command_ability", SystemCommandAbility)
 model_factory.register_model("system_notice", SystemNotice)
 model_factory.register_model("exit", Exit)
+model_factory.register_model("network_access_point", NetworkAccessPoint)
+model_factory.register_model("av_display", AvDisplay)
+model_factory.register_model("lighting_fixture", LightingFixture)
+model_factory.register_model("conference_seating", ConferenceSeating)
+model_factory.register_model("lounge_furniture", LoungeFurniture)
 
 # 注册图节点模型
 model_factory.register_model("graph_node", Node)

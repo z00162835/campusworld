@@ -74,6 +74,37 @@ class _MiniWorldProfile:
         return m[package_type_code]
 
 
+class _MiniWorldProfileWithLocatedIn:
+    world_package_id_prop = "graph_seed_test"
+
+    @property
+    def world_package_id(self) -> str:
+        return self.world_package_id_prop
+
+    @property
+    def strict_relationships(self) -> bool:
+        return False
+
+    @property
+    def allowed_relationship_type_codes(self) -> FrozenSet[str]:
+        return frozenset({"connects_to", "located_in"})
+
+    def map_node_type(self, package_type_code: str) -> str:
+        m = {
+            "world": "world",
+            "building": "building",
+            "building_floor": "building_floor",
+            "room": "room",
+            "furniture": "furniture",
+        }
+        if package_type_code not in m:
+            raise GraphSeedError(
+                WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value,
+                f"unknown {package_type_code}",
+            )
+        return m[package_type_code]
+
+
 def _minimal_snapshot() -> Dict[str, Any]:
     return {
         "world": {
@@ -222,6 +253,80 @@ def test_run_graph_seed_creates_reverse_connects_to():
             ).scalar()
         assert int(cnt or 0) == 1
         assert int(cnt_rev or 0) == 1
+    finally:
+        _cleanup_test_graph(world_key)
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_run_graph_seed_located_in_sets_location_id():
+    _require_postgres_engine()
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import ensure_graph_seed_ontology
+
+    ensure_graph_seed_ontology(engine)
+    world_key = "graph_seed_test"
+    _cleanup_test_graph(world_key)
+
+    profile = _MiniWorldProfileWithLocatedIn()
+    snap = _minimal_snapshot()
+    snap["entities"] = {
+        "npcs": [],
+        "items": [
+            {
+                "id": "gst_item_bench",
+                "world_id": world_key,
+                "type_code": "furniture",
+                "entity_kind": "item",
+                "display_name": "Test Bench",
+                "location_ref": "gst_r1",
+                "attributes": {"item_kind": "furniture"},
+                "presentation_domains": ["room"],
+                "access_locks": {"view": "all()", "interact": "all()"},
+                "tags": ["item", "furniture"],
+                "source_ref": "entities/items.yaml",
+            }
+        ],
+        "zones": [],
+    }
+    snap["relationships"] = list(snap["relationships"]) + [
+        {
+            "id": "gst_rel_located_in_item",
+            "rel_type_code": "located_in",
+            "source_id": "gst_item_bench",
+            "target_id": "gst_r1",
+            "directed": True,
+            "attributes": {},
+        }
+    ]
+    try:
+        with db_session_context() as session:
+            out = run_graph_seed(session, world_key, snap, profile)  # type: ignore[arg-type]
+            session.commit()
+        assert out["ok"] is True
+
+        with db_session_context() as session:
+            loc_bench = session.execute(
+                text(
+                    """
+                    SELECT id, location_id FROM nodes
+                    WHERE type_code = 'furniture'
+                      AND attributes->>'package_node_id' = 'gst_item_bench'
+                    """
+                )
+            ).mappings().first()
+            loc_room = session.execute(
+                text(
+                    """
+                    SELECT id FROM nodes
+                    WHERE type_code = 'room'
+                      AND attributes->>'package_node_id' = 'gst_r1'
+                    """
+                )
+            ).scalar()
+        assert loc_bench is not None
+        assert loc_room is not None
+        assert int(loc_bench["location_id"]) == int(loc_room)
     finally:
         _cleanup_test_graph(world_key)
 
