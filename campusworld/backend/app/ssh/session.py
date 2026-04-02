@@ -38,6 +38,7 @@ class SSHSession:
     # 控制台信息
     terminal_size: Optional[tuple] = None
     command_history: List[str] = field(default_factory=list)
+    output_buffer: List[str] = field(default_factory=list)
 
     # SSH channel 引用（用于强制关闭）
     channel: Optional[Any] = field(default=None, init=False, repr=False)
@@ -60,6 +61,15 @@ class SSHSession:
         if len(self.command_history) > 100:
             self.command_history = self.command_history[-100:]
         self.update_activity()
+
+    def add_output(self, text: str):
+        """追加待下发/回显的输出行（测试与控制台缓冲）。"""
+        self.output_buffer.append(text)
+        self.update_activity()
+
+    def clear_output(self):
+        """清空输出缓冲。"""
+        self.output_buffer.clear()
     
     def get_session_info(self) -> Dict[str, Any]:
         """获取会话信息摘要"""
@@ -211,6 +221,11 @@ class SessionManager:
         """获取当前会话数量"""
         with self.lock:
             return len(self.sessions)
+
+    def list_all_sessions(self) -> List[SSHSession]:
+        """返回当前管理的所有会话（含非活跃）。"""
+        with self.lock:
+            return list(self.sessions.values())
     
     def get_user_session_count(self, username: str) -> int:
         """获取指定用户的会话数量"""
@@ -258,16 +273,16 @@ class SessionManager:
     def cleanup_expired_sessions(self, timeout_minutes: int = 30):
         """清理过期会话"""
         with self.lock:
-            expired_sessions = []
-            for session_id, session in self.sessions.items():
-                if session.is_expired(timeout_minutes):
-                    expired_sessions.append(session_id)
-            
-            for session_id in expired_sessions:
-                self.remove_session(session_id)
-            
-            if expired_sessions:
-                self.logger.info(f"Cleaned up {len(expired_sessions)} expired sessions")
+            expired_sessions = [
+                session_id
+                for session_id, session in self.sessions.items()
+                if session.is_expired(timeout_minutes)
+            ]
+        # remove_session 会再次获取 lock，不得在持有 lock 时调用（非可重入锁会死锁）
+        for session_id in expired_sessions:
+            self.remove_session(session_id)
+        if expired_sessions:
+            self.logger.info(f"Cleaned up {len(expired_sessions)} expired sessions")
     
     def cleanup_all(self):
         """清理所有会话"""

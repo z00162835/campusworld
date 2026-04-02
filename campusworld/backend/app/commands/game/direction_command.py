@@ -8,39 +8,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.commands.base import CommandContext, CommandResult, GameCommand
 from app.core.database import db_session_context
+from app.game_engine.direction_util import normalize_direction
+from app.game_engine.subgraph_boundary import bridge_enabled, is_authorized_cross_world_bridge
 from app.models.graph import Node, Relationship
-
-_DIRECTION_ALIASES: Dict[str, str] = {
-    "n": "north",
-    "north": "north",
-    "s": "south",
-    "south": "south",
-    "e": "east",
-    "east": "east",
-    "w": "west",
-    "west": "west",
-    "ne": "northeast",
-    "northeast": "northeast",
-    "nw": "northwest",
-    "northwest": "northwest",
-    "se": "southeast",
-    "southeast": "southeast",
-    "sw": "southwest",
-    "southwest": "southwest",
-    "u": "up",
-    "up": "up",
-    "d": "down",
-    "down": "down",
-    "in": "enter",
-    "enter": "enter",
-    "o": "out",
-    "out": "out",
-}
-
-
-def normalize_direction(raw: str) -> str:
-    token = str(raw or "").strip().lower()
-    return _DIRECTION_ALIASES.get(token, token)
 
 
 class MovementCommand(GameCommand):
@@ -62,7 +32,7 @@ class MovementCommand(GameCommand):
                 context.username,
                 direction,
             )
-            ok, msg = self._move(str(context.user_id), direction)
+            ok, msg, err = self._move(str(context.user_id), direction)
             if ok:
                 self.logger.info(
                     "AUDIT world.move.success operator=%s direction=%s",
@@ -76,7 +46,7 @@ class MovementCommand(GameCommand):
                 direction,
                 msg,
             )
-            return CommandResult.error_result(msg)
+            return CommandResult.error_result(msg, error=err)
         except Exception as e:
             return CommandResult.error_result(f"移动失败: {e}")
 
@@ -87,7 +57,7 @@ class MovementCommand(GameCommand):
             return normalize_direction(args[0])
         return None
 
-    def _move(self, user_id: str, direction: str) -> Tuple[bool, str]:
+    def _move(self, user_id: str, direction: str) -> Tuple[bool, str, Optional[str]]:
         with db_session_context() as session:
             user = (
                 session.query(Node)
@@ -95,12 +65,12 @@ class MovementCommand(GameCommand):
                 .first()
             )
             if not user:
-                return False, "用户不存在"
+                return False, "用户不存在", None
             attrs: Dict[str, Any] = dict(user.attributes or {})
             world_id = str(attrs.get("active_world") or "").strip().lower()
             room_pkg_id = str(attrs.get("world_location") or "").strip().lower()
             if not world_id or not room_pkg_id:
-                return False, "你当前不在世界内"
+                return False, "你当前不在世界内", None
 
             room = (
                 session.query(Node)
@@ -113,7 +83,7 @@ class MovementCommand(GameCommand):
                 .first()
             )
             if not room:
-                return False, "当前位置无效"
+                return False, "当前位置无效", None
 
             candidates = (
                 session.query(Relationship, Node)
@@ -138,9 +108,44 @@ class MovementCommand(GameCommand):
                     target = node
                     break
             if not target:
+                bridge_candidates = (
+                    session.query(Relationship, Node)
+                    .join(Node, Relationship.target_id == Node.id)
+                    .filter(
+                        Relationship.source_id == room.id,
+                        Relationship.type_code == "connects_to",
+                        Relationship.is_active == True,  # noqa: E712
+                        Node.is_active == True,  # noqa: E712
+                    )
+                    .all()
+                )
+                dir_norm = normalize_direction(direction)
+                for rel, node in bridge_candidates:
+                    if not is_authorized_cross_world_bridge(rel):
+                        continue
+                    rel_attrs = dict(rel.attributes or {})
+                    rel_dir = normalize_direction(str(rel_attrs.get("direction") or ""))
+                    if rel_dir:
+                        available_dirs.append(rel_dir)
+                    if rel_dir != dir_norm:
+                        continue
+                    if not bridge_enabled(rel):
+                        return False, "该方向的跨世界桥接已关闭", "WORLD_BRIDGE_DISABLED"
+                    tw = str((node.attributes or {}).get("world_id") or "").strip().lower()
+                    if tw == world_id:
+                        continue
+                    target = node
+                    attrs["active_world"] = tw
+                    break
+
+            if not target:
                 if available_dirs:
-                    return False, f"无法向 {direction} 移动，可用方向: {', '.join(sorted(set(available_dirs)))}"
-                return False, "该方向目标不可达"
+                    return (
+                        False,
+                        f"无法向 {direction} 移动，可用方向: {', '.join(sorted(set(available_dirs)))}",
+                        None,
+                    )
+                return False, "该方向目标不可达", None
 
             target_pkg_id = str((target.attributes or {}).get("package_node_id") or "")
             attrs["world_location"] = target_pkg_id
@@ -149,7 +154,14 @@ class MovementCommand(GameCommand):
             session.add(user)
             session.commit()
             target_name = str((target.attributes or {}).get("display_name") or target.name or target_pkg_id)
-            return True, f"你向 {normalize_direction(direction)} 移动，来到 {target_name}"
+            tw_final = str((target.attributes or {}).get("world_id") or "").strip().lower()
+            if tw_final and tw_final != world_id:
+                return (
+                    True,
+                    f"你通过跨世界连接向 {normalize_direction(direction)} 移动，来到 {target_name}（{tw_final}）",
+                    None,
+                )
+            return True, f"你向 {normalize_direction(direction)} 移动，来到 {target_name}", None
 
 
 class FixedDirectionCommand(MovementCommand):

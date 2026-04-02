@@ -309,6 +309,14 @@ def run_graph_seed(
                 WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value,
                 f"relationship endpoints not loaded: {rel.get('id')} {src_id}->{tgt_id}",
             )
+        sw = str((src_n.attributes or {}).get("world_id") or "")
+        tw = str((tgt_n.attributes or {}).get("world_id") or "")
+        if sw and tw and sw != tw:
+            raise GraphSeedError(
+                WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value,
+                f"relationship crosses world boundary in snapshot (disallowed; use admin bridge): "
+                f"id={rel.get('id')!r} {sw!r}->{tw!r}",
+            )
         if rtc == "connects_to":
             connects_pairs.add((src_id, tgt_id))
         st = _ensure_relationship(

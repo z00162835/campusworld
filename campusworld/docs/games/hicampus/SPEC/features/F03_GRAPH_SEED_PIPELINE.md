@@ -11,6 +11,12 @@
 - 幂等 upsert（按确定性 UUID 与 `package_node_id`）
 - 与 F01 可选集成：`manifest.graph_seed` / `features.graph_seed.enabled`
 
+## Multi-World Subgraph Model（多世界子图谱）
+
+- **语义**：多个世界包共用同一套全局图存储；每个安装的世界在图中形成 **子图谱**，由节点与边上的 `attributes.world_id` 标识边界。
+- **默认隔离**：快照实例化仅在单一 `world_id` 内进行；若关系的两端解析到 **不同** `world_id`，种子流程 **拒绝写入**（异常 `GRAPH_SEED_REFERENCE_BROKEN`，提示需通过管理命令创建跨世界桥接，见 F04 `world bridge`）。
+- **与 F06 对齐**：运行态若已存在未授权跨世界 `relationships`（无桥接元数据），由拓扑校验报 `UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP`。
+
 ## Out of Scope
 
 - 命令层入口与权限
@@ -55,7 +61,7 @@
 
 | 码 | 场景 |
 |----|------|
-| `GRAPH_SEED_REFERENCE_BROKEN` | `world.id` 缺失、world_id 与 profile 不一致、关系端点未加载等 |
+| `GRAPH_SEED_REFERENCE_BROKEN` | `world.id` 缺失、world_id 与 profile 不一致、关系端点未加载、**快照内关系跨 world_id（须用 F04 `world bridge`）** 等 |
 | `GRAPH_SEED_TYPE_UNKNOWN` | 包 `type_code` 无映射，或 DB 缺 `node_types` / `relationship_types` 行 |
 | `GRAPH_SEED_RELATIONSHIP_UNSUPPORTED` | strict 模式下出现未在白名单的关系类型 |
 | `GRAPH_SEED_FAILED` | 非 PG 环境、无 snapshot、无 `get_graph_profile`、或其它未分类异常（loader 侧） |

@@ -25,6 +25,7 @@ def test_world_command_usage_when_missing_args():
     out = cmd.execute(_ctx(["admin.world.*"]), [])
     assert not out.success
     assert "world <list|install|uninstall|reload|status|validate|repair>" in out.message
+    assert "bridge" in out.message
 
 
 def test_world_command_denies_without_sub_permission():
@@ -175,4 +176,78 @@ def test_world_command_repair_dry_run_force_combined_still_dry_run():
     args, kwargs = m.call_args
     assert kwargs["dry_run"] is True
     assert kwargs["force"] is True
+
+
+def test_world_bridge_add_denied_without_manage_permission():
+    from unittest.mock import patch
+
+    cmd = WorldCommand()
+    out = cmd.execute(
+        _ctx(["admin.world.bridge.read"]),
+        ["bridge", "add", "w1", "r1", "north", "w2", "r2"],
+    )
+    assert not out.success
+    assert out.error == "WORLD_BRIDGE_PERMISSION_DENIED"
+
+
+def test_world_bridge_list_ok_with_read_permission():
+    from unittest.mock import patch
+
+    cmd = WorldCommand()
+    with patch("app.commands.game.world_command.world_bridge_service.list_bridges") as m:
+        m.return_value = {"ok": True, "bridges": [], "total": 0}
+        out = cmd.execute(_ctx(["admin.world.bridge.read"]), ["bridge", "list"])
+    assert out.success
+    assert out.data["total"] == 0
+
+
+def test_world_bridge_add_calls_service_with_manage_permission():
+    from unittest.mock import patch
+
+    cmd = WorldCommand()
+    with patch("app.commands.game.world_command.world_bridge_service.add_bridge") as m:
+        m.return_value = {"ok": True, "bridge_id": "b1", "message": "bridge created", "status": "applied"}
+        out = cmd.execute(
+            _ctx(["admin.world.bridge.manage"]),
+            ["bridge", "add", "w1", "r1", "north", "w2", "r2", "--dry-run"],
+        )
+    assert out.success
+    _, kwargs = m.call_args
+    assert kwargs.get("dry_run") is True
+
+
+def test_world_bridge_add_same_world_surface_service_error():
+    from unittest.mock import patch
+
+    cmd = WorldCommand()
+    with patch("app.commands.game.world_command.world_bridge_service.add_bridge") as m:
+        m.return_value = {
+            "ok": False,
+            "error": "WORLD_BRIDGE_CROSS_BOUNDARY_VIOLATION",
+            "message": "bridge must span two different worlds",
+        }
+        out = cmd.execute(
+            _ctx(["admin.world.bridge.manage"]),
+            ["bridge", "add", "w1", "r1", "north", "w1", "r2"],
+        )
+    assert not out.success
+    assert out.error == "WORLD_BRIDGE_CROSS_BOUNDARY_VIOLATION"
+
+
+def test_world_bridge_validate_with_issues_returns_boundary_violation():
+    from unittest.mock import patch
+
+    cmd = WorldCommand()
+    with patch("app.commands.game.world_command.world_bridge_service.validate_bridges") as m:
+        m.return_value = {
+            "ok": False,
+            "world_id": "w1",
+            "issues": [{"code": "UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP", "message": "x", "details": {}}],
+            "issue_count": 1,
+            "summary": {},
+        }
+        out = cmd.execute(_ctx(["admin.world.bridge.read"]), ["bridge", "validate", "w1"])
+    assert not out.success
+    assert out.error == "WORLD_BOUNDARY_VIOLATION"
+    assert out.data["issue_count"] == 1
 

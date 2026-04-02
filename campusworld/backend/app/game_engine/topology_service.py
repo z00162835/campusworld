@@ -8,7 +8,14 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 import uuid as uuidlib
 
+from sqlalchemy import or_
+
 from app.core.database import db_session_context
+from app.game_engine.subgraph_boundary import (
+    is_authorized_cross_world_bridge,
+    node_world_id,
+    relationship_endpoints_span_worlds,
+)
 from app.models.graph import Node, Relationship, RelationshipType
 
 
@@ -73,6 +80,15 @@ class WorldTopologyService:
                     applied.append(action)
                 else:
                     skipped.append({**action, "reason": result.get("reason", "not_applied")})
+            elif action.get("action") == "disable_unauthorized_cross_world_link":
+                if not force:
+                    skipped.append({**action, "reason": "force_required"})
+                    continue
+                result = self._apply_disable_unauthorized_cross_world_link(action)
+                if result.get("applied"):
+                    applied.append(action)
+                else:
+                    skipped.append({**action, "reason": result.get("reason", "not_applied")})
             else:
                 skipped.append({**action, "reason": "unsupported_action"})
 
@@ -87,6 +103,57 @@ class WorldTopologyService:
             "skipped_actions": skipped,
             "ok": (len(issues) == 0) or (len(planned) > 0 and len(skipped) == 0),
         }
+
+    def _collect_cross_world_boundary_issues(self, world_id: str) -> List[TopologyIssue]:
+        issues: List[TopologyIssue] = []
+        with db_session_context() as session:
+            w_nodes = (
+                session.query(Node)
+                .filter(Node.attributes["world_id"].astext == str(world_id), Node.is_active == True)  # noqa: E712
+                .all()
+            )
+            wids = {int(n.id) for n in w_nodes}
+            if not wids:
+                return []
+            rels = (
+                session.query(Relationship)
+                .filter(
+                    or_(Relationship.source_id.in_(wids), Relationship.target_id.in_(wids)),
+                    Relationship.is_active == True,  # noqa: E712
+                )
+                .all()
+            )
+            need_ids = set()
+            for r in rels:
+                need_ids.add(int(r.source_id))
+                need_ids.add(int(r.target_id))
+            endpoints = session.query(Node).filter(Node.id.in_(need_ids)).all()
+            id2node = {int(n.id): n for n in endpoints}
+
+        for r in rels:
+            sn = id2node.get(int(r.source_id))
+            tn = id2node.get(int(r.target_id))
+            if not sn or not tn:
+                continue
+            if not relationship_endpoints_span_worlds(sn, tn):
+                continue
+            if is_authorized_cross_world_bridge(r):
+                continue
+            issues.append(
+                TopologyIssue(
+                    code="UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP",
+                    message="cross-world relationship without authorized bridge",
+                    details={
+                        "relationship_id": int(r.id),
+                        "source_id": int(r.source_id),
+                        "target_id": int(r.target_id),
+                        "source_world": node_world_id(sn),
+                        "target_world": node_world_id(tn),
+                        "world_id": str(world_id),
+                    },
+                )
+            )
+        return issues
 
     def _collect_issues(self, world_id: str) -> List[TopologyIssue]:
         profile = self._get_profile(world_id)
@@ -178,6 +245,66 @@ class WorldTopologyService:
                         },
                     )
                 )
+        issues.extend(self._collect_cross_world_boundary_issues(world_id))
+        issues.extend(self._collect_account_session_issues(world_id))
+        return issues
+
+    def _collect_account_session_issues(self, world_id: str) -> List[TopologyIssue]:
+        """Accounts with active_world==world_id must resolve world_location to a room in the same world."""
+        issues: List[TopologyIssue] = []
+        wid = str(world_id).strip().lower()
+        if not wid:
+            return []
+        with db_session_context() as session:
+            accounts = (
+                session.query(Node)
+                .filter(Node.type_code == "account", Node.is_active == True)  # noqa: E712
+                .all()
+            )
+            for acc in accounts:
+                attrs = dict(acc.attributes or {})
+                aw = str(attrs.get("active_world") or "").strip().lower()
+                if aw != wid:
+                    continue
+                loc_pkg = str(attrs.get("world_location") or "").strip().lower()
+                if not loc_pkg:
+                    continue
+                room = (
+                    session.query(Node)
+                    .filter(
+                        Node.type_code == "room",
+                        Node.attributes["package_node_id"].astext == loc_pkg,
+                        Node.is_active == True,  # noqa: E712
+                    )
+                    .first()
+                )
+                if not room:
+                    issues.append(
+                        TopologyIssue(
+                            code="SESSION_WORLD_LOCATION_ROOM_MISSING",
+                            message=f"world_location room not found: {loc_pkg}",
+                            details={
+                                "account_id": int(acc.id),
+                                "world_id": wid,
+                                "world_location": loc_pkg,
+                            },
+                        )
+                    )
+                    continue
+                rw = node_world_id(room)
+                if rw and rw != aw:
+                    issues.append(
+                        TopologyIssue(
+                            code="SESSION_ACTIVE_WORLD_LOCATION_MISMATCH",
+                            message="account world_location room belongs to a different world than active_world",
+                            details={
+                                "account_id": int(acc.id),
+                                "active_world": aw,
+                                "room_world_id": rw,
+                                "world_location": loc_pkg,
+                            },
+                        )
+                    )
         return issues
 
     def _build_repair_actions(self, issues: List[TopologyIssue]) -> List[Dict[str, Any]]:
@@ -189,6 +316,13 @@ class WorldTopologyService:
                         "action": "create_reverse_connects_to",
                         "source_id": issue.details.get("source_id"),
                         "target_id": issue.details.get("target_id"),
+                    }
+                )
+            elif issue.code == "UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP":
+                actions.append(
+                    {
+                        "action": "disable_unauthorized_cross_world_link",
+                        "relationship_id": issue.details.get("relationship_id"),
                     }
                 )
         return actions
@@ -222,6 +356,21 @@ class WorldTopologyService:
                 attributes={},
                 tags=[],
             )
+            session.add(rel)
+            session.commit()
+        return {"applied": True}
+
+    def _apply_disable_unauthorized_cross_world_link(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        rid = action.get("relationship_id")
+        if rid is None:
+            return {"applied": False, "reason": "missing_relationship_id"}
+        with db_session_context() as session:
+            rel = session.query(Relationship).filter(Relationship.id == int(rid)).first()
+            if not rel:
+                return {"applied": False, "reason": "not_found"}
+            if is_authorized_cross_world_bridge(rel):
+                return {"applied": False, "reason": "authorized_bridge_skip"}
+            rel.is_active = False
             session.add(rel)
             session.commit()
         return {"applied": True}

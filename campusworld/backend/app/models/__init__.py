@@ -19,6 +19,13 @@ from .system import (
     WorldInstallJob,
 )
 from .exit import Exit
+from .things import (
+    AccessTerminal,
+    Furniture,
+    LogicalZone,
+    NpcAgent,
+    WorldThing,
+)
 
 # 图数据结构系统
 from .graph import (
@@ -56,6 +63,11 @@ __all__ = [
     "WorldRuntimeState",
     "WorldInstallJob",
     "Exit",
+    "AccessTerminal",
+    "Furniture",
+    "LogicalZone",
+    "NpcAgent",
+    "WorldThing",
     
     # 图数据结构系统
     "Node",

@@ -92,6 +92,14 @@ class WSHandler:
                 await self._handle_complete(conn, data)
             elif msg_type == "ping":
                 await conn.send_json({"type": "pong"})
+            elif msg_type == "agent_enter":
+                await self._handle_agent_enter(conn, data)
+            elif msg_type == "agent_exit":
+                await self._handle_agent_exit(conn, data)
+            elif msg_type == "agent_execute":
+                await self._handle_agent_execute(conn, data)
+            elif msg_type == "agent_list":
+                await self._handle_agent_list(conn, data)
             else:
                 await conn.send_json({"type": "error", "message": f"Unknown message type: {msg_type}"})
 
@@ -233,6 +241,37 @@ class WSHandler:
             "type": "completions",
             "options": [c["name"] for c in unique_commands]
         })
+
+    async def _handle_agent_list(self, conn: WSConnection, data: Dict[str, Any]):
+        """返回可用 Agent 列表"""
+        # TODO: 从 Agent 注册表获取可用 agents
+        agents = []
+        await conn.send_json({"type": "agent_list", "agents": agents})
+
+    async def _handle_agent_enter(self, conn: WSConnection, data: Dict[str, Any]):
+        """进入 Agent 环境"""
+        if not conn.authenticated:
+            await conn.send_json({"type": "error", "message": "Not authenticated"})
+            return
+        agent_name = data.get("agent_name", "")
+        # TODO: 创建/加入 Agent 会话
+        await conn.send_json({"type": "agent_entered", "agent_name": agent_name})
+
+    async def _handle_agent_exit(self, conn: WSConnection, data: Dict[str, Any]):
+        """退出 Agent 环境"""
+        if not conn.authenticated:
+            await conn.send_json({"type": "error", "message": "Not authenticated"})
+            return
+        await conn.send_json({"type": "agent_exited"})
+
+    async def _handle_agent_execute(self, conn: WSConnection, data: Dict[str, Any]):
+        """在 Agent 环境中执行命令"""
+        if not conn.authenticated:
+            await conn.send_json({"type": "error", "message": "Not authenticated"})
+            return
+        command = data.get("command", "")
+        # TODO: 在 Agent 上下文中执行命令
+        await conn.send_json({"type": "agent_result", "result": "", "success": True})
 
 
 # 全局 WebSocket 处理器实例

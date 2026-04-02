@@ -158,7 +158,8 @@ class TestSessionManager:
         assert self.manager.get_session_count() == 1
         assert "test_123" in self.manager.sessions
 
-    def test_remove_session(self):
+    @patch("app.ssh.session.SSHSession._save_session_state")
+    def test_remove_session(self, _mock_save):
         """测试移除会话"""
         session = self.session_class(
             session_id="test_123",
@@ -207,7 +208,8 @@ class TestSessionManager:
         sessions = self.manager.list_all_sessions()
         assert len(sessions) == 3
 
-    def test_cleanup_expired_sessions(self):
+    @patch("app.ssh.session.SSHSession._save_session_state")
+    def test_cleanup_expired_sessions(self, _mock_save):
         """测试清理过期会话"""
         # 添加一个正常会话
         normal_session = self.session_class(

@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 
 from campus.config import Config
 from campus.connection import WSConnection
-from campus.terminal import Terminal, format_output
+from campus.terminal import Terminal
 from campus.protocol import WSMessage
 
 
@@ -25,20 +25,22 @@ class CampusClient:
         self.config = config
         self.connection: WSConnection = None
         self.terminal: Terminal = None
+        self._username = "guest"
+        self._max_retries = 3
+        self._retry_count = 0
 
-    async def connect(self, username: str, password: str) -> bool:
+    async def connect(self, username: str, password: str = "") -> bool:
         """连接到服务器"""
         server_config = self.config.get_server_config()
         host = server_config.get("host", "localhost")
         port = server_config.get("port", 8000)
         use_ssl = server_config.get("use_ssl", False)
 
-        # 简化认证：使用用户名作为 user_id
-        user_id = username
-
+        self._username = username
         self.connection = WSConnection(host, port, use_ssl)
+
         connected = await self.connection.connect(
-            user_id=user_id,
+            user_id=username,
             username=username,
             permissions=["player"]
         )
@@ -55,6 +57,29 @@ class CampusClient:
             completions = await self.connection.request_completions("")
             self.terminal.set_completions(completions)
 
+            self._retry_count = 0
+            return True
+        return False
+
+    async def reconnect(self) -> bool:
+        """尝试重新连接"""
+        if self._retry_count >= self._max_retries:
+            return False
+
+        self._retry_count += 1
+        print(f"Attempting to reconnect ({self._retry_count}/{self._max_retries})...")
+
+        connected = await self.connection.reconnect(
+            user_id=self._username,
+            username=self._username,
+            permissions=["player"]
+        )
+
+        if connected:
+            # 重新获取命令补全
+            completions = await self.connection.request_completions("")
+            self.terminal.set_completions(completions)
+            self._retry_count = 0
             return True
         return False
 
@@ -63,37 +88,25 @@ class CampusClient:
         print("CampusWorld CLI Client")
         print("=" * 40)
 
-        # 交互式登录
-        username = input("Username: ").strip()
-        password = input("Password: ").strip()
+        # 获取配置或使用默认值
+        default_user = self.config.get("auth.default_user", "guest")
+        username = input(f"Username [{default_user}]: ").strip() or default_user
 
         print("\nConnecting...")
-        if not await self.connect(username, password):
+        if not await self.connect(username):
             print("Connection failed!")
-            return
+            # 尝试重连
+            if await self.reconnect():
+                print("Reconnected successfully!")
+            else:
+                return
 
         print("Connected!\n")
+        print("Press Ctrl+P to open command palette")
+        print("=" * 40)
 
-        # 运行终端
-        await self.terminal.run_async(self.handle_command)
-
-    async def handle_command(self, text: str):
-        """处理命令"""
-        if not self.connection:
-            return
-
-        # 发送命令
-        if await self.connection.send_command(text):
-            # 等待结果
-            response = await self.connection.receive()
-            if response:
-                if WSMessage.is_result(response):
-                    if response.get("success"):
-                        print(format_output(response.get("message", ""), True))
-                    else:
-                        print(format_output(response.get("message", ""), False))
-                elif WSMessage.is_error(response):
-                    print(format_output(response.get("message", "Unknown error"), False))
+        # 运行终端（textual App）- 使用异步版本
+        await self.terminal.run_async()
 
 
 def main():
@@ -118,6 +131,8 @@ def main():
         server_config = config.get_server_config()
         server_config["port"] = args.port
         config.config["server"] = server_config
+    if args.user:
+        config.config["default_user"] = args.user
 
     # 创建客户端
     client = CampusClient(config)

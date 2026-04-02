@@ -8,12 +8,19 @@ import pytest
 import sys
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 
 # 添加项目根目录到Python路径
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+
+def _db_session_cm(mock_session: MagicMock) -> MagicMock:
+    cm = MagicMock()
+    cm.__enter__.return_value = mock_session
+    cm.__exit__.return_value = None
+    return cm
 
 
 class TestGameHandler:
@@ -32,12 +39,11 @@ class TestGameHandler:
         assert self.handler.audit_logger is not None
         assert self.handler.security_logger is not None
 
-    @patch('app.ssh.game_handler.SessionLocal')
-    def test_authenticate_user_not_found(self, mock_session_local):
+    @patch('app.ssh.game_handler.db_session_context')
+    def test_authenticate_user_not_found(self, mock_db_ctx):
         """测试用户不存在的情况"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
         # 查询返回None
         mock_session.query.return_value.filter.return_value.first.return_value = None
@@ -51,13 +57,12 @@ class TestGameHandler:
         assert result['success'] is False
         assert '用户不存在' in result['error']
 
-    @patch('app.ssh.game_handler.SessionLocal')
-    @patch('app.ssh.game_handler.verify_password')
-    def test_authenticate_user_success(self, mock_verify, mock_session_local):
+    @patch('app.ssh.game_handler.db_session_context')
+    @patch('app.core.security.verify_password')
+    def test_authenticate_user_success(self, mock_verify, mock_db_ctx):
         """测试用户认证成功"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
         # 创建模拟用户节点
         mock_user_node = MagicMock()
@@ -85,13 +90,12 @@ class TestGameHandler:
         assert 'session_id' in result
         assert 'user_id' in result
 
-    @patch('app.ssh.game_handler.SessionLocal')
-    @patch('app.ssh.game_handler.verify_password')
-    def test_authenticate_user_wrong_password(self, mock_verify, mock_session_local):
+    @patch('app.ssh.game_handler.db_session_context')
+    @patch('app.core.security.verify_password')
+    def test_authenticate_user_wrong_password(self, mock_verify, mock_db_ctx):
         """测试密码错误的情况"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
         # 创建模拟用户节点
         mock_user_node = MagicMock()
@@ -116,12 +120,11 @@ class TestGameHandler:
         assert result['success'] is False
         assert '密码错误' in result['error']
 
-    @patch('app.ssh.game_handler.SessionLocal')
-    def test_authenticate_user_inactive(self, mock_session_local):
+    @patch('app.ssh.game_handler.db_session_context')
+    def test_authenticate_user_inactive(self, mock_db_ctx):
         """测试账号被禁用的情況"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
         # 创建模拟用户节点（账号被禁用）
         mock_user_node = MagicMock()
@@ -140,12 +143,11 @@ class TestGameHandler:
         assert result['success'] is False
         assert '已被禁用' in result['error']
 
-    @patch('app.ssh.game_handler.SessionLocal')
-    def test_authenticate_user_locked(self, mock_session_local):
+    @patch('app.ssh.game_handler.db_session_context')
+    def test_authenticate_user_locked(self, mock_db_ctx):
         """测试账号被锁定的情況"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
         # 创建模拟用户节点（账号被锁定）
         mock_user_node = MagicMock()
@@ -166,14 +168,13 @@ class TestGameHandler:
         assert result['success'] is False
         assert '已被锁定' in result['error']
 
-    @patch('app.ssh.game_handler.SessionLocal')
-    def test_authenticate_user_suspended(self, mock_session_local):
+    @patch('app.ssh.game_handler.db_session_context')
+    def test_authenticate_user_suspended(self, mock_db_ctx):
         """测试账号被暂停的情況"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
-        future_date = (datetime.now() + datetime.timedelta(days=1)).isoformat()
+        future_date = (datetime.now() + timedelta(days=1)).isoformat()
 
         # 创建模拟用户节点（账号被暂停）
         mock_user_node = MagicMock()
@@ -196,12 +197,11 @@ class TestGameHandler:
         assert '已暂停' in result['error']
 
     @patch('app.ssh.game_handler.root_manager')
-    @patch('app.ssh.game_handler.SessionLocal')
-    def test_spawn_user_success(self, mock_session_local, mock_root_manager):
+    @patch('app.ssh.game_handler.db_session_context')
+    def test_spawn_user_success(self, mock_db_ctx, mock_root_manager):
         """测试用户spawn成功"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
         # Mock root_manager
         mock_root_manager.ensure_root_node_exists.return_value = True
@@ -222,12 +222,11 @@ class TestGameHandler:
         assert result is True
 
     @patch('app.ssh.game_handler.root_manager')
-    @patch('app.ssh.game_handler.SessionLocal')
-    def test_spawn_user_root_not_exists(self, mock_session_local, mock_root_manager):
+    @patch('app.ssh.game_handler.db_session_context')
+    def test_spawn_user_root_not_exists(self, mock_db_ctx, mock_root_manager):
         """测试根节点不存在时spawn失败"""
-        # 设置mock
         mock_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_session
+        mock_db_ctx.return_value = _db_session_cm(mock_session)
 
         # Mock root_manager返回False
         mock_root_manager.ensure_root_node_exists.return_value = False
@@ -241,16 +240,16 @@ class TestGameHandler:
 class TestGameHandlerIntegration:
     """集成测试 - 测试GameHandler与数据库的交互"""
 
-    @patch('app.ssh.game_handler.verify_password')
+    @patch('app.core.security.verify_password')
     def test_authenticate_flow(self, mock_verify):
         """测试完整的认证流程"""
         from app.ssh.game_handler import GameHandler
 
         handler = GameHandler()
 
-        with patch('app.ssh.game_handler.SessionLocal') as mock_session_local:
+        with patch('app.ssh.game_handler.db_session_context') as mock_db_ctx:
             mock_session = MagicMock()
-            mock_session_local.return_value.__enter__.return_value = mock_session
+            mock_db_ctx.return_value = _db_session_cm(mock_session)
 
             # 创建模拟用户
             mock_user_node = MagicMock()

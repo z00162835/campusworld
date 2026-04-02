@@ -76,3 +76,44 @@ class WSMessage:
     def is_pong(msg: Dict[str, Any]) -> bool:
         """是否是心跳响应"""
         return msg.get("type") == "pong"
+
+    # Agent 消息
+    @staticmethod
+    def agent_enter(agent_name: str) -> str:
+        """创建进入 Agent 环境消息"""
+        return json.dumps({"type": "agent_enter", "agent_name": agent_name})
+
+    @staticmethod
+    def agent_exit() -> str:
+        """创建退出 Agent 环境消息"""
+        return json.dumps({"type": "agent_exit"})
+
+    @staticmethod
+    def agent_execute(command: str) -> str:
+        """创建 Agent 执行命令消息"""
+        return json.dumps({"type": "agent_execute", "command": command})
+
+    @staticmethod
+    def agent_list() -> str:
+        """创建列出 Agent 实例消息"""
+        return json.dumps({"type": "agent_list"})
+
+    @staticmethod
+    def is_agent_entered(msg: Dict[str, Any]) -> bool:
+        """是否是进入 Agent 环境响应"""
+        return msg.get("type") == "agent_entered"
+
+    @staticmethod
+    def is_agent_exited(msg: Dict[str, Any]) -> bool:
+        """是否是退出 Agent 环境响应"""
+        return msg.get("type") == "agent_exited"
+
+    @staticmethod
+    def is_agent_result(msg: Dict[str, Any]) -> bool:
+        """是否是 Agent 执行结果"""
+        return msg.get("type") == "agent_result"
+
+    @staticmethod
+    def is_agent_list(msg: Dict[str, Any]) -> bool:
+        """是否是 Agent 列表响应"""
+        return msg.get("type") == "agent_list"

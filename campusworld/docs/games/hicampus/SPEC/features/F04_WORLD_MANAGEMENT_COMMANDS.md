@@ -21,6 +21,23 @@
 - `world validate <world_id> [--dry-run]`
 - `world repair <world_id> [--dry-run] [--force]`
 
+### Cross-World Bridge（跨世界连接，默认不联通）
+
+仅管理员通过子命令显式建立；默认任意两世界 **不** 在图上直连。
+
+| 子命令 | 权限 | 说明 |
+|--------|------|------|
+| `world bridge add <src_world> <src_room_pkg> <direction> <dst_world> <dst_room_pkg>` | `admin.world.bridge.manage` | 创建 `connects_to` + `cross_world_bridge` 元数据；可选 `--two-way`、`--bridge-type`（portal / gate / transit）、`--dry-run` |
+| `world bridge remove <bridge_id>` 或 `remove <src_world> <src_room_pkg> <direction>` | `admin.world.bridge.manage` | 停用桥接关联边 |
+| `world bridge list [<world_id>] [--include-disabled]` | `admin.world.bridge.read` | 列出桥接；可按世界过滤 |
+| `world bridge validate <world_id>` | `admin.world.bridge.read` | 仅针对 **未授权跨世界关系** 的报告（`UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP`） |
+
+**错误码（节选）**：`WORLD_BRIDGE_PERMISSION_DENIED`、`WORLD_BRIDGE_INVALID_ARGUMENT`、`WORLD_BRIDGE_NOT_FOUND`、`WORLD_BRIDGE_ALREADY_EXISTS`、`WORLD_BRIDGE_CROSS_BOUNDARY_VIOLATION`、`WORLD_BRIDGE_DIRECTION_CONFLICT`、`WORLD_BRIDGE_APPLY_FAILED`。
+
+**审计事件**：`world.bridge.add.attempt|success|fail`、`world.bridge.remove.attempt|success|fail`、`world.bridge.list`、`world.bridge.validate`。
+
+**与移动**：本世界同方向存在本地 `connects_to` 时 **优先本地**；无本地出口时才尝试启用中的跨世界桥接；桥接关闭时 `WORLD_BRIDGE_DISABLED`。
+
 ## Runtime Output Contract
 
 `world install/uninstall/reload` 的输出应透传运行时结构化结果（见 F01）并在命令层附加路径观测字段：
@@ -77,8 +94,10 @@
 
 ## Error / Permission Contract
 
-- 权限：`admin.world.*`（可细分为 `admin.world.read/manage/maintain`）。
-- 鉴权失败：返回 `WORLD_FORBIDDEN`。
+- 权限：`admin.world.*`（可细分为 `admin.world.read/manage/maintain`）；跨世界桥接另需 `admin.world.bridge.read` / `admin.world.bridge.manage`（可由 `admin.world.*` 通配覆盖）。
+- 鉴权失败：返回 `WORLD_FORBIDDEN`（既有子命令）或 `WORLD_BRIDGE_PERMISSION_DENIED`（`world bridge`）。
+- **分层**：`WORLD_BOUNDARY_*` / `WORLD_TOPOLOGY_*`（拓扑）、`WORLD_BRIDGE_*`（桥接命令与服务）、`GRAPH_SEED_*`（F03 种子）。
+- `world bridge validate` 在未授权跨世界问题时：`success=false`，`error=WORLD_BOUNDARY_VIOLATION`。
 - 运行时/数据/种子失败：沿用 `WORLD_*`、`WORLD_DATA_*`、`GRAPH_SEED_*` 错误码。
 
 ## Dependencies

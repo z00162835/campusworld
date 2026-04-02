@@ -1,91 +1,408 @@
 """
-终端 UI
-使用 prompt_toolkit 实现增强的终端交互体验
-Claude Code 风格的 / 命令选择
+CampusWorld 终端 - 基于 Textual 框架
+提供 Claude Code 风格的命令面板体验
 """
 
 import asyncio
-import sys
-import time
-from typing import Optional, Callable, List
-
-from prompt_toolkit import PromptSession, HTML
-from prompt_toolkit.buffer import Buffer
-from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit.keys import Keys
-from prompt_toolkit.styles import Style
-from prompt_toolkit.application import Application
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import HSplit, Window
-from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.widgets import TextArea
+from difflib import SequenceMatcher
+from typing import Optional, Callable, List, AsyncIterator
+from textual.app import App, ComposeResult
+from textual.command import CommandPalette, Provider, Hit, Hits
+from textual.containers import Container
+from textual.screen import Screen
+from textual.widgets import Header, Input, Static, Log
+from textual.binding import Binding
+from textual.suggester import Suggester
+from textual.style import Style
+from textual import on
 
 from .protocol import WSMessage
 
 
-class CommandCompleter(Completer):
-    """命令补全器"""
+class CommandSuggester(Suggester):
+    """命令补全建议器"""
 
     def __init__(self, completions: List[str]):
-        self.completions = completions
+        super().__init__()
+        self._completions = completions
 
-    def get_completions(self, word_before_cursor: str, cursor_position: int,
-                        context=None) -> List[Completion]:
-        """获取补全选项"""
-        word = word_before_cursor.lower()
-        for completion in self.completions:
-            if completion.lower().startswith(word):
-                yield Completion(completion, start_position=-len(word_before_cursor))
+    async def get_suggestion(self, value: str) -> Optional[str]:
+        """获取建议（返回字符串或None）"""
+        if not value or not self._completions:
+            return None
+
+        value_lower = value.lower().strip()
+        if not value_lower:
+            return None
+
+        # 前缀匹配优先
+        for cmd in self._completions:
+            if cmd.lower().startswith(value_lower):
+                return cmd
+
+        # 模糊匹配
+        best_match = None
+        best_ratio = 0.6
+        for cmd in self._completions:
+            ratio = SequenceMatcher(None, value_lower, cmd.lower()).ratio()
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_match = cmd
+
+        return best_match
+
+    def update_completions(self, completions: List[str]):
+        """更新补全列表"""
+        self._completions = completions
 
 
-class CommandPalette:
-    """命令选择面板（用于 / 命令）"""
+class CampusCommandProvider(Provider):
+    """命令提供者 - 从服务器获取命令列表（Textual 8.x API）"""
 
-    def __init__(self, commands: List[tuple]):
+    def __init__(self, screen: Screen, match_style: Style | None = None) -> None:
+        super().__init__(screen, match_style)
+
+    async def search(self, query: str) -> AsyncIterator[Hit]:
+        """搜索命令
+
+        Args:
+            query: 用户输入的搜索文本
+
+        Yields:
+            匹配的 Hit 对象
         """
-        commands: [(name, description), ...]
-        """
-        self.commands = commands
-        self.selected_index = 0
+        app = self.app
 
-    def move_up(self):
-        """选择上一项"""
-        if self.commands:
-            self.selected_index = (self.selected_index - 1) % len(self.commands)
+        # 获取所有候选命令
+        all_commands = list(app._completions)
+        agent_commands = [f"/{a}" for a in app._agents]
 
-    def move_down(self):
-        """选择下一项"""
-        if self.commands:
-            self.selected_index = (self.selected_index + 1) % len(self.commands)
+        if not query:
+            # 无搜索词时，列出所有命令
+            for cmd in all_commands:
+                yield Hit(
+                    score=1.0,
+                    match_display=cmd,
+                    command=lambda c=cmd: app.execute_from_provider(c),
+                    text=cmd,
+                    help=f"执行命令: {cmd}",
+                )
+            for agent_cmd in agent_commands:
+                agent_name = agent_cmd[1:]
+                yield Hit(
+                    score=1.0,
+                    match_display=agent_cmd,
+                    command=lambda a=agent_name: app.enter_agent(a),
+                    text=agent_cmd,
+                    help=f"进入 {agent_name} 环境",
+                )
+        else:
+            # 模糊匹配
+            matcher = self.matcher(query)
+            for cmd in all_commands:
+                if matcher.match(cmd):
+                    yield Hit(
+                        score=matcher.match(cmd) or 0.0,
+                        match_display=cmd,
+                        command=lambda c=cmd: app.execute_from_provider(c),
+                        text=cmd,
+                        help=f"执行命令: {cmd}",
+                    )
+            for agent_cmd in agent_commands:
+                agent_name = agent_cmd[1:]
+                if matcher.match(agent_cmd):
+                    yield Hit(
+                        score=matcher.match(agent_cmd) or 0.0,
+                        match_display=agent_cmd,
+                        command=lambda a=agent_name: app.enter_agent(a),
+                        text=agent_cmd,
+                        help=f"进入 {agent_name} 环境",
+                    )
 
-    def get_selected(self) -> Optional[str]:
-        """获取选中的命令名"""
-        if self.commands and 0 <= self.selected_index < len(self.commands):
-            return self.commands[self.selected_index][0]
 
-    def render(self) -> List[HTML]:
-        """渲染命令列表"""
-        lines = []
-        for i, (name, desc) in enumerate(self.commands):
-            if i == self.selected_index:
-                lines.append(HTML(
-                    f'<b><style bg="blue" fg="white"> {name} </style></b>  {desc}'
-                ))
-            else:
-                lines.append(HTML(f'  <style fg="white">{name}</style>  {desc}'))
-        lines.append(HTML('<style fg="gray">  ↑↓ navigate  Enter select  Esc cancel</style>'))
-        return lines
+class CampusTerminal(App):
+    """CampusWorld 终端应用"""
+
+    # 注册命令提供者，CommandPalette 自动从此发现 Provider
+    COMMANDS = App.COMMANDS | {CampusCommandProvider}
+
+    CSS = """
+    Screen {
+        background: $surface;
+    }
+
+    #output-container {
+        height: 1fr;
+        border: solid $primary;
+        margin: 1;
+        padding: 1;
+    }
+
+    #output {
+        height: 100%;
+        border: none;
+        padding: 0;
+    }
+
+    #input-container {
+        height: 3;
+        border: solid $primary;
+        margin: 0 1 1 1;
+        padding: 1;
+        background: $surface;
+    }
+
+    #status-bar {
+        height: 1;
+        dock: top;
+        background: $primary;
+        color: $text;
+        text-align: center;
+        padding: 0 1;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "cancel_input", "Cancel", show=False),
+        Binding("ctrl+c", "quit", "Quit", show=False),
+        Binding("tab", "complete_command", "Complete", show=False),
+        Binding("up", "history_up", show=False),
+        Binding("down", "history_down", show=False),
+    ]
+
+    def __init__(self, completions: List[str], on_command: Optional[Callable] = None):
+        super().__init__()
+        self._completions = completions
+        self._agents: List[str] = []  # 可用 Agent 列表
+        self._on_command = on_command
+        self._command_palette: Optional[CommandPalette] = None
+        self._current_agent: Optional[str] = None  # 当前 Agent 环境
+        self._suggester = CommandSuggester(completions)
+        self._history: List[str] = []  # 命令历史
+        self._history_index: int = -1  # 历史索引
+        self._connection = None  # WebSocket 连接
+
+    def get_default_provider(self) -> Provider:
+        """返回命令提供者"""
+        return CampusCommandProvider(self)
+
+    def compose(self) -> ComposeResult:
+        """构建 UI"""
+        yield Header()
+        yield Static("Ctrl+C 退出", id="status-bar")
+        with Container(id="output-container"):
+            yield Log(id="output")
+        with Container(id="input-container"):
+            yield Input(
+                placeholder="输入命令，按 Tab 补全",
+                id="command-input",
+                suggester=self._suggester
+            )
+
+    async def on_mount(self) -> None:
+        """应用挂载"""
+        self.title = "CampusWorld CLI"
+        self.sub_title = "CampusWorld Terminal"
+
+        # 显示欢迎信息
+        output = self.query_one("#output", Log)
+        output.write_line("[bold green]========================================[/bold green]")
+        output.write_line("[bold green]  Welcome to CampusWorld CLI[/bold green]")
+        output.write_line("[bold green]  Type / to select commands or enter agent mode[/bold green]")
+        output.write_line("[bold green]  Type @<id> to interact with agent instance[/bold green]")
+        output.write_line("[bold green]========================================[/bold green]")
+        output.write_line("")
+
+        # 聚焦输入框
+        self.query_one("#command-input", Input).focus()
+
+        # 注意：CommandPalette 是 Screen 类型，不应 mount 到当前 screen
+        # 而是通过 push_screen 打开。保持 self._command_palette 为 None，
+        # 在 toggle 时动态创建和 push。
+
+    @on(Input.Submitted)
+    async def on_input_submitted(self, event: Input.Submitted) -> None:
+        """处理输入提交"""
+        command = event.value.strip()
+        if command:
+            # 添加到历史记录
+            if command not in self._history:
+                self._history.insert(0, command)
+                if len(self._history) > 100:
+                    self._history.pop()
+            self._history_index = -1
+            await self.execute_command(command)
+            # 清空输入
+            self.query_one("#command-input", Input).value = ""
+
+    async def execute_command(self, command: str) -> None:
+        """执行命令"""
+        output = self.query_one("#output", Log)
+
+        # 检查是否是 Agent 命令
+        if command.startswith("/"):
+            agent_name = command[1:].strip()
+            if agent_name:
+                await self.enter_agent(agent_name)
+                return
+        elif command.startswith("@"):
+            agent_id = command[1:].strip()
+            if agent_id and self._current_agent:
+                await self.enter_agent_instance(agent_id)
+                return
+
+        # 添加命令到输出
+        prompt = f"[bold cyan]❯[/bold cyan]"
+        if self._current_agent:
+            prompt = f"[bold magenta][{self._current_agent}]❯[/bold magenta]"
+        output.write_line(f"{prompt} {command}")
+
+        # 调用命令回调
+        if self._on_command:
+            await self._on_command(command)
+
+    async def execute_from_provider(self, command: str) -> None:
+        """从命令面板执行命令"""
+        input_widget = self.query_one("#command-input", Input)
+        input_widget.value = command
+        await self.execute_command(command)
+        input_widget.value = ""
+
+    async def enter_agent(self, agent_name: str) -> None:
+        """进入 Agent 环境"""
+        output = self.query_one("#output", Log)
+
+        # 尝试与服务端通信
+        if self._connection:
+            success = await self._connection.agent_enter(agent_name)
+            if success:
+                self._current_agent = agent_name
+                self.update_status()
+                return
+
+        # 回退到本地模式（服务端不支持时）
+        output.write_line(f"[bold magenta]进入 {agent_name} 环境 (本地模式)[/bold magenta]")
+        output.write_line("可用命令:")
+        output.write_line("  ls      - 列出所有 agent 实例")
+        output.write_line("  @<id>   - 进入指定的 agent 实例")
+        output.write_line("  exit    - 退出 agent 环境")
+        self._current_agent = agent_name
+        self.update_status()
+
+    async def enter_agent_instance(self, instance_id: str) -> None:
+        """进入特定的 Agent 实例"""
+        output = self.query_one("#output", Log)
+        output.write_line(f"[bold magenta]进入 agent 实例 {instance_id}[/bold magenta]")
+        output.write_line(f"[dim]提示：此 agent 提供 check 命令可用[/dim]")
+
+    async def exit_agent(self) -> None:
+        """退出 Agent 环境"""
+        if self._current_agent:
+            if self._connection:
+                await self._connection.agent_exit()
+            output = self.query_one("#output", Log)
+            output.write_line(f"[bold magenta]退出 {self._current_agent} 环境[/bold magenta]")
+            self._current_agent = None
+            self.update_status()
+
+    def action_toggle_command_palette(self) -> None:
+        """切换命令面板 - 使用 push_screen 打开/关闭"""
+        if CommandPalette.is_open(self.app):
+            # 已经在打开状态，找到并关闭它
+            # CommandPalette 关闭时会从 screen stack 中移除
+            for screen in self.app.screen_stack:
+                if isinstance(screen, CommandPalette):
+                    screen.dismiss()
+                    break
+        else:
+            # 打开命令面板 - Provider 从 App.COMMANDS 自动发现
+            self.app.push_screen(CommandPalette())
+
+    def action_cancel_input(self) -> None:
+        """取消输入 / 退出 Agent 环境"""
+        if self._current_agent:
+            # 在 Agent 环境中，ESC 退出 Agent 环境
+            asyncio.create_task(self.exit_agent())
+        else:
+            # 普通模式下清空输入
+            input_widget = self.query_one("#command-input", Input)
+            input_widget.value = ""
+            self.set_focus(self.query_one("#command-input", Input))
+
+    def action_complete_command(self) -> None:
+        """Tab 补全"""
+        input_widget = self.query_one("#command-input", Input)
+        value = input_widget.value
+
+        if not value or not self._completions:
+            return
+
+        # 查找匹配的命令
+        value_lower = value.lower().strip()
+        matches = [cmd for cmd in self._completions if cmd.lower().startswith(value_lower)]
+
+        if len(matches) == 1:
+            # 唯一匹配，自动补全
+            input_widget.value = matches[0]
+        elif len(matches) > 1:
+            # 多个匹配，显示选项
+            output = self.query_one("#output", Log)
+            output.write_line("[dim]可能的补全:[/dim] " + ", ".join(matches))
+
+    def action_history_up(self) -> None:
+        """历史上一条命令"""
+        if not self._history:
+            return
+        input_widget = self.query_one("#command-input", Input)
+        if self._history_index < len(self._history) - 1:
+            self._history_index += 1
+            input_widget.value = self._history[self._history_index]
+
+    def action_history_down(self) -> None:
+        """历史下一条命令"""
+        input_widget = self.query_one("#command-input", Input)
+        if self._history_index > 0:
+            self._history_index -= 1
+            input_widget.value = self._history[self._history_index]
+        elif self._history_index == 0:
+            self._history_index = -1
+            input_widget.value = ""
+
+    def append_output(self, text: str, style: str = "") -> None:
+        """追加输出"""
+        output = self.query_one("#output", Log)
+        if style:
+            output.write_line(f"[{style}]{text}[/{style}]")
+        else:
+            output.write_line(text)
+
+    def update_status(self) -> None:
+        """更新状态栏"""
+        status = "Ctrl+C 退出"
+        if self._current_agent:
+            status = f"[Agent: {self._current_agent}] | Ctrl+C 退出"
+        self.query_one("#status-bar", Static).update(status)
+
+    def update_completions(self, completions: List[str]) -> None:
+        """更新命令列表"""
+        self._completions = completions
+        self._suggester.update_completions(completions)
+
+    def update_agents(self, agents: List[str]) -> None:
+        """更新 Agent 列表"""
+        self._agents = agents
 
 
 class Terminal:
-    """Campus 终端 - 支持 / 命令即时选择（按 / 后 Enter 显示选择列表）"""
+    """Terminal 包装器 - 兼容原有接口"""
 
     def __init__(self, prompt_format: str = "[{user}@{time}] campusworld> "):
         self.prompt_format = prompt_format
         self.username = "user"
         self._completions: List[str] = []
         self._connection = None
+        self._on_command_callback: Optional[Callable] = None
+        self._app: Optional[CampusTerminal] = None
 
     def set_connection(self, connection):
         """设置连接"""
@@ -94,135 +411,32 @@ class Terminal:
     def set_completions(self, completions: List[str]):
         """设置补全列表"""
         self._completions = completions
+        if self._app:
+            self._app.update_completions(completions)
 
-    def _get_prompt(self) -> str:
-        """生成提示符"""
-        try:
-            return self.prompt_format.format(
-                user=self.username,
-                time=time.strftime("%H:%M:%S")
-            )
-        except KeyError:
-            return "[user@HH:MM:SS] campusworld> "
+    async def _handle_command(self, command: str):
+        """处理命令"""
+        if self._connection:
+            await self._connection.send_command(command)
+            response = await self._connection.receive()
+            if response:
+                if WSMessage.is_result(response):
+                    msg = response.get("message", "")
+                    success = response.get("success", True)
+                    if self._app:
+                        style = "green" if success else "red bold"
+                        self._app.append_output(msg, style)
+                elif WSMessage.is_error(response):
+                    if self._app:
+                        self._app.append_output(response.get("message", "Unknown error"), "red bold")
 
-    def _create_style(self) -> Style:
-        """创建终端样式"""
-        return Style.from_dict({
-            'prompt': '#ansigreen bold',
-            'command': '#ansiwhite',
-            'error': '#ansired bold',
-            'success': '#ansigreen',
-        })
-
-    async def run_async(self, on_command: Callable[[str], None]):
+    async def run_async(self, on_command: Callable[[str], None] = None):
         """异步运行终端"""
-        session = PromptSession(
-            message=self._get_prompt,
-            completer=CommandCompleter(self._completions) if self._completions else None,
-            enable_history=True,
-            mouse_support=False,
-            style=self._create_style(),
-        )
-
-        # 命令列表
-        command_list = [(cmd, cmd) for cmd in self._completions] if self._completions else []
-
-        while True:
-            try:
-                # 读取用户输入
-                text = await session.prompt_async()
-
-                # 检查是否是 / 命令（显示命令选择列表）
-                if text.strip() == '/' and command_list:
-                    selected = await self._run_palette(session, command_list)
-                    if selected:
-                        await on_command(selected)
-                    continue
-
-                # 处理普通命令
-                if text.strip():
-                    await on_command(text)
-
-            except KeyboardInterrupt:
-                print("\nUse 'quit' or 'exit' to leave campusworld")
-                continue
-            except EOFError:
-                break
-
-    async def _run_palette(self, session: PromptSession, command_list: List[tuple]) -> Optional[str]:
-        """运行命令选择面板"""
-        palette = CommandPalette(command_list)
-
-        # 创建面板窗口
-        palette_control = FormattedTextControl(
-            text=palette.render(),
-            focusable=True
-        )
-        palette_window = Window(
-            control=palette_control,
-            height=min(12, len(command_list) + 3),
-            style='class:palette'
-        )
-
-        # 输入窗口
-        input_buffer = Buffer(multiline=False)
-        input_window = TextArea(
-            buffer=input_buffer,
-            multiline=False,
-            get_prompt=lambda: self._get_prompt()
-        )
-
-        # 容器
-        container = HSplit([palette_window, input_window])
-        layout = Layout(container)
-
-        # 按键绑定
-        kb = KeyBindings()
-
-        @kb.add('escape', eager=True)
-        @kb.add('c-c', eager=True)
-        def cancel(event):
-            event.app.exit(result=None)
-
-        @kb.add('up', eager=True)
-        def up(event):
-            palette.move_up()
-            palette_control.text = palette.render()
-            event.app.invalidate()
-
-        @kb.add('down', eager=True)
-        def down(event):
-            palette.move_down()
-            palette_control.text = palette.render()
-            event.app.invalidate()
-
-        @kb.add('enter', eager=True)
-        def enter(event):
-            selected = palette.get_selected()
-            event.app.exit(result=selected)
-
-        # 运行面板应用
-        app = Application(
-            layout=layout,
-            key_bindings=kb,
-            style=self._create_style(),
-            erase_when_done=True
-        )
-
-        return await app.run_async()
-
-    def run(self, on_command: Callable[[str], None]):
-        """同步运行终端"""
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        try:
-            loop.run_until_complete(self.run_async(on_command))
-        except KeyboardInterrupt:
-            pass
+        self._on_command_callback = on_command
+        app = CampusTerminal(self._completions, self._handle_command)
+        app._connection = self._connection
+        self._app = app
+        await app.run_async()
 
 
 def format_output(message: str, success: bool = True) -> str:
@@ -230,5 +444,4 @@ def format_output(message: str, success: bool = True) -> str:
     if success:
         return message
     else:
-        ESC = chr(27)
-        return ESC + "[31mError: " + message + ESC + "[0m"
+        return f"[red]Error: {message}[/red]"
