@@ -6,7 +6,6 @@ CampusWorld 终端 - 基于 Textual 框架
 import asyncio
 from difflib import SequenceMatcher
 from typing import Optional, Callable, List, AsyncIterator
-from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.command import CommandPalette, Provider, Hit, Hits
 from textual.containers import Container, Horizontal
@@ -164,10 +163,6 @@ class CampusTerminal(App):
         background: #16161e;
         color: #ffffff;
     }
-
-    #command-input::placeholder {
-        color: #666;
-    }
     """
 
     BINDINGS = [
@@ -260,11 +255,11 @@ class CampusTerminal(App):
             else:
                 # 只输入 / 时，显示可用 agents
                 if self._agents:
-                    output.write_line(Text.from_markup("[bold]可用 Agent:[/bold]"))
+                    output.write_line("可用 Agent:")
                     for agent in self._agents:
-                        output.write_line(Text.from_markup(f"  /{agent}"))
+                        output.write_line(f"  /{agent}")
                 else:
-                    output.write_line(Text.from_markup("[dim]暂无可用 Agent[/dim]"))
+                    output.write_line("暂无可用 Agent")
                 return
         elif command.startswith("@"):
             agent_id = command[1:].strip()
@@ -276,7 +271,7 @@ class CampusTerminal(App):
         prompt = "❯"
         if self._current_agent:
             prompt = f"[{self._current_agent}]❯"
-        output.write_line(Text.from_markup(f"[bold cyan]{prompt}[/bold cyan] {command}"))
+        output.write_line(f"{prompt} {command}")
 
         # 调用命令回调
         if self._on_command:
@@ -302,7 +297,7 @@ class CampusTerminal(App):
                 return
 
         # 回退到本地模式（服务端不支持时）
-        output.write_line(Text.from_markup(f"[bold magenta]进入 {agent_name} 环境 (本地模式)[/bold magenta]"))
+        output.write_line(f"进入 {agent_name} 环境 (本地模式)")
         output.write_line("可用命令:")
         output.write_line("  ls      - 列出所有 agent 实例")
         output.write_line("  @<id>   - 进入指定的 agent 实例")
@@ -313,8 +308,8 @@ class CampusTerminal(App):
     async def enter_agent_instance(self, instance_id: str) -> None:
         """进入特定的 Agent 实例"""
         output = self.query_one("#output", Log)
-        output.write_line(Text.from_markup(f"[bold magenta]进入 agent 实例 {instance_id}[/bold magenta]"))
-        output.write_line(Text.from_markup(f"[dim]提示：此 agent 提供 check 命令可用[/dim]"))
+        output.write_line(f"进入 agent 实例 {instance_id}")
+        output.write_line("提示：此 agent 提供 check 命令可用")
 
     async def exit_agent(self) -> None:
         """退出 Agent 环境"""
@@ -322,7 +317,7 @@ class CampusTerminal(App):
             if self._connection:
                 await self._connection.agent_exit()
             output = self.query_one("#output", Log)
-            output.write_line(Text.from_markup(f"[bold magenta]退出 {self._current_agent} 环境[/bold magenta]"))
+            output.write_line(f"退出 {self._current_agent} 环境")
             self._current_agent = None
             self.update_status()
 
@@ -359,7 +354,7 @@ class CampusTerminal(App):
         elif len(matches) > 1:
             # 多个匹配，显示选项
             output = self.query_one("#output", Log)
-            output.write_line(Text.from_markup("[dim]可能的补全:[/dim] ") + ", ".join(matches))
+            output.write_line("可能的补全: " + ", ".join(matches))
 
     def action_history_up(self) -> None:
         """历史上一条命令"""

@@ -9,12 +9,12 @@ Vue 3 + TypeScript + Vite 构建的单页应用。
 - **Vue 3** - 渐进式前端框架（Composition API + `<script setup>`）
 - **TypeScript** - 类型安全（strict 模式）
 - **Vite** - 构建工具
-- **Element Plus** - UI 组件库（按需导入）
+- **Element Plus** - UI 组件库（自动导入）
 - **Pinia** - 状态管理
 - **Vue Router** - 路由管理（动态导入）
 - **Axios** - HTTP 客户端
 - **vue-i18n** - 国际化
-- **Day.js** - 日期处理
+- **Day.js** - 日期处理（已安装，待使用）
 
 ## 项目结构
 
@@ -27,74 +27,65 @@ frontend/
 │   │   └── accounts.ts        # 账户 API
 │   │
 │   ├── components/            # 组件
-│   │   ├── common/            # 通用组件
+│   │   ├── common/           # 通用组件
 │   │   │   └── ErrorBoundary.vue
-│   │   ├── layout/            # 布局组件
-│   │   │   ├── NavBar.vue
-│   │   │   ├── Sidebar.vue
-│   │   │   ├── TabBar.vue
-│   │   │   └── Footer.vue
-│   │   └── works/             # 工作台组件
-│   │       ├── Dashboard.vue
-│   │       ├── ChatInput.vue
-│   │       ├── TodoList.vue
-│   │       └── AgentsActivity.vue
+│   │   └── layout/           # 布局组件
+│   │       ├── NavBar.vue
+│   │       ├── Sidebar.vue
+│   │       ├── TabBar.vue
+│   │       └── Footer.vue
 │   │
 │   ├── composables/           # 可复用组合函数
-│   │   ├── useAuth.ts         # 认证状态
-│   │   ├── useLoading.ts      # 加载状态
+│   │   ├── useAuth.ts        # 认证状态
+│   │   ├── useLoading.ts     # 加载状态
 │   │   └── useNotification.ts # 通知
 │   │
-│   ├── locales/               # 国际化
-│   │   ├── index.ts           # i18n 配置
-│   │   ├── zh.ts              # 中文
-│   │   └── en.ts              # 英文
+│   ├── locales/              # 国际化
+│   │   ├── index.ts          # i18n 配置
+│   │   ├── zh.ts             # 中文
+│   │   └── en.ts             # 英文
 │   │
-│   ├── router/                # 路由配置
-│   │   └── index.ts           # 路由 + 导航守卫
+│   ├── router/               # 路由配置
+│   │   └── index.ts          # 路由 + 导航守卫
 │   │
-│   ├── stores/                # Pinia 状态管理
+│   ├── stores/               # Pinia 状态管理
 │   │   ├── auth.ts           # 认证状态
-│   │   ├── user.ts           # 用户状态
-│   │   └── tabs.ts           # 标签页状态
+│   │   ├── user.ts          # 用户状态
+│   │   └── tabs.ts          # 标签页状态
 │   │
-│   ├── types/                 # TypeScript 类型定义
-│   │   ├── index.ts          # 统一导出
-│   │   └── auth.ts           # 认证相关类型
+│   ├── types/                # TypeScript 类型定义
+│   │   ├── index.ts         # 统一导出
+│   │   └── auth.ts          # 认证相关类型
 │   │
-│   ├── utils/                # 工具函数
-│   │   └── theme.ts          # 主题管理
+│   ├── utils/               # 工具函数
+│   │   └── theme.ts         # 主题管理
 │   │
-│   ├── views/                 # 页面视图
-│   │   ├── Home.vue           # 首页/工作台
-│   │   ├── NotFound.vue      # 404
-│   │   ├── auth/             # 认证
+│   ├── views/                # 页面视图
+│   │   ├── Home.vue          # 首页/工作台
+│   │   ├── NotFound.vue     # 404
+│   │   ├── auth/            # 认证
 │   │   │   ├── Login.vue
 │   │   │   ├── Login.spec.ts
 │   │   │   └── Register.vue
-│   │   ├── user/             # 用户
+│   │   ├── user/            # 用户
 │   │   │   └── Profile.vue
-│   │   ├── agents/           # 智能体
+│   │   ├── agents/          # 智能体
 │   │   ├── spaces/          # 空间
-│   │   ├── discovery/        # 发现
-│   │   └── history/          # 历史
+│   │   ├── discovery/       # 发现
+│   │   └── history/         # 历史
 │   │
-│   ├── websocket/             # WebSocket 服务
+│   ├── websocket/            # WebSocket 服务
 │   │   ├── index.ts         # WebSocket 管理器
-│   │   ├── types.ts         # 类型定义
-│   │   └── composables/      # WebSocket 组合函数
+│   │   ├── types.ts        # 类型定义
+│   │   └── composables/
 │   │       └── useWebSocket.ts
 │   │
-│   ├── styles/               # 样式文件
-│   │   ├── base/             # 基础样式
-│   │   ├── components/        # 组件样式
-│   │   └── themes/           # 主题变量
+│   ├── styles/              # 样式文件
+│   ├── test/                # 测试配置
+│   │   └── setup.ts         # 全局 mocks
 │   │
-│   ├── test/                 # 测试配置
-│   │   └── setup.ts          # 全局 mocks
-│   │
-│   ├── App.vue               # 根组件
-│   └── main.ts               # 入口文件
+│   ├── App.vue              # 根组件
+│   └── main.ts              # 入口文件
 │
 ├── package.json
 ├── vite.config.ts
@@ -146,8 +137,6 @@ if (authStore.isAuthenticated) { ... }
 支持流式交互：
 
 - 自动重连
-- 心跳机制
-- 连接超时处理
 - 消息处理器注册
 
 ```typescript
@@ -215,6 +204,7 @@ npm run test:coverage
 - 使用 ESLint + Prettier 规范代码
 - API 调用通过 `@/api/` 服务层，禁止直接使用 axios
 - 状态通过 Pinia stores 管理，禁止直接操作 localStorage
+- 组件使用 unplugin-vue-components 自动导入
 
 ## API 集成
 
