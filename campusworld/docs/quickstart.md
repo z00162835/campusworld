@@ -65,11 +65,8 @@ python -m db.init_database
 ### 4. 启动后端
 
 ```bash
-# 方式 A：完整启动（含 SSH 服务器，推荐）
+# 系统入口：主程序（游戏引擎 + HTTP/WebSocket + SSH）
 python campusworld.py
-
-# 方式 B：仅启动 API 服务
-uvicorn campusworld:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 5. 启动前端

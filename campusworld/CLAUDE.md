@@ -21,6 +21,12 @@ CampusWorld 基于三层架构设计：
 
 5个核心服务：**公共服务**（core/配置/安全）· **知识服务**（models/全图数据）· **能力服务**（game_engine/游戏逻辑）· **AI使能服务** · **Agent服务**
 
+### 世界内容包（HiCampus 与 `world install`）
+
+可安装世界以 `backend/app/games/<world_id>/` 为内容根目录，由 **GameLoader**（[`game_engine/loader.py`](backend/app/game_engine/loader.py)）发现与装载；`world install` / `uninstall` / `reload`（[`commands/game/world_command.py`](backend/app/commands/game/world_command.py)）维护运行时并与奇点屋入口可见性同步。包内 [`manifest.yaml`](backend/app/games/hicampus/manifest.yaml) 中的 **`graph_seed`** 为 `true` 时，快照经 [`game_engine/graph_seed/`](backend/app/game_engine/graph_seed/) 写入 **PostgreSQL**（需已完成相关库迁移），命令层 `look`、方向移动等依赖图中的 **room** 与 **`connects_to`**；无 PostgreSQL 的环境应将 `graph_seed` 设为 `false`，否则安装可能失败。用户登录后默认落在 **奇点屋**，再 `enter <world_id>` 进入世界。
+
+操作步骤见下文 **「安装 HiCampus 世界」**；更短的清单见 **[`QUICKSTART.md`](QUICKSTART.md)**「安装 HiCampus 世界」。
+
 ## World Semantic Design - 世界语义设计
 
 CampusWorld 的核心设计理念是"**世界语义驱动**"：
@@ -29,6 +35,7 @@ CampusWorld 的核心设计理念是"**世界语义驱动**"：
 - **关系即语义**：Exit 连接 Room、Character 位于 Room、User 拥有 Character — 所有关系显式表达为语义边
 - **命令即交互**：用户/Agent 通过命令（commands/）操作图数据模型中的实体，类似 MUD 游戏体验
 - **知识本体**：全图数据结构构筑知识本体，支持动态模型发现和扩展
+- **可安装世界包**：例如 `app/games/hicampus/`，由 `GameLoader` 发现，`world install <world_id>` 加载；用户始终在系统 **奇点屋** 落地，再经入口进入世界（参见下文「安装 HiCampus 世界」）。
 
 ## 项目架构
 
@@ -58,17 +65,24 @@ docker compose -f docker-compose.dev.yml up -d
 cd backend
 pip install -r requirements/dev.txt
 
-# 方式1: 使用主程序(推荐，含SSH)
+# 后端系统入口（游戏引擎 + HTTP/WebSocket + SSH）
 python campusworld.py
-
-# 方式2: 使用uvicorn启动API
-uvicorn campusworld:app --reload --host 0.0.0.0 --port 8000
 
 # 前端开发
 cd frontend
 npm install
 npm run dev
 ```
+
+### 安装 HiCampus 世界（可选）
+
+HiCampus 为内置示例世界包（`app/games/hicampus/`）。完整空间、`look` 与方向移动依赖图数据中的房间与 `connects_to` 边，因此一般需要 **PostgreSQL** 且在 [`app/games/hicampus/manifest.yaml`](backend/app/games/hicampus/manifest.yaml) 中启用 **`graph_seed: true`**（安装/重载世界时把包快照幂等写入图库；无数据库的测试环境可改为 `false`，此时仅注册运行时，世界内浏览/移动不可用）。
+
+1. 启动后端（含游戏引擎），确保 DB 已迁移。
+2. 在 SSH 会话或具备 **`admin.world.manage`** 的上下文中执行：`world install hicampus`。
+3. 用户登录后位于奇点屋：`look` 应可见入口 **hicampus**；`enter hicampus` 进入门户厅（`hicampus_gate`）。
+4. **示例深链路**（种子成功后）：`n`（连桥）→ `n`（广场）→ `n`（F1 首层交通核）→ `w`（首层卫生间，可见物品）→ `e` 返回交通核 → `u`（二层会议室，可见物品）。
+5. 可选：`world validate hicampus`（拓扑检查）。更细的特性与契约见 [`docs/games/hicampus/SPEC/`](docs/games/hicampus/SPEC/SPEC.md)。
 
 ## 项目结构
 

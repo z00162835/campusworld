@@ -102,7 +102,6 @@ class CampusClient:
                 return
 
         print("Connected!\n")
-        print("Press Ctrl+P to open command palette")
         print("=" * 40)
 
         # 运行终端（textual App）- 使用异步版本

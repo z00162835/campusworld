@@ -129,10 +129,7 @@ app.start_ssh()  # 仅启动SSH
 # 安装依赖
 pip install -r requirements/dev.txt
 
-# 启动后端API
-uvicorn campusworld:app --reload
-
-# 启动主程序(含SSH)
+# 启动系统（游戏引擎 + HTTP/WebSocket + SSH；推荐唯一入口）
 python campusworld.py
 
 # 启动SSH服务器

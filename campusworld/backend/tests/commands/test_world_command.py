@@ -24,7 +24,7 @@ def test_world_command_usage_when_missing_args():
     cmd = WorldCommand()
     out = cmd.execute(_ctx(["admin.world.*"]), [])
     assert not out.success
-    assert "world <list|install|uninstall|reload|status|validate|repair>" in out.message
+    assert "world <list|install|uninstall|reload|status|validate|repair|content>" in out.message
     assert "bridge" in out.message
 
 

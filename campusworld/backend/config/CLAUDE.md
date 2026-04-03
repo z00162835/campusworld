@@ -116,8 +116,8 @@ cd backend
 pip install -r requirements/base.txt
 pip install -r requirements/dev.txt
 
-# 运行
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# 运行（系统入口）
+python campusworld.py
 
 # 测试
 pytest

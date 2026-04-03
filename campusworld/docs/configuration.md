@@ -304,8 +304,9 @@ export CAMPUSWORLD_SECURITY_SECRET_KEY=your-production-secret
 export CAMPUSWORLD_DATABASE_PASSWORD=production-db-password
 export CAMPUSWORLD_REDIS_PASSWORD=production-redis-password
 
-# 启动应用
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# 启动应用（系统入口）
+cd backend
+python campusworld.py
 ```
 
 ## 🔍 配置验证

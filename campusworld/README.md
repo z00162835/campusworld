@@ -21,9 +21,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 # 后端
 cd backend && pip install -r requirements/dev.txt
-python campusworld.py          # 含 SSH 服务器（推荐）
-# 或
-uvicorn campusworld:app --reload --port 8000
+python campusworld.py          # 系统入口：游戏引擎 + HTTP + SSH
 
 # 前端
 cd frontend && npm install && npm run dev

@@ -191,8 +191,8 @@ cd campusworld/backend
 # 激活环境
 conda activate campusworld
 
-# 启动开发服务器
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# 启动系统（主程序：引擎 + HTTP + SSH）
+python campusworld.py
 ```
 
 ### 2. 安装新依赖

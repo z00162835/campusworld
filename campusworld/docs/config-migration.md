@@ -341,7 +341,7 @@ python scripts/validate_config.py
 ### 3. 启动应用测试
 ```bash
 cd backend
-python -m app.main
+python campusworld.py
 ```
 
 ## 🐛 常见问题

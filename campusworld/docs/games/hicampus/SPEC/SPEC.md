@@ -41,6 +41,12 @@ flowchart TD
     hiCampusPkg --> hiCampusWorld[HiCampusWorld]
 ```
 
+### 开发者快速路径（与当前仓库一致）
+
+- **房间与连边的真源**为 `data/rooms.yaml`、`data/relationships.yaml`（含 `connects_to` 的 `direction`）。本文件中部分早期拓扑表（如楼宇 ID 命名）可能与生成数据不完全一致，以 YAML 为准。
+- **安装与奇点屋进入**：`world install hicampus` → 奇点屋 `look` / `enter hicampus`；**图种子**由包内 `manifest.yaml` 的 `graph_seed` 控制，需 PostgreSQL，说明见仓库根 `CLAUDE.md`「安装 HiCampus 世界」。
+- **特性分档**：入口与容错见 `SPEC/features/F05_WORLD_ENTRY_INTEGRATION.md`，图种子见 `F03_GRAPH_SEED_PIPELINE.md`。
+
 ## Evennia Reference Mapping
 
 本 SPEC 参考 Evennia 的三类实践并映射到 CampusWorld：

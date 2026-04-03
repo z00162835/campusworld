@@ -77,6 +77,8 @@ class GameLoader:
     def reload_game(self, game_name: str) -> bool
 ```
 
+可安装世界包（如 `games/hicampus`）在 **`manifest.yaml`** 中设置 `graph_seed: true` 时，`load_game` / `reload_game` 会把包快照经 **`graph_seed/pipeline.run_graph_seed`** 写入 PostgreSQL（需已执行 **`ensure_graph_seed_ontology`** 相关迁移）。无 PG 的环境应关闭 `graph_seed`，否则安装会失败。运维入口与奇点屋路径见仓库根 **`CLAUDE.md`**「安装 HiCampus 世界」。
+
 ### GameInterface
 
 游戏接口，提供:

@@ -33,6 +33,48 @@ relationships:
   directed: true
   attributes:
     direction: south
+- id: rel_plaza_f1_circulation
+  rel_type_code: connects_to
+  source_id: hicampus_plaza
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+- id: rel_f1_circulation_plaza
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_plaza
+  directed: true
+  attributes:
+    direction: south
+- id: rel_circulation_restroom_w
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_f1_01f_restroom_01
+  directed: true
+  attributes:
+    direction: west
+- id: rel_restroom_circulation_e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_restroom_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+- id: rel_circulation_02f_meeting_up
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_f1_02f_meeting_01
+  directed: true
+  attributes:
+    direction: up
+- id: rel_02f_meeting_circulation_down
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_meeting_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    direction: down
 - id: rel_npc_located_in_gate
   rel_type_code: located_in
   source_id: hicampus_npc_security_01

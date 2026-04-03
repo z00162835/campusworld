@@ -3,8 +3,9 @@ version: 1.0.0
 api_version: v2
 data_dir: data
 
-# graph_seed: optional DB sync from package snapshot (PostgreSQL + ensure_graph_seed_ontology). false for tests/CI without PG.
-graph_seed: false
+# graph_seed: true = 在 load_game/reload 时把包快照写入 PostgreSQL（需 database URL 为 postgresql 且已迁移 ensure_graph_seed_ontology）。
+# 无 PG 的 CI/本地单测可设为 false，否则 load_game 可能报 GRAPH_SEED_FAILED。
+graph_seed: true
 # Alternative: features.graph_seed.enabled: true
 # Strict mode (fail if package has rel types not in graph profile): features.graph_seed.strict_relationships: true
 

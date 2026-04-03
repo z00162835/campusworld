@@ -149,8 +149,8 @@ pip install -r requirements/dev.txt
 # 运行测试
 pytest
 
-# 启动开发服务器
-uvicorn app.main:app --reload
+# 启动系统（主程序）
+python campusworld.py
 ```
 
 ### 前端开发

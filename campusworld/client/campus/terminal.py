@@ -124,46 +124,11 @@ class CampusCommandProvider(Provider):
 class CampusTerminal(App):
     """CampusWorld 终端应用"""
 
-    # 注册命令提供者，CommandPalette 自动从此发现 Provider
-    COMMANDS = App.COMMANDS | {CampusCommandProvider}
+    # 只使用自定义命令提供者，不包含默认 Textual 命令
+    COMMANDS = {CampusCommandProvider}
 
-    CSS = """
-    Screen {
-        background: #1a1a2e;
-    }
-
-    #output-container {
-        height: 1fr;
-        margin: 0;
-        background: #1a1a2e;
-    }
-
-    #output {
-        height: 100%;
-        border: none;
-        padding: 1 2;
-        background: #1a1a2e;
-    }
-
-    #input-line {
-        dock: bottom;
-        background: #16161e;
-        padding: 0 1;
-        height: 2;
-    }
-
-    #prompt {
-        width: auto;
-        color: #79d4ff;
-        padding-left: 1;
-    }
-
-    #command-input {
-        width: 1fr;
-        background: #16161e;
-        color: #ffffff;
-    }
-    """
+    # CSS 样式文件
+    CSS_PATH = "terminal.css"
 
     BINDINGS = [
         Binding("/", "open_command_palette", "Commands", show=False),
@@ -188,10 +153,10 @@ class CampusTerminal(App):
 
     def compose(self) -> ComposeResult:
         """构建 UI"""
-        with Container(id="output-container"):
+        with Container(id="chat-container"):
             yield Log(id="output")
         with Horizontal(id="input-line"):
-            yield Static("❯ ", id="prompt")
+            yield Static(">>> ", id="prompt")
             yield Input(
                 placeholder="输入命令",
                 id="command-input",
@@ -219,7 +184,6 @@ class CampusTerminal(App):
         output.write_line("  Type @<id> to interact with agent instance")
         output.write_line("========================================")
         output.write_line("")
-
         # 聚焦输入框
         self.query_one("#command-input", Input).focus()
 
@@ -268,9 +232,9 @@ class CampusTerminal(App):
                 return
 
         # 添加命令到输出
-        prompt = "❯"
+        prompt = ">>>"
         if self._current_agent:
-            prompt = f"[{self._current_agent}]❯"
+            prompt = f"[{self._current_agent}]>>>"
         output.write_line(f"{prompt} {command}")
 
         # 调用命令回调

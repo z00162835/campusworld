@@ -631,7 +631,7 @@ show_startup_instructions() {
     echo ""
     echo -e "${BLUE}📖 启动说明：${NC}"
     echo "1. 启动后端服务："
-    echo "   cd $PROJECT_ROOT/backend && conda activate campusworld && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+    echo "   cd $PROJECT_ROOT/backend && conda activate campusworld && python campusworld.py"
     echo ""
     echo "2. 启动前端服务："
     echo "   cd $PROJECT_ROOT/frontend && npm run dev"

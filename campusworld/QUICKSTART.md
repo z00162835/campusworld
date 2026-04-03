@@ -20,10 +20,10 @@ cd campusworld
 初始化完成后，按照提示启动服务：
 
 ```bash
-# 启动后端服务
+# 启动后端服务（推荐：游戏引擎 + HTTP/WebSocket + SSH，与 HiCampus / world 命令一致）
 cd backend
 conda activate campusworld
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python campusworld.py
 
 # 新开终端，启动前端服务
 cd frontend
@@ -78,10 +78,12 @@ python -m db.init_database
 # 诊断 seed/建表状态（只读）
 python scripts/diagnose_seed_state.py
 
-# 启动服务
+# 启动服务（系统入口：主程序）
 conda activate campusworld
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python campusworld.py
 ```
+
+**系统入口说明**：请使用 **`python campusworld.py`**。主程序会依次拉起 **游戏引擎（GameLoader）**、**HTTP/WebSocket**（FastAPI，见 `app.api.http_app`）、**SSH**。`world install hicampus`、`look`、`enter` 等依赖引擎与（通常）SSH 会话。
 
 ### 4. 前端设置
 
@@ -173,6 +175,25 @@ open http://localhost:3000
 open http://localhost:8080
 ```
 
+## 🌍 安装 HiCampus 世界（可选）
+
+HiCampus 是内置示例世界包，目录为 `backend/app/games/hicampus/`。在 SSH/终端中使用 **`look`**、方向键移动（`n`/`u` 等）浏览房间与物品时，依赖图数据库中的房间与出口；因此需要 **PostgreSQL** 已启动且已完成库初始化，且包内 [`backend/app/games/hicampus/manifest.yaml`](backend/app/games/hicampus/manifest.yaml) 中 **`graph_seed: true`**（默认如此：安装世界时会将包快照写入图库）。若无 PostgreSQL、仅做 API 调试，可将 `graph_seed` 改为 `false`，此时 **`world install` 仍可能成功**，但世界内浏览/移动通常不可用。
+
+**前置条件**
+
+- 后端已按上文配置数据库并完成 `python -m db.init_database`（或等价迁移流程）。
+- 游戏引擎与 SSH 随 **`python campusworld.py`** 启动；文档与脚本均以该命令为唯一推荐的后端入口。详情见根目录 [`CLAUDE.md`](CLAUDE.md)。
+
+**步骤**
+
+1. 使用具备 **`admin.world.manage`** 的账号接入 **SSH 会话**（或项目提供的同名命令通道）。
+2. 执行 **`world install hicampus`**；可选 **`world status hicampus`** 查看是否已加载。
+3. 用户登录后位于 **奇点屋**：执行 **`look`** 应看到入口 **hicampus**；**`enter hicampus`** 进入门户厅（`hicampus_gate`）。
+4. **示例深链路**（图种子成功后）：`n`（连桥）→ `n`（广场）→ `n`（F1 首层交通核）→ `w`（首层卫生间，可看物品）→ `e` 返回 → `u`（二层会议室，可看物品）。
+5. 可选：**`world validate hicampus`** 做拓扑检查。
+
+架构说明、manifest 与特性文档：根目录 [`CLAUDE.md`](CLAUDE.md)（「世界内容包」「安装 HiCampus 世界」）、[`docs/games/hicampus/SPEC/SPEC.md`](docs/games/hicampus/SPEC/SPEC.md)。
+
 ## 🔍 常见问题
 
 ### 1. 端口冲突
@@ -214,10 +235,11 @@ npm install
 
 启动成功后，您可以：
 
-1. **阅读文档**: 查看 `docs/` 目录下的详细文档
-2. **探索代码**: 了解项目结构和代码组织
-3. **运行测试**: 执行测试套件验证功能
-4. **开始开发**: 根据需求进行功能开发
+1. **阅读文档**: 查看 `docs/` 目录下的详细文档；架构与世界语义见根目录 `CLAUDE.md`
+2. **安装示例世界**: 按需按上文「安装 HiCampus 世界」在终端中加载 HiCampus 包
+3. **探索代码**: 了解项目结构和代码组织
+4. **运行测试**: 执行测试套件验证功能
+5. **开始开发**: 根据需求进行功能开发
 
 ## 🆘 获取帮助
 
