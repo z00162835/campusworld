@@ -41,6 +41,38 @@ def _try_exec_mapped(conn, sql: str, params: dict) -> None:
         pass
 
 
+def _ensure_pg_extensions(conn) -> None:
+    """
+    Create PostGIS / pgvector / related extensions so ORM create_all can use
+    geometry(...) and vector(...) column types. Must run before create_all on
+    empty databases (migrations previously ran only after create_all).
+    """
+    _try_exec(conn, 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+    _try_exec(conn, 'CREATE EXTENSION IF NOT EXISTS "vector";')
+    _try_exec(conn, 'CREATE EXTENSION IF NOT EXISTS "postgis";')
+    _try_exec(conn, 'CREATE EXTENSION IF NOT EXISTS "pg_trgm";')
+
+    ext_rows = conn.execute(
+        text("select extname from pg_extension where extname in ('postgis','vector')")
+    ).fetchall()
+    installed = {r[0] for r in ext_rows}
+    if "postgis" not in installed or "vector" not in installed:
+        raise SchemaMigrationError(
+            f"missing required extensions: {sorted({'postgis','vector'} - installed)}. "
+            "Install postgis and vector on PostgreSQL (e.g. postgresql-XX-postgis-3, pgvector) "
+            "or use an image that includes them."
+        )
+
+
+def ensure_required_extensions(engine) -> None:
+    """Public entry: ensure extensions exist (PostgreSQL). Raises SchemaMigrationError if missing."""
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        _ensure_pg_extensions(conn)
+    finally:
+        conn.close()
+
+
 def ensure_graph_schema(engine) -> None:
     """
     对 graph schema 做最小增量迁移：
@@ -51,20 +83,7 @@ def ensure_graph_schema(engine) -> None:
     # 使用 AUTOCOMMIT，避免某条语句失败导致整个事务进入 aborted 状态
     conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
     try:
-        # 扩展尽力启用（失败不阻断）
-        _try_exec(conn, 'CREATE EXTENSION IF NOT EXISTS "vector";')
-        _try_exec(conn, 'CREATE EXTENSION IF NOT EXISTS "postgis";')
-        _try_exec(conn, 'CREATE EXTENSION IF NOT EXISTS "pg_trgm";')
-
-        # 若关键扩展缺失，则不继续添加依赖这些扩展的列类型
-        ext_rows = conn.execute(
-            text("select extname from pg_extension where extname in ('postgis','vector')")
-        ).fetchall()
-        installed = {r[0] for r in ext_rows}
-        if "postgis" not in installed or "vector" not in installed:
-            raise SchemaMigrationError(
-                f"missing required extensions: {sorted({'postgis','vector'} - installed)}"
-            )
+        _ensure_pg_extensions(conn)
 
         # node_types（关键列：ORM 依赖）
         _must_exec(conn, "ALTER TABLE node_types ADD COLUMN IF NOT EXISTS parent_type_code VARCHAR(128);", "add node_types.parent_type_code failed")
@@ -239,7 +258,7 @@ def ensure_graph_seed_ontology(engine) -> None:
             ("world", None, "世界", "app.models.world.World", "World", "app.models.world"),
             ("world_object", None, "世界对象", "app.models.world.WorldObject", "WorldObject", "app.models.world"),
             ("building", "world_object", "建筑", "app.models.building.Building", "Building", "app.models.building"),
-            ("building_floor", "world_object", "楼层", "app.models.floor.BuildingFloor", "BuildingFloor", "app.models.floor"),
+            ("building_floor", "world_object", "楼层", "app.models.building.BuildingFloor", "BuildingFloor", "app.models.building"),
             ("room", "world_object", "房间", "app.models.room.Room", "Room", "app.models.room"),
             ("npc_agent", "world_object", "NPC代理", "app.models.things.agents.NpcAgent", "NpcAgent", "app.models.things.agents"),
             (
@@ -305,6 +324,14 @@ def ensure_graph_seed_ontology(engine) -> None:
                 "app.models.things.seating.LoungeFurniture",
                 "LoungeFurniture",
                 "app.models.things.seating",
+            ),
+            (
+                "world_entrance",
+                "world_object",
+                "世界入口（Evennia Exit）",
+                "app.models.world_entrance.WorldEntrance",
+                "WorldEntrance",
+                "app.models.world_entrance",
             ),
         ]
         for type_code, parent_code, type_name, typeclass, classname, module_path in node_rows:

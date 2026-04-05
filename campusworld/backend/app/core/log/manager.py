@@ -331,6 +331,7 @@ class LoggingManager:
             'urllib3': 'WARNING',
             'requests': 'WARNING',
             'sqlalchemy': 'WARNING',
+            'passlib': 'WARNING',
         }
 
         # 合并配置

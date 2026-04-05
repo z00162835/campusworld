@@ -108,6 +108,7 @@ logging:
     urllib3: "WARNING"
     requests: "WARNING"
     sqlalchemy: "WARNING"
+    passlib: "WARNING"
 
 # CORS配置
 cors:
@@ -148,6 +149,17 @@ storage:
     - "pdf"
     - "doc"
     - "docx"
+
+# 游戏引擎 / 世界包
+game_engine:
+  # true：启动时从 world_runtime_states 读取已 install 的世界并 load_game（保留安装状态，重启后自动进内存）
+  load_installed_worlds_on_start: true
+  # 可选：额外装载「磁盘发现」的包（与 install 状态无关，默认 false）。true 时 auto_load_worlds 见下
+  auto_load_discovered_on_start: false
+  # 兼容旧键名：若未设置 auto_load_discovered_on_start，则读取 auto_load_on_start
+  # auto_load_on_start: false
+  # 仅当 auto_load_discovered_on_start（或 legacy auto_load_on_start）为 true：null=全部已发现包；[]=不加载；列表=白名单
+  auto_load_worlds: null
 
 # 监控配置
 monitoring:

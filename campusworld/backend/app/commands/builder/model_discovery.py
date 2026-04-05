@@ -47,7 +47,6 @@ class ModelDiscoverer:
 
                 # 跳过抽象类型
                 if node_type.status != 0:  # 只加载活跃状态(status=0)的类型
-                    logger.debug(f"跳过非活跃类型: {type_code}")
                     continue
 
                 try:
@@ -61,7 +60,6 @@ class ModelDiscoverer:
                             'description': node_type.description,
                             'schema': node_type.schema_definition,
                         }
-                        logger.debug(f"发现模型: {type_code} -> {node_type.classname}")
                 except Exception as e:
                     logger.warning(f"加载模型类失败 {type_code}: {e}")
 
