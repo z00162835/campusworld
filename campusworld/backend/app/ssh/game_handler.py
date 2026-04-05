@@ -9,13 +9,26 @@ import time
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
+from sqlalchemy.orm.attributes import flag_modified
+
 from app.core.database import db_session_context
 from app.core.log import get_logger, LoggerNames
 from app.game_engine.manager import game_engine_manager
+from app.game_engine.world_room_resolve import find_world_room_node
 from app.models.graph import Node
 from app.models.root_manager import root_manager
-from app.models.user import User
 from app.ssh.entry_router import EntryRouter
+
+
+def teleport_account_to_root(session, user_node: Node, root_node: Node) -> None:
+    """Clear world session attributes and anchor the account at the singularity (root) room."""
+    attrs = dict(user_node.attributes or {})
+    attrs["active_world"] = None
+    attrs["world_location"] = None
+    user_node.location_id = root_node.id
+    user_node.home_id = root_node.id
+    user_node.attributes = attrs
+    flag_modified(user_node, "attributes")
 
 
 class GameHandler:
@@ -235,7 +248,6 @@ class GameHandler:
                     return False
 
                 # 入口路由：先决策，再执行，失败降级到奇点屋
-                attrs = user_node.attributes or {}
                 route = self.entry_router.resolve_post_auth_destination(user_node)
                 fallback_used = False
 
@@ -250,19 +262,22 @@ class GameHandler:
                     )
                     if not entered:
                         fallback_used = True
-                        user_node.location_id = root_node.id
-                        user_node.home_id = root_node.id
-                        attrs["active_world"] = None
+                        teleport_account_to_root(session, user_node, root_node)
+                        attrs = dict(user_node.attributes or {})
                         attrs["entry_fallback_reason"] = "enter_world_failed"
+                        user_node.attributes = attrs
+                        flag_modified(user_node, "attributes")
                 else:
                     user_node.location_id = root_node.id
                     user_node.home_id = root_node.id
 
-                # 更新最后活动时间和路由信息
+                # 更新最后活动时间和路由信息（须基于 enter 后的最新 attributes）
+                attrs = dict(user_node.attributes or {})
                 attrs["last_activity"] = datetime.now().isoformat()
                 attrs["last_entry_route"] = route.target_kind
                 attrs["last_entry_reason"] = route.reason
                 user_node.attributes = attrs
+                flag_modified(user_node, "attributes")
 
                 # 提交更改
                 session.commit()
@@ -318,14 +333,44 @@ class GameHandler:
                 if not success:
                     return {"success": False, "message": message}
 
-                attrs = user_node.attributes or {}
+                attrs = dict(user_node.attributes or {})
                 attrs["last_activity"] = datetime.now().isoformat()
                 user_node.attributes = attrs
+                flag_modified(user_node, "attributes")
                 session.commit()
                 return {"success": True, "message": message}
         except Exception as e:
             self.logger.error(f"进入世界失败: {e}")
             return {"success": False, "message": f"进入世界失败: {e}"}
+
+    def leave_world(self, user_id, username: str = "Unknown") -> Dict[str, Any]:
+        """Leave the current world and return the account to the singularity room."""
+        try:
+            with db_session_context() as session:
+                user_node = session.query(Node).filter(Node.id == user_id).first()
+                if not user_node:
+                    return {"success": False, "message": "用户不存在"}
+
+                if not root_manager.ensure_root_node_exists():
+                    return {"success": False, "message": "系统入口不可用"}
+
+                root_node = root_manager.get_root_node(session)
+                if not root_node:
+                    return {"success": False, "message": "系统入口不可用"}
+
+                if user_node.location_id == root_node.id:
+                    return {"success": False, "message": "你当前已在奇点屋"}
+
+                teleport_account_to_root(session, user_node, root_node)
+                attrs = dict(user_node.attributes or {})
+                attrs["last_activity"] = datetime.now().isoformat()
+                user_node.attributes = attrs
+                flag_modified(user_node, "attributes")
+                session.commit()
+                return {"success": True, "message": "已离开世界，回到奇点屋"}
+        except Exception as e:
+            self.logger.error(f"离开世界失败: {e}")
+            return {"success": False, "message": f"离开世界失败: {e}"}
 
     def _enter_world_in_session(self, session, user_node: Node, username: str, world_name: str, spawn_key: str, root_node_id: int):
         """在当前数据库会话内执行世界进入和状态写回。"""
@@ -335,9 +380,31 @@ class GameHandler:
 
         game = engine.get_game(world_name)
         if not game:
-            return False, f"世界未加载: {world_name}"
+            # 若启动时装载失败或未 install，内存中可能仍无实例；进入前按需 load_game（等同 `world load`）。
+            load_out = game_engine_manager.load_game(world_name)
+            if load_out.get("ok"):
+                game = engine.get_game(world_name)
+            else:
+                err_msg = str(load_out.get("message") or "load failed")
+                err_code = str(load_out.get("error_code") or "")
+                if err_code == "WORLD_STATE_CONFLICT" or "already loaded" in err_msg.lower():
+                    game = engine.get_game(world_name)
+                else:
+                    return False, (
+                        f"世界未加载: {world_name}。{err_msg} "
+                        f"（进程内未加载世界包；请确认已 world install，且 game_engine.load_installed_worlds_on_start=true，"
+                        f"或先执行: world load {world_name}）"
+                    )
+        if not game:
+            return False, (
+                f"世界未加载: {world_name}（load 后仍未注册到引擎，请查看日志或执行 world load {world_name}）"
+            )
 
-        attrs = user_node.attributes or {}
+        spawn_room = find_world_room_node(session, world_name, spawn_key)
+        if not spawn_room:
+            return False, f"出生点房间不在图中: {world_name}/{spawn_key}（请确认已 world install 且 graph_seed 已写入）"
+
+        attrs = dict(user_node.attributes or {})
         player_payload = {
             "username": username,
             "world_name": world_name,
@@ -351,8 +418,9 @@ class GameHandler:
         attrs["world_location"] = spawn_key
         attrs["last_world_location"] = spawn_key
         user_node.attributes = attrs
-        # 系统层位置仍锚定在奇点屋，世界内位置写入 attributes
-        user_node.location_id = root_node_id
+        flag_modified(user_node, "attributes")
+        # Evennia-like: account.location_id is the in-world room node; home stays at singularity
+        user_node.location_id = spawn_room.id
         user_node.home_id = root_node_id
         return True, f"已进入世界 {world_name}（出生点: {spawn_key}）"
 
@@ -403,9 +471,10 @@ class GameHandler:
             with db_session_context() as session:
                 user_node = session.query(Node).filter(Node.id == user_id).first()
                 if user_node:
-                    attrs = user_node.attributes
+                    attrs = dict(user_node.attributes or {})
                     attrs["last_activity"] = datetime.now().isoformat()
                     user_node.attributes = attrs
+                    flag_modified(user_node, "attributes")
                     session.commit()
                     return True
                 return False

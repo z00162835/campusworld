@@ -6,6 +6,7 @@
 
 from .look_command import LookCommand
 from .enter_world_command import EnterWorldCommand
+from .leave_world_command import LeaveWorldCommand
 from .direction_command import build_direction_commands
 from .notice_command import NoticeCommand
 from .world_command import WorldCommand
@@ -14,9 +15,17 @@ from .world_command import WorldCommand
 GAME_COMMANDS = [
     LookCommand(),
     EnterWorldCommand(),
+    LeaveWorldCommand(),
     *build_direction_commands(),
     NoticeCommand(),
     WorldCommand(),
 ]
 
-__all__ = ['LookCommand', 'EnterWorldCommand', 'NoticeCommand', 'WorldCommand', 'GAME_COMMANDS']
+__all__ = [
+    'LookCommand',
+    'EnterWorldCommand',
+    'LeaveWorldCommand',
+    'NoticeCommand',
+    'WorldCommand',
+    'GAME_COMMANDS',
+]

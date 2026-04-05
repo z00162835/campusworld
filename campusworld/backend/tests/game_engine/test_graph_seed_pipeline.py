@@ -428,3 +428,27 @@ def test_run_graph_seed_second_run_idempotent():
         assert second["details"]["relationships_skipped"] >= first["details"]["relationships_created"]
     finally:
         _cleanup_test_graph(world_key)
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_entity_row_flat_attributes_merges_nested_yaml_attributes():
+    from app.game_engine.graph_seed.pipeline import _entity_row_flat_attributes
+
+    row: Dict[str, Any] = {
+        "id": "fixture_01",
+        "type_code": "lighting_fixture",
+        "display_name": "Building · 照明回路",
+        "world_id": "hicampus",
+        "tags": [],
+        "entity_kind": "item",
+        "location_ref": "room_a",
+        "attributes": {"room_list_name": "照明回路", "power_on": True},
+    }
+    flat = _entity_row_flat_attributes(row)
+    assert flat["room_list_name"] == "照明回路"
+    assert flat["power_on"] is True
+    assert flat["entity_kind"] == "item"
+    assert flat["location_ref"] == "room_a"
+    assert "display_name" not in flat
+    assert "attributes" not in flat

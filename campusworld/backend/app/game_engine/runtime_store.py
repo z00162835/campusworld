@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -95,6 +95,17 @@ class WorldRuntimeRepository:
         except Exception:
             return None
 
+    def list_world_ids_with_status(self, status: str) -> List[str]:
+        """Return world_id values whose control-plane row matches ``status`` (e.g. ``installed``)."""
+        with db_session_context() as session:
+            rows = (
+                session.query(WorldRuntimeState.world_id)
+                .filter(WorldRuntimeState.status == status)
+                .order_by(WorldRuntimeState.world_id)
+                .all()
+            )
+            return [r[0] for r in rows]
+
     def get_state(self, world_id: str) -> Dict[str, Any]:
         with db_session_context() as session:
             row = session.query(WorldRuntimeState).filter(WorldRuntimeState.world_id == world_id).first()
@@ -160,25 +171,27 @@ class WorldRuntimeRepository:
             session_ctx = db_session_context()
             session = session_ctx.__enter__()
         try:
-            stmt = pg_insert(WorldRuntimeState).values(
+            # Core Table + physical column name "metadata" so ON CONFLICT excluded.* matches INSERT (ORM insert + state_metadata broke excluded.state_metadata).
+            tbl = WorldRuntimeState.__table__
+            ins = pg_insert(tbl).values(
                 world_id=world_id,
                 status=status,
                 version=version,
                 last_error_code=last_error_code,
                 last_error_message=last_error_message,
-                state_metadata=payload,
+                metadata=payload,
                 updated_by=updated_by,
             )
-            stmt = stmt.on_conflict_do_update(
-                index_elements=[WorldRuntimeState.world_id],
+            stmt = ins.on_conflict_do_update(
+                index_elements=[tbl.c.world_id],
                 set_={
-                    "status": stmt.excluded.status,
-                    "version": stmt.excluded.version,
-                    "last_error_code": stmt.excluded.last_error_code,
-                    "last_error_message": stmt.excluded.last_error_message,
-                    "metadata": stmt.excluded.state_metadata,
-                    "updated_by": stmt.excluded.updated_by,
-                    "updated_at": func.now(),
+                    tbl.c.status: ins.excluded.status,
+                    tbl.c.version: ins.excluded.version,
+                    tbl.c.last_error_code: ins.excluded.last_error_code,
+                    tbl.c.last_error_message: ins.excluded.last_error_message,
+                    tbl.c["metadata"]: ins.excluded["metadata"],
+                    tbl.c.updated_by: ins.excluded.updated_by,
+                    tbl.c.updated_at: func.now(),
                 },
             )
             session.execute(stmt)

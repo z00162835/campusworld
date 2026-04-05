@@ -140,15 +140,30 @@ def _build_specs(world_id: str, snap: Mapping[str, Any], profile: WorldGraphProf
                     logical_id=eid,
                     package_type_code=str(row.get("type_code") or ""),
                     name=str(row.get("display_name") or eid)[:255],
-                    attributes={
-                        k: v
-                        for k, v in row.items()
-                        if k not in ("id", "type_code", "display_name", "tags", "world_id")
-                    },
+                    attributes=_entity_row_flat_attributes(row),
                     tags=list(row.get("tags") or []),
                 )
             )
     return specs
+
+
+def _entity_row_flat_attributes(row: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Merge package row top-level fields with nested ``attributes`` dict.
+
+    YAML entities keep device/item fields under ``attributes:``; without merging,
+    keys like ``room_list_name`` stay nested and look/typeclasses never see them.
+    """
+    skip = frozenset({"id", "type_code", "display_name", "tags", "world_id"})
+    top: Dict[str, Any] = {}
+    for k, v in row.items():
+        if k in skip or k == "attributes":
+            continue
+        top[k] = v
+    nested = row.get("attributes")
+    if isinstance(nested, dict):
+        return {**top, **nested}
+    return top
 
 
 def _load_node_type_map(session: Session) -> Dict[str, NodeType]:

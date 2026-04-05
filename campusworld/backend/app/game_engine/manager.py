@@ -9,11 +9,13 @@
 """
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
+from app.core.config_manager import get_setting
 
 from .base import GameEngine
-from .loader import GameLoader
 from .interface import GameInterface
+from .loader import GameLoader
 
 
 class CampusWorldGameEngine(GameEngine):
@@ -33,8 +35,27 @@ class CampusWorldGameEngine(GameEngine):
             if not super().start():
                 return False
 
-            # 自动加载内容 - 静默，结果由 get_engine_status() 查询
-            loaded_games = self.loader.auto_load_games()
+            # 已安装世界（world_runtime_states.status=installed）默认在启动时装载进内存，与「发现全部包」无关
+            if get_setting("game_engine.load_installed_worlds_on_start", True):
+                loaded_installed = self.loader.load_installed_worlds_at_start()
+                self.logger.info(
+                    "game_engine.load_installed_worlds_on_start loaded=%s", loaded_installed
+                )
+            else:
+                self.logger.info(
+                    "game_engine.load_installed_worlds_on_start=false; skip loading installed worlds at startup"
+                )
+
+            # 可选：按旧逻辑额外装载「磁盘上已发现」的包（默认关；与 install 状态无关，仅供开发/特殊场景）
+            legacy_discover = get_setting("game_engine.auto_load_discovered_on_start", None)
+            if legacy_discover is None:
+                legacy_discover = get_setting("game_engine.auto_load_on_start", False)
+            if legacy_discover:
+                worlds_cfg = get_setting("game_engine.auto_load_worlds", None)
+                loaded_extra = self.loader.auto_load_games(
+                    only_world_ids=worlds_cfg if isinstance(worlds_cfg, list) else None
+                )
+                self.logger.info("auto_load_discovered / legacy auto_load_on_start loaded=%s", loaded_extra)
 
             return True
 

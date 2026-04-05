@@ -14,6 +14,7 @@ from ..base import GameCommand, CommandResult, CommandContext
 from app.core.log import get_logger, LoggerNames
 from app.commands.policy_expr import evaluate_policy_expr, PolicyExprError
 from app.game_engine.world_room_resolve import room_is_world_entry_gate
+from app.commands.game.look_appearance import look_alias_strings_from_attrs, room_list_label_for_entry
 
 _EXIT_DIRECTION_ORDER = (
     "north",
@@ -38,6 +39,24 @@ def _sort_room_exit_labels(labels: List[str]) -> List[str]:
 
 
 LOOK_DISAMBIGUATION_KEY = "look_disambiguation_entries"
+
+
+def _entry_matches_look_target(entry: Dict[str, Any], target_lower: str) -> bool:
+    """True if user search string matches graph content entry (name or list aliases)."""
+    tl = (target_lower or "").strip().lower()
+    if not tl:
+        return False
+    blobs: List[str] = [str(entry.get("name") or "")]
+    blobs.extend(look_alias_strings_from_attrs(dict(entry.get("attributes") or {})))
+    seen: set = set()
+    for raw in blobs:
+        if not raw or raw in seen:
+            continue
+        seen.add(raw)
+        sl = raw.lower()
+        if tl == sl or tl in sl:
+            return True
+    return False
 
 
 def _merge_room_exit_labels_from_attrs_and_graph(
@@ -249,17 +268,16 @@ class LookCommand(GameCommand):
                             continue
                         if not self._is_visible_in_room(context, n):
                             continue
-                        content_entries.append(
-                            {
-                                "node_id": n.id,
-                                "name": n.name,
-                                "type_code": n.type_code,
-                                "type": n.type_code,
-                                "description": n.description or "",
-                                "attributes": dict(n.attributes or {}),
-                            }
-                        )
-                        room_objects.append(n.name)
+                        entry_d = {
+                            "node_id": n.id,
+                            "name": n.name,
+                            "type_code": n.type_code,
+                            "type": n.type_code,
+                            "description": n.description or "",
+                            "attributes": dict(n.attributes or {}),
+                        }
+                        content_entries.append(entry_d)
+                        room_objects.append(room_list_label_for_entry(entry_d))
                     rname = ra.get("room_name") or ra.get("display_name") or room_node.name
                     rdesc = (ra.get("room_description") or "").strip() or ra.get(
                         "display_name"
@@ -351,21 +369,38 @@ class LookCommand(GameCommand):
             # 获取当前房间的物品
             current_room = self._get_current_room(context)
             if current_room:
-                room_items = current_room.get('items', [])
-                for item_name in room_items:
-                    if target_lower in item_name.lower():
-                        # 优先：尝试从图数据按名称解析为 Node
-                        graph_obj = self._get_graph_object_in_room_by_name(context, item_name)
+                entries = current_room.get("content_entries") or []
+                if entries:
+                    for entry in entries:
+                        if not isinstance(entry, dict):
+                            continue
+                        if not _entry_matches_look_target(entry, target_lower):
+                            continue
+                        nid = entry.get("node_id")
+                        if nid is None:
+                            continue
+                        gid = f"node:{nid}"
+                        if gid in found_ids:
+                            continue
+                        graph_obj = self._graph_object_dict_by_node_id(context, int(nid))
                         if graph_obj:
-                            gid = f"node:{graph_obj.get('node_id')}"
-                            if gid not in found_ids:
-                                found_objects.append(graph_obj)
-                                found_ids.add(gid)
-                        else:
-                            item_info = self._get_item_info(context, item_name)
-                            if item_info and item_info.get('id') not in found_ids:
-                                found_objects.append(item_info)
-                                found_ids.add(item_info.get('id'))
+                            found_objects.append(graph_obj)
+                            found_ids.add(gid)
+                else:
+                    room_items = current_room.get("items", [])
+                    for item_name in room_items:
+                        if target_lower in item_name.lower():
+                            graph_obj = self._get_graph_object_in_room_by_name(context, item_name)
+                            if graph_obj:
+                                gid = f"node:{graph_obj.get('node_id')}"
+                                if gid not in found_ids:
+                                    found_objects.append(graph_obj)
+                                    found_ids.add(gid)
+                            else:
+                                item_info = self._get_item_info(context, item_name)
+                                if item_info and item_info.get("id") not in found_ids:
+                                    found_objects.append(item_info)
+                                    found_ids.add(item_info.get("id"))
             
             # 搜索全局物品
             game_info = self.get_game_info(context)
@@ -413,29 +448,40 @@ class LookCommand(GameCommand):
                 if not room_node_id:
                     return None
 
-                # exact match by name
-                node = session.query(Node).filter(
-                    Node.location_id == room_node_id,
-                    Node.name == name,
-                    Node.is_active == True,
-                ).first()
-                if not node:
-                    # fuzzy match: name contains token OR tag contains token OR display_name matches
-                    token = str(name).lower()
-                    candidates = (
-                        session.query(Node)
-                        .filter(
-                            Node.location_id == room_node_id,
-                            Node.is_active == True,
-                        )
-                        .all()
+                candidates = (
+                    session.query(Node)
+                    .filter(
+                        Node.location_id == room_node_id,
+                        Node.is_active == True,
                     )
+                    .all()
+                )
+                node = None
+                nl = (name or "").strip().lower()
+                for c in candidates:
+                    if (c.name or "").strip().lower() == nl:
+                        node = c
+                        break
+                if not node:
+                    for c in candidates:
+                        attrs = dict(c.attributes or {})
+                        for blob in look_alias_strings_from_attrs(attrs):
+                            if blob.strip().lower() == nl:
+                                node = c
+                                break
+                        if node:
+                            break
+                if not node:
+                    token = nl
                     for c in candidates:
                         if token in (c.name or "").lower():
                             node = c
                             break
-                        attrs = c.attributes or {}
+                        attrs = dict(c.attributes or {})
                         if token and token in str(attrs.get("display_name", "")).lower():
+                            node = c
+                            break
+                        if token and any(token in b.lower() for b in look_alias_strings_from_attrs(attrs)):
                             node = c
                             break
                         tags = c.tags or []
@@ -615,7 +661,16 @@ class LookCommand(GameCommand):
             entries: List[Dict[str, Any]] = []
 
             for i, obj in enumerate(objects, 1):
-                obj_name = obj.get("name", obj.get("id", "未知"))
+                obj_name = room_list_label_for_entry(
+                    {
+                        "name": obj.get("name"),
+                        "type_code": obj.get("type_code") or obj.get("type"),
+                        "attributes": dict(obj.get("attributes") or {}),
+                        "description": str(obj.get("description") or ""),
+                    }
+                )
+                if not obj_name or obj_name == "?":
+                    obj_name = str(obj.get("name", obj.get("id", "未知")))
                 obj_type = obj.get("type_code") or obj.get("type", "未知")
                 nid = obj.get("node_id")
                 suffix = f"  [#{nid}]" if nid is not None else ""

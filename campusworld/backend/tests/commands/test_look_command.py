@@ -57,13 +57,47 @@ def test_look_command_returns_multiple_match_prompt():
     cmd = LookCommand()
     ctx = _build_context()
     cmd._search_objects = lambda _ctx, _target: [
-        {"id": "1", "name": "board1", "type": "obj"},
-        {"id": "2", "name": "board2", "type": "obj"},
+        {"id": "1", "name": "board1", "type": "obj", "node_id": 101},
+        {"id": "2", "name": "board2", "type": "obj", "node_id": 102},
     ]
 
     result = cmd.execute(ctx, ["board"])
     assert result.success
     assert "多个匹配" in result.message
+    assert "[#101]" in result.message
+
+
+def test_look_command_numeric_disambiguation_with_session():
+    from dataclasses import dataclass, field
+    from typing import Any, Dict
+
+    from app.commands.game.look_command import LookCommand, LOOK_DISAMBIGUATION_KEY
+
+    @dataclass
+    class _Sess:
+        command_ephemeral: Dict[str, Any] = field(default_factory=dict)
+
+    cmd = LookCommand()
+    ctx = _build_context()
+    sess = _Sess()
+    sess.command_ephemeral[LOOK_DISAMBIGUATION_KEY] = [{"node_id": 55}]
+    ctx.session = sess
+
+    cmd._graph_object_dict_by_node_id = lambda _c, _nid: {
+        "node_id": 55,
+        "name": "Target",
+        "type_code": "lighting_fixture",
+        "type": "lighting_fixture",
+        "description": "d",
+        "attributes": {},
+    }
+
+    cmd._build_object_description = lambda _c, _o, target_args=None: "picked-ok"
+
+    result = cmd.execute(ctx, ["1"])
+    assert result.success
+    assert result.message == "picked-ok"
+    assert LOOK_DISAMBIGUATION_KEY not in sess.command_ephemeral
 
 
 def test_look_command_world_object_shows_enter_hint():

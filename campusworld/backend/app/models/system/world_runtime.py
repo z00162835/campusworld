@@ -22,7 +22,8 @@ class WorldRuntimeState(Base):
     __tablename__ = "world_runtime_states"
 
     world_id = Column(String(128), primary_key=True)
-    status = Column(String(32), nullable=False, index=True)
+    # Indexes only in __table_args__ (Column(index=True) would duplicate ix_* names)
+    status = Column(String(32), nullable=False)
     version = Column(String(64), nullable=True)
     last_error_code = Column(String(128), nullable=True)
     last_error_message = Column(Text, nullable=True)
@@ -44,17 +45,17 @@ class WorldInstallJob(Base):
     __tablename__ = "world_install_jobs"
 
     job_id = Column(UUID(as_uuid=True), primary_key=True, default=uuidlib.uuid4)
-    world_id = Column(String(128), nullable=False, index=True)
+    world_id = Column(String(128), nullable=False)
     action = Column(String(32), nullable=False)
-    status = Column(String(32), nullable=False, index=True)
+    status = Column(String(32), nullable=False)
     requested_by = Column(String(128), nullable=True)
-    request_fingerprint = Column(String(255), nullable=True, index=True)
+    request_fingerprint = Column(String(255), nullable=True)
     error_code = Column(String(128), nullable=True)
     event_log = Column(JSONB, nullable=False, default=list)
     summary = Column(JSONB, nullable=False, default=dict)
     started_at = Column(DateTime(timezone=True), nullable=True)
     finished_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     __table_args__ = (

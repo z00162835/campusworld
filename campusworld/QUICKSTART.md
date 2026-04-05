@@ -72,8 +72,12 @@ pip install -r requirements/dev.txt
 cp .env.example .env
 # 编辑 .env 文件（`CAMPUSWORLD_*` 前缀），用于覆盖 YAML 配置
 
-# 初始化数据库
+# 初始化 / 迁移数据库（默认 migrate：建表 + schema 补丁 + 可选种子）
 python -m db.init_database
+# 显式：python -m db.init_database migrate
+# 危险重建（仅 PostgreSQL，会清空 public）：需 CAMPUSWORLD_ALLOW_DB_RESET=true 且加 --i-understand
+# CAMPUSWORLD_ALLOW_DB_RESET=true python -m db.init_database reset --i-understand
+# scripts/setup.sh 本地自动化：RESET_DB=1（会导出 CAMPUSWORLD_ALLOW_DB_RESET 并调用 reset --i-understand）
 
 # 诊断 seed/建表状态（只读）
 python scripts/diagnose_seed_state.py
@@ -83,7 +87,7 @@ conda activate campusworld
 python campusworld.py
 ```
 
-**系统入口说明**：请使用 **`python campusworld.py`**。主程序会依次拉起 **游戏引擎（GameLoader）**、**HTTP/WebSocket**（FastAPI，见 `app.api.http_app`）、**SSH**。`world install hicampus`、`look`、`enter` 等依赖引擎与（通常）SSH 会话。
+**系统入口说明**：请使用 **`python campusworld.py`**。主程序会依次拉起 **游戏引擎（GameLoader）**、**HTTP/WebSocket**（FastAPI，见 `app.api.http_app`）、**SSH**。默认 **`game_engine.load_installed_worlds_on_start: true`**：会在启动时对 **`world_runtime_states` 中已 `install` 的世界**执行 `load_game`（重启后保留安装状态并自动进内存）。首次使用仍需 **`world install <world_id>`**（例如 `hicampus`）写入安装状态。可选 **`game_engine.auto_load_discovered_on_start`**（或旧键 **`auto_load_on_start`**）用于额外按「磁盘发现的包」装载，与 install 状态无关。
 
 ### 4. 前端设置
 

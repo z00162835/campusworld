@@ -39,6 +39,8 @@ class SSHSession:
     terminal_size: Optional[tuple] = None
     command_history: List[str] = field(default_factory=list)
     output_buffer: List[str] = field(default_factory=list)
+    # 命令间短暂状态（如 look 多匹配编号消歧）；不写入 DB
+    command_ephemeral: Dict[str, Any] = field(default_factory=dict)
 
     # SSH channel 引用（用于强制关闭）
     channel: Optional[Any] = field(default=None, init=False, repr=False)

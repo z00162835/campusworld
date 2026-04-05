@@ -236,6 +236,31 @@ class TestGameHandler:
 
         assert result is False
 
+    @patch("app.ssh.game_handler.find_world_room_node")
+    @patch("app.ssh.game_handler.game_engine_manager")
+    def test_enter_world_lazy_loads_when_package_not_in_memory(self, mock_gem, mock_find_room):
+        """内存中尚未 load 时，enter 应触发 load_game 再进入。"""
+        mock_find_room.return_value = MagicMock(id=1001)
+        engine = MagicMock()
+        mock_gem.get_engine.return_value = engine
+        game = MagicMock()
+        game.add_player.return_value = True
+        engine.get_game.side_effect = [None, game]
+        mock_gem.load_game.return_value = {"ok": True, "message": "world loaded"}
+
+        user_node = MagicMock()
+        user_node.attributes = {}
+        ok, msg = self.handler._enter_world_in_session(
+            MagicMock(), user_node, "alice", "hicampus", "hicampus_gate", 99
+        )
+        assert ok is True
+        assert "hicampus" in msg
+        mock_gem.load_game.assert_called_once_with("hicampus")
+        assert engine.get_game.call_count == 2
+        game.add_player.assert_called_once()
+        assert user_node.attributes.get("active_world") == "hicampus"
+        assert user_node.location_id == 1001
+
 
 class TestGameHandlerIntegration:
     """集成测试 - 测试GameHandler与数据库的交互"""

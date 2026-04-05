@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from app.commands.base import CommandContext, CommandResult
 from app.commands.registry import command_registry
+from app.commands.shell_words import split_command_line
 from app.core.database import db_session_context
 from app.commands.policy_expr import evaluate_policy_expr, PolicyExprError
 from app.models.graph import Node
@@ -36,7 +37,7 @@ def invoke_command_line(
     if not line:
         return CommandResult.success_result("")
 
-    parts = line.split()
+    parts = split_command_line(line)
     command_name = parts[0].lower()
     args = parts[1:] if len(parts) > 1 else []
 

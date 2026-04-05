@@ -54,6 +54,7 @@ class ProtocolHandler(ABC):
             session_id=session_id,
             permissions=permissions,
             caller=caller,
+            session=session,
             game_state=game_state,
             db_session=db_session,
             roles=resolved_roles,

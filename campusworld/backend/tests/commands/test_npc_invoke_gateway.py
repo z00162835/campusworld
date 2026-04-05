@@ -65,5 +65,6 @@ def test_npc_gateway_allows_world_list_with_admin_world_permission(monkeypatch):
                     game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
                 )
     assert res.success
-    assert "world list ok" in res.message
+    assert "hicampus" in res.message
+    assert "world_id" in res.message
 

@@ -62,7 +62,7 @@ class EnterWorldCommand(GameCommand):
     def _get_specific_help(self) -> str:
         return (
             "\n说明:\n"
-            "  - enter <world_name> [spawn_key]: 从奇点屋进入指定世界\n"
+            "  - enter <world_name> [spawn_key]: 从奇点屋进入指定世界（须先 leave 离开世界）\n"
             "  - enter（无参数）: 仅在世界内作为方向命令使用（等价于 in/enter 方向）\n"
         )
 

@@ -19,6 +19,7 @@ from .system import (
     WorldInstallJob,
 )
 from .exit import Exit
+from .world_entrance import WorldEntrance
 from .things import (
     AccessTerminal,
     AvDisplay,
@@ -68,6 +69,7 @@ __all__ = [
     "WorldRuntimeState",
     "WorldInstallJob",
     "Exit",
+    "WorldEntrance",
     "AccessTerminal",
     "AvDisplay",
     "ConferenceSeating",
@@ -102,9 +104,14 @@ model_factory.register_model("system_bulletin_board", BulletinBoard)
 model_factory.register_model("system_command_ability", SystemCommandAbility)
 model_factory.register_model("system_notice", SystemNotice)
 model_factory.register_model("exit", Exit)
+model_factory.register_model("world_entrance", WorldEntrance)
 model_factory.register_model("network_access_point", NetworkAccessPoint)
 model_factory.register_model("av_display", AvDisplay)
 model_factory.register_model("lighting_fixture", LightingFixture)
+model_factory.register_model("access_terminal", AccessTerminal)
+model_factory.register_model("npc_agent", NpcAgent)
+model_factory.register_model("furniture", Furniture)
+model_factory.register_model("logical_zone", LogicalZone)
 model_factory.register_model("conference_seating", ConferenceSeating)
 model_factory.register_model("lounge_furniture", LoungeFurniture)
 

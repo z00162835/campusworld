@@ -37,6 +37,9 @@ show_help() {
     echo "  --skip-database      跳过数据库初始化"
     echo "  -v, --verbose        详细输出"
     echo ""
+    echo "环境变量:"
+    echo "  RESET_DB=1           仅本地：先危险 reset（DROP public）再 migrate；会设置 CAMPUSWORLD_ALLOW_DB_RESET=true"
+    echo ""
     echo "示例:"
     echo "  $0                    # 完整初始化"
     echo "  $0 --skip-docker      # 跳过Docker启动"
@@ -557,9 +560,18 @@ init_database() {
     eval "$(conda shell.bash hook)"
     conda activate campusworld
     
-    # 运行数据库迁移
+    # 运行数据库迁移（RESET_DB=1 时先 PostgreSQL public 危险重建，见 --help）
     log_info "运行数据库迁移..."
-    if python -m db.init_database; then
+    if [ "${RESET_DB:-}" = "1" ]; then
+        log_warning "RESET_DB=1：将执行 reset（DROP SCHEMA public CASCADE），仅用于本地开发"
+        export CAMPUSWORLD_ALLOW_DB_RESET=true
+        if python -m db.init_database reset --i-understand; then
+            log_success "数据库初始化成功（已 reset）"
+        else
+            log_error "数据库初始化失败"
+            exit 1
+        fi
+    elif python -m db.init_database; then
         log_success "数据库初始化成功"
     else
         log_error "数据库初始化失败"

@@ -141,6 +141,9 @@ def _build_item_row(
     if not isinstance(attrs, dict):
         attrs = {}
 
+    if " · " in display_name:
+        attrs.setdefault("room_list_name", display_name.rsplit(" · ", 1)[-1].strip())
+
     # Deterministic per-item identity helpers for operations/telemetry stubs.
     h = hashlib.sha1(iid.encode("utf-8")).hexdigest()
     attrs.setdefault("device_id", iid)

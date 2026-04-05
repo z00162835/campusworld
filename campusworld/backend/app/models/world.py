@@ -64,6 +64,13 @@ class World(DefaultObject):
         }
         
         super().__init__(name=name, **world_attrs)
+
+    def room_line_format_kwargs(self):
+        kw = super().room_line_format_kwargs()
+        w = self._node_attributes.get("welcome_message") or self._node_attributes.get("theme")
+        if w:
+            kw["hints"] = (kw.get("hints") or "") + f" — {str(w)[:120]}"
+        return kw
     
     def __repr__(self):
         name = self._node_attributes.get('name', 'Unknown')

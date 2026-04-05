@@ -5,7 +5,9 @@ World management command family.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+import yaml
 
 from app.commands.base import AdminCommand, CommandContext, CommandResult
 from app.core.database import db_session_context
@@ -24,6 +26,50 @@ from app.games.hicampus.package.content_overlay import (
     diff_spatial_vs_db,
 )
 from app.games.hicampus.package.contracts import DataPackageError
+
+
+def _read_manifest_brief(game_root: Path) -> Dict[str, Any]:
+    """Light read of manifest.yaml for list / resolve (no full package load)."""
+    out: Dict[str, Any] = {"display_name": None, "version": None, "api_version": None}
+    mf = game_root / "manifest.yaml"
+    if not mf.is_file():
+        return out
+    try:
+        raw = mf.read_text(encoding="utf-8")
+        data = yaml.safe_load(raw) or {}
+        if not isinstance(data, dict):
+            return out
+        out["display_name"] = data.get("display_name") or data.get("title")
+        out["version"] = data.get("version")
+        out["api_version"] = data.get("api_version")
+    except Exception:
+        pass
+    return out
+
+
+def _format_world_list_message(rows: List[Dict[str, Any]]) -> str:
+    """Multi-line table for SSH and other handlers that only show result.message."""
+    if not rows:
+        return (
+            "world list: no packages found under game search paths.\n"
+            "Expected layout: .../games/<world_id>/manifest.yaml"
+        )
+    lines = [
+        f"{'world_id':<16} {'display_name':<26} {'loaded':<6} {'version':<8} {'api':<6} source",
+        "-" * 90,
+    ]
+    for r in rows:
+        wid = str(r.get("world_id", ""))[:16]
+        dn = str(r.get("display_name") or "-")[:26]
+        ld = "yes" if r.get("loaded") else "no"
+        ver = str(r.get("version") or "-")[:8]
+        api = str(r.get("api_version") or "-")[:6]
+        src = str(r.get("source_type") or "-")[:10]
+        lines.append(f"{wid:<16} {dn:<26} {ld:<6} {ver:<8} {api:<6} {src}")
+    lines.append("")
+    lines.append(f"(total={len(rows)})  Canonical install key is world_id (package directory).")
+    lines.append("Example: world install <world_id>")
+    return "\n".join(lines)
 
 
 class WorldCommand(AdminCommand):
@@ -79,7 +125,8 @@ class WorldCommand(AdminCommand):
     def get_usage(self) -> str:
         return (
             "用法: world <list|install|uninstall|reload|status|validate|repair|content> ...; "
-            "world content <validate|diff|apply> <world_id> [--report] [--dry-run] [--no-snapshot]; "
+            "<world_id> 可为包目录名world_id（见 world list）、大小写不敏感或 manifest.display_name（唯一时）; "
+            "world content <validate|diff|apply> <world_ref> ...; "
             "world bridge <add|remove|list|validate> ... [--dry-run] [--two-way] [--bridge-type portal|gate|transit]"
         )
 
@@ -303,6 +350,95 @@ class WorldCommand(AdminCommand):
 
         return CommandResult.error_result("internal: bridge routing", error=WORLD_BRIDGE_INVALID_ARGUMENT)
 
+    def _resolve_world_ref(self, ref: str) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Map CLI world reference to canonical package id (directory name / manifest world_id key for load_game).
+
+        Returns:
+            (canonical_world_id, None) on success, or (None, error_message).
+        """
+        ref = (ref or "").strip()
+        if not ref:
+            return None, "world reference is empty"
+        available = game_engine_manager.list_games()
+        if ref in available:
+            return ref, None
+        rlo = ref.lower()
+        ci_matches = [w for w in available if w.lower() == rlo]
+        if len(ci_matches) == 1:
+            return ci_matches[0], None
+        if len(ci_matches) > 1:
+            return None, f"ambiguous world id (case-insensitive): {', '.join(ci_matches)}"
+
+        disk_id = self._try_resolve_from_disk(ref)
+        if disk_id:
+            return disk_id, None
+
+        engine = game_engine_manager.get_engine()
+        if not engine or not getattr(engine, "loader", None):
+            return None, (
+                f"unknown world '{ref}'. Known package ids: {', '.join(available) or '(none)'}; "
+                "try: world list"
+            )
+
+        hits: List[str] = []
+        for wid in available:
+            where = self._resolve_world_path(wid)
+            rp = where.get("resolved_path")
+            if not rp:
+                continue
+            brief = _read_manifest_brief(Path(rp))
+            dn = brief.get("display_name")
+            if isinstance(dn, str) and dn.strip().lower() == rlo:
+                hits.append(wid)
+        if len(hits) == 1:
+            return hits[0], None
+        if len(hits) > 1:
+            return None, (
+                f"ambiguous display_name '{ref}' matches: {', '.join(hits)}. "
+                "Use world_id from: world list"
+            )
+        return None, (
+            f"unknown world '{ref}'. Use: world list (canonical id is the package directory name)."
+        )
+
+    def _try_resolve_from_disk(self, ref: str) -> Optional[str]:
+        """Directory name under loader search_paths (canonical casing), case-insensitive."""
+        engine = game_engine_manager.get_engine()
+        if not engine or not getattr(engine, "loader", None):
+            return None
+        rlo = ref.strip().lower()
+        if not rlo:
+            return None
+        for base in engine.loader.search_paths:
+            try:
+                if not base.is_dir():
+                    continue
+                for child in base.iterdir():
+                    if child.is_dir() and child.name.lower() == rlo:
+                        return child.name
+            except OSError:
+                continue
+        return None
+
+    def _row_for_list(self, wid: str, loaded: set) -> Dict[str, Any]:
+        where = self._resolve_world_path(wid)
+        brief: Dict[str, Any] = {}
+        if where.get("resolved_path"):
+            brief = _read_manifest_brief(Path(where["resolved_path"]))
+        display = brief.get("display_name")
+        if not display:
+            display = wid
+        return {
+            "world_id": wid,
+            "display_name": display,
+            "version": brief.get("version"),
+            "api_version": brief.get("api_version"),
+            "loaded": wid in loaded,
+            "resolved_path": where["resolved_path"],
+            "source_type": where["source_type"],
+        }
+
     def _resolve_data_root(self, world_id: str) -> Optional[Path]:
         info = self._resolve_world_path(world_id)
         p = info.get("resolved_path")
@@ -328,15 +464,19 @@ class WorldCommand(AdminCommand):
     def _content(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
             return CommandResult.error_result(
-                "用法: world content <validate|diff|apply> <world_id> [--report] [--dry-run] [--no-snapshot]"
+                "用法: world content <validate|diff|apply> <world_ref> [--report] [--dry-run] [--no-snapshot]"
             )
         sub = str(args[0]).lower().strip()
         rest, flags = self._content_flags(args[1:])
         if not rest:
-            return CommandResult.error_result("缺少 world_id")
-        world_id = str(rest[0]).strip()
+            return CommandResult.error_result("缺少 world_ref（包目录 id 或 display_name）")
+        ref = str(rest[0]).strip()
         if not self._has_sub_permission(context, "content"):
             return CommandResult.error_result("Permission denied for world content", error="WORLD_FORBIDDEN")
+
+        world_id, err = self._resolve_world_ref(ref)
+        if err:
+            return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
 
         data_root = self._resolve_data_root(world_id)
         if not data_root:
@@ -418,28 +558,22 @@ class WorldCommand(AdminCommand):
         engine = game_engine_manager.get_engine()
         if engine and getattr(engine, "loader", None):
             loaded = set(engine.loader.get_loaded_games())
-        rows = []
-        for wid in available:
-            where = self._resolve_world_path(wid)
-            rows.append(
-                {
-                    "world_id": wid,
-                    "loaded": wid in loaded,
-                    "resolved_path": where["resolved_path"],
-                    "source_type": where["source_type"],
-                }
-            )
+        rows = [self._row_for_list(wid, loaded) for wid in available]
+        msg = _format_world_list_message(rows)
         self.logger.info("AUDIT world.list operator=%s count=%s", context.username, len(rows))
         return CommandResult.success_result(
-            f"world list ok, total={len(rows)}",
+            msg,
             data={"items": rows, "total": len(rows)},
             command_type=self.command_type,
         )
 
     def _status(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result("用法: world status <world_id>")
-        world_id = str(args[0]).strip()
+            return CommandResult.error_result("用法: world status <world_ref>")
+        ref = str(args[0]).strip()
+        world_id, err = self._resolve_world_ref(ref)
+        if err:
+            return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         info = game_engine_manager.get_game_status(world_id) or {}
         runtime = {}
         engine = game_engine_manager.get_engine()
@@ -461,8 +595,11 @@ class WorldCommand(AdminCommand):
 
     def _install(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result("用法: world install <world_id>")
-        world_id = str(args[0]).strip()
+            return CommandResult.error_result("用法: world install <world_ref>")
+        ref = str(args[0]).strip()
+        world_id, err = self._resolve_world_ref(ref)
+        if err:
+            return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         out = game_engine_manager.load_game(world_id)
         self.logger.info(
             "AUDIT world.install operator=%s world_id=%s result=%s error_code=%s",
@@ -477,8 +614,11 @@ class WorldCommand(AdminCommand):
 
     def _uninstall(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result("用法: world uninstall <world_id>")
-        world_id = str(args[0]).strip()
+            return CommandResult.error_result("用法: world uninstall <world_ref>")
+        ref = str(args[0]).strip()
+        world_id, err = self._resolve_world_ref(ref)
+        if err:
+            return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         out = game_engine_manager.unload_game(world_id)
         self.logger.info(
             "AUDIT world.uninstall operator=%s world_id=%s result=%s error_code=%s",
@@ -493,8 +633,11 @@ class WorldCommand(AdminCommand):
 
     def _reload(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result("用法: world reload <world_id>")
-        world_id = str(args[0]).strip()
+            return CommandResult.error_result("用法: world reload <world_ref>")
+        ref = str(args[0]).strip()
+        world_id, err = self._resolve_world_ref(ref)
+        if err:
+            return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         out = game_engine_manager.reload_game(world_id)
         self.logger.info(
             "AUDIT world.reload operator=%s world_id=%s result=%s error_code=%s",
@@ -509,8 +652,11 @@ class WorldCommand(AdminCommand):
 
     def _validate(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result("用法: world validate <world_id> [--dry-run]")
-        world_id = str(args[0]).strip()
+            return CommandResult.error_result("用法: world validate <world_ref> [--dry-run]")
+        ref = str(args[0]).strip()
+        world_id, err = self._resolve_world_ref(ref)
+        if err:
+            return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         dry_run = "--dry-run" in args[1:]
         report = world_topology_service.validate_topology(world_id)
         self.logger.info(
@@ -538,8 +684,11 @@ class WorldCommand(AdminCommand):
 
     def _repair(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result("用法: world repair <world_id> [--dry-run] [--force]")
-        world_id = str(args[0]).strip()
+            return CommandResult.error_result("用法: world repair <world_ref> [--dry-run] [--force]")
+        ref = str(args[0]).strip()
+        world_id, err = self._resolve_world_ref(ref)
+        if err:
+            return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         dry_run = "--dry-run" in args[1:]
         force = "--force" in args[1:]
         report = world_topology_service.repair_topology(world_id, dry_run=dry_run, force=force)

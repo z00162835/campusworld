@@ -74,6 +74,32 @@ class GameLoader:
             self._op_locks[world_id] = threading.Lock()
         return self._op_locks[world_id]
 
+    def _sync_world_entry_visibility_after_load(self, world_id: str) -> None:
+        """
+        After a world loads successfully, persist world entry visibility (portal nodes).
+
+        Delegates to ``world_entry_service.sync_world_entry_visibility`` (placement
+        and policy are defined there). ``world install`` / ``world reload`` also
+        call sync; this covers ``load_installed_worlds_at_start`` → ``load_game``
+        so installed worlds do not miss entry nodes after process restart.
+        """
+        try:
+            from app.game_engine.world_entry_service import world_entry_service
+
+            ok, err = world_entry_service.sync_world_entry_visibility(world_id, enabled=True)
+            if not ok:
+                self.logger.warning(
+                    "sync_world_entry_visibility after load failed world_id=%s code=%s",
+                    world_id,
+                    err,
+                )
+        except Exception as e:
+            self.logger.warning(
+                "sync_world_entry_visibility after load raised world_id=%s: %s",
+                world_id,
+                e,
+            )
+
     def get_runtime_state(self, world_id: str) -> Dict[str, Any]:
         return self.repository.get_state(world_id)
 
@@ -468,6 +494,7 @@ class GameLoader:
 
                 self.loaded_games[game_name] = game_instance
                 self.game_modules[game_name] = module
+                self._sync_world_entry_visibility_after_load(game_name)
                 return self._result(
                     True,
                     game_name,
@@ -768,6 +795,7 @@ class GameLoader:
                     )
                 self.loaded_games[game_name] = instance
                 self.game_modules[game_name] = module
+                self._sync_world_entry_visibility_after_load(game_name)
                 return self._result(
                     True,
                     game_name,
@@ -825,9 +853,46 @@ class GameLoader:
             "status": state.get("status", WorldRuntimeStatus.INSTALLED.value),
         }
 
-    def auto_load_games(self) -> List[str]:
+    def load_installed_worlds_at_start(self) -> List[str]:
+        """
+        Load worlds marked ``installed`` in ``world_runtime_states`` that still exist on disk.
+
+        This matches ``world install`` persistence across process restarts (unrelated to
+        loading every discovered package).
+        """
+        installed = set(self.repository.list_world_ids_with_status(WorldRuntimeStatus.INSTALLED.value))
+        discovered = set(self.discover_games())
+        targets = sorted(installed & discovered)
         loaded: List[str] = []
-        for game_name in self.discover_games():
+        for world_id in targets:
+            result = self.load_game(world_id)
+            if result.get("ok"):
+                loaded.append(world_id)
+            else:
+                self.logger.error(
+                    "startup load installed world '%s' failed: %s", world_id, result
+                )
+        self.logger.info(
+            "load_installed_worlds_at_start attempted=%s loaded=%s", targets, loaded
+        )
+        return loaded
+
+    def auto_load_games(self, only_world_ids: Optional[List[str]] = None) -> List[str]:
+        """
+        Load discovered world packages at process start (legacy / dev opt-in).
+
+        Args:
+            only_world_ids: If None, every discovered package is loaded. If a list (possibly empty),
+                only those ids that appear in discover_games() are loaded.
+        """
+        discovered = self.discover_games()
+        if only_world_ids is not None:
+            allow = set(only_world_ids)
+            targets = [n for n in discovered if n in allow]
+        else:
+            targets = list(discovered)
+        loaded: List[str] = []
+        for game_name in targets:
             result = self.load_game(game_name)
             if result.get("ok"):
                 loaded.append(game_name)

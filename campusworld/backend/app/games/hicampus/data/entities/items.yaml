@@ -16,6 +16,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_bridge_lighting_fixture_01
     asset_tag: HC-1ABE265B
     placement:
@@ -63,6 +64,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_bridge_wifi_ap_01
     asset_tag: HC-CA365D7A
     placement:
@@ -102,6 +104,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_01f_circulation_01_lighting_fixture_01
     asset_tag: HC-E5671CD9
     placement:
@@ -137,6 +140,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f1_01f_circulation_01_lounge_furniture_01
     asset_tag: HC-4413057E
     placement:
@@ -183,6 +187,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_01f_circulation_01_wifi_ap_01
     asset_tag: HC-B17256AB
     placement:
@@ -222,6 +227,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_01f_electrical_01_lighting_fixture_01
     asset_tag: HC-E255092F
     placement:
@@ -269,6 +275,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_01f_electrical_01_wifi_ap_01
     asset_tag: HC-3F610D63
     placement:
@@ -308,6 +315,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_01f_restroom_01_lighting_fixture_01
     asset_tag: HC-CAED9AA8
     placement:
@@ -355,6 +363,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_01f_restroom_01_wifi_ap_01
     asset_tag: HC-42A3E17F
     placement:
@@ -398,6 +407,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_02f_meeting_01_av_display_01
     asset_tag: HC-72C40497
     placement:
@@ -432,6 +442,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_02f_meeting_01_conference_seating_01
     asset_tag: HC-90CA9078
     placement:
@@ -470,6 +481,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_02f_meeting_01_lighting_fixture_01
     asset_tag: HC-817176D2
     placement:
@@ -517,6 +529,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_02f_meeting_01_wifi_ap_01
     asset_tag: HC-11D9E4FB
     placement:
@@ -556,6 +569,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_02f_office_01_lighting_fixture_01
     asset_tag: HC-E25A7510
     placement:
@@ -602,6 +616,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_02f_office_01_wifi_ap_01
     asset_tag: HC-88756098
     placement:
@@ -641,6 +656,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_02f_office_02_lighting_fixture_01
     asset_tag: HC-37BBD447
     placement:
@@ -687,6 +703,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_02f_office_02_wifi_ap_01
     asset_tag: HC-2FB6F043
     placement:
@@ -721,6 +738,7 @@ items:
     includes:
     - bar_counter
     - stools
+    room_list_name: 吧台与高脚凳
     device_id: hicampus_f1_02f_pantry_01_furniture_pantry_01
     asset_tag: HC-11B6533C
     placement:
@@ -759,6 +777,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_02f_pantry_01_lighting_fixture_01
     asset_tag: HC-CC8A994F
     placement:
@@ -805,6 +824,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_02f_pantry_01_wifi_ap_01
     asset_tag: HC-465440DE
     placement:
@@ -844,6 +864,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_02f_restroom_01_lighting_fixture_01
     asset_tag: HC-6319CA34
     placement:
@@ -890,6 +911,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_02f_restroom_01_wifi_ap_01
     asset_tag: HC-1F658740
     placement:
@@ -933,6 +955,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_03f_meeting_01_av_display_01
     asset_tag: HC-F9F32044
     placement:
@@ -967,6 +990,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_03f_meeting_01_conference_seating_01
     asset_tag: HC-F5A1CCC6
     placement:
@@ -1005,6 +1029,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_03f_meeting_01_lighting_fixture_01
     asset_tag: HC-E59C3E58
     placement:
@@ -1052,6 +1077,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_03f_meeting_01_wifi_ap_01
     asset_tag: HC-034712EE
     placement:
@@ -1091,6 +1117,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_03f_office_01_lighting_fixture_01
     asset_tag: HC-B3FA79EF
     placement:
@@ -1137,6 +1164,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_03f_office_01_wifi_ap_01
     asset_tag: HC-AC58B3AE
     placement:
@@ -1176,6 +1204,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_03f_office_02_lighting_fixture_01
     asset_tag: HC-B3EA7A26
     placement:
@@ -1222,6 +1251,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_03f_office_02_wifi_ap_01
     asset_tag: HC-5AA3BBD1
     placement:
@@ -1256,6 +1286,7 @@ items:
     includes:
     - bar_counter
     - stools
+    room_list_name: 吧台与高脚凳
     device_id: hicampus_f1_03f_pantry_01_furniture_pantry_01
     asset_tag: HC-27D19F59
     placement:
@@ -1294,6 +1325,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_03f_pantry_01_lighting_fixture_01
     asset_tag: HC-295C7C8E
     placement:
@@ -1340,6 +1372,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_03f_pantry_01_wifi_ap_01
     asset_tag: HC-21C3C5B1
     placement:
@@ -1379,6 +1412,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_03f_restroom_01_lighting_fixture_01
     asset_tag: HC-E024AE76
     placement:
@@ -1425,6 +1459,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_03f_restroom_01_wifi_ap_01
     asset_tag: HC-8C1CABCD
     placement:
@@ -1468,6 +1503,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_04f_meeting_01_av_display_01
     asset_tag: HC-ACC7833B
     placement:
@@ -1502,6 +1538,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_04f_meeting_01_conference_seating_01
     asset_tag: HC-6D78510C
     placement:
@@ -1540,6 +1577,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_04f_meeting_01_lighting_fixture_01
     asset_tag: HC-5C3415E2
     placement:
@@ -1587,6 +1625,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_04f_meeting_01_wifi_ap_01
     asset_tag: HC-0697A424
     placement:
@@ -1626,6 +1665,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_04f_office_01_lighting_fixture_01
     asset_tag: HC-F6128FC0
     placement:
@@ -1672,6 +1712,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_04f_office_01_wifi_ap_01
     asset_tag: HC-51FD374F
     placement:
@@ -1711,6 +1752,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_04f_office_02_lighting_fixture_01
     asset_tag: HC-4FAAF264
     placement:
@@ -1757,6 +1799,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_04f_office_02_wifi_ap_01
     asset_tag: HC-0911853D
     placement:
@@ -1791,6 +1834,7 @@ items:
     includes:
     - bar_counter
     - stools
+    room_list_name: 吧台与高脚凳
     device_id: hicampus_f1_04f_pantry_01_furniture_pantry_01
     asset_tag: HC-AF589170
     placement:
@@ -1829,6 +1873,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_04f_pantry_01_lighting_fixture_01
     asset_tag: HC-E4AAD656
     placement:
@@ -1875,6 +1920,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_04f_pantry_01_wifi_ap_01
     asset_tag: HC-88F2713F
     placement:
@@ -1914,6 +1960,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_04f_restroom_01_lighting_fixture_01
     asset_tag: HC-3FAED633
     placement:
@@ -1960,6 +2007,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_04f_restroom_01_wifi_ap_01
     asset_tag: HC-5CED8CAF
     placement:
@@ -2003,6 +2051,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_05f_meeting_01_av_display_01
     asset_tag: HC-DD5CCAB4
     placement:
@@ -2037,6 +2086,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_05f_meeting_01_conference_seating_01
     asset_tag: HC-954CF116
     placement:
@@ -2075,6 +2125,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_05f_meeting_01_lighting_fixture_01
     asset_tag: HC-175157B1
     placement:
@@ -2122,6 +2173,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_05f_meeting_01_wifi_ap_01
     asset_tag: HC-DC5C0CAA
     placement:
@@ -2161,6 +2213,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_05f_office_01_lighting_fixture_01
     asset_tag: HC-F7735CFD
     placement:
@@ -2207,6 +2260,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_05f_office_01_wifi_ap_01
     asset_tag: HC-4F9D226E
     placement:
@@ -2246,6 +2300,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_05f_office_02_lighting_fixture_01
     asset_tag: HC-72229E88
     placement:
@@ -2292,6 +2347,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_05f_office_02_wifi_ap_01
     asset_tag: HC-ABE98D55
     placement:
@@ -2326,6 +2382,7 @@ items:
     includes:
     - bar_counter
     - stools
+    room_list_name: 吧台与高脚凳
     device_id: hicampus_f1_05f_pantry_01_furniture_pantry_01
     asset_tag: HC-7992424C
     placement:
@@ -2364,6 +2421,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_05f_pantry_01_lighting_fixture_01
     asset_tag: HC-96B181B1
     placement:
@@ -2410,6 +2468,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_05f_pantry_01_wifi_ap_01
     asset_tag: HC-6E469E74
     placement:
@@ -2449,6 +2508,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_05f_restroom_01_lighting_fixture_01
     asset_tag: HC-FAF3A8C3
     placement:
@@ -2495,6 +2555,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_05f_restroom_01_wifi_ap_01
     asset_tag: HC-832768D8
     placement:
@@ -2538,6 +2599,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_06f_meeting_01_av_display_01
     asset_tag: HC-EACE4F5A
     placement:
@@ -2572,6 +2634,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_06f_meeting_01_conference_seating_01
     asset_tag: HC-0168F902
     placement:
@@ -2610,6 +2673,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_06f_meeting_01_lighting_fixture_01
     asset_tag: HC-CF6F7082
     placement:
@@ -2657,6 +2721,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_06f_meeting_01_wifi_ap_01
     asset_tag: HC-2A236618
     placement:
@@ -2696,6 +2761,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_06f_office_01_lighting_fixture_01
     asset_tag: HC-0D96A80C
     placement:
@@ -2742,6 +2808,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_06f_office_01_wifi_ap_01
     asset_tag: HC-6641DF2C
     placement:
@@ -2781,6 +2848,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_06f_office_02_lighting_fixture_01
     asset_tag: HC-CFA06CFB
     placement:
@@ -2827,6 +2895,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_06f_office_02_wifi_ap_01
     asset_tag: HC-730DEA81
     placement:
@@ -2861,6 +2930,7 @@ items:
     includes:
     - bar_counter
     - stools
+    room_list_name: 吧台与高脚凳
     device_id: hicampus_f1_06f_pantry_01_furniture_pantry_01
     asset_tag: HC-66EEE716
     placement:
@@ -2899,6 +2969,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_06f_pantry_01_lighting_fixture_01
     asset_tag: HC-59DA152A
     placement:
@@ -2945,6 +3016,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_06f_pantry_01_wifi_ap_01
     asset_tag: HC-CD75B2CA
     placement:
@@ -2984,6 +3056,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_06f_restroom_01_lighting_fixture_01
     asset_tag: HC-812350C2
     placement:
@@ -3030,6 +3103,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_06f_restroom_01_wifi_ap_01
     asset_tag: HC-94D4F2EC
     placement:
@@ -3073,6 +3147,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_07f_meeting_01_av_display_01
     asset_tag: HC-1A88AD27
     placement:
@@ -3107,6 +3182,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_07f_meeting_01_conference_seating_01
     asset_tag: HC-BA87362A
     placement:
@@ -3145,6 +3221,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_07f_meeting_01_lighting_fixture_01
     asset_tag: HC-5E183F5C
     placement:
@@ -3192,6 +3269,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_07f_meeting_01_wifi_ap_01
     asset_tag: HC-BA62C152
     placement:
@@ -3231,6 +3309,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_07f_office_01_lighting_fixture_01
     asset_tag: HC-8B3EFD10
     placement:
@@ -3277,6 +3356,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_07f_office_01_wifi_ap_01
     asset_tag: HC-C067753F
     placement:
@@ -3316,6 +3396,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_07f_office_02_lighting_fixture_01
     asset_tag: HC-0CE011B5
     placement:
@@ -3362,6 +3443,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_07f_office_02_wifi_ap_01
     asset_tag: HC-564C6ACD
     placement:
@@ -3396,6 +3478,7 @@ items:
     includes:
     - bar_counter
     - stools
+    room_list_name: 吧台与高脚凳
     device_id: hicampus_f1_07f_pantry_01_furniture_pantry_01
     asset_tag: HC-812E775B
     placement:
@@ -3434,6 +3517,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_07f_pantry_01_lighting_fixture_01
     asset_tag: HC-BA7F09D6
     placement:
@@ -3480,6 +3564,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_07f_pantry_01_wifi_ap_01
     asset_tag: HC-5B292A7A
     placement:
@@ -3519,6 +3604,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_07f_restroom_01_lighting_fixture_01
     asset_tag: HC-74C85870
     placement:
@@ -3565,6 +3651,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_07f_restroom_01_wifi_ap_01
     asset_tag: HC-82FBB630
     placement:
@@ -3608,6 +3695,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_08f_meeting_01_av_display_01
     asset_tag: HC-0885B697
     placement:
@@ -3642,6 +3730,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_08f_meeting_01_conference_seating_01
     asset_tag: HC-DB093C76
     placement:
@@ -3680,6 +3769,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_08f_meeting_01_lighting_fixture_01
     asset_tag: HC-8E057E01
     placement:
@@ -3727,6 +3817,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_08f_meeting_01_wifi_ap_01
     asset_tag: HC-279D43A3
     placement:
@@ -3766,6 +3857,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_08f_office_01_lighting_fixture_01
     asset_tag: HC-C62424A0
     placement:
@@ -3812,6 +3904,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_08f_office_01_wifi_ap_01
     asset_tag: HC-A51866E5
     placement:
@@ -3851,6 +3944,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_08f_office_02_lighting_fixture_01
     asset_tag: HC-70484184
     placement:
@@ -3897,6 +3991,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_08f_office_02_wifi_ap_01
     asset_tag: HC-1196272F
     placement:
@@ -3931,6 +4026,7 @@ items:
     includes:
     - bar_counter
     - stools
+    room_list_name: 吧台与高脚凳
     device_id: hicampus_f1_08f_pantry_01_furniture_pantry_01
     asset_tag: HC-F6C07CB4
     placement:
@@ -3969,6 +4065,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_08f_pantry_01_lighting_fixture_01
     asset_tag: HC-503C97F9
     placement:
@@ -4015,6 +4112,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_08f_pantry_01_wifi_ap_01
     asset_tag: HC-3FBE9067
     placement:
@@ -4054,6 +4152,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_08f_restroom_01_lighting_fixture_01
     asset_tag: HC-C71BC9ED
     placement:
@@ -4100,6 +4199,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_08f_restroom_01_wifi_ap_01
     asset_tag: HC-C4C9454F
     placement:
@@ -4143,6 +4243,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_09f_meeting_01_av_display_01
     asset_tag: HC-3137FC17
     placement:
@@ -4177,6 +4278,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_09f_meeting_01_conference_seating_01
     asset_tag: HC-39138FF9
     placement:
@@ -4215,6 +4317,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_09f_meeting_01_lighting_fixture_01
     asset_tag: HC-787FF726
     placement:
@@ -4262,6 +4365,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_09f_meeting_01_wifi_ap_01
     asset_tag: HC-AEA9EC01
     placement:
@@ -4305,6 +4409,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_09f_meeting_02_av_display_01
     asset_tag: HC-CBDD281D
     placement:
@@ -4339,6 +4444,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_09f_meeting_02_conference_seating_01
     asset_tag: HC-E82DC834
     placement:
@@ -4377,6 +4483,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_09f_meeting_02_lighting_fixture_01
     asset_tag: HC-3148DFD6
     placement:
@@ -4424,6 +4531,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_09f_meeting_02_wifi_ap_01
     asset_tag: HC-C6B7D216
     placement:
@@ -4463,6 +4571,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_09f_office_01_lighting_fixture_01
     asset_tag: HC-39CE08EE
     placement:
@@ -4509,6 +4618,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_09f_office_01_wifi_ap_01
     asset_tag: HC-C8BBBC62
     placement:
@@ -4548,6 +4658,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_09f_office_02_lighting_fixture_01
     asset_tag: HC-66B9D5AC
     placement:
@@ -4594,6 +4705,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_09f_office_02_wifi_ap_01
     asset_tag: HC-4DB11E66
     placement:
@@ -4633,6 +4745,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_09f_restroom_01_lighting_fixture_01
     asset_tag: HC-7D851525
     placement:
@@ -4679,6 +4792,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_09f_restroom_01_wifi_ap_01
     asset_tag: HC-38A6BE91
     placement:
@@ -4722,6 +4836,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_10f_meeting_01_av_display_01
     asset_tag: HC-0C10B61D
     placement:
@@ -4756,6 +4871,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_10f_meeting_01_conference_seating_01
     asset_tag: HC-402BA332
     placement:
@@ -4794,6 +4910,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_10f_meeting_01_lighting_fixture_01
     asset_tag: HC-313F7405
     placement:
@@ -4841,6 +4958,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_10f_meeting_01_wifi_ap_01
     asset_tag: HC-073F09A4
     placement:
@@ -4884,6 +5002,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_10f_meeting_02_av_display_01
     asset_tag: HC-A2B7C7F0
     placement:
@@ -4918,6 +5037,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_10f_meeting_02_conference_seating_01
     asset_tag: HC-20AFFB89
     placement:
@@ -4956,6 +5076,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_10f_meeting_02_lighting_fixture_01
     asset_tag: HC-7138FD0E
     placement:
@@ -5003,6 +5124,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_10f_meeting_02_wifi_ap_01
     asset_tag: HC-0B95E86E
     placement:
@@ -5042,6 +5164,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_10f_office_01_lighting_fixture_01
     asset_tag: HC-53FDB7F0
     placement:
@@ -5088,6 +5211,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_10f_office_01_wifi_ap_01
     asset_tag: HC-98C0631D
     placement:
@@ -5127,6 +5251,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_10f_office_02_lighting_fixture_01
     asset_tag: HC-444F9A49
     placement:
@@ -5173,6 +5298,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_10f_office_02_wifi_ap_01
     asset_tag: HC-AF4CC324
     placement:
@@ -5212,6 +5338,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_10f_restroom_01_lighting_fixture_01
     asset_tag: HC-92783139
     placement:
@@ -5258,6 +5385,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_10f_restroom_01_wifi_ap_01
     asset_tag: HC-85A6263B
     placement:
@@ -5301,6 +5429,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_11f_meeting_01_av_display_01
     asset_tag: HC-B5A251C5
     placement:
@@ -5335,6 +5464,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_11f_meeting_01_conference_seating_01
     asset_tag: HC-A6EAA3E0
     placement:
@@ -5373,6 +5503,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_11f_meeting_01_lighting_fixture_01
     asset_tag: HC-7C8ADCF5
     placement:
@@ -5420,6 +5551,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_11f_meeting_01_wifi_ap_01
     asset_tag: HC-C4E9D063
     placement:
@@ -5463,6 +5595,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_11f_meeting_02_av_display_01
     asset_tag: HC-E7C9A54D
     placement:
@@ -5497,6 +5630,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_11f_meeting_02_conference_seating_01
     asset_tag: HC-64D3E9AC
     placement:
@@ -5535,6 +5669,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_11f_meeting_02_lighting_fixture_01
     asset_tag: HC-EDA45967
     placement:
@@ -5582,6 +5717,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_11f_meeting_02_wifi_ap_01
     asset_tag: HC-5EDBCC92
     placement:
@@ -5621,6 +5757,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_11f_office_01_lighting_fixture_01
     asset_tag: HC-960B6650
     placement:
@@ -5667,6 +5804,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_11f_office_01_wifi_ap_01
     asset_tag: HC-E4B6D42B
     placement:
@@ -5706,6 +5844,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_11f_office_02_lighting_fixture_01
     asset_tag: HC-194A1ABD
     placement:
@@ -5752,6 +5891,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_11f_office_02_wifi_ap_01
     asset_tag: HC-57CB4565
     placement:
@@ -5791,6 +5931,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_11f_restroom_01_lighting_fixture_01
     asset_tag: HC-C0E79DCD
     placement:
@@ -5837,6 +5978,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_11f_restroom_01_wifi_ap_01
     asset_tag: HC-582DFB3C
     placement:
@@ -5880,6 +6022,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_12f_meeting_01_av_display_01
     asset_tag: HC-5DC90708
     placement:
@@ -5914,6 +6057,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_12f_meeting_01_conference_seating_01
     asset_tag: HC-4698CEA3
     placement:
@@ -5952,6 +6096,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_12f_meeting_01_lighting_fixture_01
     asset_tag: HC-C6441123
     placement:
@@ -5999,6 +6144,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_12f_meeting_01_wifi_ap_01
     asset_tag: HC-0FDE4C2D
     placement:
@@ -6042,6 +6188,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_12f_meeting_02_av_display_01
     asset_tag: HC-2BBBD66C
     placement:
@@ -6076,6 +6223,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_12f_meeting_02_conference_seating_01
     asset_tag: HC-ABDEB13E
     placement:
@@ -6114,6 +6262,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_12f_meeting_02_lighting_fixture_01
     asset_tag: HC-07DECEE0
     placement:
@@ -6161,6 +6310,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_12f_meeting_02_wifi_ap_01
     asset_tag: HC-49587B73
     placement:
@@ -6200,6 +6350,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_12f_office_01_lighting_fixture_01
     asset_tag: HC-665F0DFC
     placement:
@@ -6246,6 +6397,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_12f_office_01_wifi_ap_01
     asset_tag: HC-0D98DA7C
     placement:
@@ -6285,6 +6437,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_12f_office_02_lighting_fixture_01
     asset_tag: HC-C3442F10
     placement:
@@ -6331,6 +6484,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_12f_office_02_wifi_ap_01
     asset_tag: HC-1BABD8E7
     placement:
@@ -6370,6 +6524,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_12f_restroom_01_lighting_fixture_01
     asset_tag: HC-2F07D7C3
     placement:
@@ -6416,6 +6571,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_12f_restroom_01_wifi_ap_01
     asset_tag: HC-B9AE91B4
     placement:
@@ -6459,6 +6615,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_13f_meeting_01_av_display_01
     asset_tag: HC-57351025
     placement:
@@ -6493,6 +6650,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_13f_meeting_01_conference_seating_01
     asset_tag: HC-F3FCB970
     placement:
@@ -6531,6 +6689,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_13f_meeting_01_lighting_fixture_01
     asset_tag: HC-89107414
     placement:
@@ -6578,6 +6737,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_13f_meeting_01_wifi_ap_01
     asset_tag: HC-112B5B07
     placement:
@@ -6621,6 +6781,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_13f_meeting_02_av_display_01
     asset_tag: HC-0ABDF66D
     placement:
@@ -6655,6 +6816,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_13f_meeting_02_conference_seating_01
     asset_tag: HC-45AD36A5
     placement:
@@ -6693,6 +6855,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_13f_meeting_02_lighting_fixture_01
     asset_tag: HC-CCC2F371
     placement:
@@ -6740,6 +6903,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_13f_meeting_02_wifi_ap_01
     asset_tag: HC-47721F48
     placement:
@@ -6779,6 +6943,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_13f_office_01_lighting_fixture_01
     asset_tag: HC-A06E4228
     placement:
@@ -6825,6 +6990,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_13f_office_01_wifi_ap_01
     asset_tag: HC-09D1BA75
     placement:
@@ -6864,6 +7030,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_13f_office_02_lighting_fixture_01
     asset_tag: HC-F60BB6C6
     placement:
@@ -6910,6 +7077,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_13f_office_02_wifi_ap_01
     asset_tag: HC-EE0EE7BF
     placement:
@@ -6949,6 +7117,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_13f_restroom_01_lighting_fixture_01
     asset_tag: HC-EA13FBC9
     placement:
@@ -6995,6 +7164,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_13f_restroom_01_wifi_ap_01
     asset_tag: HC-4B4F5C67
     placement:
@@ -7038,6 +7208,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_14f_meeting_01_av_display_01
     asset_tag: HC-91C54E4C
     placement:
@@ -7072,6 +7243,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_14f_meeting_01_conference_seating_01
     asset_tag: HC-9E1BF1A4
     placement:
@@ -7110,6 +7282,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_14f_meeting_01_lighting_fixture_01
     asset_tag: HC-4F41FC8E
     placement:
@@ -7157,6 +7330,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_14f_meeting_01_wifi_ap_01
     asset_tag: HC-A83237D4
     placement:
@@ -7200,6 +7374,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_14f_meeting_02_av_display_01
     asset_tag: HC-A253BFA8
     placement:
@@ -7234,6 +7409,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_14f_meeting_02_conference_seating_01
     asset_tag: HC-047AC711
     placement:
@@ -7272,6 +7448,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_14f_meeting_02_lighting_fixture_01
     asset_tag: HC-25B15576
     placement:
@@ -7319,6 +7496,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_14f_meeting_02_wifi_ap_01
     asset_tag: HC-236F4CF1
     placement:
@@ -7358,6 +7536,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_14f_office_01_lighting_fixture_01
     asset_tag: HC-EB6334C5
     placement:
@@ -7404,6 +7583,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_14f_office_01_wifi_ap_01
     asset_tag: HC-31F94C16
     placement:
@@ -7443,6 +7623,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_14f_office_02_lighting_fixture_01
     asset_tag: HC-5EABC2DE
     placement:
@@ -7489,6 +7670,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_14f_office_02_wifi_ap_01
     asset_tag: HC-DE8E4704
     placement:
@@ -7528,6 +7710,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_14f_restroom_01_lighting_fixture_01
     asset_tag: HC-20BBE703
     placement:
@@ -7574,6 +7757,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_14f_restroom_01_wifi_ap_01
     asset_tag: HC-53959244
     placement:
@@ -7617,6 +7801,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_15f_meeting_01_av_display_01
     asset_tag: HC-69329762
     placement:
@@ -7651,6 +7836,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_15f_meeting_01_conference_seating_01
     asset_tag: HC-67A3C11C
     placement:
@@ -7689,6 +7875,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_15f_meeting_01_lighting_fixture_01
     asset_tag: HC-FF0B7BE8
     placement:
@@ -7736,6 +7923,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_15f_meeting_01_wifi_ap_01
     asset_tag: HC-775D2669
     placement:
@@ -7779,6 +7967,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_15f_meeting_02_av_display_01
     asset_tag: HC-B7C55045
     placement:
@@ -7813,6 +8002,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_15f_meeting_02_conference_seating_01
     asset_tag: HC-90FB092C
     placement:
@@ -7851,6 +8041,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_15f_meeting_02_lighting_fixture_01
     asset_tag: HC-E54A8D32
     placement:
@@ -7898,6 +8089,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_15f_meeting_02_wifi_ap_01
     asset_tag: HC-BEE14209
     placement:
@@ -7937,6 +8129,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_15f_office_01_lighting_fixture_01
     asset_tag: HC-838199F1
     placement:
@@ -7983,6 +8176,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_15f_office_01_wifi_ap_01
     asset_tag: HC-A79CBA39
     placement:
@@ -8022,6 +8216,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_15f_office_02_lighting_fixture_01
     asset_tag: HC-7101C482
     placement:
@@ -8068,6 +8263,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_15f_office_02_wifi_ap_01
     asset_tag: HC-BADBFDC0
     placement:
@@ -8107,6 +8303,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_15f_restroom_01_lighting_fixture_01
     asset_tag: HC-606B6EDC
     placement:
@@ -8153,6 +8350,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_15f_restroom_01_wifi_ap_01
     asset_tag: HC-05D4FFB6
     placement:
@@ -8196,6 +8394,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_16f_meeting_01_av_display_01
     asset_tag: HC-A69A7729
     placement:
@@ -8230,6 +8429,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_16f_meeting_01_conference_seating_01
     asset_tag: HC-4A7BD033
     placement:
@@ -8268,6 +8468,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_16f_meeting_01_lighting_fixture_01
     asset_tag: HC-07976725
     placement:
@@ -8315,6 +8516,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_16f_meeting_01_wifi_ap_01
     asset_tag: HC-1AFF997D
     placement:
@@ -8358,6 +8560,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_16f_meeting_02_av_display_01
     asset_tag: HC-FCD1D2E8
     placement:
@@ -8392,6 +8595,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_16f_meeting_02_conference_seating_01
     asset_tag: HC-0CCF122D
     placement:
@@ -8430,6 +8634,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_16f_meeting_02_lighting_fixture_01
     asset_tag: HC-1089D0B6
     placement:
@@ -8477,6 +8682,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_16f_meeting_02_wifi_ap_01
     asset_tag: HC-7FA39C03
     placement:
@@ -8516,6 +8722,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_16f_office_01_lighting_fixture_01
     asset_tag: HC-3E330E80
     placement:
@@ -8562,6 +8769,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_16f_office_01_wifi_ap_01
     asset_tag: HC-B84FE09E
     placement:
@@ -8601,6 +8809,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_16f_office_02_lighting_fixture_01
     asset_tag: HC-CE7EC297
     placement:
@@ -8647,6 +8856,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_16f_office_02_wifi_ap_01
     asset_tag: HC-ECCCA1B6
     placement:
@@ -8686,6 +8896,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_16f_restroom_01_lighting_fixture_01
     asset_tag: HC-10F7BABE
     placement:
@@ -8732,6 +8943,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_16f_restroom_01_wifi_ap_01
     asset_tag: HC-19EBE102
     placement:
@@ -8767,6 +8979,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_17f_manager_01_furniture_manager_01
     asset_tag: HC-8876E425
     placement:
@@ -8805,6 +9018,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_17f_manager_01_lighting_fixture_01
     asset_tag: HC-8B18A305
     placement:
@@ -8851,6 +9065,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_17f_manager_01_wifi_ap_01
     asset_tag: HC-49C9DC85
     placement:
@@ -8895,6 +9110,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_17f_meeting_01_av_display_01
     asset_tag: HC-BEE9CE64
     placement:
@@ -8929,6 +9145,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_17f_meeting_01_conference_seating_01
     asset_tag: HC-098613F2
     placement:
@@ -8967,6 +9184,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_17f_meeting_01_lighting_fixture_01
     asset_tag: HC-CF7E14F3
     placement:
@@ -9014,6 +9232,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_17f_meeting_01_wifi_ap_01
     asset_tag: HC-234EC1D6
     placement:
@@ -9058,6 +9277,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_17f_meeting_02_av_display_01
     asset_tag: HC-0BC933BE
     placement:
@@ -9092,6 +9312,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_17f_meeting_02_conference_seating_01
     asset_tag: HC-EFFAC37D
     placement:
@@ -9130,6 +9351,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_17f_meeting_02_lighting_fixture_01
     asset_tag: HC-D7328D2E
     placement:
@@ -9177,6 +9399,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_17f_meeting_02_wifi_ap_01
     asset_tag: HC-984B6D83
     placement:
@@ -9216,6 +9439,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_17f_office_01_lighting_fixture_01
     asset_tag: HC-04C2E948
     placement:
@@ -9262,6 +9486,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_17f_office_01_wifi_ap_01
     asset_tag: HC-4E4308D9
     placement:
@@ -9301,6 +9526,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_17f_restroom_01_lighting_fixture_01
     asset_tag: HC-DFFF79CB
     placement:
@@ -9347,6 +9573,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_17f_restroom_01_wifi_ap_01
     asset_tag: HC-84C2691B
     placement:
@@ -9382,6 +9609,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_18f_manager_01_furniture_manager_01
     asset_tag: HC-FA22B034
     placement:
@@ -9420,6 +9648,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_18f_manager_01_lighting_fixture_01
     asset_tag: HC-531779CC
     placement:
@@ -9466,6 +9695,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_18f_manager_01_wifi_ap_01
     asset_tag: HC-6A9F152E
     placement:
@@ -9510,6 +9740,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_18f_meeting_01_av_display_01
     asset_tag: HC-268EAC90
     placement:
@@ -9544,6 +9775,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_18f_meeting_01_conference_seating_01
     asset_tag: HC-532A9FAF
     placement:
@@ -9582,6 +9814,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_18f_meeting_01_lighting_fixture_01
     asset_tag: HC-AF24E7EB
     placement:
@@ -9629,6 +9862,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_18f_meeting_01_wifi_ap_01
     asset_tag: HC-FC5D40D6
     placement:
@@ -9673,6 +9907,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_18f_meeting_02_av_display_01
     asset_tag: HC-E9D01B4C
     placement:
@@ -9707,6 +9942,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_18f_meeting_02_conference_seating_01
     asset_tag: HC-BBED355B
     placement:
@@ -9745,6 +9981,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_18f_meeting_02_lighting_fixture_01
     asset_tag: HC-8A066D5E
     placement:
@@ -9792,6 +10029,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_18f_meeting_02_wifi_ap_01
     asset_tag: HC-177A1EB3
     placement:
@@ -9831,6 +10069,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_18f_office_01_lighting_fixture_01
     asset_tag: HC-F80C5DFC
     placement:
@@ -9877,6 +10116,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_18f_office_01_wifi_ap_01
     asset_tag: HC-16069619
     placement:
@@ -9916,6 +10156,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_18f_restroom_01_lighting_fixture_01
     asset_tag: HC-E26284D6
     placement:
@@ -9962,6 +10203,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_18f_restroom_01_wifi_ap_01
     asset_tag: HC-FBA47879
     placement:
@@ -9997,6 +10239,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_19f_manager_01_furniture_manager_01
     asset_tag: HC-3EE28319
     placement:
@@ -10035,6 +10278,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_19f_manager_01_lighting_fixture_01
     asset_tag: HC-62025F7A
     placement:
@@ -10081,6 +10325,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_19f_manager_01_wifi_ap_01
     asset_tag: HC-CDA07738
     placement:
@@ -10125,6 +10370,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_19f_meeting_01_av_display_01
     asset_tag: HC-AB14E884
     placement:
@@ -10159,6 +10405,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_19f_meeting_01_conference_seating_01
     asset_tag: HC-2665CA02
     placement:
@@ -10197,6 +10444,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_19f_meeting_01_lighting_fixture_01
     asset_tag: HC-9B9A8822
     placement:
@@ -10244,6 +10492,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_19f_meeting_01_wifi_ap_01
     asset_tag: HC-61029D7B
     placement:
@@ -10288,6 +10537,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_19f_meeting_02_av_display_01
     asset_tag: HC-064F0B50
     placement:
@@ -10322,6 +10572,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_19f_meeting_02_conference_seating_01
     asset_tag: HC-8A9BE016
     placement:
@@ -10360,6 +10611,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_19f_meeting_02_lighting_fixture_01
     asset_tag: HC-F6EA9FCB
     placement:
@@ -10407,6 +10659,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_19f_meeting_02_wifi_ap_01
     asset_tag: HC-8639B13C
     placement:
@@ -10446,6 +10699,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_19f_office_01_lighting_fixture_01
     asset_tag: HC-DE13F731
     placement:
@@ -10492,6 +10746,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_19f_office_01_wifi_ap_01
     asset_tag: HC-A47FE52C
     placement:
@@ -10531,6 +10786,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_19f_restroom_01_lighting_fixture_01
     asset_tag: HC-E2A731FA
     placement:
@@ -10577,6 +10833,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_19f_restroom_01_wifi_ap_01
     asset_tag: HC-1383A488
     placement:
@@ -10612,6 +10869,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_20f_manager_01_furniture_manager_01
     asset_tag: HC-1833C5AC
     placement:
@@ -10650,6 +10908,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_20f_manager_01_lighting_fixture_01
     asset_tag: HC-170AEE29
     placement:
@@ -10696,6 +10955,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_20f_manager_01_wifi_ap_01
     asset_tag: HC-7C48DCDC
     placement:
@@ -10740,6 +11000,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_20f_meeting_01_av_display_01
     asset_tag: HC-B3E09887
     placement:
@@ -10774,6 +11035,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_20f_meeting_01_conference_seating_01
     asset_tag: HC-DABD5FEE
     placement:
@@ -10812,6 +11074,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_20f_meeting_01_lighting_fixture_01
     asset_tag: HC-93E03603
     placement:
@@ -10859,6 +11122,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_20f_meeting_01_wifi_ap_01
     asset_tag: HC-D864CBBE
     placement:
@@ -10903,6 +11167,7 @@ items:
       brightness_nit: 450
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_20f_meeting_02_av_display_01
     asset_tag: HC-39C3C551
     placement:
@@ -10937,6 +11202,7 @@ items:
     seat_count: 12
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_20f_meeting_02_conference_seating_01
     asset_tag: HC-6EA62203
     placement:
@@ -10975,6 +11241,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_20f_meeting_02_lighting_fixture_01
     asset_tag: HC-8DCA52D9
     placement:
@@ -11022,6 +11289,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_20f_meeting_02_wifi_ap_01
     asset_tag: HC-42AC3D9D
     placement:
@@ -11061,6 +11329,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_20f_office_01_lighting_fixture_01
     asset_tag: HC-CC283E68
     placement:
@@ -11107,6 +11376,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_20f_office_01_wifi_ap_01
     asset_tag: HC-93865B37
     placement:
@@ -11146,6 +11416,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_20f_restroom_01_lighting_fixture_01
     asset_tag: HC-1C0C1093
     placement:
@@ -11192,6 +11463,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_20f_restroom_01_wifi_ap_01
     asset_tag: HC-2617FFBB
     placement:
@@ -11227,6 +11499,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_21f_manager_01_furniture_manager_01
     asset_tag: HC-D3280972
     placement:
@@ -11265,6 +11538,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_21f_manager_01_lighting_fixture_01
     asset_tag: HC-7F0B632E
     placement:
@@ -11311,6 +11585,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_21f_manager_01_wifi_ap_01
     asset_tag: HC-A03E7DDF
     placement:
@@ -11346,6 +11621,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_21f_manager_02_furniture_manager_01
     asset_tag: HC-FDC220B4
     placement:
@@ -11384,6 +11660,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_21f_manager_02_lighting_fixture_01
     asset_tag: HC-E624EE26
     placement:
@@ -11430,6 +11707,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_21f_manager_02_wifi_ap_01
     asset_tag: HC-7F6A2D32
     placement:
@@ -11474,6 +11752,7 @@ items:
       mode: boardroom
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_21f_meeting_01_av_display_01
     asset_tag: HC-5BCFCDCA
     placement:
@@ -11508,6 +11787,7 @@ items:
     seat_count: 10
     layout: boardroom
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_21f_meeting_01_conference_seating_01
     asset_tag: HC-E437AE4F
     placement:
@@ -11546,6 +11826,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_21f_meeting_01_lighting_fixture_01
     asset_tag: HC-73A5ABB1
     placement:
@@ -11593,6 +11874,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_21f_meeting_01_wifi_ap_01
     asset_tag: HC-58D70D6F
     placement:
@@ -11637,6 +11919,7 @@ items:
       mode: boardroom
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_21f_meeting_02_av_display_01
     asset_tag: HC-85FEDF45
     placement:
@@ -11671,6 +11954,7 @@ items:
     seat_count: 10
     layout: boardroom
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_21f_meeting_02_conference_seating_01
     asset_tag: HC-2EE2FCC8
     placement:
@@ -11709,6 +11993,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_21f_meeting_02_lighting_fixture_01
     asset_tag: HC-139E6BC7
     placement:
@@ -11756,6 +12041,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_21f_meeting_02_wifi_ap_01
     asset_tag: HC-3DE7D8F2
     placement:
@@ -11795,6 +12081,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_21f_office_01_lighting_fixture_01
     asset_tag: HC-B67F94A6
     placement:
@@ -11841,6 +12128,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_21f_office_01_wifi_ap_01
     asset_tag: HC-80B3D975
     placement:
@@ -11876,6 +12164,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_22f_manager_01_furniture_manager_01
     asset_tag: HC-222FAE47
     placement:
@@ -11914,6 +12203,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_22f_manager_01_lighting_fixture_01
     asset_tag: HC-B44C1A3E
     placement:
@@ -11960,6 +12250,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_22f_manager_01_wifi_ap_01
     asset_tag: HC-94D50F5E
     placement:
@@ -11995,6 +12286,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_22f_manager_02_furniture_manager_01
     asset_tag: HC-7F149CC4
     placement:
@@ -12033,6 +12325,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_22f_manager_02_lighting_fixture_01
     asset_tag: HC-C665E7AB
     placement:
@@ -12079,6 +12372,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_22f_manager_02_wifi_ap_01
     asset_tag: HC-F6648588
     placement:
@@ -12123,6 +12417,7 @@ items:
       mode: boardroom
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_22f_meeting_01_av_display_01
     asset_tag: HC-C5A5B4E4
     placement:
@@ -12157,6 +12452,7 @@ items:
     seat_count: 10
     layout: boardroom
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_22f_meeting_01_conference_seating_01
     asset_tag: HC-E12A133C
     placement:
@@ -12195,6 +12491,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_22f_meeting_01_lighting_fixture_01
     asset_tag: HC-715CF994
     placement:
@@ -12242,6 +12539,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_22f_meeting_01_wifi_ap_01
     asset_tag: HC-D44FDF8D
     placement:
@@ -12286,6 +12584,7 @@ items:
       mode: boardroom
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_22f_meeting_02_av_display_01
     asset_tag: HC-17F04385
     placement:
@@ -12320,6 +12619,7 @@ items:
     seat_count: 10
     layout: boardroom
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_22f_meeting_02_conference_seating_01
     asset_tag: HC-01FC59A2
     placement:
@@ -12358,6 +12658,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_22f_meeting_02_lighting_fixture_01
     asset_tag: HC-2AAD3C6F
     placement:
@@ -12405,6 +12706,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_22f_meeting_02_wifi_ap_01
     asset_tag: HC-90C1BBED
     placement:
@@ -12444,6 +12746,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_22f_office_01_lighting_fixture_01
     asset_tag: HC-877EC4D9
     placement:
@@ -12490,6 +12793,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_22f_office_01_wifi_ap_01
     asset_tag: HC-FD1F125E
     placement:
@@ -12525,6 +12829,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_23f_manager_01_furniture_manager_01
     asset_tag: HC-1DA561B4
     placement:
@@ -12563,6 +12868,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_23f_manager_01_lighting_fixture_01
     asset_tag: HC-7C741210
     placement:
@@ -12609,6 +12915,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_23f_manager_01_wifi_ap_01
     asset_tag: HC-837799F5
     placement:
@@ -12644,6 +12951,7 @@ items:
     - desk
     - bookshelf
     - sofa
+    room_list_name: 办公家具组
     device_id: hicampus_f1_23f_manager_02_furniture_manager_01
     asset_tag: HC-F776F820
     placement:
@@ -12682,6 +12990,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_23f_manager_02_lighting_fixture_01
     asset_tag: HC-C0C9923A
     placement:
@@ -12728,6 +13037,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_23f_manager_02_wifi_ap_01
     asset_tag: HC-621516E6
     placement:
@@ -12772,6 +13082,7 @@ items:
       mode: boardroom
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_23f_meeting_01_av_display_01
     asset_tag: HC-5F6F1461
     placement:
@@ -12806,6 +13117,7 @@ items:
     seat_count: 10
     layout: boardroom
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_23f_meeting_01_conference_seating_01
     asset_tag: HC-E2A825C7
     placement:
@@ -12844,6 +13156,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_23f_meeting_01_lighting_fixture_01
     asset_tag: HC-61FD699D
     placement:
@@ -12891,6 +13204,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_23f_meeting_01_wifi_ap_01
     asset_tag: HC-E41F25AE
     placement:
@@ -12935,6 +13249,7 @@ items:
       mode: boardroom
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f1_23f_meeting_02_av_display_01
     asset_tag: HC-D174DE90
     placement:
@@ -12969,6 +13284,7 @@ items:
     seat_count: 10
     layout: boardroom
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f1_23f_meeting_02_conference_seating_01
     asset_tag: HC-DC9AF67C
     placement:
@@ -13007,6 +13323,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_23f_meeting_02_lighting_fixture_01
     asset_tag: HC-8A8C04A7
     placement:
@@ -13054,6 +13371,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_23f_meeting_02_wifi_ap_01
     asset_tag: HC-C72E93E8
     placement:
@@ -13093,6 +13411,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f1_23f_office_01_lighting_fixture_01
     asset_tag: HC-9527DBFF
     placement:
@@ -13139,6 +13458,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f1_23f_office_01_wifi_ap_01
     asset_tag: HC-F27DB47B
     placement:
@@ -13171,6 +13491,7 @@ items:
     item_kind: furniture
     furniture_role: dining
     capacity: 16
+    room_list_name: 餐桌椅
     device_id: hicampus_f2_01f_canteen_dining_01_furniture_dining_01
     asset_tag: HC-54B10438
     placement:
@@ -13209,6 +13530,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_01f_canteen_dining_01_lighting_fixture_01
     asset_tag: HC-F02454C2
     placement:
@@ -13256,6 +13578,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_01f_canteen_dining_01_wifi_ap_01
     asset_tag: HC-10CF4773
     placement:
@@ -13288,6 +13611,7 @@ items:
     item_kind: furniture
     furniture_role: dining
     capacity: 16
+    room_list_name: 餐桌椅
     device_id: hicampus_f2_01f_canteen_dining_02_furniture_dining_01
     asset_tag: HC-1875A4F2
     placement:
@@ -13326,6 +13650,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_01f_canteen_dining_02_lighting_fixture_01
     asset_tag: HC-9773DE89
     placement:
@@ -13373,6 +13698,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_01f_canteen_dining_02_wifi_ap_01
     asset_tag: HC-1293FD85
     placement:
@@ -13412,6 +13738,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_01f_kitchen_01_lighting_fixture_01
     asset_tag: HC-100DD1B4
     placement:
@@ -13459,6 +13786,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_01f_kitchen_01_wifi_ap_01
     asset_tag: HC-A4690DA5
     placement:
@@ -13498,6 +13826,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_01f_restroom_01_lighting_fixture_01
     asset_tag: HC-127AC124
     placement:
@@ -13545,6 +13874,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_01f_restroom_01_wifi_ap_01
     asset_tag: HC-BD281C92
     placement:
@@ -13578,6 +13908,7 @@ items:
     furniture_role: storage
     includes:
     - shelf
+    room_list_name: 货架组
     device_id: hicampus_f2_01f_storage_01_furniture_storage_01
     asset_tag: HC-48FC2C01
     placement:
@@ -13616,6 +13947,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_01f_storage_01_lighting_fixture_01
     asset_tag: HC-1EAE7AD2
     placement:
@@ -13663,6 +13995,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_01f_storage_01_wifi_ap_01
     asset_tag: HC-5418741A
     placement:
@@ -13695,6 +14028,7 @@ items:
     item_kind: furniture
     furniture_role: dining
     capacity: 16
+    room_list_name: 餐桌椅
     device_id: hicampus_f2_02f_canteen_dining_01_furniture_dining_01
     asset_tag: HC-2E4AE5C0
     placement:
@@ -13733,6 +14067,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_02f_canteen_dining_01_lighting_fixture_01
     asset_tag: HC-18C60D81
     placement:
@@ -13780,6 +14115,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_02f_canteen_dining_01_wifi_ap_01
     asset_tag: HC-0872253B
     placement:
@@ -13812,6 +14148,7 @@ items:
     item_kind: furniture
     furniture_role: dining
     capacity: 16
+    room_list_name: 餐桌椅
     device_id: hicampus_f2_02f_canteen_dining_02_furniture_dining_01
     asset_tag: HC-A381325D
     placement:
@@ -13850,6 +14187,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_02f_canteen_dining_02_lighting_fixture_01
     asset_tag: HC-C132E40F
     placement:
@@ -13897,6 +14235,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_02f_canteen_dining_02_wifi_ap_01
     asset_tag: HC-F9D9E4BB
     placement:
@@ -13936,6 +14275,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_02f_kitchen_01_lighting_fixture_01
     asset_tag: HC-EA025BB0
     placement:
@@ -13983,6 +14323,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_02f_kitchen_01_wifi_ap_01
     asset_tag: HC-554C3775
     placement:
@@ -14022,6 +14363,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_02f_restroom_01_lighting_fixture_01
     asset_tag: HC-6BD65E58
     placement:
@@ -14069,6 +14411,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_02f_restroom_01_wifi_ap_01
     asset_tag: HC-7837FA25
     placement:
@@ -14102,6 +14445,7 @@ items:
     furniture_role: storage
     includes:
     - shelf
+    room_list_name: 货架组
     device_id: hicampus_f2_02f_storage_01_furniture_storage_01
     asset_tag: HC-7C435577
     placement:
@@ -14140,6 +14484,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_02f_storage_01_lighting_fixture_01
     asset_tag: HC-3A181808
     placement:
@@ -14187,6 +14532,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_02f_storage_01_wifi_ap_01
     asset_tag: HC-82090D59
     placement:
@@ -14219,6 +14565,7 @@ items:
     item_kind: furniture
     furniture_role: dining
     capacity: 16
+    room_list_name: 餐桌椅
     device_id: hicampus_f2_03f_canteen_dining_01_furniture_dining_01
     asset_tag: HC-2D7E4A0A
     placement:
@@ -14257,6 +14604,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_03f_canteen_dining_01_lighting_fixture_01
     asset_tag: HC-99D44BFC
     placement:
@@ -14304,6 +14652,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_03f_canteen_dining_01_wifi_ap_01
     asset_tag: HC-EE4BD6CE
     placement:
@@ -14336,6 +14685,7 @@ items:
     item_kind: furniture
     furniture_role: dining
     capacity: 16
+    room_list_name: 餐桌椅
     device_id: hicampus_f2_03f_canteen_dining_02_furniture_dining_01
     asset_tag: HC-33858A71
     placement:
@@ -14374,6 +14724,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_03f_canteen_dining_02_lighting_fixture_01
     asset_tag: HC-85F082FE
     placement:
@@ -14421,6 +14772,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_03f_canteen_dining_02_wifi_ap_01
     asset_tag: HC-B569D7DA
     placement:
@@ -14460,6 +14812,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_03f_kitchen_01_lighting_fixture_01
     asset_tag: HC-D3D1D91B
     placement:
@@ -14507,6 +14860,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_03f_kitchen_01_wifi_ap_01
     asset_tag: HC-822CA6C9
     placement:
@@ -14546,6 +14900,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_03f_restroom_01_lighting_fixture_01
     asset_tag: HC-D176521A
     placement:
@@ -14593,6 +14948,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_03f_restroom_01_wifi_ap_01
     asset_tag: HC-C3695069
     placement:
@@ -14626,6 +14982,7 @@ items:
     furniture_role: storage
     includes:
     - shelf
+    room_list_name: 货架组
     device_id: hicampus_f2_03f_storage_01_furniture_storage_01
     asset_tag: HC-735317F9
     placement:
@@ -14664,6 +15021,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f2_03f_storage_01_lighting_fixture_01
     asset_tag: HC-900BFB04
     placement:
@@ -14711,6 +15069,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f2_03f_storage_01_wifi_ap_01
     asset_tag: HC-6407C5FA
     placement:
@@ -14750,6 +15109,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_01f_circulation_01_lighting_fixture_01
     asset_tag: HC-55FDAA19
     placement:
@@ -14785,6 +15145,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f3_01f_circulation_01_lounge_furniture_01
     asset_tag: HC-7BBFF81E
     placement:
@@ -14831,6 +15192,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_01f_circulation_01_wifi_ap_01
     asset_tag: HC-10AF14A7
     placement:
@@ -14864,6 +15226,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_01f_classroom_01_furniture_classroom_01
     asset_tag: HC-8FCEF180
     placement:
@@ -14902,6 +15265,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_01f_classroom_01_lighting_fixture_01
     asset_tag: HC-36456152
     placement:
@@ -14949,6 +15313,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_01f_classroom_01_wifi_ap_01
     asset_tag: HC-04C23CCF
     placement:
@@ -14982,6 +15347,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_01f_classroom_02_furniture_classroom_01
     asset_tag: HC-2E948C62
     placement:
@@ -15020,6 +15386,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_01f_classroom_02_lighting_fixture_01
     asset_tag: HC-BBA9DC21
     placement:
@@ -15067,6 +15434,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_01f_classroom_02_wifi_ap_01
     asset_tag: HC-43C7436B
     placement:
@@ -15106,6 +15474,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_01f_office_01_lighting_fixture_01
     asset_tag: HC-0616FC95
     placement:
@@ -15153,6 +15522,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_01f_office_01_wifi_ap_01
     asset_tag: HC-46B3E454
     placement:
@@ -15192,6 +15562,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_01f_restroom_01_lighting_fixture_01
     asset_tag: HC-26A1B7E3
     placement:
@@ -15239,6 +15610,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_01f_restroom_01_wifi_ap_01
     asset_tag: HC-20E4FB73
     placement:
@@ -15278,6 +15650,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_02f_circulation_01_lighting_fixture_01
     asset_tag: HC-334305D3
     placement:
@@ -15313,6 +15686,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f3_02f_circulation_01_lounge_furniture_01
     asset_tag: HC-4B77E913
     placement:
@@ -15359,6 +15733,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_02f_circulation_01_wifi_ap_01
     asset_tag: HC-649EE1B9
     placement:
@@ -15392,6 +15767,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_02f_classroom_01_furniture_classroom_01
     asset_tag: HC-A2F2B533
     placement:
@@ -15430,6 +15806,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_02f_classroom_01_lighting_fixture_01
     asset_tag: HC-31C9DA4A
     placement:
@@ -15477,6 +15854,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_02f_classroom_01_wifi_ap_01
     asset_tag: HC-47B5B6E0
     placement:
@@ -15510,6 +15888,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_02f_classroom_02_furniture_classroom_01
     asset_tag: HC-4580F6E3
     placement:
@@ -15548,6 +15927,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_02f_classroom_02_lighting_fixture_01
     asset_tag: HC-EB14AD58
     placement:
@@ -15595,6 +15975,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_02f_classroom_02_wifi_ap_01
     asset_tag: HC-EE65CD4A
     placement:
@@ -15634,6 +16015,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_02f_office_01_lighting_fixture_01
     asset_tag: HC-EE490484
     placement:
@@ -15681,6 +16063,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_02f_office_01_wifi_ap_01
     asset_tag: HC-F547503B
     placement:
@@ -15720,6 +16103,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_02f_restroom_01_lighting_fixture_01
     asset_tag: HC-C13577A4
     placement:
@@ -15767,6 +16151,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_02f_restroom_01_wifi_ap_01
     asset_tag: HC-32B4D216
     placement:
@@ -15800,6 +16185,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_03f_classroom_01_furniture_classroom_01
     asset_tag: HC-BE5519E3
     placement:
@@ -15838,6 +16224,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_03f_classroom_01_lighting_fixture_01
     asset_tag: HC-24F69FB2
     placement:
@@ -15884,6 +16271,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_03f_classroom_01_wifi_ap_01
     asset_tag: HC-A28ED1A9
     placement:
@@ -15917,6 +16305,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_03f_classroom_02_furniture_classroom_01
     asset_tag: HC-7FCB79D6
     placement:
@@ -15955,6 +16344,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_03f_classroom_02_lighting_fixture_01
     asset_tag: HC-C7EA81FB
     placement:
@@ -16001,6 +16391,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_03f_classroom_02_wifi_ap_01
     asset_tag: HC-065ED351
     placement:
@@ -16035,6 +16426,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f3_03f_lab_01_furniture_lab_01
     asset_tag: HC-BDE0BA68
     placement:
@@ -16073,6 +16465,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_03f_lab_01_lighting_fixture_01
     asset_tag: HC-7F84B7B8
     placement:
@@ -16119,6 +16512,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_03f_lab_01_wifi_ap_01
     asset_tag: HC-D2F793F0
     placement:
@@ -16162,6 +16556,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f3_03f_meeting_01_av_display_01
     asset_tag: HC-F86F71AE
     placement:
@@ -16196,6 +16591,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f3_03f_meeting_01_conference_seating_01
     asset_tag: HC-E4926FA8
     placement:
@@ -16234,6 +16630,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_03f_meeting_01_lighting_fixture_01
     asset_tag: HC-A929DD64
     placement:
@@ -16281,6 +16678,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_03f_meeting_01_wifi_ap_01
     asset_tag: HC-CD955769
     placement:
@@ -16320,6 +16718,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_03f_restroom_01_lighting_fixture_01
     asset_tag: HC-E475AF94
     placement:
@@ -16366,6 +16765,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_03f_restroom_01_wifi_ap_01
     asset_tag: HC-6885CA89
     placement:
@@ -16399,6 +16799,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_04f_classroom_01_furniture_classroom_01
     asset_tag: HC-24177DDF
     placement:
@@ -16437,6 +16838,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_04f_classroom_01_lighting_fixture_01
     asset_tag: HC-3E94B449
     placement:
@@ -16483,6 +16885,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_04f_classroom_01_wifi_ap_01
     asset_tag: HC-588E0AB2
     placement:
@@ -16516,6 +16919,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_04f_classroom_02_furniture_classroom_01
     asset_tag: HC-FE52A401
     placement:
@@ -16554,6 +16958,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_04f_classroom_02_lighting_fixture_01
     asset_tag: HC-1C5A2D2C
     placement:
@@ -16600,6 +17005,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_04f_classroom_02_wifi_ap_01
     asset_tag: HC-B9D57F8D
     placement:
@@ -16634,6 +17040,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f3_04f_lab_01_furniture_lab_01
     asset_tag: HC-91A9B801
     placement:
@@ -16672,6 +17079,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_04f_lab_01_lighting_fixture_01
     asset_tag: HC-7CA3F3B1
     placement:
@@ -16718,6 +17126,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_04f_lab_01_wifi_ap_01
     asset_tag: HC-4D2298D4
     placement:
@@ -16761,6 +17170,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f3_04f_meeting_01_av_display_01
     asset_tag: HC-A73B5521
     placement:
@@ -16795,6 +17205,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f3_04f_meeting_01_conference_seating_01
     asset_tag: HC-29DD74F0
     placement:
@@ -16833,6 +17244,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_04f_meeting_01_lighting_fixture_01
     asset_tag: HC-2D30AFFD
     placement:
@@ -16880,6 +17292,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_04f_meeting_01_wifi_ap_01
     asset_tag: HC-093FD54E
     placement:
@@ -16919,6 +17332,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_04f_restroom_01_lighting_fixture_01
     asset_tag: HC-F0848896
     placement:
@@ -16965,6 +17379,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_04f_restroom_01_wifi_ap_01
     asset_tag: HC-8679D75C
     placement:
@@ -16998,6 +17413,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_05f_classroom_01_furniture_classroom_01
     asset_tag: HC-9E56F70B
     placement:
@@ -17036,6 +17452,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_05f_classroom_01_lighting_fixture_01
     asset_tag: HC-3BA32E06
     placement:
@@ -17082,6 +17499,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_05f_classroom_01_wifi_ap_01
     asset_tag: HC-67F781AE
     placement:
@@ -17115,6 +17533,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_05f_classroom_02_furniture_classroom_01
     asset_tag: HC-A1ADAE28
     placement:
@@ -17153,6 +17572,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_05f_classroom_02_lighting_fixture_01
     asset_tag: HC-C9B911FB
     placement:
@@ -17199,6 +17619,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_05f_classroom_02_wifi_ap_01
     asset_tag: HC-7F35915C
     placement:
@@ -17233,6 +17654,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f3_05f_lab_01_furniture_lab_01
     asset_tag: HC-53E433FF
     placement:
@@ -17271,6 +17693,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_05f_lab_01_lighting_fixture_01
     asset_tag: HC-14059A03
     placement:
@@ -17317,6 +17740,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_05f_lab_01_wifi_ap_01
     asset_tag: HC-C8BACA11
     placement:
@@ -17360,6 +17784,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f3_05f_meeting_01_av_display_01
     asset_tag: HC-98462D54
     placement:
@@ -17394,6 +17819,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f3_05f_meeting_01_conference_seating_01
     asset_tag: HC-F3FEF3C7
     placement:
@@ -17432,6 +17858,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_05f_meeting_01_lighting_fixture_01
     asset_tag: HC-CB40949B
     placement:
@@ -17479,6 +17906,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_05f_meeting_01_wifi_ap_01
     asset_tag: HC-7F505F65
     placement:
@@ -17518,6 +17946,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_05f_restroom_01_lighting_fixture_01
     asset_tag: HC-2BC2D4E9
     placement:
@@ -17564,6 +17993,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_05f_restroom_01_wifi_ap_01
     asset_tag: HC-2E0CD316
     placement:
@@ -17597,6 +18027,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_06f_classroom_01_furniture_classroom_01
     asset_tag: HC-92A415CD
     placement:
@@ -17635,6 +18066,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_06f_classroom_01_lighting_fixture_01
     asset_tag: HC-494CA73C
     placement:
@@ -17681,6 +18113,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_06f_classroom_01_wifi_ap_01
     asset_tag: HC-84F7CB5D
     placement:
@@ -17714,6 +18147,7 @@ items:
     furniture_role: classroom
     seat_count: 24
     has_power_outlets: true
+    room_list_name: 课桌椅组
     device_id: hicampus_f3_06f_classroom_02_furniture_classroom_01
     asset_tag: HC-9F285B1B
     placement:
@@ -17752,6 +18186,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_06f_classroom_02_lighting_fixture_01
     asset_tag: HC-505F31E2
     placement:
@@ -17798,6 +18233,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_06f_classroom_02_wifi_ap_01
     asset_tag: HC-20E36E72
     placement:
@@ -17832,6 +18268,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f3_06f_lab_01_furniture_lab_01
     asset_tag: HC-015BD8A0
     placement:
@@ -17870,6 +18307,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_06f_lab_01_lighting_fixture_01
     asset_tag: HC-1AE03FD8
     placement:
@@ -17916,6 +18354,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_06f_lab_01_wifi_ap_01
     asset_tag: HC-795E396A
     placement:
@@ -17959,6 +18398,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f3_06f_meeting_01_av_display_01
     asset_tag: HC-8BEB4EE4
     placement:
@@ -17993,6 +18433,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f3_06f_meeting_01_conference_seating_01
     asset_tag: HC-CE1C8320
     placement:
@@ -18031,6 +18472,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_06f_meeting_01_lighting_fixture_01
     asset_tag: HC-C3F9D7BB
     placement:
@@ -18078,6 +18520,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_06f_meeting_01_wifi_ap_01
     asset_tag: HC-E7B2F6AC
     placement:
@@ -18117,6 +18560,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f3_06f_restroom_01_lighting_fixture_01
     asset_tag: HC-ACC616A5
     placement:
@@ -18163,6 +18607,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f3_06f_restroom_01_wifi_ap_01
     asset_tag: HC-AC16FFA2
     placement:
@@ -18202,6 +18647,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_01f_electrical_01_lighting_fixture_01
     asset_tag: HC-ED462129
     placement:
@@ -18248,6 +18694,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_01f_electrical_01_wifi_ap_01
     asset_tag: HC-A513D111
     placement:
@@ -18287,6 +18734,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_01f_monitoring_01_lighting_fixture_01
     asset_tag: HC-3587787A
     placement:
@@ -18333,6 +18781,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_01f_monitoring_01_wifi_ap_01
     asset_tag: HC-4155EBEC
     placement:
@@ -18367,6 +18816,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_01f_prep_lab_01_furniture_lab_01
     asset_tag: HC-FC33716C
     placement:
@@ -18405,6 +18855,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_01f_prep_lab_01_lighting_fixture_01
     asset_tag: HC-47BB4F2A
     placement:
@@ -18451,6 +18902,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_01f_prep_lab_01_wifi_ap_01
     asset_tag: HC-69E9084E
     placement:
@@ -18485,6 +18937,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_01f_prep_lab_02_furniture_lab_01
     asset_tag: HC-69D1CC6B
     placement:
@@ -18523,6 +18976,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_01f_prep_lab_02_lighting_fixture_01
     asset_tag: HC-52CCD4AC
     placement:
@@ -18569,6 +19023,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_01f_prep_lab_02_wifi_ap_01
     asset_tag: HC-7439C59D
     placement:
@@ -18602,6 +19057,7 @@ items:
     furniture_role: storage
     includes:
     - shelf
+    room_list_name: 货架组
     device_id: hicampus_f4_01f_storage_01_furniture_storage_01
     asset_tag: HC-94349F04
     placement:
@@ -18640,6 +19096,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_01f_storage_01_lighting_fixture_01
     asset_tag: HC-D71F9DD4
     placement:
@@ -18686,6 +19143,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_01f_storage_01_wifi_ap_01
     asset_tag: HC-7D692BC3
     placement:
@@ -18725,6 +19183,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_02f_electrical_01_lighting_fixture_01
     asset_tag: HC-EB16C63B
     placement:
@@ -18771,6 +19230,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_02f_electrical_01_wifi_ap_01
     asset_tag: HC-D397D053
     placement:
@@ -18810,6 +19270,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_02f_monitoring_01_lighting_fixture_01
     asset_tag: HC-B60EFCB8
     placement:
@@ -18856,6 +19317,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_02f_monitoring_01_wifi_ap_01
     asset_tag: HC-77FD53E1
     placement:
@@ -18890,6 +19352,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_02f_prep_lab_01_furniture_lab_01
     asset_tag: HC-C6865AE1
     placement:
@@ -18928,6 +19391,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_02f_prep_lab_01_lighting_fixture_01
     asset_tag: HC-E91CCB07
     placement:
@@ -18974,6 +19438,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_02f_prep_lab_01_wifi_ap_01
     asset_tag: HC-B895C10B
     placement:
@@ -19008,6 +19473,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_02f_prep_lab_02_furniture_lab_01
     asset_tag: HC-1CEBD9BF
     placement:
@@ -19046,6 +19512,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_02f_prep_lab_02_lighting_fixture_01
     asset_tag: HC-6AC4B077
     placement:
@@ -19092,6 +19559,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_02f_prep_lab_02_wifi_ap_01
     asset_tag: HC-9072D57A
     placement:
@@ -19125,6 +19593,7 @@ items:
     furniture_role: storage
     includes:
     - shelf
+    room_list_name: 货架组
     device_id: hicampus_f4_02f_storage_01_furniture_storage_01
     asset_tag: HC-802ABFD0
     placement:
@@ -19163,6 +19632,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_02f_storage_01_lighting_fixture_01
     asset_tag: HC-1B8E9F36
     placement:
@@ -19209,6 +19679,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_02f_storage_01_wifi_ap_01
     asset_tag: HC-E726C2F1
     placement:
@@ -19243,6 +19714,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_03f_lab_01_furniture_lab_01
     asset_tag: HC-08125216
     placement:
@@ -19281,6 +19753,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_03f_lab_01_lighting_fixture_01
     asset_tag: HC-0BA309D8
     placement:
@@ -19327,6 +19800,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_03f_lab_01_wifi_ap_01
     asset_tag: HC-67B59794
     placement:
@@ -19361,6 +19835,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_03f_lab_02_furniture_lab_01
     asset_tag: HC-01EE07C6
     placement:
@@ -19399,6 +19874,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_03f_lab_02_lighting_fixture_01
     asset_tag: HC-59EC5E07
     placement:
@@ -19445,6 +19921,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_03f_lab_02_wifi_ap_01
     asset_tag: HC-B9FADB86
     placement:
@@ -19479,6 +19956,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_03f_lab_03_furniture_lab_01
     asset_tag: HC-0A1FE88A
     placement:
@@ -19517,6 +19995,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_03f_lab_03_lighting_fixture_01
     asset_tag: HC-CE38326A
     placement:
@@ -19563,6 +20042,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_03f_lab_03_wifi_ap_01
     asset_tag: HC-004AE2FA
     placement:
@@ -19597,6 +20077,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_03f_prep_lab_01_furniture_lab_01
     asset_tag: HC-0C8DD9A3
     placement:
@@ -19635,6 +20116,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_03f_prep_lab_01_lighting_fixture_01
     asset_tag: HC-0DC3A0F0
     placement:
@@ -19681,6 +20163,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_03f_prep_lab_01_wifi_ap_01
     asset_tag: HC-C7DA0F12
     placement:
@@ -19720,6 +20203,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_03f_restroom_01_lighting_fixture_01
     asset_tag: HC-33BD02C9
     placement:
@@ -19766,6 +20250,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_03f_restroom_01_wifi_ap_01
     asset_tag: HC-A02D0BB5
     placement:
@@ -19800,6 +20285,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_04f_lab_01_furniture_lab_01
     asset_tag: HC-EB81EBAE
     placement:
@@ -19838,6 +20324,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_04f_lab_01_lighting_fixture_01
     asset_tag: HC-52DD1EC8
     placement:
@@ -19884,6 +20371,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_04f_lab_01_wifi_ap_01
     asset_tag: HC-473F8EC6
     placement:
@@ -19918,6 +20406,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_04f_lab_02_furniture_lab_01
     asset_tag: HC-7B4101B6
     placement:
@@ -19956,6 +20445,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_04f_lab_02_lighting_fixture_01
     asset_tag: HC-9B08C56B
     placement:
@@ -20002,6 +20492,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_04f_lab_02_wifi_ap_01
     asset_tag: HC-FCF1DD99
     placement:
@@ -20036,6 +20527,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_04f_lab_03_furniture_lab_01
     asset_tag: HC-F93C826A
     placement:
@@ -20074,6 +20566,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_04f_lab_03_lighting_fixture_01
     asset_tag: HC-A15102F1
     placement:
@@ -20120,6 +20613,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_04f_lab_03_wifi_ap_01
     asset_tag: HC-91ACB33B
     placement:
@@ -20154,6 +20648,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_04f_prep_lab_01_furniture_lab_01
     asset_tag: HC-DB51C43C
     placement:
@@ -20192,6 +20687,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_04f_prep_lab_01_lighting_fixture_01
     asset_tag: HC-917730A3
     placement:
@@ -20238,6 +20734,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_04f_prep_lab_01_wifi_ap_01
     asset_tag: HC-9FEA1DCB
     placement:
@@ -20277,6 +20774,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_04f_restroom_01_lighting_fixture_01
     asset_tag: HC-FF001E6A
     placement:
@@ -20323,6 +20821,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_04f_restroom_01_wifi_ap_01
     asset_tag: HC-E61453E6
     placement:
@@ -20357,6 +20856,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_05f_lab_01_furniture_lab_01
     asset_tag: HC-353ECE6D
     placement:
@@ -20395,6 +20895,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_05f_lab_01_lighting_fixture_01
     asset_tag: HC-F4282DA0
     placement:
@@ -20441,6 +20942,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_05f_lab_01_wifi_ap_01
     asset_tag: HC-8F000EB6
     placement:
@@ -20475,6 +20977,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_05f_lab_02_furniture_lab_01
     asset_tag: HC-4F15A233
     placement:
@@ -20513,6 +21016,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_05f_lab_02_lighting_fixture_01
     asset_tag: HC-E642571F
     placement:
@@ -20559,6 +21063,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_05f_lab_02_wifi_ap_01
     asset_tag: HC-9372EA7F
     placement:
@@ -20593,6 +21098,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_05f_lab_03_furniture_lab_01
     asset_tag: HC-0C936F06
     placement:
@@ -20631,6 +21137,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_05f_lab_03_lighting_fixture_01
     asset_tag: HC-DFB945FB
     placement:
@@ -20677,6 +21184,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_05f_lab_03_wifi_ap_01
     asset_tag: HC-6E8A3EB2
     placement:
@@ -20711,6 +21219,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_05f_prep_lab_01_furniture_lab_01
     asset_tag: HC-C57EAAD8
     placement:
@@ -20749,6 +21258,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_05f_prep_lab_01_lighting_fixture_01
     asset_tag: HC-9C39F8ED
     placement:
@@ -20795,6 +21305,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_05f_prep_lab_01_wifi_ap_01
     asset_tag: HC-DE6FC65C
     placement:
@@ -20834,6 +21345,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_05f_restroom_01_lighting_fixture_01
     asset_tag: HC-AAD6A8D6
     placement:
@@ -20880,6 +21392,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_05f_restroom_01_wifi_ap_01
     asset_tag: HC-CCC171EF
     placement:
@@ -20914,6 +21427,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_06f_lab_01_furniture_lab_01
     asset_tag: HC-65C8FDF7
     placement:
@@ -20952,6 +21466,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_06f_lab_01_lighting_fixture_01
     asset_tag: HC-B9E5CED7
     placement:
@@ -20998,6 +21513,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_06f_lab_01_wifi_ap_01
     asset_tag: HC-038D1D20
     placement:
@@ -21032,6 +21548,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_06f_lab_02_furniture_lab_01
     asset_tag: HC-C79991E6
     placement:
@@ -21070,6 +21587,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_06f_lab_02_lighting_fixture_01
     asset_tag: HC-78169484
     placement:
@@ -21116,6 +21634,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_06f_lab_02_wifi_ap_01
     asset_tag: HC-48CA2ADC
     placement:
@@ -21150,6 +21669,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_06f_lab_03_furniture_lab_01
     asset_tag: HC-027FDC65
     placement:
@@ -21188,6 +21708,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_06f_lab_03_lighting_fixture_01
     asset_tag: HC-BBD0AF22
     placement:
@@ -21234,6 +21755,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_06f_lab_03_wifi_ap_01
     asset_tag: HC-2E4AA949
     placement:
@@ -21268,6 +21790,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_06f_prep_lab_01_furniture_lab_01
     asset_tag: HC-A9B3DF0B
     placement:
@@ -21306,6 +21829,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_06f_prep_lab_01_lighting_fixture_01
     asset_tag: HC-1AF875A1
     placement:
@@ -21352,6 +21876,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_06f_prep_lab_01_wifi_ap_01
     asset_tag: HC-13D7DC58
     placement:
@@ -21391,6 +21916,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_06f_restroom_01_lighting_fixture_01
     asset_tag: HC-AE7D195D
     placement:
@@ -21437,6 +21963,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_06f_restroom_01_wifi_ap_01
     asset_tag: HC-FA14C3EF
     placement:
@@ -21471,6 +21998,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_07f_lab_01_furniture_lab_01
     asset_tag: HC-CEDE8961
     placement:
@@ -21509,6 +22037,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_07f_lab_01_lighting_fixture_01
     asset_tag: HC-A166069C
     placement:
@@ -21555,6 +22084,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_07f_lab_01_wifi_ap_01
     asset_tag: HC-5E1B2FDE
     placement:
@@ -21589,6 +22119,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_07f_lab_02_furniture_lab_01
     asset_tag: HC-E30E8C60
     placement:
@@ -21627,6 +22158,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_07f_lab_02_lighting_fixture_01
     asset_tag: HC-2780B458
     placement:
@@ -21673,6 +22205,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_07f_lab_02_wifi_ap_01
     asset_tag: HC-258FB1A7
     placement:
@@ -21707,6 +22240,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_07f_lab_03_furniture_lab_01
     asset_tag: HC-13842C17
     placement:
@@ -21745,6 +22279,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_07f_lab_03_lighting_fixture_01
     asset_tag: HC-41E746D8
     placement:
@@ -21791,6 +22326,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_07f_lab_03_wifi_ap_01
     asset_tag: HC-164E16F0
     placement:
@@ -21825,6 +22361,7 @@ items:
     includes:
     - workbench
     - cabinet
+    room_list_name: 实验台与储物
     device_id: hicampus_f4_07f_prep_lab_01_furniture_lab_01
     asset_tag: HC-329DAF1F
     placement:
@@ -21863,6 +22400,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_07f_prep_lab_01_lighting_fixture_01
     asset_tag: HC-41B89B3C
     placement:
@@ -21909,6 +22447,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_07f_prep_lab_01_wifi_ap_01
     asset_tag: HC-1E7C73B4
     placement:
@@ -21948,6 +22487,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f4_07f_restroom_01_lighting_fixture_01
     asset_tag: HC-00D312FE
     placement:
@@ -21994,6 +22534,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f4_07f_restroom_01_wifi_ap_01
     asset_tag: HC-B1C9A3A4
     placement:
@@ -22033,6 +22574,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_01f_av_room_01_lighting_fixture_01
     asset_tag: HC-40392999
     placement:
@@ -22079,6 +22621,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_01f_av_room_01_wifi_ap_01
     asset_tag: HC-3B826FA2
     placement:
@@ -22113,6 +22656,7 @@ items:
     includes:
     - display_stand
     - signage
+    room_list_name: 展陈家具
     device_id: hicampus_f5_01f_expo_hall_01_furniture_expo_01
     asset_tag: HC-6B6C3B17
     placement:
@@ -22151,6 +22695,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_01f_expo_hall_01_lighting_fixture_01
     asset_tag: HC-A8E5FD35
     placement:
@@ -22197,6 +22742,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_01f_expo_hall_01_wifi_ap_01
     asset_tag: HC-8B9E0101
     placement:
@@ -22231,6 +22777,7 @@ items:
     includes:
     - display_stand
     - signage
+    room_list_name: 展陈家具
     device_id: hicampus_f5_01f_expo_hall_02_furniture_expo_01
     asset_tag: HC-88E4CEE1
     placement:
@@ -22269,6 +22816,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_01f_expo_hall_02_lighting_fixture_01
     asset_tag: HC-51CE4A31
     placement:
@@ -22315,6 +22863,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_01f_expo_hall_02_wifi_ap_01
     asset_tag: HC-5BF4DA3E
     placement:
@@ -22358,6 +22907,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f5_01f_meeting_01_av_display_01
     asset_tag: HC-4B0ECFE7
     placement:
@@ -22392,6 +22942,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f5_01f_meeting_01_conference_seating_01
     asset_tag: HC-14892652
     placement:
@@ -22430,6 +22981,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_01f_meeting_01_lighting_fixture_01
     asset_tag: HC-7991CF78
     placement:
@@ -22477,6 +23029,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_01f_meeting_01_wifi_ap_01
     asset_tag: HC-5EF71A76
     placement:
@@ -22516,6 +23069,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_01f_restroom_01_lighting_fixture_01
     asset_tag: HC-D562DE77
     placement:
@@ -22562,6 +23116,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_01f_restroom_01_wifi_ap_01
     asset_tag: HC-64DA9112
     placement:
@@ -22601,6 +23156,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_02f_av_room_01_lighting_fixture_01
     asset_tag: HC-EE52D0A2
     placement:
@@ -22647,6 +23203,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_02f_av_room_01_wifi_ap_01
     asset_tag: HC-815F67EA
     placement:
@@ -22681,6 +23238,7 @@ items:
     includes:
     - display_stand
     - signage
+    room_list_name: 展陈家具
     device_id: hicampus_f5_02f_expo_hall_01_furniture_expo_01
     asset_tag: HC-A7BE2F23
     placement:
@@ -22719,6 +23277,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_02f_expo_hall_01_lighting_fixture_01
     asset_tag: HC-DB71E234
     placement:
@@ -22765,6 +23324,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_02f_expo_hall_01_wifi_ap_01
     asset_tag: HC-4437E691
     placement:
@@ -22799,6 +23359,7 @@ items:
     includes:
     - display_stand
     - signage
+    room_list_name: 展陈家具
     device_id: hicampus_f5_02f_expo_hall_02_furniture_expo_01
     asset_tag: HC-2FACFB7D
     placement:
@@ -22837,6 +23398,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_02f_expo_hall_02_lighting_fixture_01
     asset_tag: HC-A87EF184
     placement:
@@ -22883,6 +23445,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_02f_expo_hall_02_wifi_ap_01
     asset_tag: HC-6DC03633
     placement:
@@ -22926,6 +23489,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f5_02f_meeting_01_av_display_01
     asset_tag: HC-DAF52E91
     placement:
@@ -22960,6 +23524,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f5_02f_meeting_01_conference_seating_01
     asset_tag: HC-6C31756A
     placement:
@@ -22998,6 +23563,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_02f_meeting_01_lighting_fixture_01
     asset_tag: HC-18EEF89C
     placement:
@@ -23045,6 +23611,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_02f_meeting_01_wifi_ap_01
     asset_tag: HC-E289173B
     placement:
@@ -23084,6 +23651,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_02f_restroom_01_lighting_fixture_01
     asset_tag: HC-7FC7FA67
     placement:
@@ -23130,6 +23698,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_02f_restroom_01_wifi_ap_01
     asset_tag: HC-6DC4D03A
     placement:
@@ -23169,6 +23738,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_03f_av_room_01_lighting_fixture_01
     asset_tag: HC-CE737F89
     placement:
@@ -23215,6 +23785,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_03f_av_room_01_wifi_ap_01
     asset_tag: HC-A1C57019
     placement:
@@ -23249,6 +23820,7 @@ items:
     includes:
     - display_stand
     - signage
+    room_list_name: 展陈家具
     device_id: hicampus_f5_03f_expo_hall_01_furniture_expo_01
     asset_tag: HC-0AD47F4B
     placement:
@@ -23287,6 +23859,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_03f_expo_hall_01_lighting_fixture_01
     asset_tag: HC-B4D47441
     placement:
@@ -23333,6 +23906,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_03f_expo_hall_01_wifi_ap_01
     asset_tag: HC-57F33861
     placement:
@@ -23367,6 +23941,7 @@ items:
     includes:
     - display_stand
     - signage
+    room_list_name: 展陈家具
     device_id: hicampus_f5_03f_expo_hall_02_furniture_expo_01
     asset_tag: HC-B7D6F99F
     placement:
@@ -23405,6 +23980,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_03f_expo_hall_02_lighting_fixture_01
     asset_tag: HC-FE1D4536
     placement:
@@ -23451,6 +24027,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_03f_expo_hall_02_wifi_ap_01
     asset_tag: HC-10B005C4
     placement:
@@ -23494,6 +24071,7 @@ items:
       volume_pct: 30
     telemetry:
       temperature_c: null
+    room_list_name: 会议大屏
     device_id: hicampus_f5_03f_meeting_01_av_display_01
     asset_tag: HC-C61CE034
     placement:
@@ -23528,6 +24106,7 @@ items:
     seat_count: 8
     layout: u_shape
     material: fabric
+    room_list_name: 会议座椅
     device_id: hicampus_f5_03f_meeting_01_conference_seating_01
     asset_tag: HC-8AC9088D
     placement:
@@ -23566,6 +24145,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_03f_meeting_01_lighting_fixture_01
     asset_tag: HC-C014020F
     placement:
@@ -23613,6 +24193,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_03f_meeting_01_wifi_ap_01
     asset_tag: HC-6744DA54
     placement:
@@ -23652,6 +24233,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f5_03f_restroom_01_lighting_fixture_01
     asset_tag: HC-4D62C7E3
     placement:
@@ -23698,6 +24280,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f5_03f_restroom_01_wifi_ap_01
     asset_tag: HC-A2A65170
     placement:
@@ -23733,6 +24316,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_01f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-7D6D220A
     placement:
@@ -23771,6 +24355,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_01f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-E4F396AC
     placement:
@@ -23817,6 +24402,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_01f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-2A767CCE
     placement:
@@ -23852,6 +24438,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_01f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-25A3BD9D
     placement:
@@ -23890,6 +24477,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_01f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-D5E7A54D
     placement:
@@ -23936,6 +24524,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_01f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-046742B3
     placement:
@@ -23975,6 +24564,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_01f_lounge_01_lighting_fixture_01
     asset_tag: HC-EB075A96
     placement:
@@ -24010,6 +24600,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_01f_lounge_01_lounge_furniture_01
     asset_tag: HC-8EED253B
     placement:
@@ -24055,6 +24646,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_01f_lounge_01_wifi_ap_01
     asset_tag: HC-AED1B9CB
     placement:
@@ -24094,6 +24686,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_01f_restroom_01_lighting_fixture_01
     asset_tag: HC-DDF6ABC8
     placement:
@@ -24140,6 +24733,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_01f_restroom_01_wifi_ap_01
     asset_tag: HC-F92C01A9
     placement:
@@ -24175,6 +24769,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_02f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-BB48CC26
     placement:
@@ -24213,6 +24808,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_02f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-A2104FA4
     placement:
@@ -24259,6 +24855,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_02f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-1DF14B97
     placement:
@@ -24294,6 +24891,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_02f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-770A5109
     placement:
@@ -24332,6 +24930,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_02f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-DF08559A
     placement:
@@ -24378,6 +24977,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_02f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-E2C5E32A
     placement:
@@ -24417,6 +25017,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_02f_lounge_01_lighting_fixture_01
     asset_tag: HC-1DF73637
     placement:
@@ -24452,6 +25053,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_02f_lounge_01_lounge_furniture_01
     asset_tag: HC-362440F3
     placement:
@@ -24497,6 +25099,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_02f_lounge_01_wifi_ap_01
     asset_tag: HC-FEFCFC5B
     placement:
@@ -24536,6 +25139,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_02f_restroom_01_lighting_fixture_01
     asset_tag: HC-056BF894
     placement:
@@ -24582,6 +25186,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_02f_restroom_01_wifi_ap_01
     asset_tag: HC-1E8FB95E
     placement:
@@ -24617,6 +25222,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_03f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-C31FBA12
     placement:
@@ -24655,6 +25261,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_03f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-2ABAB229
     placement:
@@ -24701,6 +25308,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_03f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-89365A43
     placement:
@@ -24736,6 +25344,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_03f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-F8D3C2B8
     placement:
@@ -24774,6 +25383,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_03f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-F3210FAD
     placement:
@@ -24820,6 +25430,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_03f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-5D47CCCD
     placement:
@@ -24859,6 +25470,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_03f_lounge_01_lighting_fixture_01
     asset_tag: HC-7C9C073C
     placement:
@@ -24894,6 +25506,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_03f_lounge_01_lounge_furniture_01
     asset_tag: HC-290F5B38
     placement:
@@ -24939,6 +25552,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_03f_lounge_01_wifi_ap_01
     asset_tag: HC-86CB9001
     placement:
@@ -24978,6 +25592,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_03f_restroom_01_lighting_fixture_01
     asset_tag: HC-8C402A9F
     placement:
@@ -25024,6 +25639,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_03f_restroom_01_wifi_ap_01
     asset_tag: HC-EC9BA36F
     placement:
@@ -25059,6 +25675,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_04f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-F1ED9FCE
     placement:
@@ -25097,6 +25714,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_04f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-EAFC10FB
     placement:
@@ -25143,6 +25761,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_04f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-C3ED4490
     placement:
@@ -25178,6 +25797,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_04f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-96323609
     placement:
@@ -25216,6 +25836,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_04f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-C68A8A3A
     placement:
@@ -25262,6 +25883,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_04f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-C5F1DED5
     placement:
@@ -25301,6 +25923,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_04f_lounge_01_lighting_fixture_01
     asset_tag: HC-8423995B
     placement:
@@ -25336,6 +25959,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_04f_lounge_01_lounge_furniture_01
     asset_tag: HC-A1763BE1
     placement:
@@ -25381,6 +26005,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_04f_lounge_01_wifi_ap_01
     asset_tag: HC-77226664
     placement:
@@ -25420,6 +26045,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_04f_restroom_01_lighting_fixture_01
     asset_tag: HC-2EDA1BA3
     placement:
@@ -25466,6 +26092,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_04f_restroom_01_wifi_ap_01
     asset_tag: HC-67D5CC17
     placement:
@@ -25501,6 +26128,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_05f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-38683555
     placement:
@@ -25539,6 +26167,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_05f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-5D5C7A8F
     placement:
@@ -25585,6 +26214,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_05f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-FB7CA87E
     placement:
@@ -25620,6 +26250,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_05f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-9B57D6EC
     placement:
@@ -25658,6 +26289,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_05f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-26170EEC
     placement:
@@ -25704,6 +26336,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_05f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-AD0221D6
     placement:
@@ -25743,6 +26376,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_05f_lounge_01_lighting_fixture_01
     asset_tag: HC-933544AB
     placement:
@@ -25778,6 +26412,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_05f_lounge_01_lounge_furniture_01
     asset_tag: HC-CF502F3E
     placement:
@@ -25823,6 +26458,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_05f_lounge_01_wifi_ap_01
     asset_tag: HC-7E4361CC
     placement:
@@ -25862,6 +26498,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_05f_restroom_01_lighting_fixture_01
     asset_tag: HC-F9FB8FAA
     placement:
@@ -25908,6 +26545,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_05f_restroom_01_wifi_ap_01
     asset_tag: HC-7E3CAB95
     placement:
@@ -25943,6 +26581,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_06f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-BEA1ACBE
     placement:
@@ -25981,6 +26620,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_06f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-CFBF3273
     placement:
@@ -26027,6 +26667,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_06f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-6E3235F4
     placement:
@@ -26062,6 +26703,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_06f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-79983E2B
     placement:
@@ -26100,6 +26742,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_06f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-2D752F6C
     placement:
@@ -26146,6 +26789,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_06f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-516A8832
     placement:
@@ -26185,6 +26829,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_06f_lounge_01_lighting_fixture_01
     asset_tag: HC-355111DD
     placement:
@@ -26220,6 +26865,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_06f_lounge_01_lounge_furniture_01
     asset_tag: HC-2DB0257E
     placement:
@@ -26265,6 +26911,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_06f_lounge_01_wifi_ap_01
     asset_tag: HC-AC63BDEE
     placement:
@@ -26304,6 +26951,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_06f_restroom_01_lighting_fixture_01
     asset_tag: HC-ABE77AAF
     placement:
@@ -26350,6 +26998,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_06f_restroom_01_wifi_ap_01
     asset_tag: HC-624B65BC
     placement:
@@ -26385,6 +27034,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_07f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-9D0762A7
     placement:
@@ -26423,6 +27073,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_07f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-2DD78E13
     placement:
@@ -26469,6 +27120,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_07f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-0EEEB5B4
     placement:
@@ -26504,6 +27156,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_07f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-E41B44D0
     placement:
@@ -26542,6 +27195,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_07f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-22FE3A95
     placement:
@@ -26588,6 +27242,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_07f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-B9768BF8
     placement:
@@ -26627,6 +27282,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_07f_lounge_01_lighting_fixture_01
     asset_tag: HC-04A7FF2A
     placement:
@@ -26662,6 +27318,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_07f_lounge_01_lounge_furniture_01
     asset_tag: HC-845E12C7
     placement:
@@ -26707,6 +27364,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_07f_lounge_01_wifi_ap_01
     asset_tag: HC-332DC92F
     placement:
@@ -26746,6 +27404,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_07f_restroom_01_lighting_fixture_01
     asset_tag: HC-FB675080
     placement:
@@ -26792,6 +27451,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_07f_restroom_01_wifi_ap_01
     asset_tag: HC-E2C96C3C
     placement:
@@ -26827,6 +27487,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_08f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-C7DE029E
     placement:
@@ -26865,6 +27526,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_08f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-7B80679A
     placement:
@@ -26911,6 +27573,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_08f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-296B344F
     placement:
@@ -26946,6 +27609,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_08f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-F08EF107
     placement:
@@ -26984,6 +27648,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_08f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-0A159B9F
     placement:
@@ -27030,6 +27695,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_08f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-B6ABB205
     placement:
@@ -27069,6 +27735,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_08f_lounge_01_lighting_fixture_01
     asset_tag: HC-8B92323B
     placement:
@@ -27104,6 +27771,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_08f_lounge_01_lounge_furniture_01
     asset_tag: HC-4C8DDC1B
     placement:
@@ -27149,6 +27817,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_08f_lounge_01_wifi_ap_01
     asset_tag: HC-6B742459
     placement:
@@ -27188,6 +27857,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_08f_restroom_01_lighting_fixture_01
     asset_tag: HC-92CC07D8
     placement:
@@ -27234,6 +27904,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_08f_restroom_01_wifi_ap_01
     asset_tag: HC-D9C73AE0
     placement:
@@ -27269,6 +27940,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_09f_dorm_unit_01_furniture_dorm_01
     asset_tag: HC-EC66A03F
     placement:
@@ -27307,6 +27979,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_09f_dorm_unit_01_lighting_fixture_01
     asset_tag: HC-13329676
     placement:
@@ -27353,6 +28026,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_09f_dorm_unit_01_wifi_ap_01
     asset_tag: HC-E50F1D5E
     placement:
@@ -27388,6 +28062,7 @@ items:
     - bed
     - wardrobe
     - desk
+    room_list_name: 起居家具组
     device_id: hicampus_f6_09f_dorm_unit_02_furniture_dorm_01
     asset_tag: HC-B8F27E56
     placement:
@@ -27426,6 +28101,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_09f_dorm_unit_02_lighting_fixture_01
     asset_tag: HC-637054FC
     placement:
@@ -27472,6 +28148,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_09f_dorm_unit_02_wifi_ap_01
     asset_tag: HC-6BF21678
     placement:
@@ -27511,6 +28188,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_09f_lounge_01_lighting_fixture_01
     asset_tag: HC-4430ADA1
     placement:
@@ -27546,6 +28224,7 @@ items:
       sofa_count: 2
       chair_count: 4
       table_count: 1
+    room_list_name: 沙发与等候座
     device_id: hicampus_f6_09f_lounge_01_lounge_furniture_01
     asset_tag: HC-C041B86C
     placement:
@@ -27591,6 +28270,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_09f_lounge_01_wifi_ap_01
     asset_tag: HC-078D386B
     placement:
@@ -27630,6 +28310,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_f6_09f_restroom_01_lighting_fixture_01
     asset_tag: HC-B8D064E6
     placement:
@@ -27676,6 +28357,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_f6_09f_restroom_01_wifi_ap_01
     asset_tag: HC-1E804155
     placement:
@@ -27744,6 +28426,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_gate_lighting_fixture_01
     asset_tag: HC-916663C7
     placement:
@@ -27791,6 +28474,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_gate_wifi_ap_01
     asset_tag: HC-B371C024
     placement:
@@ -27853,6 +28537,7 @@ items:
       scene: work
     telemetry:
       power_w: null
+    room_list_name: 照明回路
     device_id: hicampus_plaza_lighting_fixture_01
     asset_tag: HC-DED0A59D
     placement:
@@ -27900,6 +28585,7 @@ items:
       rssi_dbm: null
       clients: 0
       uplink_mbps: null
+    room_list_name: 无线接入点
     device_id: hicampus_plaza_wifi_ap_01
     asset_tag: HC-DCB7B1BC
     placement:

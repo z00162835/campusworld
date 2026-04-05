@@ -87,6 +87,13 @@ CommandPalette > #results {
     padding: 0;
     margin: 0;
     overflow: hidden;
+}
+
+CommandPalette > #results ScrollView {
+    scrollbar-size: 0 0;
+}
+
+CommandPalette > #results OptionList {
     scrollbar-size: 0 0;
 }
 

@@ -1,6 +1,6 @@
 import contextlib
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -55,6 +55,18 @@ def _build_loader_with_stubbed_service():
         lambda world_id, action, status_before, enter_status, exec_fn, requested_by="system": exec_fn("job-1")
     )
     return loader, engine
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_loader_syncs_world_entry_visibility_after_load_helper():
+    loader, _engine = _build_loader_with_stubbed_service()
+    with patch(
+        "app.game_engine.world_entry_service.world_entry_service.sync_world_entry_visibility",
+        return_value=(True, None),
+    ) as m_sync:
+        loader._sync_world_entry_visibility_after_load("hicampus")
+    m_sync.assert_called_once_with("hicampus", enabled=True)
 
 
 @pytest.mark.game

@@ -90,6 +90,14 @@ class SSHHandler(ProtocolHandler):
         pass
 ```
 
+### 命令输出与 `CommandResult.data`
+
+[`SSHHandler._format_command_result`](ssh_handler.py) **仅向终端写入 `result.message`**，不会自动打印 `result.data`。需要表格或列表的管理员命令（例如 `world list`）应在命令实现里把人类可读内容放进 **`message`**（可有多个换行），同时保留 **`data`** 供 HTTP/WebSocket/JSON 客户端使用。
+
+### GameHandler 与账号位置（Evennia-like）
+
+[`app/ssh/game_handler.py`](../ssh/game_handler.py) 在 `enter` / 登录恢复世界时，将账号 **`location_id` 设为世界内房间节点 id**（不再把账号长期挂在根节点仅靠 JSON 表示世界坐标）。`leave` / `ooc` 经 **`GameHandler.leave_world`** 清空世界辅助属性并回到奇点屋根房间。与命令 `look`、`go`/方向键共享同一图语义。
+
 ## 使用方式
 
 ```python

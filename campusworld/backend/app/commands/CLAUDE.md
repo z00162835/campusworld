@@ -110,6 +110,12 @@ all_commands = command_registry.list_all_commands()
 |------|------|
 | look/l | 查看当前房间/对象 |
 | go [方向] | 移动到指定方向 |
+
+**Look 行为要点**
+
+- **出口**：房间展示的方向出口 = 节点属性 `room_exits` 的键 **加上** 从当前房间出发的 **`connects_to` 关系**（`attributes.direction` 经 `normalize_direction`；无 direction 时用目标 `package_node_id`），去重后按罗盘序排序。
+- **列表行**：房间内对象列表统一 **`- *{display_name}*{hints}`**（`hints` 为可选后缀，如设备状态、公告摘要）。
+- **多匹配消歧**：SSH 下多匹配时写入会话 **`command_ephemeral["look_disambiguation_entries"]`**，随后可用 **`look 1`**、**`look 2`**…（与列表序号一致）；无 `context.session` 时仅提示使用完整名称。
 | say | 说话 |
 | help | 帮助 |
 

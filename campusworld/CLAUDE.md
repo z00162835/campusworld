@@ -25,6 +25,10 @@ CampusWorld 基于三层架构设计：
 
 可安装世界以 `backend/app/games/<world_id>/` 为内容根目录，由 **GameLoader**（[`game_engine/loader.py`](backend/app/game_engine/loader.py)）发现与装载；`world install` / `uninstall` / `reload`（[`commands/game/world_command.py`](backend/app/commands/game/world_command.py)）维护运行时并与奇点屋入口可见性同步。包内 [`manifest.yaml`](backend/app/games/hicampus/manifest.yaml) 中的 **`graph_seed`** 为 `true` 时，快照经 [`game_engine/graph_seed/`](backend/app/game_engine/graph_seed/) 写入 **PostgreSQL**（需已完成相关库迁移），命令层 `look`、方向移动等依赖图中的 **room** 与 **`connects_to`**；无 PostgreSQL 的环境应将 `graph_seed` 设为 `false`，否则安装可能失败。用户登录后默认落在 **奇点屋**，再 `enter <world_id>` 进入世界。
 
+**世界内位置（Evennia 式）**：账号节点（`type_code=account`）的 **`location_id` 指向当前所在房间图节点**（含 HiCampus 包内 room）；`home_id` 仍锚定奇点屋根房间。`attributes.active_world` / `world_location` 作跨世界桥与拓扑校验的辅助字段，与 `location_id` 同步更新。从奇点屋 `enter` 另一世界前须 **`leave`（或 `ooc`）** 回到根房间；进入世界时出生点须已在图中（`world_entry_service` 解析的 `spawn_key` 对应 `package_node_id`）。实现见 [`app/ssh/game_handler.py`](backend/app/ssh/game_handler.py)、[`app/commands/game/direction_command.py`](backend/app/commands/game/direction_command.py)、[`app/commands/game/look_command.py`](backend/app/commands/game/look_command.py)。
+
+**奇点屋世界入口（Evennia Exit）**：与图种子中的 **`type_code=world` 元数据节点**分离，使用专用 **`type_code=world_entrance`** 节点挂在根房间（`location_id` = 奇点屋），由 [`world_entry_service.sync_world_entry_visibility`](backend/app/game_engine/world_entry_service.py) 在 `world install` / `uninstall` 时维护；节点描述即世界门面，`look` 在 **「出口（世界）」** 区块列出（见 [`look_appearance.py`](backend/app/commands/game/look_appearance.py)）。`enter <world_id>` 只解析 `world_entrance`。属性可含 **`destination_node_id`**（gate 房间图 id，与 Evennia 的 `destination` 对齐）。**`look` 当前房间唯一由 `location_id` 解析**，不再使用 `active_world`+`world_location` 作为 `look` 回退路径。
+
 操作步骤见下文 **「安装 HiCampus 世界」**；更短的清单见 **[`QUICKSTART.md`](QUICKSTART.md)**「安装 HiCampus 世界」。
 
 ## World Semantic Design - 世界语义设计

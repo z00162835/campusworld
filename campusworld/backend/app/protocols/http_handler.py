@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 from .base import ProtocolHandler
 from app.commands.registry import command_registry
 from app.commands.base import CommandContext, CommandResult
+from app.commands.shell_words import split_command_line
 from app.core.database import db_session_context
 
 
@@ -27,8 +28,7 @@ class HTTPHandler(ProtocolHandler):
             if not command_line.strip():
                 return json.dumps({"success": True, "message": ""})
             
-            # 解析命令
-            parts = command_line.strip().split()
+            parts = split_command_line(command_line)
             command_name = parts[0].lower()
             args = parts[1:] if len(parts) > 1 else []
             

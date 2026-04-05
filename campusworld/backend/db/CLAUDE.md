@@ -8,12 +8,14 @@ PostgreSQL 数据库管理和初始化。
 
 ```
 db/
-├── init_database.py          # 数据库初始化脚本
+├── init_database.py          # CLI：migrate（默认）/ reset（PostgreSQL 危险重建）
+├── migrate_report.py         # ensure_* 顺序执行、报表、reset 门闸
+├── schema_migrations.py      # 轻量增量迁移（非 Alembic）
 ├── schemas/
-│   ├── database_schema.sql  # 完整数据库schema
-│   ├── verify_schema.py    # Schema验证脚本
-│   └── run_schema_direct.py # 直接运行schema脚本
-└── schemas/README.md        # Schema文档
+│   ├── database_schema.sql   # 完整/片段 SQL 真源（补丁从片段抽取）
+│   ├── verify_schema.py      # Schema 验证脚本
+│   └── run_schema_direct.py  # 直接运行 SQL 文件
+└── schemas/README.md         # Schema 文档
 ```
 
 ## 核心概念
@@ -95,17 +97,37 @@ db.commit()
 db.close()
 ```
 
-## 初始化数据库
+## 初始化与迁移
+
+**默认（migrate，与无参等价）**：PostgreSQL 上先 **`schema_migrations.ensure_required_extensions`**（postgis / vector 等，否则 `geometry` / `vector` 类型在 `create_all` 时不存在）→ `create_all` → 其余 `ensure_*`（含 `ensure_graph_seed_ontology`）+ 可选种子数据。
 
 ```bash
-# 方式1: 使用初始化脚本
 cd backend
 python -m db.init_database
+# 或显式
+python -m db.init_database migrate
+# JSON 报表
+python -m db.init_database migrate --json-report
+```
 
-# 方式2: 直接运行SQL
+**危险重建（reset，仅 PostgreSQL）**：删除 `public` schema 内全部对象后，再执行与 migrate 相同后续步骤。
+
+- 必须：`--i-understand`
+- 门闸：`CAMPUSWORLD_ALLOW_DB_RESET=true` **或** 配置 `development.allow_db_reset: true`（各环境 YAML 中默认为 `false`）
+
+```bash
+CAMPUSWORLD_ALLOW_DB_RESET=true python -m db.init_database reset --i-understand
+
+`scripts/setup.sh` 在设置 `RESET_DB=1` 时会导出 `CAMPUSWORLD_ALLOW_DB_RESET=true` 并执行上述 reset 命令（仅本地自动化场景）。
+```
+
+**其他方式**：
+
+```bash
+# 直接跑 SQL（高级）
 psql -U postgres -d campusworld -f db/schemas/database_schema.sql
 
-# 方式3: Docker环境
+# Docker（若 compose 中定义了 db-init 服务）
 docker compose -f docker-compose.dev.yml up -d db-init
 ```
 
@@ -127,6 +149,7 @@ database:
 ## 开发提示
 
 - 生产环境设置 `echo: false`
-- 使用迁移工具 (Alembic) 管理 schema 变更
+- **现状**：增量结构变更优先写在 `schema_migrations.py`（`ensure_*`），并在 `migrate_report.run_schema_migrations` 中登记顺序；**未接入 Alembic**。
+- **可选后续**：对需版本链或数据迁移的变更引入 Alembic，与现有 `ensure_*` 并存并逐步收敛。
 - 大批量操作使用 `bulk_insert_mappings`
 - 事务中注意异常回滚

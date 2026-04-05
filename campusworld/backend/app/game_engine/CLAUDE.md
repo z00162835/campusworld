@@ -62,8 +62,8 @@ class CampusWorldGameEngine(GameEngine):
         self.interface = GameInterface(self)
 
     def start(self) -> bool:
-        loaded_games = self.loader.auto_load_games()
-        return True
+        # 默认 game_engine.load_installed_worlds_on_start=true：从 DB 已 install 的世界 load_game；见 settings.yaml
+        ...
 ```
 
 ### GameLoader
@@ -73,7 +73,8 @@ class CampusWorldGameEngine(GameEngine):
 ```python
 class GameLoader:
     def load_game(self, game_name: str) -> bool
-    def auto_load_games(self) -> List[str]
+    def load_installed_worlds_at_start(self) -> List[str]
+    def auto_load_games(self, only_world_ids: Optional[List[str]] = None) -> List[str]
     def reload_game(self, game_name: str) -> bool
 ```
 
@@ -143,7 +144,7 @@ from app.game_engine import (
 
 ```yaml
 game_engine:
-  auto_load: true
-  save_interval: 300  # 保存间隔(秒)
-  max_players: 10000
+  load_installed_worlds_on_start: true
+  auto_load_discovered_on_start: false
+  auto_load_worlds: null
 ```

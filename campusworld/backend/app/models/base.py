@@ -1051,6 +1051,91 @@ class DefaultObject(GraphNodeInterface):
             self.location_id = self.home_id
             return True
         return False
+
+    # ==================== Look appearance (Evennia-style) ====================
+
+    room_list_line_template = "- *{name}*{hints}"
+
+    def get_display_name(self, looker=None, **kwargs) -> str:
+        del looker, kwargs
+        a = self._node_attributes
+        return str(a.get("display_name") or self._node_name or "?")
+
+    def get_room_list_display_name(self, looker=None, **kwargs) -> str:
+        """Shorter in-room list label (Evennia-style); falls back to get_display_name."""
+        del looker, kwargs
+        a = self._node_attributes
+        for key in ("room_list_name", "look_list_name", "short_name"):
+            v = a.get(key)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        inner = a.get("attributes")
+        if isinstance(inner, dict):
+            for key in ("room_list_name", "look_list_name", "short_name"):
+                v = inner.get(key)
+                if isinstance(v, str) and v.strip():
+                    return v.strip()
+        # HiCampus-style scoped titles: "{place} · {short label}" — not gate-specific.
+        for cand in (
+            str(a.get("display_name") or "").strip(),
+            str(self._node_name or "").strip(),
+        ):
+            if " · " in cand:
+                tail = cand.rsplit(" · ", 1)[-1].strip()
+                if tail and tail != cand:
+                    return tail
+        return self.get_display_name()
+
+    def get_display_extra_name_info(self, looker=None, **kwargs) -> str:
+        del looker, kwargs
+        return ""
+
+    def get_display_desc(self, looker=None, **kwargs) -> str:
+        del looker, kwargs
+        a = self._node_attributes
+        if (self._node_description or "").strip():
+            return str(self._node_description).strip()
+        text_keys = (
+            "long_description",
+            "short_description",
+            "description",
+            "entry_description",
+            "look_description",
+            "examine_desc",
+        )
+        for key in text_keys:
+            v = a.get(key)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        inner = a.get("attributes")
+        if isinstance(inner, dict):
+            for key in text_keys:
+                v = inner.get(key)
+                if isinstance(v, str) and v.strip():
+                    return v.strip()
+        return ""
+
+    def room_line_format_kwargs(self) -> Dict[str, Any]:
+        a = self._node_attributes
+        hint = str(a.get("look_hint") or a.get("entry_hint") or "").strip()[:200]
+        hints = f" {hint}" if hint else ""
+        return {
+            "name": self.get_room_list_display_name(),
+            "extra_name_info": self.get_display_extra_name_info(),
+            "hints": hints,
+            "state_suffix": "",
+            "power_hint": "",
+            "wifi_hint": "",
+            "av_hint": "",
+            "short_blurb": str(a.get("short_blurb") or "")[:200],
+            "hint": str(a.get("look_hint") or a.get("entry_hint") or "")[:200],
+        }
+
+    def room_list_line_for_look(self) -> str:
+        from app.commands.game.look_template_format import safe_format_template
+
+        tmpl = getattr(self.__class__, "room_list_line_template", "- *{name}*{hints}")
+        return safe_format_template(tmpl, **self.room_line_format_kwargs())
     
     # ==================== 属性管理 ====================
     

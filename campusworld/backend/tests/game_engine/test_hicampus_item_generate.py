@@ -9,6 +9,7 @@ import yaml
 
 from app.games.hicampus.package.entity_item_generate import (
     _PRESERVED_ITEM_IDS,
+    _build_item_row,
     generate_items,
     merge_items,
 )
@@ -67,6 +68,33 @@ def test_merge_keeps_preserves_and_skips_duplicate_ids(tmp_path: Path):
 def test_preserved_ids_cover_hand_authored_items():
     assert "hicampus_device_gate_terminal_01" in _PRESERVED_ITEM_IDS
     assert "hicampus_furniture_bench_01" in _PRESERVED_ITEM_IDS
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_build_item_row_sets_room_list_name_when_display_uses_middle_dot():
+    row = _build_item_row(
+        template_key="lighting_fixture",
+        template={
+            "type_code": "lighting_fixture",
+            "display_name_tpl": "{room_name} · 照明回路",
+            "attributes": {"item_kind": "device", "device_role": "lighting"},
+            "tags": ["item", "device"],
+            "presentation_domains": ["room"],
+            "access_locks": {"view": "all()", "interact": "all()"},
+        },
+        room={"id": "hicampus_bridge", "display_name": "HiCampus Bridge", "tags": ["room"]},
+        seq=1,
+        placement={
+            "building_code": "F1",
+            "floor_no": 1,
+            "layer_role": "lobby",
+            "building_type": "administrative",
+            "layer": "public",
+        },
+    )
+    assert row["display_name"] == "HiCampus Bridge · 照明回路"
+    assert row["attributes"].get("room_list_name") == "照明回路"
 
 
 @pytest.mark.game

@@ -17,77 +17,39 @@
 
 **触发器语法**：若 `EXECUTE PROCEDURE` 报错，可改为 PostgreSQL 14+ 的 `EXECUTE FUNCTION`（视实例版本而定）。
 
-## 📋 问题分析
+## 权威路径（与仓库实现一致）
 
-原始数据库schema执行失败的主要原因：
+日常开发与 CI 请以 **`python -m db.init_database`**（默认 **migrate** 模式）为准：
 
-### 1. **SQL语句分割问题**
-- 使用简单的`;`分割SQL语句
-- PostgreSQL函数定义包含多个分号，被错误分割
-- 导致语法错误和函数定义不完整
+1. **SQLAlchemy** `Base.metadata.create_all()` 创建 ORM 已注册、但库中尚不存在的表。
+2. **`db/schema_migrations.py`** 中各 `ensure_*`（由 **`db/migrate_report.run_schema_migrations`** 顺序调用）对**已有库**做增量 `ALTER` / 片段 SQL（如 `command_policies`、`world_runtime` 等），并包含 **`ensure_graph_seed_ontology`**（图种子所需 `node_types` / `relationship_types`）。
+3. 可选 **`db/seed_data.seed_minimal`**：由 `development.seed_data` 或 `CAMPUSWORLD_DEVELOPMENT_SEED_DATA` 控制。
 
-### 2. **执行顺序错误**
-- 在创建表之前就尝试添加外键约束
-- 在创建表之前就尝试创建索引
-- 在创建表之前就尝试创建视图
+**危险重建（仅 PostgreSQL）**：`python -m db.init_database reset --i-understand` 会 `DROP SCHEMA public CASCADE` 后重新执行上述 migrate 流程；须同时满足 **`CAMPUSWORLD_ALLOW_DB_RESET=true`** 或配置 **`development.allow_db_reset: true`**。
 
-### 3. **事务处理问题**
-- 第一个错误导致事务失败
-- 后续所有操作都被忽略
-- 缺乏错误恢复机制
+本目录下的 **`database_schema.sql`** 仍是部分补丁与手工运维的**参考真源**；**不再维护**历史上文档中提及的 `database_schema_fixed.sql` / `database_migration_fixed.py`（仓库中不存在）。
 
-### 4. **文件路径问题**
-- 迁移脚本在`db/schemas/`目录下
-- SQL文件路径不正确
-- 相对路径引用问题
+## 🛠️ 其他使用方式
 
-## 🚀 修复方案
-
-### 1. **修复后的SQL文件** (`database_schema_fixed.sql`)
-- **正确的执行顺序**：表 → 约束 → 索引 → 函数 → 触发器 → 视图 → 数据
-- **事务安全处理**：使用`IF NOT EXISTS`避免重复创建
-- **依赖关系管理**：确保所有依赖项按正确顺序创建
-- **完整的函数定义**：避免函数定义被错误分割
-
-### 2. **修复后的迁移脚本** (`database_migration_fixed.py`)
-- **智能SQL分割**：识别函数、触发器、视图定义
-- **错误恢复机制**：检测关键错误时回滚事务
-- **详细的执行日志**：显示每个SQL语句的执行状态
-- **完整的验证流程**：验证表、视图、函数是否创建成功
-
-### 3. **直接执行脚本** (`run_schema_direct.py`)
-- **简化执行流程**：直接执行SQL文件，避免复杂迁移逻辑
-- **智能语句分割**：正确处理PostgreSQL语法结构
-- **实时执行反馈**：显示每个语句的执行结果
-- **自动验证结果**：执行完成后自动验证数据库结构
-
-## 🛠️ 使用方法
-
-### 方法1：使用直接执行脚本（推荐）
+### 方法1：应用内入口（推荐）
 
 ```bash
-# 进入schemas目录
-cd campusworld/backend/db/schemas
+cd backend
+python -m db.init_database              # 默认 migrate
+python -m db.init_database migrate --json-report
+```
 
-# 执行修复后的SQL文件
+### 方法2：直接执行本目录 SQL（高级 / 排障）
+
+```bash
+psql -h localhost -p 5433 -U campusworld_dev_user -d campusworld_dev -f db/schemas/database_schema.sql
+```
+
+### 方法3：`run_schema_direct.py`
+
+```bash
+cd backend/db/schemas
 python run_schema_direct.py
-```
-
-### 方法2：使用修复后的迁移脚本
-
-```bash
-# 进入schemas目录
-cd campusworld/backend/db/schemas
-
-# 执行修复后的迁移脚本
-python database_migration_fixed.py
-```
-
-### 方法3：直接执行SQL文件
-
-```bash
-# 使用psql直接执行
-psql -h localhost -p 5433 -U campusworld_dev_user -d campusworld_dev -f database_schema_fixed.sql
 ```
 
 ## 📊 执行流程

@@ -57,3 +57,4 @@ development:
   enable_profiling: false
   mock_external_services: false
   seed_data: false
+  allow_db_reset: false

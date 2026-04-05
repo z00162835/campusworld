@@ -25,6 +25,16 @@ class BulletinBoard(DefaultObject):
     _LOOK_ALIASES = ["bulletin_board", "bulletin", "board"]
     _logger = get_logger(LoggerNames.GAME)
 
+    def room_line_format_kwargs(self):
+        kw = super().room_line_format_kwargs()
+        a = self._node_attributes
+        blurb = str(a.get("short_blurb") or a.get("desc") or "").strip()[:200]
+        kw["short_blurb"] = blurb
+        if blurb:
+            sep = " — " if (kw.get("hints") or "").strip() else " "
+            kw["hints"] = (kw.get("hints") or "") + sep + blurb
+        return kw
+
     def __init__(self, name: str = "bulletin_board", config: Optional[Dict[str, Any]] = None, **kwargs):
         self._node_type = "system_bulletin_board"
 

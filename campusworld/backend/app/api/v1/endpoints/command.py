@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.commands.registry import command_registry
 from app.commands.base import CommandContext, CommandResult
+from app.commands.shell_words import split_command_line
 from app.core.database import db_session_context
 
 router = APIRouter()
@@ -45,8 +46,7 @@ async def execute_command(
 ):
     """执行命令"""
     try:
-        # 解析命令
-        parts = request.command.strip().split()
+        parts = split_command_line(request.command.strip())
         command_name = parts[0].lower()
         args = parts[1:] if len(parts) > 1 else []
         if request.args:

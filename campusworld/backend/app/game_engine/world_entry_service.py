@@ -1,8 +1,7 @@
 """
 World entry integration service.
 
-Keeps a user-facing world entry object visible in SingularityRoom and
-provides entry resolution/validation for `enter <world_id>`.
+Singularity-room exits use type_code ``world_entrance`` (Evennia-style Exit), not graph-seeded ``world`` metadata.
 """
 
 from __future__ import annotations
@@ -10,12 +9,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.database import db_session_context
 from app.core.log import get_logger, LoggerNames
 from app.commands.policy_expr import evaluate_policy_expr, PolicyExprError
+from app.game_engine.world_room_resolve import find_world_room_node
 from app.models.graph import Node, NodeType
 from app.models.root_manager import root_manager
 
@@ -46,6 +47,8 @@ class WorldEntryService:
             )
         try:
             with db_session_context() as session:
+                self._migrate_legacy_root_portal_to_world_entrance(session, wid)
+                session.commit()
                 node = self._find_world_entry_node(session, wid)
                 if not node:
                     return WorldEntryDecision(
@@ -124,6 +127,7 @@ class WorldEntryService:
                 root = root_manager.get_root_node(session)
                 if not root:
                     return False, "WORLD_ENTRY_ROOT_UNAVAILABLE"
+                self._migrate_legacy_root_portal_to_world_entrance(session, wid)
                 node = self._find_world_entry_node(session, wid)
                 if not node:
                     node = self._create_world_entry_node(session, wid, root.id)
@@ -132,13 +136,22 @@ class WorldEntryService:
                 attrs = dict(node.attributes or {})
                 attrs["portal_enabled"] = bool(enabled)
                 attrs["portal_world_id"] = wid
-                attrs["entity_kind"] = "item"
+                attrs["entity_kind"] = "exit"
                 attrs["presentation_domains"] = ["room"]
                 attrs["access_locks"] = {"view": "all()", "interact": "all()"}
                 attrs["portal_spawn_key"] = str(attrs.get("portal_spawn_key") or attrs.get("entry_room_id") or "campus")
                 attrs["entry_hint"] = f"enter {wid}"
+                spawn_key = attrs["portal_spawn_key"]
+                gate = find_world_room_node(session, wid, spawn_key)
+                if gate:
+                    attrs["destination_node_id"] = gate.id
                 node.attributes = attrs
+                flag_modified(node, "attributes")
                 node.name = wid
+                node.type_code = "world_entrance"
+                wnt = session.query(NodeType).filter(NodeType.type_code == "world_entrance").first()
+                if wnt:
+                    node.type_id = wnt.id
                 node.is_active = bool(enabled)
                 node.is_public = bool(enabled)
                 if enabled:
@@ -154,43 +167,95 @@ class WorldEntryService:
             self.logger.error("sync world entry visibility failed: %s", e)
             return False, "WORLD_ENTRY_SYNC_FAILED"
 
-    def _find_world_entry_node(self, session: Session, world_id: str) -> Optional[Node]:
-        return (
+    def _migrate_legacy_root_portal_to_world_entrance(self, session: Session, world_id: str) -> None:
+        """Upgrade old singularity portals (type_code=world on root) to world_entrance."""
+        root = root_manager.get_root_node(session)
+        if not root:
+            return
+        wnt = session.query(NodeType).filter(NodeType.type_code == "world_entrance").first()
+        if not wnt:
+            return
+        wid = str(world_id or "").strip().lower()
+        candidates = (
             session.query(Node)
             .filter(
                 and_(
                     Node.type_code == "world",
-                    Node.attributes["world_id"].astext == str(world_id),
+                    Node.location_id == root.id,
+                    Node.attributes["world_id"].astext == wid,
+                )
+            )
+            .all()
+        )
+        for node in candidates:
+            attrs = dict(node.attributes or {})
+            portalish = bool(
+                attrs.get("portal_spawn_key")
+                or attrs.get("entry_hint")
+                or attrs.get("portal_world_id") == wid
+                or str(node.name or "").strip().lower() == wid
+            )
+            if not portalish:
+                continue
+            node.type_code = "world_entrance"
+            node.type_id = wnt.id
+            attrs.setdefault("portal_world_id", wid)
+            attrs.setdefault("entity_kind", "exit")
+            attrs.setdefault("presentation_domains", ["room"])
+            spawn_key = str(attrs.get("portal_spawn_key") or attrs.get("entry_room_id") or "campus")
+            gate = find_world_room_node(session, wid, spawn_key)
+            if gate:
+                attrs["destination_node_id"] = gate.id
+            node.attributes = attrs
+            flag_modified(node, "attributes")
+            session.add(node)
+
+    def _find_world_entry_node(self, session: Session, world_id: str) -> Optional[Node]:
+        wid = str(world_id or "").strip().lower()
+        return (
+            session.query(Node)
+            .filter(
+                and_(
+                    Node.type_code == "world_entrance",
+                    or_(
+                        Node.attributes["portal_world_id"].astext == wid,
+                        Node.attributes["world_id"].astext == wid,
+                    ),
                 )
             )
             .first()
         )
 
     def _create_world_entry_node(self, session: Session, world_id: str, root_node_id: int) -> Optional[Node]:
-        nt = session.query(NodeType).filter(NodeType.type_code == "world").first()
+        nt = session.query(NodeType).filter(NodeType.type_code == "world_entrance").first()
         if not nt:
             return None
+        wid = str(world_id or "").strip().lower()
+        spawn_key = "hicampus_gate" if wid == "hicampus" else "campus"
+        gate = find_world_room_node(session, wid, spawn_key)
+        dest_id = gate.id if gate else None
         node = Node(
             type_id=nt.id,
-            type_code="world",
-            name=world_id,
-            description=f"{world_id} 世界入口。输入 'enter {world_id}' 进入。",
+            type_code="world_entrance",
+            name=wid,
+            description=f"{wid} 世界入口。输入 'enter {wid}' 进入。",
             is_active=True,
             is_public=True,
             access_level="normal",
             location_id=root_node_id,
             home_id=root_node_id,
             attributes={
-                "world_id": world_id,
-                "portal_world_id": world_id,
-                "portal_spawn_key": "hicampus_gate" if world_id == "hicampus" else "campus",
+                "world_id": wid,
+                "portal_world_id": wid,
+                "portal_spawn_key": spawn_key,
                 "portal_enabled": True,
-                "entity_kind": "item",
+                "entity_kind": "exit",
                 "presentation_domains": ["room"],
                 "access_locks": {"view": "all()", "interact": "all()"},
-                "entry_hint": f"enter {world_id}",
+                "entry_hint": f"enter {wid}",
+                **({"destination_node_id": dest_id} if dest_id is not None else {}),
             },
-            tags=["world", world_id],
+            tags=["world_entrance", wid],
         )
         session.add(node)
         session.flush()
@@ -198,4 +263,3 @@ class WorldEntryService:
 
 
 world_entry_service = WorldEntryService()
-

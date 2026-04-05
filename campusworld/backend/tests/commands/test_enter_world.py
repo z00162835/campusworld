@@ -17,14 +17,15 @@ def _build_context() -> CommandContext:
     )
 
 
-def test_enter_world_command_requires_world_name():
+def test_enter_world_command_bare_enter_is_direction_not_world_name_prompt():
     from app.commands.game.enter_world_command import EnterWorldCommand
 
     cmd = EnterWorldCommand()
     result = cmd.execute(_build_context(), [])
 
     assert not result.success
-    assert result.message in {"用户不存在", "你当前不在世界内"}
+    # 无参数时走世界内 enter 方向，失败文案随 DB/房间出口变化
+    assert result.message
 
 
 def test_enter_world_command_accepts_hicampus():
