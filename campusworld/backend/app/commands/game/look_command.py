@@ -9,10 +9,54 @@ Look命令实现 - 参考Evennia设计
 """
 
 from typing import List, Optional, Dict, Any, Union
+
 from ..base import GameCommand, CommandResult, CommandContext
 from app.core.log import get_logger, LoggerNames
 from app.commands.policy_expr import evaluate_policy_expr, PolicyExprError
-from .direction_command import normalize_direction
+from app.game_engine.world_room_resolve import room_is_world_entry_gate
+
+_EXIT_DIRECTION_ORDER = (
+    "north",
+    "northeast",
+    "east",
+    "southeast",
+    "south",
+    "southwest",
+    "west",
+    "northwest",
+    "up",
+    "down",
+    "enter",
+    "out",
+)
+
+
+def _sort_room_exit_labels(labels: List[str]) -> List[str]:
+    rank = {d: i for i, d in enumerate(_EXIT_DIRECTION_ORDER)}
+    cap = len(_EXIT_DIRECTION_ORDER)
+    return sorted(set(labels), key=lambda x: (rank.get(x.lower(), cap), x.lower()))
+
+
+LOOK_DISAMBIGUATION_KEY = "look_disambiguation_entries"
+
+
+def _merge_room_exit_labels_from_attrs_and_graph(
+    room_attrs: Dict[str, Any],
+    graph_labels: List[str],
+) -> List[str]:
+    from app.game_engine.direction_util import normalize_direction
+
+    merged: List[str] = []
+    re = room_attrs.get("room_exits")
+    if isinstance(re, dict):
+        for k in re.keys():
+            if k is None:
+                continue
+            ks = str(k).strip()
+            if ks:
+                merged.append(normalize_direction(ks.lower()))
+    merged.extend(graph_labels)
+    return _sort_room_exit_labels(merged)
 
 
 class LookCommand(GameCommand):
@@ -68,6 +112,10 @@ class LookCommand(GameCommand):
         """查看特定物品/对象（统一：命令只负责目标解析，展示由对象自身决定）"""
         try:
             target_args = target_args or []
+            t = str(target or "").strip()
+            if t.isdigit():
+                return self._resolve_look_disambiguation_index(context, t, target_args)
+
             # 搜索目标物品
             found_objects = self._search_objects(context, target)
             
@@ -94,11 +142,6 @@ class LookCommand(GameCommand):
             room_ref = self._get_user_current_room_ref(context)
             if not room_ref:
                 return None
-            if room_ref.get("scope") == "world":
-                return self._get_world_room_from_graph_data(
-                    world_id=str(room_ref.get("world_id") or ""),
-                    room_package_id=str(room_ref.get("room_id") or ""),
-                )
             current_room_id = str(room_ref.get("room_id") or "")
             return self._get_room_from_graph_data(context, current_room_id)
             
@@ -123,100 +166,50 @@ class LookCommand(GameCommand):
                 if not user_node:
                     self.logger.warning(f"未找到用户节点: {context.user_id}")
                     return None
-                
-                attrs = dict(user_node.attributes or {})
-                active_world = str(attrs.get("active_world") or "").strip().lower()
-                world_location = str(attrs.get("world_location") or "").strip().lower()
-                if active_world and world_location:
-                    return {"scope": "world", "world_id": active_world, "room_id": world_location}
 
-                # 获取系统层当前位置
+                # Evennia 主路径：location_id 指向 room 节点（含世界内房间与奇点屋）
                 location_id = user_node.location_id
                 if location_id:
-                    # 查找位置节点
                     location_node = session.query(Node).filter(
                         Node.id == location_id,
-                        Node.is_active == True
+                        Node.is_active == True,
                     ).first()
-                    
-                    if location_node:
-                        # 返回房间名称或ID
-                        return {"scope": "system", "room_id": location_node.attributes.get('room_name', str(location_id))}
-                
+                    if location_node and location_node.type_code == "room":
+                        return {"scope": "system", "room_id": str(location_node.id)}
+
                 return None
                 
         except Exception as e:
             self.logger.error(f"从图数据获取用户位置失败: {e}")
             return None
 
-    def _get_world_room_from_graph_data(self, world_id: str, room_package_id: str) -> Optional[Dict[str, Any]]:
-        try:
-            from app.core.database import db_session_context
-            from app.models.graph import Node, Relationship
+    def _exit_labels_from_connects_to(self, session, room_node_id: int) -> List[str]:
+        """Outgoing graph exits: direction (normalized) or target package_node_id."""
+        from app.game_engine.direction_util import normalize_direction
+        from app.models.graph import Node, Relationship
 
-            with db_session_context() as session:
-                room_node = (
-                    session.query(Node)
-                    .filter(
-                        Node.type_code == "room",
-                        Node.attributes["world_id"].astext == str(world_id),
-                        Node.attributes["package_node_id"].astext == str(room_package_id),
-                        Node.is_active == True,  # noqa: E712
-                    )
-                    .first()
-                )
-                if not room_node:
-                    return None
-                attrs = dict(room_node.attributes or {})
-                outgoing = (
-                    session.query(Relationship, Node)
-                    .join(Node, Relationship.target_id == Node.id)
-                    .filter(
-                        Relationship.source_id == room_node.id,
-                        Relationship.type_code == "connects_to",
-                        Relationship.is_active == True,  # noqa: E712
-                        Node.is_active == True,  # noqa: E712
-                    )
-                    .all()
-                )
-                exits = []
-                for rel, _target in outgoing:
-                    rattrs = dict(rel.attributes or {})
-                    d = normalize_direction(str(rattrs.get("direction") or "").strip().lower())
-                    if d:
-                        exits.append(d)
-                    else:
-                        target_pkg = str((_target.attributes or {}).get("package_node_id") or "")
-                        if target_pkg:
-                            exits.append(target_pkg.lower())
-                contents = (
-                    session.query(Node)
-                    .filter(Node.location_id == room_node.id, Node.is_active == True)  # noqa: E712
-                    .all()
-                )
-                room_objects = []
-                for n in contents:
-                    if n.type_code in ("account", "user"):
-                        continue
-                    if not self._is_visible_in_room(None, n):
-                        continue
-                    room_objects.append(n.name)
-                rname = attrs.get("room_name") or attrs.get("display_name") or room_node.name
-                rdesc = (attrs.get("room_description") or "").strip() or attrs.get("display_name") or room_node.name
-                return {
-                    "id": str(room_node.id),
-                    "name": rname,
-                    "description": rdesc,
-                    "short_description": (attrs.get("room_short_description") or "").strip(),
-                    "ambiance": (attrs.get("room_ambiance") or "").strip(),
-                    "exits": exits,
-                    "items": room_objects,
-                    "is_singularity": False,
-                    "is_home": False,
-                }
-        except Exception as e:
-            self.logger.error(f"从图数据获取世界房间失败: {e}")
-            return None
+        labels: List[str] = []
+        outgoing = (
+            session.query(Relationship, Node)
+            .join(Node, Relationship.target_id == Node.id)
+            .filter(
+                Relationship.source_id == room_node_id,
+                Relationship.type_code == "connects_to",
+                Relationship.is_active == True,  # noqa: E712
+                Node.is_active == True,  # noqa: E712
+            )
+            .all()
+        )
+        for rel, target in outgoing:
+            rattrs = dict(rel.attributes or {})
+            raw = str(rattrs.get("direction") or "").strip().lower()
+            if raw:
+                labels.append(normalize_direction(raw))
+            else:
+                pkg = str((target.attributes or {}).get("package_node_id") or "").strip()
+                if pkg:
+                    labels.append(pkg.lower())
+        return labels
 
     def _get_room_from_graph_data(self, context: CommandContext, room_id: str) -> Optional[Dict[str, Any]]:
         """从图数据获取房间信息"""
@@ -248,29 +241,50 @@ class LookCommand(GameCommand):
                         .filter(Node.location_id == room_node.id, Node.is_active == True)
                         .all()
                     )
+                    ra = dict(attrs or {})
+                    content_entries = []
                     room_objects = []
                     for n in contents:
                         if n.type_code in ("account", "user"):
                             continue
                         if not self._is_visible_in_room(context, n):
                             continue
+                        content_entries.append(
+                            {
+                                "node_id": n.id,
+                                "name": n.name,
+                                "type_code": n.type_code,
+                                "type": n.type_code,
+                                "description": n.description or "",
+                                "attributes": dict(n.attributes or {}),
+                            }
+                        )
                         room_objects.append(n.name)
-                    rname = attrs.get("room_name") or attrs.get("display_name") or room_node.name
-                    rdesc = (attrs.get("room_description") or "").strip() or attrs.get(
+                    rname = ra.get("room_name") or ra.get("display_name") or room_node.name
+                    rdesc = (ra.get("room_description") or "").strip() or ra.get(
                         "display_name"
                     ) or "这里没有什么特别的。"
+                    graph_exit_labels = self._exit_labels_from_connects_to(session, room_node.id)
+                    exit_labels = _merge_room_exit_labels_from_attrs_and_graph(ra, graph_exit_labels)
+                    wid_gate = str(ra.get("world_id") or "").strip().lower()
+                    if wid_gate and room_is_world_entry_gate(session, room_node, wid_gate):
+                        lower = {str(e).lower() for e in exit_labels}
+                        if "out" not in lower:
+                            exit_labels = _sort_room_exit_labels(list(exit_labels) + ["out"])
                     return {
                         "id": str(room_node.id),
                         "name": rname,
                         "description": rdesc,
-                        "short_description": (attrs.get("room_short_description") or "").strip(),
-                        "ambiance": (attrs.get("room_ambiance") or "").strip(),
-                        "exits": list(attrs.get("room_exits", {}).keys())
-                        if isinstance(attrs.get("room_exits"), dict)
-                        else [],
+                        "short_description": (ra.get("room_short_description") or "").strip(),
+                        "ambiance": (ra.get("room_ambiance") or "").strip(),
+                        "exits": exit_labels,
                         "items": room_objects,
-                        "is_singularity": attrs.get("is_root", False),
-                        "is_home": attrs.get("is_home", False),
+                        "content_entries": content_entries,
+                        "appearance_template": str(ra.get("appearance_template") or "").strip(),
+                        "room_node_attributes": dict(ra),
+                        "extra_name_info": str(ra.get("floor_label") or ra.get("room_extra_name_info") or "").strip(),
+                        "is_singularity": ra.get("is_root", False),
+                        "is_home": ra.get("is_home", False),
                     }
                 
                 return None
@@ -284,6 +298,10 @@ class LookCommand(GameCommand):
         Evennia-style visibility gate driven by model attributes.
         """
         attrs = dict(getattr(node, "attributes", {}) or {})
+        tc = str(getattr(node, "type_code", "") or "").lower()
+        if tc == "world_entrance" and attrs.get("portal_enabled") is False:
+            return False
+
         entity_kind = str(attrs.get("entity_kind", "") or "").lower()
         if not entity_kind:
             # Sensible default for legacy room content nodes
@@ -293,7 +311,8 @@ class LookCommand(GameCommand):
         if isinstance(domains, list):
             domain_set = {str(x).lower() for x in domains}
         else:
-            domain_set = {"room"} if entity_kind in {"item", "service", "ui"} else set()
+            domain_set = {"room"} if entity_kind in {"item", "service", "ui", "exit"} else set()
+
         if "room" not in domain_set:
             return False
 
@@ -310,46 +329,14 @@ class LookCommand(GameCommand):
             return False
     
     def _build_room_description(self, context: CommandContext, room: Dict[str, Any]) -> str:
-        """构建房间描述"""
+        """构建房间描述（Evennia 式模板 + return_appearance_room）"""
         try:
-            room_name = room.get("name", "未知房间")
-            room_desc = room.get("description", "这里没有什么特别的。")
-            short_line = (room.get("short_description") or "").strip()
-            ambiance = (room.get("ambiance") or "").strip()
-            exits = room.get("exits", [])
-            items = room.get("items", [])
+            from app.commands.game.look_appearance import return_appearance_room
 
-            # 主叙述以 room_description 为准（已在 dict 中解析）；短描/氛围为补充行
-            description = f"""
-{room_name}
-{'=' * len(room_name)}
-"""
-            if short_line:
-                description += f"\n{short_line}\n"
-            description += f"\n{room_desc}\n"
-            if ambiance:
-                description += f"\n氛围：{ambiance}\n"
-            
-            # 添加出口信息
-            if exits:
-                description += f"\n出口: {', '.join(exits)}"
-            
-            # 添加物品信息
-            if items:
-                description += f"\n物品: {', '.join(items)}"
-            
-            # 添加房间状态信息
-            room_status = self._get_room_status(room)
-            if room_status:
-                description += f"\n\n{room_status}"
-            
-            # 添加其他玩家信息
-            other_players = self._get_other_players(context, room)
-            if other_players:
-                description += f"\n\n其他玩家: {', '.join(other_players)}"
-            
-            return description.strip()
-            
+            r = dict(room)
+            r["room_status"] = self._get_room_status(r)
+            r["other_players"] = self._get_other_players(context, r)
+            return return_appearance_room(r, context)
         except Exception as e:
             self.logger.error(f"构建房间描述失败: {e}")
             return f"房间描述生成失败: {str(e)}"
@@ -414,20 +401,12 @@ class LookCommand(GameCommand):
 
                 room_ref = self._get_user_current_room_ref(context)
                 room_node_id = None
-                if room_ref and room_ref.get("scope") == "world":
-                    world_id = str(room_ref.get("world_id") or "")
-                    room_pkg_id = str(room_ref.get("room_id") or "")
-                    world_room = (
-                        session.query(Node)
-                        .filter(
-                            Node.type_code == "room",
-                            Node.attributes["world_id"].astext == world_id,
-                            Node.attributes["package_node_id"].astext == room_pkg_id,
-                            Node.is_active == True,  # noqa: E712
-                        )
-                        .first()
-                    )
-                    room_node_id = world_room.id if world_room else None
+                if room_ref and room_ref.get("scope") == "system":
+                    rid = str(room_ref.get("room_id") or "")
+                    if rid.isdigit():
+                        room_node_id = int(rid)
+                    else:
+                        room_node_id = user_node.location_id
                 else:
                     room_node_id = user_node.location_id
 
@@ -503,11 +482,10 @@ class LookCommand(GameCommand):
             return None
     
     def _build_object_description(self, context: CommandContext, obj: Dict[str, Any], target_args: Optional[List[str]] = None) -> str:
-        """构建物品/对象描述（统一外观链路：若对象实现 get_appearance，则由对象生成输出）"""
+        """构建物品/对象描述（get_appearance 优先，否则 Evennia 式 return_appearance_object）"""
         try:
             target_args = target_args or []
 
-            # Graph-backed node object: dispatch to model get_appearance if available
             type_code = obj.get("type_code") or obj.get("type")
             if type_code:
                 try:
@@ -515,12 +493,16 @@ class LookCommand(GameCommand):
 
                     model_cls = model_factory.get_model(type_code)
                     if model_cls and hasattr(model_cls, "get_appearance"):
-                        # best-effort instantiation: avoid DB writes
                         try:
-                            inst = model_cls(name=obj.get("name", type_code), disable_auto_sync=True)
+                            inst = model_cls(
+                                name=obj.get("name", type_code),
+                                description=str(obj.get("description") or ""),
+                                attributes=dict(obj.get("attributes") or {}),
+                                disable_auto_sync=True,
+                            )
                         except TypeError:
                             try:
-                                inst = model_cls(disable_auto_sync=True)
+                                inst = model_cls(name=obj.get("name", type_code), disable_auto_sync=True)
                             except TypeError:
                                 inst = None
                         if inst is not None:
@@ -531,59 +513,130 @@ class LookCommand(GameCommand):
                 except Exception:
                     pass
 
-            obj_name = obj.get('name', obj.get('id', '未知物品'))
-            attrs = dict(obj.get("attributes", {}) or {})
-            obj_desc = (
-                obj.get('description')
-                or attrs.get("description")
-                or attrs.get("entry_description")
-                or attrs.get("display_name")
-                or '这看起来没什么特别的。'
-            )
-            obj_type = obj.get('type', '未知')
-            obj_location = obj.get('location', '未知位置')
-            
-            description = f"""
-{obj_name}
-{'=' * len(obj_name)}
+            from app.commands.game.look_appearance import return_appearance_object
 
-{obj_desc}
-
-类型: {obj_type}
-位置: {obj_location}
-"""
-            if str(obj.get("type_code") or "") == "world":
-                world_id = str(attrs.get("world_id") or obj_name).lower()
-                description += f"\n提示: 输入 'enter {world_id}' 进入该世界。"
-            
-            # 添加物品状态信息
-            obj_status = self._get_object_status(obj)
-            if obj_status:
-                description += f"\n状态: {obj_status}"
-            
-            # 添加物品属性信息
-            obj_attrs = self._get_object_attributes(obj)
-            if obj_attrs:
-                description += f"\n属性: {obj_attrs}"
-            
-            return description.strip()
-            
+            text = return_appearance_object(context, obj, target_args=target_args)
+            extras = []
+            st = self._get_object_status(obj)
+            if st:
+                extras.append(f"状态: {st}")
+            oa = self._get_object_attributes(obj)
+            if oa:
+                extras.append(f"属性: {oa}")
+            if extras:
+                text = f"{text}\n\n" + "\n".join(extras)
+            return text
         except Exception as e:
             self.logger.error(f"构建物品描述失败: {e}")
             return f"物品描述生成失败: {str(e)}"
+
+    def _graph_object_dict_by_node_id(self, context: CommandContext, node_id: int) -> Optional[Dict[str, Any]]:
+        try:
+            from app.core.database import db_session_context
+            from app.models.graph import Node
+
+            with db_session_context() as session:
+                user = (
+                    session.query(Node)
+                    .filter(
+                        Node.id == context.user_id,
+                        Node.type_code == "account",
+                        Node.is_active == True,  # noqa: E712
+                    )
+                    .first()
+                )
+                if not user or not user.location_id:
+                    return None
+                node = (
+                    session.query(Node)
+                    .filter(Node.id == node_id, Node.is_active == True)  # noqa: E712
+                    .first()
+                )
+                if not node or node.location_id != user.location_id:
+                    return None
+                return {
+                    "id": str(node.id),
+                    "name": node.name,
+                    "node_id": node.id,
+                    "type_code": node.type_code,
+                    "type": node.type_code,
+                    "description": node.description,
+                    "attributes": dict(node.attributes or {}),
+                }
+        except Exception:
+            return None
+
+    def _object_from_disambig_entry(
+        self, context: CommandContext, entry: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        if not isinstance(entry, dict):
+            return None
+        if entry.get("node_id") is not None:
+            return self._graph_object_dict_by_node_id(context, int(entry["node_id"]))
+        sid = entry.get("scenic_item_id")
+        if sid:
+            return self._get_item_info(context, str(sid))
+        return None
+
+    def _resolve_look_disambiguation_index(
+        self, context: CommandContext, target: str, target_args: List[str]
+    ) -> CommandResult:
+        if not context.session or not hasattr(context.session, "command_ephemeral"):
+            return CommandResult.error_result(
+                "当前连接不支持「look <编号>」消歧；请使用完整对象名称查看。"
+            )
+        ep = getattr(context.session, "command_ephemeral", None)
+        if not isinstance(ep, dict):
+            return CommandResult.error_result(
+                "当前连接不支持「look <编号>」消歧；请使用完整对象名称查看。"
+            )
+        entries = ep.get(LOOK_DISAMBIGUATION_KEY)
+        if not isinstance(entries, list) or not entries:
+            return CommandResult.error_result(
+                "当前没有待选列表。请先输入关键词出现「多个匹配」后再使用「look <编号>」，或直接「look <完整名称>」。"
+            )
+        idx = int(target) - 1
+        if idx < 0 or idx >= len(entries):
+            return CommandResult.error_result(
+                f"编号 {target} 无效（上次列表共 {len(entries)} 项）。请重新搜索或改用完整名称。"
+            )
+        obj = self._object_from_disambig_entry(context, entries[idx])
+        if not obj:
+            return CommandResult.error_result(f"无法加载编号 {target} 对应的对象（可能已移动或无效）。")
+        ep.pop(LOOK_DISAMBIGUATION_KEY, None)
+        return CommandResult.success_result(
+            self._build_object_description(context, obj, target_args=target_args)
+        )
     
     def _show_multiple_matches(self, context: CommandContext, target: str, objects: List[Dict[str, Any]]) -> CommandResult:
         """显示多个匹配结果"""
         try:
             message = f"找到多个匹配 '{target}' 的物品:\n\n"
-            
+            entries: List[Dict[str, Any]] = []
+
             for i, obj in enumerate(objects, 1):
-                obj_name = obj.get('name', obj.get('id', '未知'))
-                obj_type = obj.get('type', '未知')
-                message += f"{i}. {obj_name} ({obj_type})\n"
-            
-            message += f"\n请使用更具体的名称，或使用 'look <编号>' 查看特定物品。"
-            
+                obj_name = obj.get("name", obj.get("id", "未知"))
+                obj_type = obj.get("type_code") or obj.get("type", "未知")
+                nid = obj.get("node_id")
+                suffix = f"  [#{nid}]" if nid is not None else ""
+                message += f"{i}. {obj_name} ({obj_type}){suffix}\n"
+                if obj.get("node_id") is not None:
+                    entries.append({"node_id": int(obj["node_id"])})
+                elif obj.get("id") is not None:
+                    entries.append({"scenic_item_id": str(obj["id"])})
+                else:
+                    entries.append({})
+
+            if context.session and hasattr(context.session, "command_ephemeral"):
+                ep = getattr(context.session, "command_ephemeral", None)
+                if isinstance(ep, dict) and entries:
+                    ep[LOOK_DISAMBIGUATION_KEY] = entries
+
+            if context.session and hasattr(context.session, "command_ephemeral"):
+                message += "\n\n请使用更具体的名称，或使用 'look <编号>' 查看列表中对应项。"
+            else:
+                message += "\n\n请使用更具体的完整名称查看。"
+
             return CommandResult.success_result(message)
             
         except Exception as e:

@@ -4,13 +4,18 @@ Directional movement command for world-internal navigation.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
+
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.commands.base import CommandContext, CommandResult, GameCommand
 from app.core.database import db_session_context
 from app.game_engine.direction_util import normalize_direction
 from app.game_engine.subgraph_boundary import bridge_enabled, is_authorized_cross_world_bridge
+from app.game_engine.world_room_resolve import room_is_world_entry_gate
 from app.models.graph import Node, Relationship
+from app.models.root_manager import root_manager
 
 
 class MovementCommand(GameCommand):
@@ -67,23 +72,65 @@ class MovementCommand(GameCommand):
             if not user:
                 return False, "用户不存在", None
             attrs: Dict[str, Any] = dict(user.attributes or {})
-            world_id = str(attrs.get("active_world") or "").strip().lower()
-            room_pkg_id = str(attrs.get("world_location") or "").strip().lower()
-            if not world_id or not room_pkg_id:
-                return False, "你当前不在世界内", None
 
-            room = (
-                session.query(Node)
-                .filter(
-                    Node.type_code == "room",
-                    Node.attributes["world_id"].astext == world_id,
-                    Node.attributes["package_node_id"].astext == room_pkg_id,
-                    Node.is_active == True,  # noqa: E712
+            room: Optional[Node] = None
+            world_id = ""
+            room_pkg_id = ""
+            if user.location_id:
+                loc = (
+                    session.query(Node)
+                    .filter(
+                        Node.id == user.location_id,
+                        Node.type_code == "room",
+                        Node.is_active == True,  # noqa: E712
+                    )
+                    .first()
                 )
-                .first()
-            )
+                if loc:
+                    la = dict(loc.attributes or {})
+                    wid = str(la.get("world_id") or "").strip().lower()
+                    pid = str(la.get("package_node_id") or "").strip().lower()
+                    if wid and pid:
+                        room = loc
+                        world_id = wid
+                        room_pkg_id = pid
+
+            if room is None:
+                world_id = str(attrs.get("active_world") or "").strip().lower()
+                room_pkg_id = str(attrs.get("world_location") or "").strip().lower()
+                if not world_id or not room_pkg_id:
+                    return False, "你当前不在世界内", None
+                room = (
+                    session.query(Node)
+                    .filter(
+                        Node.type_code == "room",
+                        Node.attributes["world_id"].astext == world_id,
+                        Node.attributes["package_node_id"].astext == room_pkg_id,
+                        Node.is_active == True,  # noqa: E712
+                    )
+                    .first()
+                )
             if not room:
                 return False, "当前位置无效", None
+
+            dir_norm_early = normalize_direction(direction)
+            if dir_norm_early == "out" and world_id and room_is_world_entry_gate(session, room, world_id):
+                # Lazy import: game_handler pulls SSH/console → init_commands → game (circular at module load).
+                from app.ssh.game_handler import teleport_account_to_root
+
+                if not root_manager.ensure_root_node_exists():
+                    return False, "系统入口不可用", None
+                root_node = root_manager.get_root_node(session)
+                if not root_node:
+                    return False, "系统入口不可用", None
+                teleport_account_to_root(session, user, root_node)
+                na = dict(user.attributes or {})
+                na["last_activity"] = datetime.now().isoformat()
+                user.attributes = na
+                flag_modified(user, "attributes")
+                session.add(user)
+                session.commit()
+                return True, "你沿出口离开当前世界，回到奇点屋。", None
 
             candidates = (
                 session.query(Relationship, Node)
@@ -138,6 +185,10 @@ class MovementCommand(GameCommand):
                     attrs["active_world"] = tw
                     break
 
+            if world_id and room_is_world_entry_gate(session, room, world_id):
+                if "out" not in available_dirs:
+                    available_dirs.append("out")
+
             if not target:
                 if available_dirs:
                     return (
@@ -151,6 +202,8 @@ class MovementCommand(GameCommand):
             attrs["world_location"] = target_pkg_id
             attrs["last_world_location"] = target_pkg_id
             user.attributes = attrs
+            user.location_id = target.id
+            flag_modified(user, "attributes")
             session.add(user)
             session.commit()
             target_name = str((target.attributes or {}).get("display_name") or target.name or target_pkg_id)
