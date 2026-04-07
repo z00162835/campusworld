@@ -17,7 +17,7 @@ class ProtocolHandler(ABC):
         self.logger = get_logger(LoggerNames.PROTOCOL)
     
     @abstractmethod
-    def handle_interactive_command(self, user_id: str, session_id: str, 
+    def handle_interactive_command(self, user_id: str, username: str, session_id: str,
                                  permissions: List[str], command_line: str,
                                  session: Optional[Any] = None,
                                  game_state: Optional[Dict[str, Any]] = None) -> str:

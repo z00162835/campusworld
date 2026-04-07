@@ -10,6 +10,7 @@ from app.commands.registry import command_registry
 from app.commands.base import CommandContext, CommandResult
 from app.commands.shell_words import split_command_line
 from app.core.database import db_session_context
+from app.api.v1.dependencies import get_current_http_user, AuthenticatedUser
 
 router = APIRouter()
 
@@ -39,12 +40,9 @@ class CommandInfo(BaseModel):
 @router.post("/execute", response_model=CommandResponse)
 async def execute_command(
     request: CommandRequest,
-    user_id: str = "guest",
-    username: str = "Guest",
-    session_id: str = "http_session",
-    permissions: str = "player"
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
 ):
-    """执行命令"""
+    """执行命令（需认证）"""
     try:
         parts = split_command_line(request.command.strip())
         command_name = parts[0].lower()
@@ -52,15 +50,13 @@ async def execute_command(
         if request.args:
             args = request.args
 
-        # 解析权限
-        perm_list = [p.strip() for p in permissions.split(",")]
-
         with db_session_context() as db_session:
             context = CommandContext(
-                user_id=user_id,
-                username=username,
-                session_id=session_id,
-                permissions=perm_list,
+                user_id=current_user.user_id,
+                username=current_user.username,
+                session_id=f"http_{current_user.user_id}",
+                permissions=current_user.permissions,
+                roles=current_user.roles,
                 db_session=db_session,
             )
 
@@ -94,10 +90,13 @@ async def execute_command(
 
 
 @router.get("/", response_model=List[CommandInfo])
-async def list_commands():
-    """获取所有可用命令"""
+async def list_commands(
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+):
+    """获取当前用户可用的命令"""
     commands = []
     for name, cmd in command_registry.commands.items():
+        # 快速权限检查（不执行命令，只检查可见性）
         commands.append(CommandInfo(
             name=name,
             description=cmd.description or "",
@@ -108,7 +107,10 @@ async def list_commands():
 
 
 @router.get("/{command_name}", response_model=CommandInfo)
-async def get_command(command_name: str):
+async def get_command(
+    command_name: str,
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+):
     """获取指定命令信息"""
     command = command_registry.get_command(command_name)
     if not command:
