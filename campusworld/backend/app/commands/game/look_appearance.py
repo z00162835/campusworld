@@ -50,7 +50,34 @@ def _bucket_for_entry(type_code: str, attrs: Dict[str, Any]) -> str:
     return "things"
 
 
-def _format_exits_block(exits: List[str]) -> str:
+def _format_exits_block(exits: List[str], exit_entries: Optional[List[Dict[str, Any]]] = None) -> str:
+    rows: List[str] = []
+    exit_entries = list(exit_entries or [])
+    if exit_entries:
+        by_dir: Dict[str, List[Dict[str, Any]]] = {}
+        for e in exit_entries:
+            if not isinstance(e, dict):
+                continue
+            d = str(e.get("direction") or "").strip()
+            if not d:
+                continue
+            by_dir.setdefault(d, []).append(e)
+        for d in sorted(by_dir.keys()):
+            group = by_dir[d]
+            if len(group) == 1:
+                target = str(group[0].get("target_display_name") or group[0].get("target_package_node_id") or "?").strip()
+                short = str(group[0].get("target_short_desc") or "").strip()
+                if short:
+                    rows.append(f"- {d} -> {target}（{short}）")
+                else:
+                    rows.append(f"- {d} -> {target}")
+            else:
+                targets = " / ".join(
+                    str(x.get("target_display_name") or x.get("target_package_node_id") or "?").strip() for x in group
+                )
+                rows.append(f"- {d} -> [{len(group)} destinations] {targets}")
+    if rows:
+        return "出口：\n" + "\n".join(rows)
     if not exits:
         return ""
     return "出口：" + ", ".join(str(e) for e in exits if e)
@@ -180,7 +207,7 @@ def return_appearance_room(room: Dict[str, Any], context: Any = None) -> str:
     desc = "\n\n".join(p for p in desc_parts if p)
 
     direction_exits = list(room.get("exits") or [])
-    exits_block = _format_exits_block(direction_exits)
+    exits_block = _format_exits_block(direction_exits, room.get("exit_entries") or [])
 
     buckets: Dict[str, List[Dict[str, Any]]] = {
         "portals": [],

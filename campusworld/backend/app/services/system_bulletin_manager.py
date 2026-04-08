@@ -17,6 +17,7 @@ from app.core.log import get_logger, LoggerNames
 from app.models.graph import Node, NodeType
 from app.models.system.bulletin_board import BulletinBoard
 from app.models.system.system_notice import SystemNotice
+from db.ontology.schema_envelope import system_notice_node_type_schema_definition
 
 logger = get_logger(LoggerNames.GAME)
 
@@ -247,13 +248,7 @@ class SystemBulletinManager:
                 classname="SystemNotice",
                 module_path="app.models.system.system_notice",
                 description="System bulletin notice",
-                schema_definition={
-                    "title": "string",
-                    "content_md": "text",
-                    "status": "string",
-                    "is_active": "boolean",
-                    "published_at": "string",
-                },
+                schema_definition=system_notice_node_type_schema_definition(),
                 is_active=True,
             )
             session.add(nt)

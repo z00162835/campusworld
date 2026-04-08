@@ -32,25 +32,9 @@ class MovementCommand(GameCommand):
             direction = self._resolve_input_direction(args)
             if not direction:
                 return CommandResult.error_result("用法: go <direction>")
-            self.logger.info(
-                "AUDIT world.move.attempt operator=%s direction=%s",
-                context.username,
-                direction,
-            )
             ok, msg, err = self._move(str(context.user_id), direction)
             if ok:
-                self.logger.info(
-                    "AUDIT world.move.success operator=%s direction=%s",
-                    context.username,
-                    direction,
-                )
                 return CommandResult.success_result(msg)
-            self.logger.info(
-                "AUDIT world.move.fail operator=%s direction=%s reason=%s",
-                context.username,
-                direction,
-                msg,
-            )
             return CommandResult.error_result(msg, error=err)
         except Exception as e:
             return CommandResult.error_result(f"移动失败: {e}")
@@ -146,14 +130,29 @@ class MovementCommand(GameCommand):
             )
             available_dirs: List[str] = []
             target = None
+            dir_norm = normalize_direction(direction)
+            matched_same_world: List[Tuple[Relationship, Node]] = []
             for rel, node in candidates:
                 rel_attrs = dict(rel.attributes or {})
                 rel_dir = normalize_direction(str(rel_attrs.get("direction") or ""))
                 if rel_dir:
                     available_dirs.append(rel_dir)
-                if rel_dir == normalize_direction(direction):
-                    target = node
-                    break
+                if rel_dir == dir_norm:
+                    matched_same_world.append((rel, node))
+            if len(matched_same_world) == 1:
+                target = matched_same_world[0][1]
+            elif len(matched_same_world) > 1:
+                option_names: List[str] = []
+                for _, node in matched_same_world:
+                    tname = str((node.attributes or {}).get("display_name") or node.name or "").strip()
+                    if tname:
+                        option_names.append(tname)
+                hint = " / ".join(sorted(set(option_names))) if option_names else "多个目标"
+                return (
+                    False,
+                    f"方向 {dir_norm} 存在多个可达目标（数据冲突），候选: {hint}",
+                    "WORLD_DIRECTION_AMBIGUOUS",
+                )
             if not target:
                 bridge_candidates = (
                     session.query(Relationship, Node)
@@ -166,7 +165,6 @@ class MovementCommand(GameCommand):
                     )
                     .all()
                 )
-                dir_norm = normalize_direction(direction)
                 for rel, node in bridge_candidates:
                     if not is_authorized_cross_world_bridge(rel):
                         continue

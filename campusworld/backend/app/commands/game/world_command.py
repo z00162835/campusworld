@@ -177,22 +177,12 @@ class WorldCommand(AdminCommand):
         rest, flags = self._split_bridge_cli(args[1:])
         if sub in ("add", "remove"):
             if not self._bridge_perm_manage(context):
-                self.logger.info(
-                    "AUDIT world.bridge.%s.fail operator=%s reason=permission",
-                    sub,
-                    context.username,
-                )
                 return CommandResult.error_result(
                     "Permission denied for world bridge management",
                     error=WORLD_BRIDGE_PERMISSION_DENIED,
                 )
         elif sub in ("list", "validate"):
             if not self._bridge_perm_read(context):
-                self.logger.info(
-                    "AUDIT world.bridge.%s.fail operator=%s reason=permission",
-                    sub,
-                    context.username,
-                )
                 return CommandResult.error_result(
                     "Permission denied for world bridge read",
                     error=WORLD_BRIDGE_PERMISSION_DENIED,
@@ -211,14 +201,6 @@ class WorldCommand(AdminCommand):
                     error=WORLD_BRIDGE_INVALID_ARGUMENT,
                 )
             sw, sn, direc, dw, dn = rest[0], rest[1], rest[2], rest[3], rest[4]
-            self.logger.info(
-                "AUDIT world.bridge.add.attempt operator=%s src=%s dst=%s dir=%s dry_run=%s",
-                context.username,
-                sw,
-                dw,
-                direc,
-                flags.get("dry_run"),
-            )
             out = world_bridge_service.add_bridge(
                 operator=str(context.username or ""),
                 src_world=sw,
@@ -231,21 +213,11 @@ class WorldCommand(AdminCommand):
                 dry_run=bool(flags.get("dry_run")),
             )
             if out.get("ok"):
-                self.logger.info(
-                    "AUDIT world.bridge.add.success operator=%s bridge_id=%s",
-                    context.username,
-                    out.get("bridge_id"),
-                )
                 return CommandResult.success_result(
                     str(out.get("message") or "bridge ok"),
                     data=out,
                     command_type=self.command_type,
                 )
-            self.logger.info(
-                "AUDIT world.bridge.add.fail operator=%s error=%s",
-                context.username,
-                out.get("error"),
-            )
             return CommandResult(
                 success=False,
                 message=str(out.get("message") or "bridge add failed"),
@@ -267,12 +239,6 @@ class WorldCommand(AdminCommand):
                     "用法: world bridge remove <bridge_id> | <src_world> <src_room> <direction> [--dry-run]",
                     error=WORLD_BRIDGE_INVALID_ARGUMENT,
                 )
-            self.logger.info(
-                "AUDIT world.bridge.remove.attempt operator=%s bridge_id=%s dry_run=%s",
-                context.username,
-                bridge_id,
-                rflags.get("dry_run"),
-            )
             out = world_bridge_service.remove_bridge(
                 bridge_id=bridge_id,
                 src_world=src_world,
@@ -282,17 +248,11 @@ class WorldCommand(AdminCommand):
                 force=bool(rflags.get("force", True)),
             )
             if out.get("ok"):
-                self.logger.info("AUDIT world.bridge.remove.success operator=%s", context.username)
                 return CommandResult.success_result(
                     str(out.get("message") or "bridge removed"),
                     data=out,
                     command_type=self.command_type,
                 )
-            self.logger.info(
-                "AUDIT world.bridge.remove.fail operator=%s error=%s",
-                context.username,
-                out.get("error"),
-            )
             return CommandResult(
                 success=False,
                 message=str(out.get("message") or "bridge remove failed"),
@@ -307,12 +267,6 @@ class WorldCommand(AdminCommand):
                 world_id=world_filter,
                 include_disabled=bool(flags.get("include_disabled")),
             )
-            self.logger.info(
-                "AUDIT world.bridge.list operator=%s world=%s count=%s",
-                context.username,
-                world_filter,
-                out.get("total"),
-            )
             return CommandResult.success_result(
                 f"world bridge list ok, total={out.get('total', 0)}",
                 data=out,
@@ -326,7 +280,6 @@ class WorldCommand(AdminCommand):
                     error=WORLD_BRIDGE_INVALID_ARGUMENT,
                 )
             wid = str(rest[0]).strip()
-            self.logger.info("AUDIT world.bridge.validate operator=%s world_id=%s", context.username, wid)
             out = world_bridge_service.validate_bridges(wid)
             if not out.get("ok") and out.get("error") == WORLD_BRIDGE_INVALID_ARGUMENT:
                 return CommandResult.error_result(
@@ -485,13 +438,6 @@ class WorldCommand(AdminCommand):
                 error="WORLD_DATA_UNAVAILABLE",
             )
 
-        self.logger.info(
-            "AUDIT world.content.%s operator=%s world_id=%s",
-            sub,
-            context.username,
-            world_id,
-        )
-
         if sub == "validate":
             try:
                 from app.games.hicampus.package.validator import validate_data_package as _vp
@@ -560,7 +506,6 @@ class WorldCommand(AdminCommand):
             loaded = set(engine.loader.get_loaded_games())
         rows = [self._row_for_list(wid, loaded) for wid in available]
         msg = _format_world_list_message(rows)
-        self.logger.info("AUDIT world.list operator=%s count=%s", context.username, len(rows))
         return CommandResult.success_result(
             msg,
             data={"items": rows, "total": len(rows)},
@@ -586,7 +531,6 @@ class WorldCommand(AdminCommand):
             "runtime_state": runtime,
             **where,
         }
-        self.logger.info("AUDIT world.status operator=%s world_id=%s", context.username, world_id)
         return CommandResult.success_result(
             f"world status ok: {world_id}",
             data=payload,
@@ -601,13 +545,6 @@ class WorldCommand(AdminCommand):
         if err:
             return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         out = game_engine_manager.load_game(world_id)
-        self.logger.info(
-            "AUDIT world.install operator=%s world_id=%s result=%s error_code=%s",
-            context.username,
-            world_id,
-            out.get("ok"),
-            out.get("error_code"),
-        )
         if out.get("ok"):
             world_entry_service.sync_world_entry_visibility(world_id, enabled=True)
         return self._from_world_result("world install", world_id, out)
@@ -620,13 +557,6 @@ class WorldCommand(AdminCommand):
         if err:
             return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         out = game_engine_manager.unload_game(world_id)
-        self.logger.info(
-            "AUDIT world.uninstall operator=%s world_id=%s result=%s error_code=%s",
-            context.username,
-            world_id,
-            out.get("ok"),
-            out.get("error_code"),
-        )
         if out.get("ok"):
             world_entry_service.sync_world_entry_visibility(world_id, enabled=False)
         return self._from_world_result("world uninstall", world_id, out)
@@ -639,13 +569,6 @@ class WorldCommand(AdminCommand):
         if err:
             return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         out = game_engine_manager.reload_game(world_id)
-        self.logger.info(
-            "AUDIT world.reload operator=%s world_id=%s result=%s error_code=%s",
-            context.username,
-            world_id,
-            out.get("ok"),
-            out.get("error_code"),
-        )
         if out.get("ok"):
             world_entry_service.sync_world_entry_visibility(world_id, enabled=True)
         return self._from_world_result("world reload", world_id, out)
@@ -659,13 +582,6 @@ class WorldCommand(AdminCommand):
             return CommandResult.error_result(err, error="WORLD_NOT_FOUND")
         dry_run = "--dry-run" in args[1:]
         report = world_topology_service.validate_topology(world_id)
-        self.logger.info(
-            "AUDIT world.validate operator=%s world_id=%s dry_run=%s issues=%s",
-            context.username,
-            world_id,
-            dry_run,
-            report.get("issue_count", 0),
-        )
         msg = (
             f"world validate passed: {world_id}"
             if report.get("ok")
@@ -692,15 +608,6 @@ class WorldCommand(AdminCommand):
         dry_run = "--dry-run" in args[1:]
         force = "--force" in args[1:]
         report = world_topology_service.repair_topology(world_id, dry_run=dry_run, force=force)
-        self.logger.info(
-            "AUDIT world.repair operator=%s world_id=%s dry_run=%s force=%s planned=%s applied=%s",
-            context.username,
-            world_id,
-            dry_run,
-            force,
-            len(report.get("planned_actions", [])),
-            len(report.get("applied_actions", [])),
-        )
         msg = (
             f"world repair dry-run ready: planned={len(report.get('planned_actions', []))}"
             if dry_run

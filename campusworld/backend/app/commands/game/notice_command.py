@@ -50,7 +50,6 @@ class NoticeCommand(GameCommand):
         dto = bulletin_board_service.publish_notice(title, content, author_id=self._safe_int(context.user_id))
         if not dto:
             return CommandResult.error_result("公告发布失败")
-        self.logger.info("AUDIT notice.publish actor=%s notice_id=%s", context.username, dto.get("id"))
         return CommandResult.success_result(f"公告已发布: #{dto.get('id')} {dto.get('title')}")
 
     def _edit(self, context: CommandContext, args: List[str]) -> CommandResult:
@@ -74,7 +73,6 @@ class NoticeCommand(GameCommand):
         )
         if not dto:
             return CommandResult.error_result(f"公告编辑失败: {notice_id}")
-        self.logger.info("AUDIT notice.edit actor=%s notice_id=%s", context.username, notice_id)
         return CommandResult.success_result(f"公告已更新: #{notice_id}")
 
     def _archive(self, context: CommandContext, args: List[str]) -> CommandResult:
@@ -87,7 +85,6 @@ class NoticeCommand(GameCommand):
         dto = bulletin_board_service.archive_notice(notice_id, editor_id=self._safe_int(context.user_id))
         if not dto:
             return CommandResult.error_result(f"公告归档失败: {notice_id}")
-        self.logger.info("AUDIT notice.archive actor=%s notice_id=%s", context.username, notice_id)
         return CommandResult.success_result(f"公告已归档: #{notice_id}")
 
     def _list(self, context: CommandContext, args: List[str]) -> CommandResult:
@@ -113,7 +110,6 @@ class NoticeCommand(GameCommand):
         else:
             for it in items:
                 lines.append(f"#{it.get('id')} [{it.get('status', 'unknown')}] {it.get('title', 'Untitled')}")
-        self.logger.info("AUDIT notice.list actor=%s status=%s page=%s", context.username, status or "all", page)
         return CommandResult.success_result("\n".join(lines).strip())
 
     @staticmethod

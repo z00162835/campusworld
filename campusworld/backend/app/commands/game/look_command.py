@@ -175,15 +175,24 @@ class LookCommand(GameCommand):
             from app.models.graph import Node
             
             with db_session_context() as session:
-                # 根据用户ID查找用户节点
+                # user_id 在 WS/HTTP 上为字符串，须与整型主键一致
+                raw_uid = getattr(context, "user_id", None)
+                try:
+                    uid_int = int(str(raw_uid).strip()) if raw_uid is not None and str(raw_uid).strip().isdigit() else None
+                except (TypeError, ValueError):
+                    uid_int = None
+                if uid_int is None:
+                    self.logger.warning(f"无效或缺失 user_id，无法解析位置: {raw_uid!r}")
+                    return None
+
                 user_node = session.query(Node).filter(
-                    Node.id == context.user_id,
-                    Node.type_code == 'account',
-                    Node.is_active == True
+                    Node.id == uid_int,
+                    Node.type_code == "account",
+                    Node.is_active == True,
                 ).first()
-                
+
                 if not user_node:
-                    self.logger.warning(f"未找到用户节点: {context.user_id}")
+                    self.logger.warning(f"未找到用户节点: {uid_int}")
                     return None
 
                 # Evennia 主路径：location_id 指向 room 节点（含世界内房间与奇点屋）
@@ -202,12 +211,29 @@ class LookCommand(GameCommand):
             self.logger.error(f"从图数据获取用户位置失败: {e}")
             return None
 
-    def _exit_labels_from_connects_to(self, session, room_node_id: int) -> List[str]:
-        """Outgoing graph exits: direction (normalized) or target package_node_id."""
+    def _target_room_display(self, node: Any) -> Dict[str, str]:
+        attrs = dict(getattr(node, "attributes", {}) or {})
+        display_name = str(
+            attrs.get("room_name")
+            or attrs.get("display_name")
+            or getattr(node, "name", "")
+            or attrs.get("package_node_id")
+            or "未知目标"
+        ).strip()
+        short_desc = str(attrs.get("room_short_description") or "").strip()
+        pkg = str(attrs.get("package_node_id") or "").strip().lower()
+        return {
+            "target_display_name": display_name,
+            "target_short_desc": short_desc,
+            "target_package_node_id": pkg,
+        }
+
+    def _exit_entries_from_connects_to(self, session, room_node_id: int) -> List[Dict[str, Any]]:
+        """Outgoing graph exits as structured entries for readable room output."""
         from app.game_engine.direction_util import normalize_direction
         from app.models.graph import Node, Relationship
 
-        labels: List[str] = []
+        entries: List[Dict[str, Any]] = []
         outgoing = (
             session.query(Relationship, Node)
             .join(Node, Relationship.target_id == Node.id)
@@ -223,12 +249,24 @@ class LookCommand(GameCommand):
             rattrs = dict(rel.attributes or {})
             raw = str(rattrs.get("direction") or "").strip().lower()
             if raw:
-                labels.append(normalize_direction(raw))
+                direction = normalize_direction(raw)
             else:
-                pkg = str((target.attributes or {}).get("package_node_id") or "").strip()
-                if pkg:
-                    labels.append(pkg.lower())
-        return labels
+                pkg = str((target.attributes or {}).get("package_node_id") or "").strip().lower()
+                direction = pkg if pkg else ""
+            if not direction:
+                continue
+            tgt = self._target_room_display(target)
+            entries.append(
+                {
+                    "direction": direction,
+                    "target_display_name": tgt["target_display_name"],
+                    "target_short_desc": tgt["target_short_desc"],
+                    "target_package_node_id": tgt["target_package_node_id"],
+                    "is_cross_world": False,
+                }
+            )
+        entries.sort(key=lambda x: (str(x.get("direction") or ""), str(x.get("target_display_name") or "")))
+        return entries
 
     def _get_room_from_graph_data(self, context: CommandContext, room_id: str) -> Optional[Dict[str, Any]]:
         """从图数据获取房间信息"""
@@ -282,7 +320,8 @@ class LookCommand(GameCommand):
                     rdesc = (ra.get("room_description") or "").strip() or ra.get(
                         "display_name"
                     ) or "这里没有什么特别的。"
-                    graph_exit_labels = self._exit_labels_from_connects_to(session, room_node.id)
+                    exit_entries = self._exit_entries_from_connects_to(session, room_node.id)
+                    graph_exit_labels = [str(e.get("direction") or "") for e in exit_entries if e.get("direction")]
                     exit_labels = _merge_room_exit_labels_from_attrs_and_graph(ra, graph_exit_labels)
                     wid_gate = str(ra.get("world_id") or "").strip().lower()
                     if wid_gate and room_is_world_entry_gate(session, room_node, wid_gate):
@@ -296,6 +335,7 @@ class LookCommand(GameCommand):
                         "short_description": (ra.get("room_short_description") or "").strip(),
                         "ambiance": (ra.get("room_ambiance") or "").strip(),
                         "exits": exit_labels,
+                        "exit_entries": exit_entries,
                         "items": room_objects,
                         "content_entries": content_entries,
                         "appearance_template": str(ra.get("appearance_template") or "").strip(),

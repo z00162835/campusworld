@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.core.log import get_logger, LoggerNames
 from app.models.graph import Node, NodeType
 from app.models.root_manager import RootNodeManager
+from db.ontology.schema_envelope import system_command_ability_node_type_schema_definition
 
 
 logger = get_logger(LoggerNames.COMMAND)
@@ -34,16 +35,7 @@ def _get_or_create_command_ability_type(session: Session) -> Optional[int]:
             classname="SystemCommandAbility",
             module_path="app.models.system.command_ability",
             description="Semantic capability node representing a command",
-            schema_definition={
-                "command_name": "string",
-                "aliases": "json",
-                "command_type": "string",
-                "help_category": "string",
-                "stability": "string",
-                "input_schema": "json",
-                "output_schema": "json",
-                "updated_at": "string",
-            },
+            schema_definition=system_command_ability_node_type_schema_definition(),
             is_active=True,
         )
         session.add(nt)
