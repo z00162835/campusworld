@@ -7,7 +7,7 @@ import asyncio
 from difflib import SequenceMatcher
 from typing import Optional, Callable, List, AsyncIterator
 from textual.app import App, ComposeResult
-from textual.command import CommandPalette, Provider, Hit, Hits
+from textual.command import CommandPalette, Provider, Hit, Hits, DiscoveryHit
 from textual.containers import Container, Horizontal
 from textual.screen import Screen
 from textual.widgets import Input, Static, Log
@@ -62,6 +62,27 @@ class CampusCommandProvider(Provider):
     def __init__(self, screen: Screen, match_style: Style | None = None) -> None:
         super().__init__(screen, match_style)
 
+    async def discover(self) -> Hits:
+        """Textual 8.x：打开命令面板时查询串为空，走 discover() 而非 search('')。"""
+        app = self.screen.app
+        all_commands = list(app._completions)
+        agent_commands = [f"/{a}" for a in app._agents]
+        for cmd in all_commands:
+            yield DiscoveryHit(
+                display=cmd,
+                command=lambda c=cmd: app.call_later(app.execute_from_provider, c),
+                text=cmd,
+                help=f"执行命令: {cmd}",
+            )
+        for agent_cmd in agent_commands:
+            agent_name = agent_cmd[1:]
+            yield DiscoveryHit(
+                display=agent_cmd,
+                command=lambda a=agent_name: app.call_later(app.enter_agent, a),
+                text=agent_cmd,
+                help=f"进入 {agent_name} 环境",
+            )
+
     async def search(self, query: str) -> AsyncIterator[Hit]:
         """搜索命令
 
@@ -98,12 +119,15 @@ class CampusCommandProvider(Provider):
                     help=f"进入 {agent_name} 环境",
                 )
         else:
-            # 模糊匹配
-            matcher = self.matcher(query)
+            # 模糊匹配 + 前缀/子串兜底（fuzzy 分数为 0 时 `if matcher.match` 会误判为无匹配）
+            q = (query or "").strip().lower()
+            matcher = self.matcher((query or "").strip())
             for cmd in all_commands:
-                if matcher.match(cmd):
+                cl = cmd.lower()
+                fuzzy = matcher.match(cmd)
+                if fuzzy > 0 or (q and (cl.startswith(q) or q in cl)):
                     yield Hit(
-                        score=matcher.match(cmd) or 0.0,
+                        score=fuzzy if fuzzy > 0 else 0.75,
                         match_display=cmd,
                         command=lambda c=cmd: app.call_later(app.execute_from_provider, c),
                         text=cmd,
@@ -111,9 +135,11 @@ class CampusCommandProvider(Provider):
                     )
             for agent_cmd in agent_commands:
                 agent_name = agent_cmd[1:]
-                if matcher.match(agent_cmd):
+                al = agent_cmd.lower()
+                fuzzy_a = matcher.match(agent_cmd)
+                if fuzzy_a > 0 or (q and (al.startswith(q) or q in al)):
                     yield Hit(
-                        score=matcher.match(agent_cmd) or 0.0,
+                        score=fuzzy_a if fuzzy_a > 0 else 0.75,
                         match_display=agent_cmd,
                         command=lambda a=agent_name: app.call_later(app.enter_agent, a),
                         text=agent_cmd,
@@ -169,7 +195,7 @@ class CampusTerminal(App):
         if event.value == "/":
             # 清空输入并打开命令面板
             event.input.value = ""
-            self.app.push_screen(CommandPalette())
+            self.push_screen(CommandPalette())
 
     async def on_mount(self) -> None:
         """应用挂载"""
@@ -184,6 +210,12 @@ class CampusTerminal(App):
         output.write_line("  Type @<id> to interact with agent instance")
         output.write_line("========================================")
         output.write_line("")
+        if not self._completions:
+            output.write_line(
+                "Warning: server returned no command names for completion. "
+                "Check backend logs (command init) and reconnect."
+            )
+            output.write_line("")
         # 聚焦输入框
         self.query_one("#command-input", Input).focus()
 
@@ -287,7 +319,7 @@ class CampusTerminal(App):
 
     def action_open_command_palette(self) -> None:
         """打开命令面板"""
-        self.app.push_screen(CommandPalette())
+        self.push_screen(CommandPalette())
 
     def action_cancel_input(self) -> None:
         """取消输入 / 退出 Agent 环境"""
@@ -383,7 +415,7 @@ class Terminal:
         """处理命令"""
         if self._connection:
             await self._connection.send_command(command)
-            response = await self._connection.receive()
+            response = await self._connection.receive_command_result()
             if response:
                 if WSMessage.is_result(response):
                     msg = response.get("message", "")

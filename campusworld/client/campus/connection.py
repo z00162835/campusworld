@@ -44,17 +44,12 @@ class WSConnection:
     def is_connected(self) -> bool:
         return self.ws is not None and self._running
 
-    async def connect(self, user_id: str, username: str,
-                     permissions: Optional[List[str]] = None) -> bool:
-        """连接到服务器"""
+    async def connect(self, token: str) -> bool:
+        """连接到服务器（使用 JWT token）"""
         try:
             self.ws = await websockets.connect(self.uri, ping_interval=30)
-            # 发送连接消息
-            await self.ws.send(WSMessage.connect(
-                user_id=user_id,
-                username=username,
-                permissions=permissions
-            ))
+            # 发送连接消息（携带 JWT token）
+            await self.ws.send(WSMessage.connect(token=token))
             # 等待连接确认
             response = await asyncio.wait_for(self.ws.recv(), timeout=10.0)
             msg = WSMessage.parse(response)
@@ -93,12 +88,11 @@ class WSConnection:
                 pass
             self.ws = None
 
-    async def reconnect(self, user_id: str, username: str,
-                       permissions: Optional[List[str]] = None) -> bool:
-        """重新连接"""
+    async def reconnect(self, token: str) -> bool:
+        """重新连接（使用 JWT token）"""
         await self.disconnect()
         await asyncio.sleep(1)  # 等待一下
-        return await self.connect(user_id, username, permissions)
+        return await self.connect(token)
 
     async def send_command(self, command: str, args: Optional[List[str]] = None) -> bool:
         """发送命令"""
@@ -120,10 +114,11 @@ class WSConnection:
             return []
         try:
             await self.ws.send(WSMessage.complete(partial))
-            # 等待响应通过队列返回
-            response = await asyncio.wait_for(self._message_queue.get(), timeout=5.0)
-            if response and WSMessage.is_completions(response):
-                return response.get("options", [])
+            # 跳过队列中无关消息，直到 completions（与 execute 结果不会严格有序时更稳）
+            for _ in range(32):
+                response = await asyncio.wait_for(self._message_queue.get(), timeout=5.0)
+                if response and WSMessage.is_completions(response):
+                    return response.get("options", [])
             return []
         except asyncio.TimeoutError:
             return []
@@ -140,6 +135,20 @@ class WSConnection:
                 return await self._message_queue.get()
         except asyncio.TimeoutError:
             return None
+
+    async def receive_command_result(self, timeout: float = 120.0) -> Optional[Dict[str, Any]]:
+        """读取下一条 execute 的 result / error，跳过 completions 等其它入队消息。"""
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + timeout
+        while loop.time() < deadline:
+            wait = min(30.0, max(0.05, deadline - loop.time()))
+            msg = await self.receive(timeout=wait)
+            if msg is None:
+                continue
+            t = msg.get("type", "")
+            if t in ("result", "error"):
+                return msg
+        return None
 
     async def _receive_loop(self):
         """接收消息循环"""

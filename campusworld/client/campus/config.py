@@ -19,7 +19,8 @@ class Config:
             "use_ssl": False
         },
         "auth": {
-            "token_file": "~/.config/campus/token"
+            "token_file": "~/.config/campus/token",
+            "default_user": "guest",
         },
         "terminal": {
             "theme": "default",

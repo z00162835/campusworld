@@ -11,15 +11,11 @@ class WSMessage:
     """WebSocket 消息"""
 
     @staticmethod
-    def connect(user_id: str, username: str, session_id: str = "",
-                permissions: Optional[List[str]] = None) -> str:
-        """创建连接消息"""
+    def connect(token: str) -> str:
+        """创建连接消息（JWT token 认证）"""
         return json.dumps({
             "type": "connect",
-            "user_id": user_id,
-            "username": username,
-            "session_id": session_id,
-            "permissions": permissions or ["player"]
+            "token": token
         })
 
     @staticmethod
