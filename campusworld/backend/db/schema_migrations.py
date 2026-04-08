@@ -8,7 +8,83 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional, Tuple
+
 from sqlalchemy import text
+
+from db.ontology.load import load_graph_seed_node_type_overrides, node_type_jsonb_params
+
+
+# Graph-seed node_types rows: order satisfies FK parent_type_code; parents match
+# docs/ontology/GRAPH_SEED_NODE_TYPES_MATRIX.md (target table).
+GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, str], ...] = (
+    ("default_object", None, "默认对象", "app.models.base.DefaultObject", "DefaultObject", "app.models.base"),
+    ("world_thing", "default_object", "世界物（WorldThing）", "app.models.things.base.WorldThing", "WorldThing", "app.models.things.base"),
+    ("world", "default_object", "世界", "app.models.world.World", "World", "app.models.world"),
+    ("world_object", "default_object", "世界对象", "app.models.world.WorldObject", "WorldObject", "app.models.world"),
+    ("building", "default_object", "建筑", "app.models.building.Building", "Building", "app.models.building"),
+    ("building_floor", "default_object", "楼层", "app.models.building.BuildingFloor", "BuildingFloor", "app.models.building"),
+    ("room", "default_object", "房间", "app.models.room.Room", "Room", "app.models.room"),
+    ("world_entrance", "default_object", "世界入口（Evennia Exit）", "app.models.world_entrance.WorldEntrance", "WorldEntrance", "app.models.world_entrance"),
+    ("furniture", "world_thing", "家具", "app.models.things.furniture.Furniture", "Furniture", "app.models.things.furniture"),
+    ("npc_agent", "world_thing", "NPC代理", "app.models.things.agents.NpcAgent", "NpcAgent", "app.models.things.agents"),
+    (
+        "access_terminal",
+        "world_thing",
+        "访问终端",
+        "app.models.things.terminals.AccessTerminal",
+        "AccessTerminal",
+        "app.models.things.terminals",
+    ),
+    (
+        "logical_zone",
+        "world_thing",
+        "逻辑分区",
+        "app.models.things.zones.LogicalZone",
+        "LogicalZone",
+        "app.models.things.zones",
+    ),
+    (
+        "network_access_point",
+        "world_thing",
+        "无线接入点",
+        "app.models.things.devices.NetworkAccessPoint",
+        "NetworkAccessPoint",
+        "app.models.things.devices",
+    ),
+    (
+        "av_display",
+        "world_thing",
+        "音视频大屏",
+        "app.models.things.devices.AvDisplay",
+        "AvDisplay",
+        "app.models.things.devices",
+    ),
+    (
+        "lighting_fixture",
+        "world_thing",
+        "照明灯具",
+        "app.models.things.devices.LightingFixture",
+        "LightingFixture",
+        "app.models.things.devices",
+    ),
+    (
+        "conference_seating",
+        "furniture",
+        "会议座椅",
+        "app.models.things.seating.ConferenceSeating",
+        "ConferenceSeating",
+        "app.models.things.seating",
+    ),
+    (
+        "lounge_furniture",
+        "furniture",
+        "休闲家具",
+        "app.models.things.seating.LoungeFurniture",
+        "LoungeFurniture",
+        "app.models.things.seating",
+    ),
+)
 
 
 class SchemaMigrationError(RuntimeError):
@@ -251,90 +327,32 @@ def ensure_graph_seed_ontology(engine) -> None:
 
     This keeps integration tests and runtime graph seeding stable on old databases
     where these rows may be missing.
+
+    Loads optional JSON overlays from db/ontology/graph_seed_node_types.yaml
+    (schema_definition, schema_default, inferred_rules, tags, ui_config) and
+    applies them on INSERT and ON CONFLICT DO UPDATE.
     """
     conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
     try:
-        node_rows = [
-            ("world", None, "世界", "app.models.world.World", "World", "app.models.world"),
-            ("world_object", None, "世界对象", "app.models.world.WorldObject", "WorldObject", "app.models.world"),
-            ("building", "world_object", "建筑", "app.models.building.Building", "Building", "app.models.building"),
-            ("building_floor", "world_object", "楼层", "app.models.building.BuildingFloor", "BuildingFloor", "app.models.building"),
-            ("room", "world_object", "房间", "app.models.room.Room", "Room", "app.models.room"),
-            ("npc_agent", "world_object", "NPC代理", "app.models.things.agents.NpcAgent", "NpcAgent", "app.models.things.agents"),
-            (
-                "access_terminal",
-                "world_object",
-                "访问终端",
-                "app.models.things.terminals.AccessTerminal",
-                "AccessTerminal",
-                "app.models.things.terminals",
-            ),
-            (
-                "logical_zone",
-                "world_object",
-                "逻辑分区",
-                "app.models.things.zones.LogicalZone",
-                "LogicalZone",
-                "app.models.things.zones",
-            ),
-            (
-                "furniture",
-                "world_object",
-                "家具",
-                "app.models.things.furniture.Furniture",
-                "Furniture",
-                "app.models.things.furniture",
-            ),
-            (
-                "network_access_point",
-                "world_object",
-                "无线接入点",
-                "app.models.things.devices.NetworkAccessPoint",
-                "NetworkAccessPoint",
-                "app.models.things.devices",
-            ),
-            (
-                "av_display",
-                "world_object",
-                "音视频大屏",
-                "app.models.things.devices.AvDisplay",
-                "AvDisplay",
-                "app.models.things.devices",
-            ),
-            (
-                "lighting_fixture",
-                "world_object",
-                "照明灯具",
-                "app.models.things.devices.LightingFixture",
-                "LightingFixture",
-                "app.models.things.devices",
-            ),
-            (
-                "conference_seating",
-                "world_object",
-                "会议座椅",
-                "app.models.things.seating.ConferenceSeating",
-                "ConferenceSeating",
-                "app.models.things.seating",
-            ),
-            (
-                "lounge_furniture",
-                "world_object",
-                "休闲家具",
-                "app.models.things.seating.LoungeFurniture",
-                "LoungeFurniture",
-                "app.models.things.seating",
-            ),
-            (
-                "world_entrance",
-                "world_object",
-                "世界入口（Evennia Exit）",
-                "app.models.world_entrance.WorldEntrance",
-                "WorldEntrance",
-                "app.models.world_entrance",
-            ),
-        ]
-        for type_code, parent_code, type_name, typeclass, classname, module_path in node_rows:
+        nt_overlays = load_graph_seed_node_type_overrides()
+
+        for type_code, parent_code, type_name, typeclass, classname, module_path in GRAPH_SEED_ONTOLOGY_NODE_ROWS:
+            overlay = nt_overlays.get(type_code, {})
+            jb = node_type_jsonb_params(overlay if isinstance(overlay, dict) else None)
+            desc_override = overlay.get("description") if isinstance(overlay, dict) else None
+            description = desc_override if isinstance(desc_override, str) and desc_override.strip() else (
+                f"graph seed ontology ensured: {type_code}"
+            )
+            params = {
+                "type_code": type_code,
+                "parent_type_code": parent_code,
+                "type_name": type_name,
+                "typeclass": typeclass,
+                "classname": classname,
+                "module_path": module_path,
+                "description": description,
+                **jb,
+            }
             _try_exec_mapped(
                 conn,
                 """
@@ -344,24 +362,23 @@ def ensure_graph_seed_ontology(engine) -> None:
                 )
                 VALUES (
                     :type_code, :parent_type_code, :type_name, :typeclass, 0, :classname, :module_path, :description,
-                    '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '[]'::jsonb, '{}'::jsonb
+                    CAST(:schema_definition AS jsonb), CAST(:schema_default AS jsonb), CAST(:inferred_rules AS jsonb),
+                    CAST(:tags AS jsonb), CAST(:ui_config AS jsonb)
                 )
                 ON CONFLICT (type_code) DO UPDATE SET
                     parent_type_code = EXCLUDED.parent_type_code,
                     type_name = EXCLUDED.type_name,
                     typeclass = EXCLUDED.typeclass,
                     classname = EXCLUDED.classname,
-                    module_path = EXCLUDED.module_path;
+                    module_path = EXCLUDED.module_path,
+                    description = EXCLUDED.description,
+                    schema_definition = EXCLUDED.schema_definition,
+                    schema_default = EXCLUDED.schema_default,
+                    inferred_rules = EXCLUDED.inferred_rules,
+                    tags = EXCLUDED.tags,
+                    ui_config = EXCLUDED.ui_config;
                 """,
-                {
-                    "type_code": type_code,
-                    "parent_type_code": parent_code,
-                    "type_name": type_name,
-                    "typeclass": typeclass,
-                    "classname": classname,
-                    "module_path": module_path,
-                    "description": f"graph seed ontology ensured: {type_code}",
-                },
+                params,
             )
 
         rel_rows = [
@@ -393,6 +410,46 @@ def ensure_graph_seed_ontology(engine) -> None:
                     "typeclass": typeclass,
                     "description": f"graph seed ontology ensured: {type_code}",
                 },
+            )
+    finally:
+        conn.close()
+
+
+def ensure_builtin_node_type_schema_envelopes(engine) -> None:
+    """
+    T5: Normalize legacy flat/fragment node_types.schema_definition for builtin types
+    to JSON Schema object envelope (type + properties). Idempotent: skips rows that
+    already use the envelope shape.
+    """
+    import json
+
+    from db.ontology.schema_envelope import (
+        account_node_type_schema_definition,
+        is_json_schema_object_envelope,
+        system_command_ability_node_type_schema_definition,
+        system_notice_node_type_schema_definition,
+    )
+
+    targets = (
+        ("account", account_node_type_schema_definition()),
+        ("system_command_ability", system_command_ability_node_type_schema_definition()),
+        ("system_notice", system_notice_node_type_schema_definition()),
+    )
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        for type_code, sd in targets:
+            row = conn.execute(
+                text("SELECT schema_definition FROM node_types WHERE type_code = :tc"),
+                {"tc": type_code},
+            ).fetchone()
+            if row is None:
+                continue
+            existing = row[0]
+            if is_json_schema_object_envelope(existing):
+                continue
+            conn.execute(
+                text("UPDATE node_types SET schema_definition = CAST(:js AS jsonb) WHERE type_code = :tc"),
+                {"js": json.dumps(sd, ensure_ascii=False), "tc": type_code},
             )
     finally:
         conn.close()

@@ -1,6 +1,6 @@
 # Database SPEC
 
-> **Architecture Role**: 本模块是**知识本体**的持久化层。PostgreSQL 通过 GraphNode/GraphEdge 表支撑 CampusWorld 的**全图数据结构**，所有实体和语义关系都持久化于此。属于"系统适配层"的数据接入能力。
+> **Architecture Role**: 本模块是**知识本体**的持久化层。PostgreSQL 通过 **`nodes`** / **`relationships`** 等表支撑 CampusWorld 的**全图数据结构**，所有实体和语义关系都持久化于此。属于"系统适配层"的数据接入能力。
 
 ## Module Overview
 
@@ -22,15 +22,17 @@ db/
 
 | 表 | 说明 |
 |---|---|
-| `graph_nodes` | 知识节点：id/uuid/type_id/type_code/name/description/attributes/is_active... |
-| `graph_edges` | 语义边：id/source_id/target_id/type/properties/created_at |
-| `node_types` | 节点类型注册：id/type_code/description |
+| `nodes` | 知识节点：id/uuid/type_id/type_code/name/description/**attributes**(JSONB)/is_active… |
+| `relationships` | 语义边：source_id/target_id/rel_type_code/attributes… |
+| `node_types` | 节点类型注册：`type_code`、`schema_definition`（属性 JSON Schema + 同级元数据）、`schema_default`、`inferred_rules`、`typeclass` 等 |
 | `users` | 用户账户：id/email/username/hashed_password... |
+
+**`schema_definition` 与实例 `attributes` 的约定**见 [`backend/db/schemas/README.md`](../../../backend/db/schemas/README.md)。
 
 ### 关系
 
 ```
-graph_nodes (1) ───< graph_edges (N) >─── (N) graph_nodes
+nodes (1) ───< relationships (N) >─── (N) nodes
      │
      └───< node_types (1)
 ```
@@ -45,7 +47,7 @@ graph_nodes (1) ───< graph_edges (N) >─── (N) graph_nodes
 
 - [ ] `init_database.py` 创建所有表
 - [ ] `seed_data.py` 填充预定义空间数据
-- [ ] GraphNode/GraphEdge 表正确存储实体和关系
+- [ ] `nodes` / `relationships` 表正确存储实体和关系
 
 ## Design Decisions
 

@@ -1,0 +1,375 @@
+schema_revision: 2
+node_types:
+  network_access_point:
+    tags:
+    - graph_seed
+    - device
+    - hicampus
+    schema_definition:
+      description: 这是一台无线接入点。
+      type: object
+      title: network_access_point attributes
+      properties:
+        item_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        device_role:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        status:
+          type: string
+          title: 设备状态
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        network:
+          type: object
+          title: 网络
+          value_kind: static
+          mutability: package_seed
+          properties:
+            mode:
+              type: string
+              title: 工作模式
+            ssid:
+              type: string
+              title: SSID
+            encryption:
+              type: string
+            bands:
+              type: array
+              items:
+                type: string
+        telemetry:
+          type: object
+          value_kind: dynamic_snapshot
+          mutability: runtime
+          properties:
+            clients:
+              type: integer
+            rssi_dbm:
+              type:
+              - integer
+              - 'null'
+            uplink_mbps:
+              type:
+              - number
+              - 'null'
+  access_terminal:
+    tags:
+    - graph_seed
+    - device
+    - hicampus
+    schema_definition:
+      description: 这是一台门禁/闸机侧访问终端，用于凭证核验与通行控制。
+      type: object
+      title: access_terminal attributes
+      properties:
+        item_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        device_role:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        access:
+          type: object
+          value_kind: static
+          mutability: package_seed
+          properties:
+            mode:
+              type: string
+  lighting_fixture:
+    tags:
+    - graph_seed
+    - device
+    - hicampus
+    schema_definition:
+      description: 这是一路受控照明回路，用于空间照度与场景策略。
+      type: object
+      title: lighting_fixture attributes
+      properties:
+        item_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        device_role:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        status:
+          type: string
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        lighting:
+          type: object
+          value_kind: dynamic_snapshot
+          mutability: runtime
+          properties:
+            brightness_pct:
+              type:
+              - integer
+              - 'null'
+            color_temp_k:
+              type:
+              - integer
+              - 'null'
+            scene:
+              type:
+              - string
+              - 'null'
+  av_display:
+    tags:
+    - graph_seed
+    - device
+    - hicampus
+    schema_definition:
+      description: 这是一块会议/公共显示设备。
+      type: object
+      title: av_display attributes
+      properties:
+        item_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        device_role:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        status:
+          type: string
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        av:
+          type: object
+          value_kind: static
+          mutability: package_seed
+          properties:
+            resolution:
+              type: string
+            volume_pct:
+              type:
+              - integer
+              - 'null'
+  furniture:
+    tags:
+    - graph_seed
+    - hicampus
+    - furnishing
+    schema_definition:
+      type: object
+      title: furniture attributes
+      properties:
+        item_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_list_name:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        placement:
+          type: object
+          value_kind: static
+          mutability: package_seed
+          properties:
+            building_id:
+              type: string
+            floor_id:
+              type: string
+            floor_no:
+              type: integer
+  conference_seating:
+    tags:
+    - graph_seed
+    - hicampus
+    - seating
+    schema_definition:
+      type: object
+      title: conference_seating attributes
+      properties:
+        item_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_list_name:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        placement:
+          type: object
+          value_kind: static
+          mutability: package_seed
+          properties: {}
+  lounge_furniture:
+    tags:
+    - graph_seed
+    - hicampus
+    - seating
+    schema_definition:
+      type: object
+      title: lounge_furniture attributes
+      properties:
+        item_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_list_name:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        placement:
+          type: object
+          value_kind: static
+          mutability: package_seed
+          properties: {}
+  room:
+    tags:
+    - graph_seed
+    - hicampus
+    - spatial
+    schema_definition:
+      type: object
+      title: room attributes (HiCampus P0)
+      properties:
+        room_type:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_code:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        uns:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_short_description:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_description:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_floor:
+          type: integer
+          value_kind: static
+          mutability: package_seed
+        room_building:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        room_campus:
+          type: string
+          value_kind: static
+          mutability: package_seed
+  building:
+    tags:
+    - graph_seed
+    - hicampus
+    - spatial
+    schema_definition:
+      type: object
+      title: building attributes (HiCampus P0)
+      properties:
+        building_code:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        building_type:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        floors_total:
+          type: integer
+          value_kind: static
+          mutability: package_seed
+        building_name:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        uns:
+          type: string
+          value_kind: static
+          mutability: package_seed
+  building_floor:
+    tags:
+    - graph_seed
+    - hicampus
+    - spatial
+    schema_definition:
+      type: object
+      title: building_floor attributes (P0)
+      properties:
+        floor_number:
+          type: integer
+          value_kind: static
+          mutability: package_seed
+        building_id:
+          type: string
+          value_kind: static
+          mutability: package_seed
+  world:
+    tags:
+    - graph_seed
+    - hicampus
+    schema_definition:
+      type: object
+      title: world attributes (P0)
+      properties:
+        world_id:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        display_name:
+          type: string
+          value_kind: static
+          mutability: package_seed
+  world_object:
+    tags:
+    - graph_seed
+    - abstract_parent
+    schema_definition:
+      type: object
+      title: world_object base
+      properties: {}
+  npc_agent:
+    tags:
+    - graph_seed
+    - hicampus
+    schema_definition:
+      type: object
+      title: npc_agent attributes (P0)
+      properties:
+        agent_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+  logical_zone:
+    tags:
+    - graph_seed
+    - hicampus
+    schema_definition:
+      type: object
+      title: logical_zone attributes (P0)
+      properties:
+        zone_kind:
+          type: string
+          value_kind: static
+          mutability: package_seed
+  world_entrance:
+    tags:
+    - graph_seed
+    - hicampus
+    - portal
+    schema_definition:
+      type: object
+      title: world_entrance attributes (P0)
+      properties:
+        target_world_id:
+          type: string
+          value_kind: static
+          mutability: package_seed

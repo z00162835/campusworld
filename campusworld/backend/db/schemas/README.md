@@ -6,12 +6,53 @@
 
 | 能力 | 说明 |
 |------|------|
-| **类型层级** | `node_types.parent_type_code` 自引用，插入子类型前须先有父类型 `type_code`。 |
-| **本体默认 / 推理** | `schema_default`（新建节点默认属性）、`inferred_rules`（轻量规则 JSON）、`relationship_types.constraints`（端点类型等）。 |
+| **类型层级** | `node_types.parent_type_code` 自引用，插入子类型前须先有父类型 `type_code`。图种子父链由 [`schema_migrations.GRAPH_SEED_ONTOLOGY_NODE_ROWS`](../schema_migrations.py) 与 [`docs/ontology/GRAPH_SEED_NODE_TYPES_MATRIX.md`](../../../docs/ontology/GRAPH_SEED_NODE_TYPES_MATRIX.md) 对齐。 |
+| **本体默认 / 推理** | `schema_definition`(type的元数据定义)、`schema_default`（新建节点默认属性）、`inferred_rules`（轻量规则 JSON）、`relationship_types.constraints`（端点类型等）。 |
 | **配置 UI** | `ui_config`：管理端表单布局/控件描述（JSON），由前端按约定渲染。 |
 | **向量** | `nodes.semantic_embedding` / `structure_embedding`（pgvector `vector`）；ANN 索引请在有数据后按需 `CREATE INDEX`（文件内已注释示例）。 |
 | **GIS + GeoJSON** | `location_geom` / `home_geom`（PostGIS，SRID 4326）+ `geom_geojson`（API 互换；应用层负责与 geometry 一致）。 |
 | **时序** | `ts_data_ref_id` 可选 UUID；TimescaleDB hypertable 示例见 SQL 文件末尾注释块。 |
+
+### `node_types`：`schema_definition` 与 `nodes.attributes`（约定）
+
+- **分工**：`type_code` + **`schema_definition`** 声明该类型下**属性注册表**与 JSON Schema 值形状；**实例当前值**在 **`nodes.attributes`**（JSONB）。**`typeclass`**（`module_path` + `classname`）绑定 Python 实现；代码中读写 `_node_attributes` 的键应与 **`schema_definition.properties` 的 key**（及嵌套 `properties`）一致。
+- **属性名即 `properties` 的 key**：`schema_definition` 根为 `type: object`，子对象 **`properties.<attr_name>`** 与 `nodes.attributes` **同层键名**对齐。嵌套结构推荐 **`properties.network` 为 `type: object`**，其内再 **`properties.ssid`** 等（与内容包常见形状一致）。
+- **元数据与 JSON Schema 关键字同级（默认）**：在每个属性定义对象内，`type` / `enum` / `minimum` / `title` 等与 **`value_kind`**、**`mutability`**、**`semantic_type`**、**`role`** 等**并列**，不默认再套一层命名空间对象（全系统已是 CampusWorld，少一层便于阅读）。
+  - **`value_kind`**：`static`（配置/种子为主） \| `dynamic_snapshot`（运行态可写回 attributes） \| `derived`；后续可扩展如时序-backed。
+  - **`mutability`**：`package_seed` \| `runtime` \| `admin` \| `system_derived`。
+  - **`attributes_path`**（可选，旧称 `api_path`）：仅当注册名与 `attributes` 内实际路径不一致时填写；省略则路径等于当前 `properties` 的 key。
+- **`inferred_rules`**：**跨属性**约束与推导（如与其它字段一致性）；**单属性**值域优先用 JSON Schema（`maximum` / `pattern` 等）。
+- **`ui_config`**：管理端表单分组、排序、控件；通过 **`property_ref`** 指向属性名或路径（如 `network.ssid`），**不**重复声明 `type`。
+
+参照（概念类比，非产品绑定）：Palantir Foundry [属性元数据](https://palantir.com/docs/foundry/object-link-types/property-metadata/)、SAP CDS / OData [注解](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abencds_annotations.htm)、[OData @ SAP](https://sap.github.io/odata-vocabularies/docs/v2-annotations.html)（语义、label、field-control ↔ `semantic_type`、`title`、`mutability`）。
+
+图种子用到的 **`node_types` 扩展**（多类型 `schema_definition` / `tags` 等）由 [`db/ontology/graph_seed_node_types.yaml`](../ontology/graph_seed_node_types.yaml) 提供，[`ensure_graph_seed_ontology`](../schema_migrations.py) 在每次执行时 **合并写入**（`ON CONFLICT` 更新 JSON 列）。约定与任务拆解见 [`docs/ontology/NODE_TYPES_SCHEMA.md`](../../../docs/ontology/NODE_TYPES_SCHEMA.md)。
+
+**示例**（`type_code: network_access_point` 的 `schema_definition` 片段）：
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["on", "off"],
+      "title": "设备状态",
+      "value_kind": "dynamic_snapshot",
+      "mutability": "runtime"
+    },
+    "network": {
+      "type": "object",
+      "value_kind": "static",
+      "mutability": "package_seed",
+      "properties": {
+        "ssid": { "type": "string" },
+        "encryption": { "type": "string" }
+      }
+    }
+  }
+}
+```
 
 **数据库依赖**：PostgreSQL 需安装扩展 `uuid-ossp`、`vector`、`postgis`、`pg_trgm`。Docker 镜像需基于带 PostGIS/pgvector 的发行版（或自行安装）。**TimescaleDB 为可选**，未安装时不要执行文件末尾注释中的 `timescaledb` 语句。
 
@@ -22,7 +63,7 @@
 日常开发与 CI 请以 **`python -m db.init_database`**（默认 **migrate** 模式）为准：
 
 1. **SQLAlchemy** `Base.metadata.create_all()` 创建 ORM 已注册、但库中尚不存在的表。
-2. **`db/schema_migrations.py`** 中各 `ensure_*`（由 **`db/migrate_report.run_schema_migrations`** 顺序调用）对**已有库**做增量 `ALTER` / 片段 SQL（如 `command_policies`、`world_runtime` 等），并包含 **`ensure_graph_seed_ontology`**（图种子所需 `node_types` / `relationship_types`）。
+2. **`db/schema_migrations.py`** 中各 `ensure_*`（由 **`db/migrate_report.run_schema_migrations`** 顺序调用）对**已有库**做增量 `ALTER` / 片段 SQL（如 `command_policies`、`world_runtime` 等），并包含 **`ensure_graph_seed_ontology`**（图种子所需 `node_types` / `relationship_types`）与 **`ensure_builtin_node_type_schema_envelopes`**（`account` / `system_command_ability` / `system_notice` 的 `schema_definition` 信封化，见 [`docs/ontology/NODE_TYPES_SCHEMA.md`](../../../docs/ontology/NODE_TYPES_SCHEMA.md)）。
 3. 可选 **`db/seed_data.seed_minimal`**：由 `development.seed_data` 或 `CAMPUSWORLD_DEVELOPMENT_SEED_DATA` 控制。
 
 **危险重建（仅 PostgreSQL）**：`python -m db.init_database reset --i-understand` 会 `DROP SCHEMA public CASCADE` 后重新执行上述 migrate 流程；须同时满足 **`CAMPUSWORLD_ALLOW_DB_RESET=true`** 或配置 **`development.allow_db_reset: true`**。

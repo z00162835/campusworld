@@ -107,7 +107,8 @@ def ensure_account_type(session) -> bool:
     if existing:
         return True
 
-    # 复用现有脚本里的 schema_definition 语义（最小集合）
+    from db.ontology.schema_envelope import account_node_type_schema_definition
+
     node_type = NodeType(
         type_code="account",
         type_name="账号",
@@ -115,14 +116,7 @@ def ensure_account_type(session) -> bool:
         classname="DefaultAccount",
         module_path="app.models.accounts",
         description="用户账号类型，支持管理员、开发者和普通用户",
-        schema_definition={
-            "username": {"type": "string", "required": True},
-            "email": {"type": "string", "required": True},
-            "hashed_password": {"type": "string", "required": True},
-            "roles": {"type": "array", "default": ["user"]},
-            "permissions": {"type": "array", "default": []},
-            "access_level": {"type": "string", "default": "normal"},
-        },
+        schema_definition=account_node_type_schema_definition(),
         is_active=True,
     )
     session.add(node_type)
