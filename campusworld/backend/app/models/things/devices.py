@@ -1,5 +1,9 @@
 """Controllable in-room devices (Evennia-style Object descendants via WorldThing)."""
 
+from __future__ import annotations
+
+from typing import Any, Dict
+
 from .base import WorldThing
 
 
@@ -51,6 +55,15 @@ class LightingFixture(WorldThing):
     def __init__(self, name: str, **kwargs):
         self._node_type = "lighting_fixture"
         super().__init__(name=name, **kwargs)
+
+    def _attributes_for_schema_look(self) -> Dict[str, Any]:
+        """Map ``power_on`` into ``status`` for schema-driven examine."""
+        a = dict(self._node_attributes)
+        if a.get("status") is None and a.get("power_on") is True:
+            a["status"] = "on"
+        elif a.get("status") is None and a.get("power_on") is False:
+            a["status"] = "off"
+        return a
 
     def room_line_format_kwargs(self):
         kw = super().room_line_format_kwargs()

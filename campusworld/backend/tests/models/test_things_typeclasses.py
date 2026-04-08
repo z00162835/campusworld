@@ -48,6 +48,54 @@ def test_network_access_point_type_code():
 
 @pytest.mark.unit
 @pytest.mark.models
+def test_network_access_point_build_synthetic_look_desc():
+    from db.ontology.load import clear_graph_seed_node_type_cache
+
+    clear_graph_seed_node_type_cache()
+    o = NetworkAccessPoint(
+        "ap1",
+        disable_auto_sync=True,
+        attributes={
+            "item_kind": "device",
+            "device_role": "wifi_ap",
+            "status": "on",
+            "network": {"mode": "ap", "ssid": "X", "bands": ["2.4g"], "encryption": "wpa2"},
+            "telemetry": {"clients": 0},
+        },
+    )
+    d = o.build_synthetic_look_desc()
+    assert "无线接入点" in d
+    assert "X" in d
+    assert "0" in d
+    assert "设备状态" in d
+    assert "网络 · SSID：X" in d
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_worldthing_build_synthetic_default_empty():
+    from app.models.things.base import WorldThing
+
+    o = WorldThing("w", disable_auto_sync=True)
+    assert o.build_synthetic_look_desc() == ""
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_room_get_display_desc_uses_schema_when_no_explicit_text():
+    """DefaultObject path: non-WorldThing types use the same schema fallback."""
+    from app.models.room import Room
+
+    from db.ontology.load import clear_graph_seed_node_type_cache
+
+    clear_graph_seed_node_type_cache()
+    r = Room("GateRoom", disable_auto_sync=True, room_type="gate")
+    d = r.get_display_desc()
+    assert "room_type：" in d and "gate" in d
+
+
+@pytest.mark.unit
+@pytest.mark.models
 def test_av_display_type_code():
     o = AvDisplay("d1", disable_auto_sync=True)
     assert o.get_node_type() == "av_display"

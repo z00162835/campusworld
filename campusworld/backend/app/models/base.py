@@ -1113,7 +1113,29 @@ class DefaultObject(GraphNodeInterface):
                 v = inner.get(key)
                 if isinstance(v, str) and v.strip():
                     return v.strip()
-        return ""
+        syn = self.build_synthetic_look_desc()
+        return syn or ""
+
+    def _attributes_for_schema_look(self) -> Dict[str, Any]:
+        """Normalize attributes before schema-driven examine; subclasses may override."""
+        return dict(self._node_attributes)
+
+    def build_synthetic_look_desc(self) -> str:
+        """
+        When explicit description fields are absent, compose examine text from
+        graph-seed ``schema_definition`` (packaged YAML, aligned with DB after migrate).
+        """
+        from db.ontology.load import get_graph_seed_schema_definition
+
+        sd = get_graph_seed_schema_definition(self.get_node_type())
+        if not sd:
+            return ""
+        from app.models.things.schema_look_desc import format_attributes_from_schema_definition
+
+        return format_attributes_from_schema_definition(
+            self._attributes_for_schema_look(),
+            sd,
+        ).strip()
 
     def room_line_format_kwargs(self) -> Dict[str, Any]:
         a = self._node_attributes

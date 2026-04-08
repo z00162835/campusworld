@@ -53,6 +53,10 @@
 | `GraphEdge` | graph.py | GraphEdge 表的 ORM 模型 |
 | `NodeType` | graph.py | 节点类型注册表 |
 
+### `NodeType` 与本体属性元数据
+
+持久化表为 **`nodes`** / **`relationships`**（`Node` / `Relationship`，非历史文档中的 `graph_nodes` / `graph_edges` 命名）。**`node_types.schema_definition`** 按 **`type_code`** 描述该类型在 **`nodes.attributes`** 上的属性注册：以 JSON Schema 惯用 **`properties.<attr_name>`** 为键，与实例 JSON 同层键名对齐；**`value_kind`**、**`mutability`**、**`semantic_type`**、**`role`** 等与 **`type`** / **`enum`** / **`title`** **同级并列**（默认写法）。**`inferred_rules`** 承载跨属性约束；**`ui_config`** 承载表单布局并通过 `property_ref` 引用属性路径。图种子类型的扩展定义见 [`docs/ontology/NODE_TYPES_SCHEMA.md`](../ontology/NODE_TYPES_SCHEMA.md) 与 [`backend/db/ontology/graph_seed_node_types.yaml`](../../../backend/db/ontology/graph_seed_node_types.yaml)。字段与 DDL 见 [`backend/db/schemas/README.md`](../../../backend/db/schemas/README.md)。
+
 ### 组件系统
 
 | 类 | 文件 | 说明 |

@@ -15,6 +15,7 @@ from .room import SingularityRoom
 from .system.bulletin_board import BulletinBoard
 from app.core.database import db_session_context, get_session
 from app.core.log import get_logger, LoggerNames
+from db.ontology.schema_envelope import flat_field_types_to_json_schema_object
 
 
 class RootNodeManager:
@@ -181,13 +182,15 @@ class RootNodeManager:
                 classname='Room',
                 module_path='app.models.room',
                 description='场景世界中的房间/地点',
-                schema_definition={
-                    'room_type': 'string',
-                    'room_description': 'text',
-                    'is_root': 'boolean',
-                    'is_home': 'boolean',
-                    'room_capacity': 'integer'
-                },
+                schema_definition=flat_field_types_to_json_schema_object(
+                    {
+                        "room_type": "string",
+                        "room_description": "text",
+                        "is_root": "boolean",
+                        "is_home": "boolean",
+                        "room_capacity": "integer",
+                    }
+                ),
                 is_active=True
             )
             
@@ -385,13 +388,15 @@ class RootNodeManager:
                 classname="BulletinBoard",
                 module_path="app.models.system.bulletin_board",
                 description="System singleton bulletin board object in SingularityRoom",
-                schema_definition={
-                    "board_key": "string",
-                    "display_name": "string",
-                    "desc": "text",
-                    "entry_room": "string",
-                    "is_system_singleton": "boolean",
-                },
+                schema_definition=flat_field_types_to_json_schema_object(
+                    {
+                        "board_key": "string",
+                        "display_name": "string",
+                        "desc": "text",
+                        "entry_room": "string",
+                        "is_system_singleton": "boolean",
+                    }
+                ),
                 is_active=True,
             )
             session.add(node_type)

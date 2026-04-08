@@ -4,7 +4,7 @@ from .base import WorldThing
 
 
 class Furniture(WorldThing):
-    """Package ``type_code``: ``furniture``; ontology parent ``world_object``."""
+    """Package ``type_code``: ``furniture``; ontology parent ``world_thing``."""
 
     def __init__(self, name: str, **kwargs):
         if not getattr(self, "_node_type", None):
