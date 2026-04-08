@@ -4,6 +4,7 @@
 """
 
 import os
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Union, Any, Callable
 from jose import JWTError, jwt
@@ -109,15 +110,19 @@ def create_access_token(
 
 def create_refresh_token(
     subject: Union[str, Any],
-    expires_delta: Optional[timedelta] = None
+    expires_delta: Optional[timedelta] = None,
+    jti: Optional[str] = None,
+    family_id: Optional[str] = None,
 ) -> str:
     """
     创建刷新令牌
-    
+
     Args:
         subject: 令牌主题（通常是用户ID）
         expires_delta: 过期时间增量
-        
+        jti: JWT ID（唯一标识），如果不提供则自动生成
+        family_id: Token 家族 ID，同一登录会话的所有 token 共享
+
     Returns:
         str: JWT刷新令牌
     """
@@ -125,14 +130,16 @@ def create_refresh_token(
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    
+
     to_encode = {
         "exp": expire,
         "sub": str(subject),
         "iat": datetime.utcnow(),
-        "type": "refresh"
+        "type": "refresh",
+        "jti": jti or str(uuid.uuid4()),
+        "family_id": family_id,
     }
-    
+
     encoded_jwt = jwt.encode(to_encode, _get_secret_key(), algorithm=ALGORITHM)
     return encoded_jwt
 

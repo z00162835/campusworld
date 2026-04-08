@@ -129,7 +129,8 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     """登录响应模型"""
     access_token: str = Field(..., description="访问令牌")
-    token_type: str = Field(..., description="令牌类型")
+    refresh_token: str = Field(..., description="刷新令牌")
+    token_type: str = Field(default="bearer", description="令牌类型")
     expires_in: int = Field(..., description="过期时间（秒）")
     user: AccountResponse = Field(..., description="用户信息")
 
@@ -139,10 +140,22 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(..., description="刷新令牌")
 
 
+class RefreshTokenInfo(BaseModel):
+    """刷新令牌信息模型（存储在 Account Node attributes 中）"""
+    jti: str = Field(..., description="JWT ID，refresh token 的唯一标识")
+    family_id: str = Field(..., description="Token 家族 ID，同一登录会话的所有 token 共享")
+    device: str = Field(..., description="设备标识")
+    issued_at: datetime = Field(..., description="颁发时间")
+    expires_at: datetime = Field(..., description="过期时间")
+    revoked: bool = Field(default=False, description="是否已撤销")
+    replaced_by: Optional[str] = Field(None, description="被哪个新 token 替换（用于 token 链追踪）")
+
+
 class RefreshTokenResponse(BaseModel):
     """刷新令牌响应模型"""
     access_token: str = Field(..., description="新的访问令牌")
-    token_type: str = Field(..., description="令牌类型")
+    refresh_token: str = Field(..., description="新的刷新令牌")
+    token_type: str = Field(default="bearer", description="令牌类型")
     expires_in: int = Field(..., description="过期时间（秒）")
 
 

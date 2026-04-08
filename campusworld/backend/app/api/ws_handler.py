@@ -12,6 +12,7 @@ WebSocket 处理器
 import json
 import asyncio
 import time
+from datetime import datetime
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from collections import defaultdict
@@ -321,6 +322,8 @@ class WSHandler:
                 await self._handle_agent_execute(conn, data)
             elif msg_type == "agent_list":
                 await self._handle_agent_list(conn, data)
+            elif msg_type == "refresh":
+                await self._handle_refresh(conn, data)
             else:
                 await conn.send_json({"type": "error", "message": "Unknown message type"})
 
@@ -605,6 +608,80 @@ class WSHandler:
         command = data.get("command", "")
         # TODO: 在 Agent 上下文中执行命令
         await conn.send_json({"type": "agent_result", "result": "", "success": True})
+
+    async def _handle_refresh(self, conn: WSConnection, data: Dict[str, Any]):
+        """
+        处理 refresh token 刷新请求。
+
+        安全要求:
+        - 连接必须已认证（conn.authenticated == True）
+        - 客户端必须提供 access_token 和 refresh_token
+        - 验证 access_token 与 refresh_token 属于同一用户
+
+        消息格式: {"type": "refresh", "access_token": "<token>", "refresh_token": "<token>"}
+        响应格式: {"type": "refreshed", "access_token": "...", "refresh_token": "...", "expires_in": 11520}
+        """
+        from app.core.auth_service import AuthService
+
+        # 1. 要求必须已认证
+        if not conn.authenticated:
+            await conn.send_json({"type": "error", "message": "Not authenticated"})
+            return
+
+        # 2. 要求同时提供 access_token 和 refresh_token
+        access_token = data.get("access_token", "")
+        refresh_token = data.get("refresh_token", "")
+
+        if not access_token:
+            await conn.send_json({"type": "error", "message": "Missing access_token"})
+            return
+
+        if not refresh_token:
+            await conn.send_json({"type": "error", "message": "Missing refresh_token"})
+            return
+
+        device = f"websocket:{conn.websocket.client}"
+
+        with db_session_context() as db:
+            # 3. 验证 refresh token（带 expected_access_token 进行绑定验证）
+            validation = AuthService.validate_refresh_token(
+                db,
+                refresh_token,
+                expected_user_id=None,  # 我们通过 access_token 验证
+            )
+            if not validation["valid"]:
+                await conn.send_json({"type": "error", "message": f"Invalid refresh token: {validation['error']}"})
+                return
+
+            # 4. 执行轮换（传入 expected_access_token 进行绑定验证）
+            result = AuthService.rotate_refresh_token(
+                db=db,
+                user_id=validation["user_id"],
+                old_jti=validation["jti"],
+                old_family_id=validation["family_id"],
+                device=device,
+                expected_access_token=access_token,
+            )
+
+            if "error" in result:
+                error_messages = {
+                    "token_binding_mismatch": "Access token does not match refresh token",
+                    "invalid_access_token": "Invalid access token",
+                    "user_not_found": "User not found",
+                    "account_inactive": "Account is inactive",
+                    "account_locked": "Account is locked",
+                }
+                await conn.send_json({"type": "error", "message": error_messages.get(result["error"], "Token rotation failed")})
+                return
+
+            await conn.send_json({
+                "type": "refreshed",
+                "access_token": result["access_token"],
+                "refresh_token": result["refresh_token"],
+                "token_type": "bearer",
+                "expires_in": result["expires_in"],
+            })
+
 
 
 # 全局 WebSocket 处理器实例
