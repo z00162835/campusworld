@@ -68,8 +68,7 @@ def mock_admin_node():
 def valid_user_token(mock_user_node):
     """Generate a valid JWT token for testuser"""
     token = create_access_token(
-        subject="test@example.com",
-        user_id=str(mock_user_node.id),
+        subject=str(mock_user_node.id),
         username=mock_user_node.name,
     )
     return token
@@ -185,7 +184,7 @@ def test_malformed_token_returns_401():
 @pytest.mark.asyncio
 async def test_get_current_http_user_valid_token(mock_user_node):
     """有效 token 应返回 AuthenticatedUser"""
-    token = create_access_token(subject="test@example.com")
+    token = create_access_token(subject="1")
 
     mock_session = MagicMock()
     mock_session.query.return_value.filter.return_value.first.return_value = mock_user_node
@@ -211,7 +210,7 @@ def test_user_not_found_returns_401():
     client = TestClient(app, raise_server_exceptions=False)
 
     # Create token for non-existent user
-    token = create_access_token(subject="nonexistent@example.com")
+    token = create_access_token(subject="9999999991")
 
     response = client.post(
         "/api/v1/command/execute",

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.commands.registry import command_registry
+from app.commands.init_commands import ensure_commands_initialized
 from app.commands.base import CommandContext, CommandResult
 from app.commands.shell_words import split_command_line
 from app.core.database import db_session_context
@@ -44,6 +45,7 @@ async def execute_command(
 ):
     """执行命令（需认证）"""
     try:
+        ensure_commands_initialized()
         parts = split_command_line(request.command.strip())
         command_name = parts[0].lower()
         args = parts[1:] if len(parts) > 1 else []
@@ -94,6 +96,7 @@ async def list_commands(
     current_user: AuthenticatedUser = Depends(get_current_http_user),
 ):
     """获取当前用户可用的命令"""
+    ensure_commands_initialized()
     commands = []
     for name, cmd in command_registry.commands.items():
         # 快速权限检查（不执行命令，只检查可见性）

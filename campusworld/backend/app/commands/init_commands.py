@@ -80,6 +80,16 @@ def initialize_commands(force_reinit: bool = False) -> bool:
             return False
 
 
+def ensure_commands_initialized() -> None:
+    """
+    若注册表仍为空则执行初始化。
+    历史上 initialize_commands 仅在 SSH 控制台首次连接时调用，纯 HTTP/WebSocket/CLI 会拿到空 registry。
+    """
+    if command_registry.commands:
+        return
+    initialize_commands()
+
+
 def get_command_summary() -> dict:
     """获取命令摘要"""
     return command_registry.get_commands_summary()

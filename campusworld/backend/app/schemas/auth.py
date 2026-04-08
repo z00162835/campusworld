@@ -2,7 +2,7 @@
 Authentication schemas
 """
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
@@ -13,7 +13,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """User creation schema"""
-    password: str
+    password: str = Field(..., min_length=8, max_length=256)
     full_name: str = None
 
 
