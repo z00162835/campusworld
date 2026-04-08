@@ -224,7 +224,7 @@ completion:
 1. **与全局种子解耦**：`backend/db/seed_data.py` 仅保留系统最小可运行集；HiCampus 楼栋/房间/实体/概念业务数据**只**存在于世界包 `data/` 下。
 2. **图实例化边界**：F02 只产出通过校验的 `PackageSnapshotV2`（或等价规范化结构）；**写库与幂等策略在 F03**，避免控制面与内容面 SQL/ORM 碎片化。
 3. **加载前置校验**：世界加载路径应对数据包执行分层校验；失败时返回稳定错误码（如 `WORLD_DATA_UNAVAILABLE`、`WORLD_DATA_INVALID`、`WORLD_DATA_REFERENCE_BROKEN`、`WORLD_DATA_BASELINE_MISMATCH`、`WORLD_DATA_SEMANTIC_CONFLICT` 等），不得拖垮 SSH/会话入口。
-4. **关系与导航**：拓扑仍以关系数据表达；双向可通行须在数据层显式维护两条有向关系（与 Evennia Exit 单向性在工程上的对应约定）。
+4. **关系与导航**：拓扑仍以关系数据表达；双向可通行须在数据层显式维护两条有向关系（与 Evennia Exit 单向性在工程上的对应约定）。同时执行**方向唯一性约束**：同一源房间 `source_id` 在同一 `direction` 上只能有一条 `connects_to`，禁止“一个方向多个目标”。
 5. **类型与展示**：节点侧沿用 `type_code` + `attributes`（含 `presentation_domains`、`access_locks` 等）扩展，避免为世界业务单独分叉一套持久化 schema。
 
 ### 规范索引（单一事实来源）

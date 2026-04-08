@@ -85,8 +85,8 @@ HiCampus 为内置示例世界包（`app/games/hicampus/`）。完整空间、`l
 1. 启动后端（含游戏引擎），确保 DB 已迁移。
 2. 在 SSH 会话或具备 **`admin.world.manage`** 的上下文中执行：`world install hicampus`。
 3. 用户登录后位于奇点屋：`look` 应可见入口 **hicampus**；`enter hicampus` 进入门户厅（`hicampus_gate`）。
-4. **示例深链路**（种子成功后）：`n`（连桥）→ `n`（广场）→ `n`（F1 首层交通核）→ `w`（首层卫生间，可见物品）→ `e` 返回交通核 → `u`（二层会议室，可见物品）。
-5. 可选：`world validate hicampus`（拓扑检查）。更细的特性与契约见 [`docs/games/hicampus/SPEC/`](docs/games/hicampus/SPEC/SPEC.md)。
+4. **示例深链路**（种子成功后）：`n`（连桥）→ `n`（广场）→ `n`（F1 首层交通核）→ `w`（首层卫生间，可见物品）→ `e` 返回交通核 → `u`（二层交通核）→ `n`（会议室，可见物品）。
+5. 可选：`world validate hicampus`（拓扑检查）。更细的特性与契约见 [`docs/games/hicampus/SPEC/`](docs/games/hicampus/SPEC/SPEC.md)。**修改 HiCampus 包内 YAML 后的再生成命令**见 [`backend/app/games/hicampus/package/README.md`](backend/app/games/hicampus/package/README.md)。
 
 ## 项目结构
 

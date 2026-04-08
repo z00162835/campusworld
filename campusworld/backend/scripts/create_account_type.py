@@ -24,6 +24,8 @@ def create_account_type():
     try:
         from app.core.database import SessionLocal
         from app.models.graph import NodeType
+        from db.ontology.schema_envelope import account_node_type_schema_definition
+
         import uuid
         
         session = SessionLocal()
@@ -49,26 +51,7 @@ def create_account_type():
             classname='DefaultAccount',
             module_path='app.models.accounts',
             description='用户账号类型，支持管理员、开发者和普通用户',
-            schema_definition={
-                'username': {'type': 'string', 'required': True},
-                'email': {'type': 'string', 'required': True},
-                'hashed_password': {'type': 'string', 'required': True},
-                'roles': {'type': 'array', 'default': ['user']},
-                'permissions': {'type': 'array', 'default': []},
-                'is_verified': {'type': 'boolean', 'default': False},
-                'is_locked': {'type': 'boolean', 'default': False},
-                'is_suspended': {'type': 'boolean', 'default': False},
-                'login_count': {'type': 'integer', 'default': 0},
-                'failed_login_attempts': {'type': 'integer', 'default': 0},
-                'max_failed_attempts': {'type': 'integer', 'default': 5},
-                'last_login': {'type': 'datetime'},
-                'last_activity': {'type': 'datetime'},
-                'lock_reason': {'type': 'string'},
-                'suspension_reason': {'type': 'string'},
-                'suspension_until': {'type': 'datetime'},
-                'created_by': {'type': 'string', 'default': 'system'},
-                'access_level': {'type': 'string', 'default': 'normal'}
-            },
+            schema_definition=account_node_type_schema_definition(),
             is_active=True
         )
         
