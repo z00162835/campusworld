@@ -1,10 +1,4 @@
 relationships:
-- id: rel_world_f1
-  rel_type_code: contains
-  source_id: hicampus_world
-  target_id: hicampus_f1
-  directed: true
-  attributes: {}
 - id: rel_gate_bridge
   rel_type_code: connects_to
   source_id: hicampus_gate
@@ -61,20 +55,4652 @@ relationships:
   directed: true
   attributes:
     direction: east
-- id: rel_circulation_02f_meeting_up
+- id: rel_topo_5dbdb1eacf
   rel_type_code: connects_to
   source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_f1_01f_electrical_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_a7b001e0dc
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_electrical_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_3e38401b08
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_circulation_01
   target_id: hicampus_f1_02f_meeting_01
   directed: true
   attributes:
-    direction: up
-- id: rel_02f_meeting_circulation_down
+    direction: north
+    topology_auto: true
+- id: rel_topo_f4081b9026
   rel_type_code: connects_to
   source_id: hicampus_f1_02f_meeting_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_c7aa8e72d3
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_circulation_01
+  target_id: hicampus_f1_02f_office_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_7b327d703e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_office_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e3136832ba
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_circulation_01
+  target_id: hicampus_f1_02f_office_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_15900a8929
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_office_02
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_d344b7d0ec
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_circulation_01
+  target_id: hicampus_f1_02f_pantry_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_9bd9a2c770
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_pantry_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_d31203ddb2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_circulation_01
+  target_id: hicampus_f1_02f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_2ab338b727
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_restroom_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_22e934af26
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_circulation_01
+  target_id: hicampus_f1_03f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_aefd9f3ab0
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_meeting_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_1c9327cb08
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_circulation_01
+  target_id: hicampus_f1_03f_office_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_3ccc839998
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_office_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e2d799c23a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_circulation_01
+  target_id: hicampus_f1_03f_office_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_77c856adab
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_office_02
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_22afaaeb1e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_circulation_01
+  target_id: hicampus_f1_03f_pantry_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_63db9ad3ad
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_pantry_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_3850e7378d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_circulation_01
+  target_id: hicampus_f1_03f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_74ddee9083
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_restroom_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_1a7e721c37
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_circulation_01
+  target_id: hicampus_f1_04f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_bf17694e61
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_meeting_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_3e75b65045
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_circulation_01
+  target_id: hicampus_f1_04f_office_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_11d4671a20
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_office_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_806772d42f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_circulation_01
+  target_id: hicampus_f1_04f_office_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_a0479f8aa2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_office_02
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_111651337e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_circulation_01
+  target_id: hicampus_f1_04f_pantry_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_8e1a0f7a32
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_pantry_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_43389bdf2e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_circulation_01
+  target_id: hicampus_f1_04f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_fd5a5eeec2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_restroom_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_03b460788c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_circulation_01
+  target_id: hicampus_f1_05f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_233a4d291e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_meeting_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_63227b9d11
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_circulation_01
+  target_id: hicampus_f1_05f_office_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_5fa5a78fd6
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_office_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_83f5758ad4
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_circulation_01
+  target_id: hicampus_f1_05f_office_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_8e162366e2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_office_02
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_d25dded1f8
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_circulation_01
+  target_id: hicampus_f1_05f_pantry_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_5a9e608ee5
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_pantry_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_2c16719464
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_circulation_01
+  target_id: hicampus_f1_05f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_4350c719b0
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_restroom_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_03f7e033ab
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_circulation_01
+  target_id: hicampus_f1_06f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_ac886b681d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_meeting_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_cec1a1e01d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_circulation_01
+  target_id: hicampus_f1_06f_office_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_c7fb3b4db5
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_office_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_0e30689b22
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_circulation_01
+  target_id: hicampus_f1_06f_office_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_8e23fc5280
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_office_02
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_15bd69f014
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_circulation_01
+  target_id: hicampus_f1_06f_pantry_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_af4f7e9d30
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_pantry_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_498a896f0a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_circulation_01
+  target_id: hicampus_f1_06f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_383bb2027c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_restroom_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_2bbfa18089
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_circulation_01
+  target_id: hicampus_f1_07f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_f8a9cb57b5
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_meeting_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_8f44111fe2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_circulation_01
+  target_id: hicampus_f1_07f_office_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_ae26558575
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_office_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_bcf46a253a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_circulation_01
+  target_id: hicampus_f1_07f_office_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_c845a3bc67
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_office_02
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_a962366386
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_circulation_01
+  target_id: hicampus_f1_07f_pantry_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_5ead1a5a25
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_pantry_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_1357dc7427
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_circulation_01
+  target_id: hicampus_f1_07f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_3e8425af5a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_restroom_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_7bd9565b4a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_circulation_01
+  target_id: hicampus_f1_08f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_34716d1b62
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_meeting_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_3fe5ee4f19
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_circulation_01
+  target_id: hicampus_f1_08f_office_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_5e0af8ef34
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_office_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_3b0b878ae2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_circulation_01
+  target_id: hicampus_f1_08f_office_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_962c1b10ea
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_office_02
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_91315aa01d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_circulation_01
+  target_id: hicampus_f1_08f_pantry_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_acef81dd3f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_pantry_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_9d522ef144
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_circulation_01
+  target_id: hicampus_f1_08f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_e803f7d4de
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_restroom_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_9c3f7cc788
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_circulation_01
+  target_id: hicampus_f1_09f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_a9380a468b
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_meeting_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_d6de25a8c5
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_circulation_01
+  target_id: hicampus_f1_09f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_0c3048ccd6
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_meeting_02
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_c005c754a8
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_circulation_01
+  target_id: hicampus_f1_09f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_df1fe98340
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_office_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_6710a53be8
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_circulation_01
+  target_id: hicampus_f1_09f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_bc3cb9a0fb
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_office_02
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_0f995d5518
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_circulation_01
+  target_id: hicampus_f1_09f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_72e3d6cb82
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_restroom_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_efde4d09d8
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_circulation_01
+  target_id: hicampus_f1_10f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_44af5e454f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_meeting_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_22ff8764ea
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_circulation_01
+  target_id: hicampus_f1_10f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_88aeb8912d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_meeting_02
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_9b02435a61
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_circulation_01
+  target_id: hicampus_f1_10f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_751da4588c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_office_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_16bfe73678
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_circulation_01
+  target_id: hicampus_f1_10f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_ab58111faf
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_office_02
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_0a1b9f6415
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_circulation_01
+  target_id: hicampus_f1_10f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_1d7a4bcb95
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_restroom_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_76af12fdc8
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_circulation_01
+  target_id: hicampus_f1_11f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_dd18850c03
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_meeting_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_8a1e365a34
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_circulation_01
+  target_id: hicampus_f1_11f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_f509b74255
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_meeting_02
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_acb25e11b5
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_circulation_01
+  target_id: hicampus_f1_11f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_3c92cf9b4d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_office_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_70e2873e64
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_circulation_01
+  target_id: hicampus_f1_11f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_a0ea69310a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_office_02
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_46b8a82300
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_circulation_01
+  target_id: hicampus_f1_11f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_6bb611fa64
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_restroom_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_783c77e8f7
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_circulation_01
+  target_id: hicampus_f1_12f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_9fe376a8e9
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_meeting_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_bd0cec0ed6
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_circulation_01
+  target_id: hicampus_f1_12f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_2d1d0617ed
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_meeting_02
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_f10d66e570
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_circulation_01
+  target_id: hicampus_f1_12f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_7a0b3bd3d4
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_office_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_579279c3cf
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_circulation_01
+  target_id: hicampus_f1_12f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_8486f7644e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_office_02
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_a6b7783cb3
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_circulation_01
+  target_id: hicampus_f1_12f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_2bc14b5765
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_restroom_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_aac8630996
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_circulation_01
+  target_id: hicampus_f1_13f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_026a37d085
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_meeting_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_d112e54246
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_circulation_01
+  target_id: hicampus_f1_13f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_5147c97292
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_meeting_02
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_481db55a4c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_circulation_01
+  target_id: hicampus_f1_13f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_9037911bd2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_office_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_4c291e1cda
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_circulation_01
+  target_id: hicampus_f1_13f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_8ce3ca7d50
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_office_02
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_8f34d7a200
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_circulation_01
+  target_id: hicampus_f1_13f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_bb40ff14ad
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_restroom_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_cb545f800f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_circulation_01
+  target_id: hicampus_f1_14f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_75ccb40965
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_meeting_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_64b2e1c9eb
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_circulation_01
+  target_id: hicampus_f1_14f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_5e8a4a8cdc
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_meeting_02
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_2e1c4dc299
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_circulation_01
+  target_id: hicampus_f1_14f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_21b4e4ef96
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_office_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_46f6a7e8d2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_circulation_01
+  target_id: hicampus_f1_14f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_901667037e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_office_02
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_e5ee4ff89a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_circulation_01
+  target_id: hicampus_f1_14f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_fabee7ffcb
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_restroom_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_adc6574a07
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_circulation_01
+  target_id: hicampus_f1_15f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_0dc5fd4546
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_meeting_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_62c41be091
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_circulation_01
+  target_id: hicampus_f1_15f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_db9c309073
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_meeting_02
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_ac4278f904
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_circulation_01
+  target_id: hicampus_f1_15f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_93ccbcb51f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_office_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_f7a83dd040
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_circulation_01
+  target_id: hicampus_f1_15f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_9b5f4a7511
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_office_02
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_90f6428632
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_circulation_01
+  target_id: hicampus_f1_15f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_b499809ca8
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_restroom_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_269fe51952
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_circulation_01
+  target_id: hicampus_f1_16f_meeting_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_c4aec7af20
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_meeting_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_3b77b5be02
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_circulation_01
+  target_id: hicampus_f1_16f_meeting_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_2855aac6ce
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_meeting_02
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_be535a2cd1
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_circulation_01
+  target_id: hicampus_f1_16f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_df4f4b398f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_office_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_d8a85d366f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_circulation_01
+  target_id: hicampus_f1_16f_office_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_e325592aee
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_office_02
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_c0505e0a60
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_circulation_01
+  target_id: hicampus_f1_16f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_686bde900e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_restroom_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_e28923868f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_circulation_01
+  target_id: hicampus_f1_17f_manager_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_e0f1d1e696
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_manager_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_23e096a3ca
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_circulation_01
+  target_id: hicampus_f1_17f_meeting_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_8c533812f9
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_meeting_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_90949c511e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_circulation_01
+  target_id: hicampus_f1_17f_meeting_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_a15a8da4d2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_meeting_02
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_fe3a70854b
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_circulation_01
+  target_id: hicampus_f1_17f_office_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_376cc49fb6
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_office_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_739f6c4a8c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_circulation_01
+  target_id: hicampus_f1_17f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_236490cb2d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_restroom_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_7e8fd67a09
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_circulation_01
+  target_id: hicampus_f1_18f_manager_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_dd32e0fdcb
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_manager_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_408f3b4f7a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_circulation_01
+  target_id: hicampus_f1_18f_meeting_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_214809aa0b
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_meeting_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_9a1686912c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_circulation_01
+  target_id: hicampus_f1_18f_meeting_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_c37bb0fc87
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_meeting_02
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_07bacf91a9
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_circulation_01
+  target_id: hicampus_f1_18f_office_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_38b9b1dee7
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_office_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_b6453fdd52
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_circulation_01
+  target_id: hicampus_f1_18f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_3c9cdd9ca3
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_restroom_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_0c53522297
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_circulation_01
+  target_id: hicampus_f1_19f_manager_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_efb2458aa7
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_manager_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_8cb858eb07
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_circulation_01
+  target_id: hicampus_f1_19f_meeting_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_e30c4f88fe
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_meeting_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e91758c72e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_circulation_01
+  target_id: hicampus_f1_19f_meeting_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_4485188120
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_meeting_02
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_b9294fa47e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_circulation_01
+  target_id: hicampus_f1_19f_office_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_660eea2afa
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_office_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_bca58afe56
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_circulation_01
+  target_id: hicampus_f1_19f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_1af041c100
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_restroom_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_9df5e1edb4
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_circulation_01
+  target_id: hicampus_f1_20f_manager_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_a42e82524e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_manager_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_c82e45c8ea
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_circulation_01
+  target_id: hicampus_f1_20f_meeting_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_b3c5c6f645
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_meeting_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_4638617cf4
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_circulation_01
+  target_id: hicampus_f1_20f_meeting_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_0ebea65e4e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_meeting_02
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_e406248d47
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_circulation_01
+  target_id: hicampus_f1_20f_office_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_f61ca66bff
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_office_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_661257331d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_circulation_01
+  target_id: hicampus_f1_20f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_bb21817954
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_restroom_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_7a2fea2c9b
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_circulation_01
+  target_id: hicampus_f1_21f_manager_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_c80380c9aa
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_manager_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_b578fee022
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_circulation_01
+  target_id: hicampus_f1_21f_manager_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_25a8620782
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_manager_02
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_23958da32a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_circulation_01
+  target_id: hicampus_f1_21f_meeting_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_d9a0a2aed0
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_meeting_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_646cb134bb
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_circulation_01
+  target_id: hicampus_f1_21f_meeting_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_1d8f25badd
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_meeting_02
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_19c81d160d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_circulation_01
+  target_id: hicampus_f1_21f_office_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_ed54608eb7
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_office_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_09bc679fce
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_circulation_01
+  target_id: hicampus_f1_22f_manager_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_3547962162
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_manager_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_8513d5d2e2
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_circulation_01
+  target_id: hicampus_f1_22f_manager_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_8db9570486
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_manager_02
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_41bd559410
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_circulation_01
+  target_id: hicampus_f1_22f_meeting_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e035c39f35
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_meeting_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_e82e5d6896
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_circulation_01
+  target_id: hicampus_f1_22f_meeting_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_b00068830b
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_meeting_02
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_655801fcda
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_circulation_01
+  target_id: hicampus_f1_22f_office_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_4b9dbf7037
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_office_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_3c47ac927e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_circulation_01
+  target_id: hicampus_f1_23f_manager_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_5f594e1c25
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_manager_01
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_eeac8d4fde
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_circulation_01
+  target_id: hicampus_f1_23f_manager_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_694e4b7a61
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_manager_02
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_55c3289045
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_circulation_01
+  target_id: hicampus_f1_23f_meeting_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e3930e6726
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_meeting_01
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_b4579c83aa
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_circulation_01
+  target_id: hicampus_f1_23f_meeting_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_290acd2fdc
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_meeting_02
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_339353c757
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_circulation_01
+  target_id: hicampus_f1_23f_office_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_8aa9efa53c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_office_01
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_67319cc904
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f2_01f_canteen_dining_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_baeee4485c
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_canteen_dining_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_751f7186cb
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f2_01f_canteen_dining_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_d385709286
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_canteen_dining_02
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_c05896a716
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f2_01f_kitchen_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_5b117a8331
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_kitchen_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_fdfeea723c
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f2_01f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_3f0d17b4e0
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_restroom_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_a3bedf2062
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f2_01f_storage_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_fbf9316838
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_storage_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_293816850b
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_circulation_01
+  target_id: hicampus_f2_02f_canteen_dining_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_fb2528e732
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_canteen_dining_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_23099d0432
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_circulation_01
+  target_id: hicampus_f2_02f_canteen_dining_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_519125120a
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_canteen_dining_02
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_5dfc12ee60
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_circulation_01
+  target_id: hicampus_f2_02f_kitchen_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_b5b6509576
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_kitchen_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_eb56cfa338
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_circulation_01
+  target_id: hicampus_f2_02f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_72d52df128
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_restroom_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_a94e17887c
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_circulation_01
+  target_id: hicampus_f2_02f_storage_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_574d6a6934
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_storage_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_213aee3b1e
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_circulation_01
+  target_id: hicampus_f2_03f_canteen_dining_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_d691df6a3c
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_canteen_dining_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_14ec572152
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_circulation_01
+  target_id: hicampus_f2_03f_canteen_dining_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_afdd0d1f95
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_canteen_dining_02
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_37e900ee45
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_circulation_01
+  target_id: hicampus_f2_03f_kitchen_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_d90f3e17a8
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_kitchen_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_218c582e50
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_circulation_01
+  target_id: hicampus_f2_03f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_f483351ddc
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_restroom_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_4772c1017a
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_circulation_01
+  target_id: hicampus_f2_03f_storage_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_1e8ada4900
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_storage_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_b0dd2f5373
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_circulation_01
+  target_id: hicampus_f3_01f_classroom_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_6e25109bc5
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_classroom_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_f44bac706b
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_circulation_01
+  target_id: hicampus_f3_01f_classroom_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_19353bb270
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_classroom_02
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_a1594c72d1
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_circulation_01
+  target_id: hicampus_f3_01f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_ffb2218e9d
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_office_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_dc80534d8f
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_circulation_01
+  target_id: hicampus_f3_01f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_fbc786bb00
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_restroom_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_b533a97bbc
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_circulation_01
+  target_id: hicampus_f3_02f_classroom_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_30ddf678f3
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_classroom_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_1f7c9708ad
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_circulation_01
+  target_id: hicampus_f3_02f_classroom_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_281dcaaea1
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_classroom_02
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_cfee648626
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_circulation_01
+  target_id: hicampus_f3_02f_office_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_542a9e1ff6
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_office_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_a3ebb51f15
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_circulation_01
+  target_id: hicampus_f3_02f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_d559d20d97
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_restroom_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_85ecae9dd0
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_circulation_01
+  target_id: hicampus_f3_03f_classroom_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_b76b24c6ac
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_classroom_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_c64c257929
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_circulation_01
+  target_id: hicampus_f3_03f_classroom_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_9393e23bcb
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_classroom_02
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_bed5514bc4
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_circulation_01
+  target_id: hicampus_f3_03f_lab_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_85ca43d8c8
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_lab_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_dabbca9d13
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_circulation_01
+  target_id: hicampus_f3_03f_meeting_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_1e20f13efd
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_meeting_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_d3b97c95a4
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_circulation_01
+  target_id: hicampus_f3_03f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_68561450c7
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_restroom_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_e9e042b996
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_circulation_01
+  target_id: hicampus_f3_04f_classroom_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_7fc881e37b
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_classroom_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_defd5277ba
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_circulation_01
+  target_id: hicampus_f3_04f_classroom_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_a74c2595a8
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_classroom_02
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_940c3418c6
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_circulation_01
+  target_id: hicampus_f3_04f_lab_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e07601114a
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_lab_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_872ade9e3c
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_circulation_01
+  target_id: hicampus_f3_04f_meeting_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_c3bfbb2996
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_meeting_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_8faf655427
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_circulation_01
+  target_id: hicampus_f3_04f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_f9cc9fbd3b
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_restroom_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_4942b61f80
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_circulation_01
+  target_id: hicampus_f3_05f_classroom_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_4136ea88b3
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_classroom_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_f20e836904
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_circulation_01
+  target_id: hicampus_f3_05f_classroom_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_acc87f332f
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_classroom_02
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_ee3bf522ab
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_circulation_01
+  target_id: hicampus_f3_05f_lab_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_88eae6ca69
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_lab_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_422d6a3fbe
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_circulation_01
+  target_id: hicampus_f3_05f_meeting_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_ca376cb242
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_meeting_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_395e8027dc
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_circulation_01
+  target_id: hicampus_f3_05f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_a04188bc01
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_restroom_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_c28162de10
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_circulation_01
+  target_id: hicampus_f3_06f_classroom_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_208a9e2956
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_classroom_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_3b8871171b
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_circulation_01
+  target_id: hicampus_f3_06f_classroom_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_83a417e57a
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_classroom_02
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_cfbbc177db
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_circulation_01
+  target_id: hicampus_f3_06f_lab_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_76ff18759d
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_lab_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_4b8ee4b213
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_circulation_01
+  target_id: hicampus_f3_06f_meeting_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_ad3531ff62
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_meeting_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_90658de1c4
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_circulation_01
+  target_id: hicampus_f3_06f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_817a496928
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_restroom_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_322cbfb0b5
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_circulation_01
+  target_id: hicampus_f4_01f_electrical_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_bdd3bc01dd
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_electrical_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_9ee4930104
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_circulation_01
+  target_id: hicampus_f4_01f_monitoring_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_a6c278a14a
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_monitoring_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_db6bad7e08
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_circulation_01
+  target_id: hicampus_f4_01f_prep_lab_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_16ad6ce8f0
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_prep_lab_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_07f7ae3a49
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_circulation_01
+  target_id: hicampus_f4_01f_prep_lab_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_7d7049e554
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_prep_lab_02
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_ffb394eb36
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_circulation_01
+  target_id: hicampus_f4_01f_storage_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_55b9d50399
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_storage_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_88d37dee45
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_circulation_01
+  target_id: hicampus_f4_02f_electrical_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_caaacf25be
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_electrical_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_727dc13071
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_circulation_01
+  target_id: hicampus_f4_02f_monitoring_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_7a2996adba
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_monitoring_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_57f7905307
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_circulation_01
+  target_id: hicampus_f4_02f_prep_lab_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_3f0e89fbae
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_prep_lab_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_4c4ad95e89
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_circulation_01
+  target_id: hicampus_f4_02f_prep_lab_02
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_2525a4dbbd
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_prep_lab_02
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_f2d73e402d
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_circulation_01
+  target_id: hicampus_f4_02f_storage_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_023f16f96d
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_storage_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_7c6dcbce45
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_circulation_01
+  target_id: hicampus_f4_03f_lab_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_a573af60bf
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_lab_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_0163f0c5da
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_circulation_01
+  target_id: hicampus_f4_03f_lab_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_c64ab01065
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_lab_02
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_09845c6792
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_circulation_01
+  target_id: hicampus_f4_03f_lab_03
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_9d74dcd84b
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_lab_03
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_46cf46d77b
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_circulation_01
+  target_id: hicampus_f4_03f_prep_lab_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_7e16a6db3b
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_prep_lab_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_f285139a98
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_circulation_01
+  target_id: hicampus_f4_03f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_4cd07fef75
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_restroom_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_357f89b898
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_circulation_01
+  target_id: hicampus_f4_04f_lab_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_9853b5f757
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_lab_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_71cce0827a
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_circulation_01
+  target_id: hicampus_f4_04f_lab_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_eb922eccb1
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_lab_02
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_619e897466
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_circulation_01
+  target_id: hicampus_f4_04f_lab_03
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_f5ba3c4b64
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_lab_03
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_e56ecb6959
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_circulation_01
+  target_id: hicampus_f4_04f_prep_lab_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_250ed25f87
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_prep_lab_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_5fece938d5
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_circulation_01
+  target_id: hicampus_f4_04f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_62d0cac7cf
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_restroom_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_5bae901867
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_circulation_01
+  target_id: hicampus_f4_05f_lab_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_65a861fa89
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_lab_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_f946eef2a9
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_circulation_01
+  target_id: hicampus_f4_05f_lab_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_b2dce30bad
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_lab_02
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_9c8995513b
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_circulation_01
+  target_id: hicampus_f4_05f_lab_03
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_1a3cf7b03e
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_lab_03
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_ad6fef1374
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_circulation_01
+  target_id: hicampus_f4_05f_prep_lab_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_2bc78a815b
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_prep_lab_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_5fcf469d0c
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_circulation_01
+  target_id: hicampus_f4_05f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_edfd5c8258
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_restroom_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_6eb0e8a197
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_circulation_01
+  target_id: hicampus_f4_06f_lab_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_881e4bf709
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_lab_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_e324423a86
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_circulation_01
+  target_id: hicampus_f4_06f_lab_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_cedda5e242
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_lab_02
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_f6c0e2b3c3
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_circulation_01
+  target_id: hicampus_f4_06f_lab_03
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_20f8679b82
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_lab_03
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_17cee8f768
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_circulation_01
+  target_id: hicampus_f4_06f_prep_lab_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_f66d1904eb
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_prep_lab_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_5d66218255
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_circulation_01
+  target_id: hicampus_f4_06f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_dd3b4a6bfd
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_restroom_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_ff48cb1ed8
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_circulation_01
+  target_id: hicampus_f4_07f_lab_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_ce4c5cfded
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_lab_01
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_5a540add67
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_circulation_01
+  target_id: hicampus_f4_07f_lab_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_f66dbab094
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_lab_02
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_5e770edbbd
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_circulation_01
+  target_id: hicampus_f4_07f_lab_03
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_a986cedcfc
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_lab_03
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_6e31426715
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_circulation_01
+  target_id: hicampus_f4_07f_prep_lab_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_0251372c2b
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_prep_lab_01
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_688be634dc
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_circulation_01
+  target_id: hicampus_f4_07f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_e886749999
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_restroom_01
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_e5bff0ed73
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_circulation_01
+  target_id: hicampus_f5_01f_av_room_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_88af4c3fe5
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_av_room_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_9c21876061
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_circulation_01
+  target_id: hicampus_f5_01f_expo_hall_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_dafb20d54a
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_expo_hall_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_1cd3f4af76
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_circulation_01
+  target_id: hicampus_f5_01f_expo_hall_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_ccf8ef60dc
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_expo_hall_02
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_a0b78d7f57
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_circulation_01
+  target_id: hicampus_f5_01f_meeting_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_aa0981ea79
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_meeting_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_ebc07ec44d
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_circulation_01
+  target_id: hicampus_f5_01f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_e509fb2831
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_restroom_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_8b628ca309
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_circulation_01
+  target_id: hicampus_f5_02f_av_room_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_370fdbe390
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_av_room_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_28ef944676
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_circulation_01
+  target_id: hicampus_f5_02f_expo_hall_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_08d0f21c2a
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_expo_hall_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_383fdf2128
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_circulation_01
+  target_id: hicampus_f5_02f_expo_hall_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_cbb7e47f0d
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_expo_hall_02
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_8e34c8e718
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_circulation_01
+  target_id: hicampus_f5_02f_meeting_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_3b38ebed83
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_meeting_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_0fead33868
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_circulation_01
+  target_id: hicampus_f5_02f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_9e17ee4781
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_restroom_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_fe63c98f4c
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_circulation_01
+  target_id: hicampus_f5_03f_av_room_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_eb3f9b44ae
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_av_room_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_b4851b81c7
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_circulation_01
+  target_id: hicampus_f5_03f_expo_hall_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_773ddd9b40
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_expo_hall_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_49dd4755e8
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_circulation_01
+  target_id: hicampus_f5_03f_expo_hall_02
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_caab544032
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_expo_hall_02
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_7d9cfe393e
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_circulation_01
+  target_id: hicampus_f5_03f_meeting_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_c35a8e6b41
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_meeting_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_05dfce769d
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_circulation_01
+  target_id: hicampus_f5_03f_restroom_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_b62ffef757
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_restroom_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_4de9404cea
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_circulation_01
+  target_id: hicampus_f6_01f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_76a9ee24e0
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_dorm_unit_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_52d6e66bf2
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_circulation_01
+  target_id: hicampus_f6_01f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_0ef0d51ca4
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_dorm_unit_02
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_1f15adfc3d
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_circulation_01
+  target_id: hicampus_f6_01f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_d7079faf18
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_lounge_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_b38535bb2e
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_circulation_01
+  target_id: hicampus_f6_01f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_aac6cd1173
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_restroom_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_cc5e99fd55
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_circulation_01
+  target_id: hicampus_f6_02f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_f241a66904
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_dorm_unit_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_b642d91f8d
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_circulation_01
+  target_id: hicampus_f6_02f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_e18754360f
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_dorm_unit_02
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_ff7ac5f564
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_circulation_01
+  target_id: hicampus_f6_02f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_2a656bcad1
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_lounge_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_c048dd1711
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_circulation_01
+  target_id: hicampus_f6_02f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_c8ee18f2d0
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_restroom_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_d6098f2de4
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_circulation_01
+  target_id: hicampus_f6_03f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_8fdf039dc9
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_dorm_unit_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_05c8055c6d
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_circulation_01
+  target_id: hicampus_f6_03f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_622e72c8c7
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_dorm_unit_02
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e384d9a7c1
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_circulation_01
+  target_id: hicampus_f6_03f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_b4a07538bb
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_lounge_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_1552d2cefa
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_circulation_01
+  target_id: hicampus_f6_03f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_ddc455c746
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_restroom_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_7e33a1eba8
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_circulation_01
+  target_id: hicampus_f6_04f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_1fd5b431e3
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_dorm_unit_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_5d15dd4c1f
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_circulation_01
+  target_id: hicampus_f6_04f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_10217d3d54
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_dorm_unit_02
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_e963b59270
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_circulation_01
+  target_id: hicampus_f6_04f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_0008d79e9f
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_lounge_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_a4aa849c8a
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_circulation_01
+  target_id: hicampus_f6_04f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_e0ffe721f2
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_restroom_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_8afd89a784
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_circulation_01
+  target_id: hicampus_f6_05f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_4563231c6a
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_dorm_unit_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_abe82911d3
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_circulation_01
+  target_id: hicampus_f6_05f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_f1e9a418d9
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_dorm_unit_02
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_d023a57b6d
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_circulation_01
+  target_id: hicampus_f6_05f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_3674dfb929
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_lounge_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_31d940fb59
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_circulation_01
+  target_id: hicampus_f6_05f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_4ece383215
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_restroom_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_20fd95c778
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_circulation_01
+  target_id: hicampus_f6_06f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_29cfa780f3
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_dorm_unit_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_4aae3b2bf7
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_circulation_01
+  target_id: hicampus_f6_06f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_eb202daede
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_dorm_unit_02
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_b051d3da58
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_circulation_01
+  target_id: hicampus_f6_06f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_a0e18162f8
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_lounge_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_edc06da10a
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_circulation_01
+  target_id: hicampus_f6_06f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_b7f1753759
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_restroom_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_bc47c68ba4
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_circulation_01
+  target_id: hicampus_f6_07f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_1f929c9f2a
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_dorm_unit_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_9a1ea63ad2
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_circulation_01
+  target_id: hicampus_f6_07f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_515b2b9b42
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_dorm_unit_02
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_1ad272d22e
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_circulation_01
+  target_id: hicampus_f6_07f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_27fab04998
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_lounge_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_6d04b3250a
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_circulation_01
+  target_id: hicampus_f6_07f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_b308f3d174
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_restroom_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_bded58ca23
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_circulation_01
+  target_id: hicampus_f6_08f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_b67e3d6da7
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_dorm_unit_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_9e04b7f56e
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_circulation_01
+  target_id: hicampus_f6_08f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_a14b8ae5a2
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_dorm_unit_02
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_236e3de7ee
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_circulation_01
+  target_id: hicampus_f6_08f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_4b328eaf8a
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_lounge_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_2080530145
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_circulation_01
+  target_id: hicampus_f6_08f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_2c2e84a1ea
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_restroom_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_ac02723283
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_circulation_01
+  target_id: hicampus_f6_09f_dorm_unit_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_7b6ed4d376
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_dorm_unit_01
+  target_id: hicampus_f6_09f_circulation_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_3fb076ab8e
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_circulation_01
+  target_id: hicampus_f6_09f_dorm_unit_02
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_c426605ff8
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_dorm_unit_02
+  target_id: hicampus_f6_09f_circulation_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_5c8f494853
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_circulation_01
+  target_id: hicampus_f6_09f_lounge_01
+  directed: true
+  attributes:
+    direction: east
+    topology_auto: true
+- id: rel_topo_3d2c357432
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_lounge_01
+  target_id: hicampus_f6_09f_circulation_01
+  directed: true
+  attributes:
+    direction: west
+    topology_auto: true
+- id: rel_topo_ba904a18b6
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_circulation_01
+  target_id: hicampus_f6_09f_restroom_01
+  directed: true
+  attributes:
+    direction: south
+    topology_auto: true
+- id: rel_topo_7db05fee7d
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_restroom_01
+  target_id: hicampus_f6_09f_circulation_01
+  directed: true
+  attributes:
+    direction: north
+    topology_auto: true
+- id: rel_topo_e6d8f84d61
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: northwest
+    topology_auto: true
+- id: rel_topo_d67668f024
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southeast
+    topology_auto: true
+- id: rel_topo_d7cb17b358
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    direction: northeast
+    topology_auto: true
+- id: rel_topo_1f52ac061b
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_circulation_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southwest
+    topology_auto: true
+- id: rel_topo_d1963c4b3b
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    direction: northwest
+    topology_auto: true
+- id: rel_topo_e2d9f108bb
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_circulation_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southeast
+    topology_auto: true
+- id: rel_topo_3c0506d3a9
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_circulation_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southeast
+    topology_auto: true
+- id: rel_topo_8bf951552c
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_circulation_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    direction: northwest
+    topology_auto: true
+- id: rel_topo_e1bdbb9e34
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    direction: southeast
+    topology_auto: true
+- id: rel_topo_e0eac15e87
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_circulation_01
+  target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    direction: northwest
+    topology_auto: true
+- id: rel_topo_29838ce5dd
+  rel_type_code: connects_to
+  source_id: hicampus_f1_01f_circulation_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_23cfd2a0b4
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_circulation_01
   target_id: hicampus_f1_01f_circulation_01
   directed: true
   attributes:
     direction: down
+    topology_auto: true
+- id: rel_topo_8ee5ca0d72
+  rel_type_code: connects_to
+  source_id: hicampus_f1_02f_circulation_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_5a3926230f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_circulation_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_74d74abeaf
+  rel_type_code: connects_to
+  source_id: hicampus_f1_03f_circulation_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_6429666993
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_circulation_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_47dc396a3a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_04f_circulation_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_34d9df55dd
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_circulation_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_e0b64c446f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_05f_circulation_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_834ac723af
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_circulation_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_82736fc9c6
+  rel_type_code: connects_to
+  source_id: hicampus_f1_06f_circulation_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_21a336244d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_circulation_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_9ef4bf5bd4
+  rel_type_code: connects_to
+  source_id: hicampus_f1_07f_circulation_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_4834c2580e
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_circulation_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_8fe150e3c0
+  rel_type_code: connects_to
+  source_id: hicampus_f1_08f_circulation_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_93ddd91b7b
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_circulation_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_75406234be
+  rel_type_code: connects_to
+  source_id: hicampus_f1_09f_circulation_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_a53a632dd8
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_circulation_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_2e5707af58
+  rel_type_code: connects_to
+  source_id: hicampus_f1_10f_circulation_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_c6f615ca7d
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_circulation_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_0432b7cbd1
+  rel_type_code: connects_to
+  source_id: hicampus_f1_11f_circulation_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_6ae5ebfdfa
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_circulation_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_623ec78b4c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_12f_circulation_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_7b3b27cb87
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_circulation_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_77f31e9456
+  rel_type_code: connects_to
+  source_id: hicampus_f1_13f_circulation_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_7e922d2055
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_circulation_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_bd32552490
+  rel_type_code: connects_to
+  source_id: hicampus_f1_14f_circulation_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_b546e878f0
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_circulation_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_db56324d01
+  rel_type_code: connects_to
+  source_id: hicampus_f1_15f_circulation_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_3828be6d85
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_circulation_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_568359a02f
+  rel_type_code: connects_to
+  source_id: hicampus_f1_16f_circulation_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_78fdfdc51a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_circulation_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_abf277de9a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_17f_circulation_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_9621ab5335
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_circulation_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_7f6b0c6e0c
+  rel_type_code: connects_to
+  source_id: hicampus_f1_18f_circulation_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_2e01d3dc34
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_circulation_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_af4ebb3a76
+  rel_type_code: connects_to
+  source_id: hicampus_f1_19f_circulation_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_2ef67deb57
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_circulation_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_17a33fdead
+  rel_type_code: connects_to
+  source_id: hicampus_f1_20f_circulation_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_2a05a6aabc
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_circulation_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_6a1f217e0a
+  rel_type_code: connects_to
+  source_id: hicampus_f1_21f_circulation_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_c2da6d4449
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_circulation_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_c78db5c7c4
+  rel_type_code: connects_to
+  source_id: hicampus_f1_22f_circulation_01
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_8e1e25578b
+  rel_type_code: connects_to
+  source_id: hicampus_f1_23f_circulation_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_bc6c460f36
+  rel_type_code: connects_to
+  source_id: hicampus_f2_01f_circulation_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_14e17d037a
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_circulation_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_8f59d7b9ea
+  rel_type_code: connects_to
+  source_id: hicampus_f2_02f_circulation_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_7a257aab4c
+  rel_type_code: connects_to
+  source_id: hicampus_f2_03f_circulation_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_f2967370e0
+  rel_type_code: connects_to
+  source_id: hicampus_f3_01f_circulation_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_d18049913d
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_circulation_01
+  target_id: hicampus_f3_01f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_a8db507bd1
+  rel_type_code: connects_to
+  source_id: hicampus_f3_02f_circulation_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_0a545b14aa
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_circulation_01
+  target_id: hicampus_f3_02f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_a496443cfc
+  rel_type_code: connects_to
+  source_id: hicampus_f3_03f_circulation_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_65da6841ab
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_circulation_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_6b309e842d
+  rel_type_code: connects_to
+  source_id: hicampus_f3_04f_circulation_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_0877607339
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_circulation_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_0211ca07bd
+  rel_type_code: connects_to
+  source_id: hicampus_f3_05f_circulation_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_1afe3889c3
+  rel_type_code: connects_to
+  source_id: hicampus_f3_06f_circulation_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_c11a2997dc
+  rel_type_code: connects_to
+  source_id: hicampus_f4_01f_circulation_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_87c6d7d287
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_circulation_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_3db0570904
+  rel_type_code: connects_to
+  source_id: hicampus_f4_02f_circulation_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_6375ef03e2
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_circulation_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_f9c263a4d4
+  rel_type_code: connects_to
+  source_id: hicampus_f4_03f_circulation_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_fa20dcf38b
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_circulation_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_3eae3e72ec
+  rel_type_code: connects_to
+  source_id: hicampus_f4_04f_circulation_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_6213aebffe
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_circulation_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_7139db1e2e
+  rel_type_code: connects_to
+  source_id: hicampus_f4_05f_circulation_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_18a0357c2f
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_circulation_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_330e8e070d
+  rel_type_code: connects_to
+  source_id: hicampus_f4_06f_circulation_01
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_fceae5d29c
+  rel_type_code: connects_to
+  source_id: hicampus_f4_07f_circulation_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_6c10c56c89
+  rel_type_code: connects_to
+  source_id: hicampus_f5_01f_circulation_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_62f19ab843
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_circulation_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_90296c3187
+  rel_type_code: connects_to
+  source_id: hicampus_f5_02f_circulation_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_4456b5271d
+  rel_type_code: connects_to
+  source_id: hicampus_f5_03f_circulation_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_927b273b06
+  rel_type_code: connects_to
+  source_id: hicampus_f6_01f_circulation_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_c4f90f65e7
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_circulation_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_2e157ca2bb
+  rel_type_code: connects_to
+  source_id: hicampus_f6_02f_circulation_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_63c0571276
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_circulation_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_4c310b621a
+  rel_type_code: connects_to
+  source_id: hicampus_f6_03f_circulation_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_c910968cb5
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_circulation_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_1845b0ad4c
+  rel_type_code: connects_to
+  source_id: hicampus_f6_04f_circulation_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_f2c6e6cdad
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_circulation_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_ffe52928b1
+  rel_type_code: connects_to
+  source_id: hicampus_f6_05f_circulation_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_d2cbefa246
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_circulation_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_0404dcdb06
+  rel_type_code: connects_to
+  source_id: hicampus_f6_06f_circulation_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_40923a29a9
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_circulation_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_4c2d9d5db9
+  rel_type_code: connects_to
+  source_id: hicampus_f6_07f_circulation_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_aade3deab7
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_circulation_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_topo_32c3b2505b
+  rel_type_code: connects_to
+  source_id: hicampus_f6_08f_circulation_01
+  target_id: hicampus_f6_09f_circulation_01
+  directed: true
+  attributes:
+    direction: up
+    topology_auto: true
+- id: rel_topo_fde71944e3
+  rel_type_code: connects_to
+  source_id: hicampus_f6_09f_circulation_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    direction: down
+    topology_auto: true
+- id: rel_world_f1
+  rel_type_code: contains
+  source_id: hicampus_world
+  target_id: hicampus_f1
+  directed: true
+  attributes: {}
 - id: rel_npc_located_in_gate
   rel_type_code: located_in
   source_id: hicampus_npc_security_01
@@ -113,6 +4739,27 @@ relationships:
   rel_type_code: located_in
   source_id: hicampus_f1_01f_circulation_01_wifi_ap_01
   target_id: hicampus_f1_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_312e620025
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_500886b827
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_542a3af9a1
+  rel_type_code: located_in
+  source_id: hicampus_f1_02f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_02f_circulation_01
   directed: true
   attributes:
     source_kind: item
@@ -4894,6 +9541,993 @@ relationships:
   rel_type_code: located_in
   source_id: hicampus_plaza_wifi_ap_01
   target_id: hicampus_plaza
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1f21b548cd
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6b88e39c1e
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8e10cfcf44
+  rel_type_code: located_in
+  source_id: hicampus_f1_03f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4d726dda9d
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_91858bf4d3
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a8c116de8f
+  rel_type_code: located_in
+  source_id: hicampus_f1_04f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_827ac1ecf6
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1ae584a311
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fa3372a909
+  rel_type_code: located_in
+  source_id: hicampus_f1_05f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fc0a171fa0
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6cc236ddef
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6b0d521b70
+  rel_type_code: located_in
+  source_id: hicampus_f1_06f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1528b770e8
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_99f936edde
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_af5f130ed2
+  rel_type_code: located_in
+  source_id: hicampus_f1_07f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a27922643f
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a440887d1a
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e5ea7ee40c
+  rel_type_code: located_in
+  source_id: hicampus_f1_08f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_08f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0a514474f3
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b83d47d1c7
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_58568f8c2b
+  rel_type_code: located_in
+  source_id: hicampus_f1_09f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_09f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e7f105ddd5
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_804475c8dd
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_198a510107
+  rel_type_code: located_in
+  source_id: hicampus_f1_10f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_10f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f7e8802444
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_daf5cdea54
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_aaf59c7805
+  rel_type_code: located_in
+  source_id: hicampus_f1_11f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_11f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_64b5253ccd
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_38fe421093
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d6a20c15b7
+  rel_type_code: located_in
+  source_id: hicampus_f1_12f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_12f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b607834f0a
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4c7073d618
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fde685bb8c
+  rel_type_code: located_in
+  source_id: hicampus_f1_13f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_13f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4dfef71d0e
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_82e10468ff
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fd020b3bd4
+  rel_type_code: located_in
+  source_id: hicampus_f1_14f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_14f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3cf59ec5a7
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_082c283261
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_30617c4404
+  rel_type_code: located_in
+  source_id: hicampus_f1_15f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_15f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d8bb24f4af
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d89d1166f0
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1b9f7a4f91
+  rel_type_code: located_in
+  source_id: hicampus_f1_16f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_16f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d777dc48e4
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1a243612d1
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_2f8be69d79
+  rel_type_code: located_in
+  source_id: hicampus_f1_17f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_17f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7325115200
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_befec63192
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_df5ca47d26
+  rel_type_code: located_in
+  source_id: hicampus_f1_18f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_18f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_58adb2c874
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_46faa409c8
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1b342d82e8
+  rel_type_code: located_in
+  source_id: hicampus_f1_19f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_19f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9ada334ff8
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_65b86efe22
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a985e124e7
+  rel_type_code: located_in
+  source_id: hicampus_f1_20f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_20f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_bd64602dc6
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b13d5071be
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1b7d994f6e
+  rel_type_code: located_in
+  source_id: hicampus_f1_21f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_21f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3fe037d2c5
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9634093d8b
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_197bd101bc
+  rel_type_code: located_in
+  source_id: hicampus_f1_22f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_22f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_794b76d17f
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_dd6e21bd7b
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6116583854
+  rel_type_code: located_in
+  source_id: hicampus_f1_23f_circulation_01_wifi_ap_01
+  target_id: hicampus_f1_23f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_df1dd39d38
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_133d312e78
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_58c3e5756e
+  rel_type_code: located_in
+  source_id: hicampus_f2_01f_circulation_01_wifi_ap_01
+  target_id: hicampus_f2_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_794230c295
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_446d779b27
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_50df0289d3
+  rel_type_code: located_in
+  source_id: hicampus_f2_02f_circulation_01_wifi_ap_01
+  target_id: hicampus_f2_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3b1e94d0d0
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_36a82b5a48
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_94a0a6f473
+  rel_type_code: located_in
+  source_id: hicampus_f2_03f_circulation_01_wifi_ap_01
+  target_id: hicampus_f2_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7dbbfe6236
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8c65c5fa1d
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_cb59f2b394
+  rel_type_code: located_in
+  source_id: hicampus_f3_03f_circulation_01_wifi_ap_01
+  target_id: hicampus_f3_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c000f7bf7d
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_66fb0e03ac
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_8c0ba2e87c
+  rel_type_code: located_in
+  source_id: hicampus_f3_04f_circulation_01_wifi_ap_01
+  target_id: hicampus_f3_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5cf7ce5c29
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3f48701f62
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9db8b15253
+  rel_type_code: located_in
+  source_id: hicampus_f3_05f_circulation_01_wifi_ap_01
+  target_id: hicampus_f3_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ffe737cfc0
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0d260877cf
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_83456c4e01
+  rel_type_code: located_in
+  source_id: hicampus_f3_06f_circulation_01_wifi_ap_01
+  target_id: hicampus_f3_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6ff6f21085
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_96c89043fb
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fd46227861
+  rel_type_code: located_in
+  source_id: hicampus_f4_01f_circulation_01_wifi_ap_01
+  target_id: hicampus_f4_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7a24c35e7d
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c811c05fb1
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5a7b199f09
+  rel_type_code: located_in
+  source_id: hicampus_f4_02f_circulation_01_wifi_ap_01
+  target_id: hicampus_f4_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b040fd4b7f
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e12f5fbb7d
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_341d84d103
+  rel_type_code: located_in
+  source_id: hicampus_f4_03f_circulation_01_wifi_ap_01
+  target_id: hicampus_f4_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_31af511e4a
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9bd9168695
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6eacb696c1
+  rel_type_code: located_in
+  source_id: hicampus_f4_04f_circulation_01_wifi_ap_01
+  target_id: hicampus_f4_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7cc3140b36
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7582f5768f
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_83c789a2df
+  rel_type_code: located_in
+  source_id: hicampus_f4_05f_circulation_01_wifi_ap_01
+  target_id: hicampus_f4_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_47bd43548a
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_fa274b5c75
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_aa2fd8db83
+  rel_type_code: located_in
+  source_id: hicampus_f4_06f_circulation_01_wifi_ap_01
+  target_id: hicampus_f4_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a4e1d1a685
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1caf7bbfe7
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_004d2b98e7
+  rel_type_code: located_in
+  source_id: hicampus_f4_07f_circulation_01_wifi_ap_01
+  target_id: hicampus_f4_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_c0c6dec037
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_4932992c6b
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_35d335e94d
+  rel_type_code: located_in
+  source_id: hicampus_f5_01f_circulation_01_wifi_ap_01
+  target_id: hicampus_f5_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9e41f13edd
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9a633cc4bf
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_1bea51a189
+  rel_type_code: located_in
+  source_id: hicampus_f5_02f_circulation_01_wifi_ap_01
+  target_id: hicampus_f5_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_a065fc4ac8
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_06eff43b1a
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_046de9ae45
+  rel_type_code: located_in
+  source_id: hicampus_f5_03f_circulation_01_wifi_ap_01
+  target_id: hicampus_f5_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_3097ca28ed
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_e1aa4df6ca
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0aee3039d9
+  rel_type_code: located_in
+  source_id: hicampus_f6_01f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_01f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_0b2731994a
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_5d4898cb8f
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d8ff82a2d7
+  rel_type_code: located_in
+  source_id: hicampus_f6_02f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_02f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d75321a75c
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b90dc8415f
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b189f2dd28
+  rel_type_code: located_in
+  source_id: hicampus_f6_03f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_03f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7e62ebae5b
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_f237882d89
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_ae3d635bb2
+  rel_type_code: located_in
+  source_id: hicampus_f6_04f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_04f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_539a3fe783
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_6362d5900a
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_7a029245ae
+  rel_type_code: located_in
+  source_id: hicampus_f6_05f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_05f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_484f5eb6c2
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_be299e3ab6
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_da86452309
+  rel_type_code: located_in
+  source_id: hicampus_f6_06f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_06f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_75ed41cd03
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b4d00f666e
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_70636e7e51
+  rel_type_code: located_in
+  source_id: hicampus_f6_07f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_07f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_d4890600e1
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b4b98d0f31
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_06e15c3d5a
+  rel_type_code: located_in
+  source_id: hicampus_f6_08f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_08f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_33c6e5a659
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_circulation_01_lighting_fixture_01
+  target_id: hicampus_f6_09f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_9214cde9f4
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_circulation_01_lounge_furniture_01
+  target_id: hicampus_f6_09f_circulation_01
+  directed: true
+  attributes:
+    source_kind: item
+- id: rel_item_located_in_b0be82fb77
+  rel_type_code: located_in
+  source_id: hicampus_f6_09f_circulation_01_wifi_ap_01
+  target_id: hicampus_f6_09f_circulation_01
   directed: true
   attributes:
     source_kind: item

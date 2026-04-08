@@ -452,3 +452,86 @@ def test_entity_row_flat_attributes_merges_nested_yaml_attributes():
     assert flat["location_ref"] == "room_a"
     assert "display_name" not in flat
     assert "attributes" not in flat
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_ensure_graph_seed_ontology_applies_yaml_schema_definitions():
+    """Ontology YAML overlays must be written to node_types on ensure_graph_seed_ontology."""
+    _require_postgres_engine()
+    from sqlalchemy import text
+
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import ensure_graph_seed_ontology
+
+    ensure_graph_seed_ontology(engine)
+    with db_session_context() as session:
+        row = session.execute(
+            text("SELECT schema_definition, tags FROM node_types WHERE type_code = 'network_access_point'")
+        ).fetchone()
+    assert row is not None
+    sd, tags = row[0], row[1]
+    assert isinstance(sd, dict)
+    assert sd.get("type") == "object"
+    assert "properties" in sd
+    assert "graph_seed" in (tags or [])
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_ensure_graph_seed_ontology_room_schema_from_yaml():
+    _require_postgres_engine()
+    from sqlalchemy import text
+
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import ensure_graph_seed_ontology
+
+    ensure_graph_seed_ontology(engine)
+    with db_session_context() as session:
+        row = session.execute(
+            text("SELECT schema_definition FROM node_types WHERE type_code = 'room'")
+        ).fetchone()
+    assert row is not None
+    sd = row[0]
+    assert isinstance(sd, dict)
+    assert sd.get("type") == "object"
+    assert "room_type" in sd.get("properties", {})
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_ensure_graph_seed_ontology_parent_type_codes_match_python_mro():
+    """T9: node_types.parent_type_code aligns with GRAPH_SEED_NODE_TYPES_MATRIX."""
+    _require_postgres_engine()
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import GRAPH_SEED_ONTOLOGY_NODE_ROWS, ensure_graph_seed_ontology
+
+    ensure_graph_seed_ontology(engine)
+    expected = {row[0]: row[1] for row in GRAPH_SEED_ONTOLOGY_NODE_ROWS}
+    with db_session_context() as session:
+        rows = session.execute(text("SELECT type_code, parent_type_code FROM node_types")).fetchall()
+    got = {r[0]: r[1] for r in rows if r[0] in expected}
+    assert got == expected
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_ensure_builtin_node_type_schema_envelopes_idempotent():
+    """T5: builtin node_types rows use JSON Schema object envelope when present."""
+    _require_postgres_engine()
+    from db.ontology.schema_envelope import is_json_schema_object_envelope
+    from db.schema_migrations import ensure_builtin_node_type_schema_envelopes
+
+    from app.core.database import db_session_context, engine
+
+    ensure_builtin_node_type_schema_envelopes(engine)
+    ensure_builtin_node_type_schema_envelopes(engine)
+    with db_session_context() as session:
+        for tc in ("account", "system_command_ability", "system_notice"):
+            row = session.execute(
+                text("SELECT schema_definition FROM node_types WHERE type_code = :tc"),
+                {"tc": tc},
+            ).fetchone()
+            if row is None:
+                continue
+            assert is_json_schema_object_envelope(row[0]), f"{tc} should be envelope after ensure"

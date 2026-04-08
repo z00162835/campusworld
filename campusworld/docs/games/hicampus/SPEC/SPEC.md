@@ -43,7 +43,8 @@ flowchart TD
 
 ### 开发者快速路径（与当前仓库一致）
 
-- **房间与连边的真源**为 `data/rooms.yaml`、`data/relationships.yaml`（含 `connects_to` 的 `direction`）。本文件中部分早期拓扑表（如楼宇 ID 命名）可能与生成数据不完全一致，以 YAML 为准。
+- **房间与连边的真源**为 `data/rooms.yaml`、`data/relationships.yaml`（含 `connects_to` 的 `direction`）。其中**大量** `connects_to` 由 `app/games/hicampus/package/topology_connect_generate.py` 生成（带 `topology_auto`）；手工维护时勿覆盖脊线保留集，见该文件内 `PRESERVE_CONNECT_IDS`。
+- **改包后刷新命令顺序**（在 `backend/` 下）：见 [`app/games/hicampus/package/README.md`](../../../../backend/app/games/hicampus/package/README.md)（`spatial_generate` 可选 → `topology_connect_generate` → `entity_item_generate` 可选 → `entity_relationship_generate` → `world reload hicampus`）。
 - **安装与奇点屋进入**：`world install hicampus` → 奇点屋 `look` / `enter hicampus`；**图种子**由包内 `manifest.yaml` 的 `graph_seed` 控制，需 PostgreSQL，说明见仓库根 `CLAUDE.md`「安装 HiCampus 世界」。
 - **特性分档**：入口与容错见 `SPEC/features/F05_WORLD_ENTRY_INTEGRATION.md`，图种子见 `F03_GRAPH_SEED_PIPELINE.md`。
 
@@ -69,31 +70,51 @@ flowchart TD
 
 ### Spatial Layout
 
-`HiCampus` 的主路径和建筑布局如下（方向语义为世界内标准方位）：
+`HiCampus` 的主路径和建筑布局如下（方向语义为世界内标准方位）。下图与表中的 **F1–F6 标签为叙事/规范名称**；包内 `buildings.yaml` 的实现 id 为 **`hicampus_f1` … `hicampus_f6`**（与 F1–F6 一一对应）。
 
 - 大门朝南（`hicampus_gate`）
 - 大门向北到长桥（`hicampus_bridge`）
 - 长桥向北到中心广场（`hicampus_plaza`）
-- 广场正北为 F1（`hicampus_f1_office`）
-- F1 西侧为 F2（`hicampus_f2_canteen`）
-- F1 东侧为 F3（`hicampus_f3_training`）
-- F2 南侧为 F4（`hicampus_f4_lab`）
-- F3 南侧为 F5（`hicampus_f5_expo`）
-- F1 北侧为 F6（`hicampus_f6_dormitory`）
+- 广场正北为 F1 楼（建筑 id：`hicampus_f1`）
+- F1 西侧为 F2（`hicampus_f2`）、东侧为 F3（`hicampus_f3`）
+- F2 南侧为 F4（`hicampus_f4`）、F3 南侧为 F5（`hicampus_f5`）
+- F1 北侧为 F6（`hicampus_f6`）
 
-> 所有上述关系默认定义为“双向可达”，即实现层应包含去程与回程两条有向出口。
+> 户外脊线（闸机–连桥–广场–F1 首层交通核等）在数据中有对应 `connects_to`。**楼宇之间的水平互联**为园区平面概念；是否在 `relationships.yaml` 中实例化为可 walk 的跨楼边，**以当前 YAML 与拓扑生成结果为准**，下图仅作空间关系示意。
 
 ```mermaid
 flowchart TB
     gate[HiCampusGate] <--> bridge[HiCampusBridge]
     bridge <--> plaza[HiCampusPlaza]
-    plaza <--> f1[HiCampusF1Office]
-    f1 <--> f2[HiCampusF2Canteen]
-    f1 <--> f3[HiCampusF3Training]
-    f2 <--> f4[HiCampusF4Lab]
-    f3 <--> f5[HiCampusF5Expo]
-    f1 <--> f6[HiCampusF6Dormitory]
+    plaza <--> f1[F1 hicampus_f1]
+    f1 <--> f2[F2 hicampus_f2]
+    f1 <--> f3[F3 hicampus_f3]
+    f2 <--> f4[F4 hicampus_f4]
+    f3 <--> f5[F5 hicampus_f5]
+    f1 <--> f6[F6 hicampus_f6]
 ```
+
+### Campus Map (Markdown, data-derived)
+
+> 本地图以世界包 `data/relationships.yaml` 的 `connects_to` 为准（双向可达需要两条有向边）。它刻意只展示园区级可 walk 的“入口节点/交通核”，不展开楼内房间。
+
+- **入口脊线（室外主路径）**
+  - `hicampus_gate` --(north)--> `hicampus_bridge`
+  - `hicampus_bridge` --(north)--> `hicampus_plaza`
+  - `hicampus_plaza` --(north)--> `hicampus_f1_01f_circulation_01`（F1 首层入口/交通核）
+- **楼宇互联（入口交通核之间的 walk 边）**
+  - F1 ↔ F2：`hicampus_f1_01f_circulation_01` --(northwest/southeast)↔ `hicampus_f2_01f_circulation_01`
+  - F1 ↔ F3：`hicampus_f1_01f_circulation_01` --(northeast/southwest)↔ `hicampus_f3_01f_circulation_01`
+  - F2 ↔ F4：`hicampus_f2_01f_circulation_01` --(northwest/southeast)↔ `hicampus_f4_01f_circulation_01`
+  - F3 ↔ F5：`hicampus_f3_01f_circulation_01` --(southeast/northwest)↔ `hicampus_f5_01f_circulation_01`
+  - F1 ↔ F6：`hicampus_f1_01f_circulation_01` --(southeast/northwest)↔ `hicampus_f6_01f_circulation_01`
+
+### Path breakpoints (analysis + guardrails)
+
+- **典型断点**：只生成了“楼内拓扑”（各层 `*_circulation_01` ↔ 卫生间/会议室/… + up/down），但缺少“楼与楼之间 / 户外与楼之间”的入口连接，导致 F2–F6 形成从 `hicampus_gate` 不可达的子图。
+- **防回归约束**：`HiCampus` 数据包校验器会强制要求从 `hicampus_gate` 可达各楼的入口交通核（各 building 的最低楼层 `*_circulation_01`），否则 `world install/reload` 会失败并提示你重跑拓扑生成器。
+- **出口可读性契约**：`look` 的出口区必须呈现 `direction -> target_display_name`，不再只输出方向列表。
+- **方向唯一契约**：同一 `source_id` + 同一 `direction` 的 `connects_to` 必须唯一，不允许一个 room 在同一方向通达多个 room。
 
 ### Required Location Nodes
 
@@ -102,12 +123,12 @@ flowchart TB
 | `hicampus_gate` | HiCampus 大门 | room | 世界入口地标，连接奇点屋入口对象 |
 | `hicampus_bridge` | HiCampus 长桥 | room | 过渡空间，承接入口流量 |
 | `hicampus_plaza` | HiCampus 中心广场 | room | 主枢纽节点，承接主导航 |
-| `hicampus_f1_office` | F1 办公楼 | building | 23层办公综合体 |
-| `hicampus_f2_canteen` | F2 食堂 | building | 3层餐饮服务建筑 |
-| `hicampus_f3_training` | F3 培训中心 | building | 6层培训与会议建筑 |
-| `hicampus_f4_lab` | F4 实验室 | building | 7层实验研发建筑 |
-| `hicampus_f5_expo` | F5 展厅 | building | 3层展示与活动建筑 |
-| `hicampus_f6_dormitory` | F6 宿舍 | building | 9层居住配套建筑 |
+| `hicampus_f1` | F1 办公楼 | building | 23层办公综合体（叙事名：F1 Office） |
+| `hicampus_f2` | F2 食堂 | building | 3层餐饮服务建筑 |
+| `hicampus_f3` | F3 培训中心 | building | 6层培训与会议建筑 |
+| `hicampus_f4` | F4 实验室 | building | 7层实验研发建筑 |
+| `hicampus_f5` | F5 展厅 | building | 3层展示与活动建筑 |
+| `hicampus_f6` | F6 宿舍 | building | 9层居住配套建筑 |
 
 ## Building Initialization Specification
 
@@ -681,6 +702,23 @@ hint: run `world repair hicampus --dry-run`
 3. 双向通行关系完整：所有主路径连接均有 A->B 与 B->A
 4. 世界入口可达：从奇点屋入口对象可进入 `hicampus_gate`
 5. 数据来源校验：节点来源标记为 `games/hicampus/data/*`，非全局 seed
+6. 楼宇入口可达：从 `hicampus_gate` 必须可达每栋楼的入口交通核（各 building 最低楼层的 `*_circulation_01`）
+
+**本地验证命令（开发者）**（在 `backend/` 下）：
+
+```bash
+# 1) 生成/重写拓扑（会覆盖除保留脊线以外的 connects_to）
+python -m app.games.hicampus.package.topology_connect_generate --write
+
+# 2) 合并/补齐实体定位关系（located_in），建议在新房间产生后执行一次
+python -m app.games.hicampus.package.entity_relationship_generate --write
+
+# 3) 进游戏引擎后重载世界（管理员命令）
+# world reload hicampus
+
+# 4) 严格校验（管理员命令）
+# world validate hicampus --strict
+```
 
 #### Audit and Idempotency
 

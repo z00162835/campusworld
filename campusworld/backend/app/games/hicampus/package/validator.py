@@ -5,7 +5,7 @@ Layered validator (L1–L5) for HiCampus declarative world data package.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Tuple
 
 import yaml
 
@@ -48,6 +48,7 @@ ALLOWED_CONCEPT_SCOPES = frozenset(
 ALLOWED_CONCEPT_TYPES = frozenset({"goal", "process", "rule", "behavior", "skill"})
 
 _BASELINE_PROFILE_PATH = Path(__file__).resolve().parent / "baseline_profile.yaml"
+_WORLD_ENTRY_ROOM_ID = "hicampus_gate"
 
 
 def _load_l4_baseline() -> tuple[Dict[str, int], Set[str]]:
@@ -81,6 +82,149 @@ def _load_l4_baseline() -> tuple[Dict[str, int], Set[str]]:
     else:
         required_rooms = default_rooms
     return floor_expect, required_rooms
+
+
+def _build_connects_to_adjacency(relationships: List[Dict[str, Any]], room_ids: Set[str]) -> Dict[str, List[str]]:
+    adj: Dict[str, List[str]] = {rid: [] for rid in room_ids}
+    for rel in relationships:
+        if not isinstance(rel, dict):
+            continue
+        if str(rel.get("rel_type_code") or "") != "connects_to":
+            continue
+        src = str(rel.get("source_id") or "")
+        tgt = str(rel.get("target_id") or "")
+        if src in room_ids and tgt in room_ids:
+            adj.setdefault(src, []).append(tgt)
+    return adj
+
+
+def _reachable_from(start: str, adj: Dict[str, List[str]]) -> Set[str]:
+    if start not in adj:
+        return set()
+    seen: Set[str] = {start}
+    q: List[str] = [start]
+    while q:
+        cur = q.pop(0)
+        for nxt in adj.get(cur, []):
+            if nxt in seen:
+                continue
+            seen.add(nxt)
+            q.append(nxt)
+    return seen
+
+
+def _find_building_entry_hubs(
+    *,
+    buildings: List[Dict[str, Any]],
+    floors: List[Dict[str, Any]],
+    rooms: List[Dict[str, Any]],
+) -> Dict[str, str]:
+    """
+    Return {building_code: entry_room_id}.
+
+    Convention: entry hub is the building's lowest floor_number/floor_no room whose id endswith
+    '_circulation_01'. This matches the topology generator contract.
+    """
+    building_by_id: Dict[str, Dict[str, Any]] = {str(b.get("id")): b for b in buildings if b.get("id")}
+    floors_by_building: Dict[str, List[Dict[str, Any]]] = {}
+    for f in floors:
+        bid = str(f.get("building_id") or "")
+        if bid and bid in building_by_id:
+            floors_by_building.setdefault(bid, []).append(f)
+
+    # Choose the "entry floor" as the lowest numeric floor.
+    entry_floor_by_building: Dict[str, str] = {}
+    for bid, flist in floors_by_building.items():
+        def floor_no(row: Dict[str, Any]) -> int:
+            try:
+                return int(row.get("floor_number") or row.get("floor_no") or 1)
+            except (TypeError, ValueError):
+                return 1
+
+        flist = sorted(flist, key=floor_no)
+        fid = str(flist[0].get("id") or "")
+        if fid:
+            entry_floor_by_building[bid] = fid
+
+    # Find circulation hub on entry floor.
+    hub_by_building_code: Dict[str, str] = {}
+    for r in rooms:
+        if not isinstance(r, dict):
+            continue
+        rid = str(r.get("id") or "")
+        if not rid or not rid.endswith("_circulation_01"):
+            continue
+        fid = str(r.get("floor_id") or "")
+        if not fid:
+            continue
+        for bid, entry_fid in entry_floor_by_building.items():
+            if fid != entry_fid:
+                continue
+            b = building_by_id.get(bid) or {}
+            code = str(b.get("building_code") or bid).strip().upper()
+            # Prefer deterministic pick; if duplicates exist, keep first seen.
+            hub_by_building_code.setdefault(code, rid)
+    return hub_by_building_code
+
+
+def _validate_world_entry_reachability(
+    *,
+    rooms: List[Dict[str, Any]],
+    relationships: List[Dict[str, Any]],
+    entry_room_id: str,
+    required_entry_hubs: Dict[str, str],
+) -> None:
+    room_ids: Set[str] = {str(r.get("id")) for r in rooms if isinstance(r, dict) and r.get("id")}
+    adj = _build_connects_to_adjacency(relationships, room_ids)
+    reachable = _reachable_from(entry_room_id, adj)
+    missing: List[Tuple[str, str]] = [
+        (bcode, hub) for bcode, hub in sorted(required_entry_hubs.items()) if hub not in reachable
+    ]
+    if not missing:
+        return
+    missing_str = ", ".join([f"{bcode}:{hub}" for bcode, hub in missing])
+    raise DataPackageError(
+        ERROR_WORLD_DATA_SEMANTIC_CONFLICT,
+        (
+            f"world entry reachability broken: from {entry_room_id} cannot reach building entry hubs "
+            f"({missing_str}). Hint: run topology generator "
+            f"'python -m app.games.hicampus.package.topology_connect_generate --write' to regenerate connects_to."
+        ),
+    )
+
+
+def _validate_connects_to_direction_conflicts(relationships: List[Dict[str, Any]], room_ids: Set[str]) -> None:
+    """
+    Hard rule: one source+direction must map to exactly one target.
+    """
+    buckets: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+    for rel in relationships:
+        if not isinstance(rel, dict):
+            continue
+        if str(rel.get("rel_type_code") or "") != "connects_to":
+            continue
+        src = str(rel.get("source_id") or "")
+        if src not in room_ids:
+            continue
+        attrs = rel.get("attributes") if isinstance(rel.get("attributes"), dict) else {}
+        direction = str(attrs.get("direction") or "").strip().lower()
+        if not direction:
+            continue
+        buckets.setdefault((src, direction), []).append(rel)
+
+    for (src, direction), rels in buckets.items():
+        if len(rels) <= 1:
+            continue
+        rel_ids: List[str] = []
+        for rel in rels:
+            rel_ids.append(str(rel.get("id") or "?"))
+        raise DataPackageError(
+            ERROR_WORLD_DATA_SEMANTIC_CONFLICT,
+            (
+                f"direction conflict: source={src} direction={direction} has multiple connects_to "
+                f"(rels={','.join(rel_ids)}). Rule: one room cannot reach more than one room on the same direction."
+            ),
+        )
 
 
 REQUIRED_FILES = [
@@ -341,6 +485,17 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
     merge_description_sidecars(data_root, spatial_pre)
     normalize_spatial_rows(spatial_pre)
     validate_spatial_p0(spatial_pre, required_room_ids=required_rooms)
+
+    # L5a.1: topology reachability (hard constraint for walkable campus)
+    entry_hubs = _find_building_entry_hubs(buildings=buildings, floors=floors, rooms=rooms)
+    if entry_hubs:
+        _validate_world_entry_reachability(
+            rooms=rooms,
+            relationships=relationships,
+            entry_room_id=_WORLD_ENTRY_ROOM_ID,
+            required_entry_hubs=entry_hubs,
+        )
+    _validate_connects_to_direction_conflicts(relationships, room_ids)
 
     # L5b: concept bindings (including concept-to-concept) and scope hints
     bindable_ids = spatial_object_ids | all_entity_ids | all_concept_ids

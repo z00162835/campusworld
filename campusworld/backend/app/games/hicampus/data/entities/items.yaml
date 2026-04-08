@@ -386,6 +386,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_02f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第2层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_02f_circulation_01_lighting_fixture_01
+    asset_tag: HC-312E6200
+    placement:
+      floor_id: hicampus_f1_02f
+      floor_no: 2
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_02f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第2层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_02f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_02f_circulation_01_lounge_furniture_01
+    asset_tag: HC-500886B8
+    placement:
+      floor_id: hicampus_f1_02f
+      floor_no: 2
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_02f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第2层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L02
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 146
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_02f_circulation_01_wifi_ap_01
+    asset_tag: HC-542A3AF9
+    placement:
+      floor_id: hicampus_f1_02f
+      floor_no: 2
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_02f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -923,6 +1045,128 @@ items:
       layer_role: office_open
       layer: standard
       floor_uns: hicampus/F1/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_03f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第3层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_03f_circulation_01_lighting_fixture_01
+    asset_tag: HC-1F21B548
+    placement:
+      floor_id: hicampus_f1_03f
+      floor_no: 3
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_03f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第3层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_03f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_03f_circulation_01_lounge_furniture_01
+    asset_tag: HC-6B88E39C
+    placement:
+      floor_id: hicampus_f1_03f
+      floor_no: 3
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_03f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第3层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L03
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 118
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_03f_circulation_01_wifi_ap_01
+    asset_tag: HC-8E10CFCF
+    placement:
+      floor_id: hicampus_f1_03f
+      floor_no: 3
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L03
   presentation_domains:
   - room
   access_locks:
@@ -1482,6 +1726,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_04f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第4层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_04f_circulation_01_lighting_fixture_01
+    asset_tag: HC-4D726DDA
+    placement:
+      floor_id: hicampus_f1_04f
+      floor_no: 4
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_04f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第4层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_04f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_04f_circulation_01_lounge_furniture_01
+    asset_tag: HC-91858BF4
+    placement:
+      floor_id: hicampus_f1_04f
+      floor_no: 4
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_04f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第4层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L04
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 101
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_04f_circulation_01_wifi_ap_01
+    asset_tag: HC-A8C116DE
+    placement:
+      floor_id: hicampus_f1_04f
+      floor_no: 4
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_04f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -2019,6 +2385,128 @@ items:
       layer_role: office_open
       layer: standard
       floor_uns: hicampus/F1/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_05f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第5层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_05f_circulation_01_lighting_fixture_01
+    asset_tag: HC-827AC1EC
+    placement:
+      floor_id: hicampus_f1_05f
+      floor_no: 5
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_05f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第5层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_05f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_05f_circulation_01_lounge_furniture_01
+    asset_tag: HC-1AE584A3
+    placement:
+      floor_id: hicampus_f1_05f
+      floor_no: 5
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_05f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第5层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L05
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 101
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_05f_circulation_01_wifi_ap_01
+    asset_tag: HC-FA3372A9
+    placement:
+      floor_id: hicampus_f1_05f
+      floor_no: 5
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L05
   presentation_domains:
   - room
   access_locks:
@@ -2578,6 +3066,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_06f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第6层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_06f_circulation_01_lighting_fixture_01
+    asset_tag: HC-FC0A171F
+    placement:
+      floor_id: hicampus_f1_06f
+      floor_no: 6
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_06f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第6层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_06f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_06f_circulation_01_lounge_furniture_01
+    asset_tag: HC-6CC236DD
+    placement:
+      floor_id: hicampus_f1_06f
+      floor_no: 6
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_06f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第6层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L06
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 105
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_06f_circulation_01_wifi_ap_01
+    asset_tag: HC-6B0D521B
+    placement:
+      floor_id: hicampus_f1_06f
+      floor_no: 6
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_06f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -3115,6 +3725,128 @@ items:
       layer_role: office_open
       layer: standard
       floor_uns: hicampus/F1/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_07f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第7层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_07f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_07f_circulation_01_lighting_fixture_01
+    asset_tag: HC-1528B770
+    placement:
+      floor_id: hicampus_f1_07f
+      floor_no: 7
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L07
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_07f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第7层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_07f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_07f_circulation_01_lounge_furniture_01
+    asset_tag: HC-99F936ED
+    placement:
+      floor_id: hicampus_f1_07f
+      floor_no: 7
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L07
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_07f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第7层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_07f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L07
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 145
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_07f_circulation_01_wifi_ap_01
+    asset_tag: HC-AF5F130E
+    placement:
+      floor_id: hicampus_f1_07f
+      floor_no: 7
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L07
   presentation_domains:
   - room
   access_locks:
@@ -3674,6 +4406,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_08f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第8层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_08f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_08f_circulation_01_lighting_fixture_01
+    asset_tag: HC-A2792264
+    placement:
+      floor_id: hicampus_f1_08f
+      floor_no: 8
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_08f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第8层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_08f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_08f_circulation_01_lounge_furniture_01
+    asset_tag: HC-A440887D
+    placement:
+      floor_id: hicampus_f1_08f
+      floor_no: 8
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_08f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第8层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_08f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L08
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 108
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_08f_circulation_01_wifi_ap_01
+    asset_tag: HC-E5EA7EE4
+    placement:
+      floor_id: hicampus_f1_08f
+      floor_no: 8
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_open
+      layer: standard
+      floor_uns: hicampus/F1/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_08f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -4211,6 +5065,128 @@ items:
       layer_role: office_open
       layer: standard
       floor_uns: hicampus/F1/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_09f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第9层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_09f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_09f_circulation_01_lighting_fixture_01
+    asset_tag: HC-0A514474
+    placement:
+      floor_id: hicampus_f1_09f
+      floor_no: 9
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L09
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_09f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第9层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_09f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_09f_circulation_01_lounge_furniture_01
+    asset_tag: HC-B83D47D1
+    placement:
+      floor_id: hicampus_f1_09f
+      floor_no: 9
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L09
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_09f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第9层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_09f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L09
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 114
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_09f_circulation_01_wifi_ap_01
+    asset_tag: HC-58568F8C
+    placement:
+      floor_id: hicampus_f1_09f
+      floor_no: 9
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L09
   presentation_domains:
   - room
   access_locks:
@@ -4815,6 +5791,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_10f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第10层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_10f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_10f_circulation_01_lighting_fixture_01
+    asset_tag: HC-E7F105DD
+    placement:
+      floor_id: hicampus_f1_10f
+      floor_no: 10
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L10
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_10f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第10层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_10f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_10f_circulation_01_lounge_furniture_01
+    asset_tag: HC-804475C8
+    placement:
+      floor_id: hicampus_f1_10f
+      floor_no: 10
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L10
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_10f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第10层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_10f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L10
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 138
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_10f_circulation_01_wifi_ap_01
+    asset_tag: HC-198A5101
+    placement:
+      floor_id: hicampus_f1_10f
+      floor_no: 10
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L10
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_10f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -5397,6 +6495,128 @@ items:
       layer_role: office_mixed
       layer: mid
       floor_uns: hicampus/F1/L10
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_11f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第11层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_11f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_11f_circulation_01_lighting_fixture_01
+    asset_tag: HC-F7E88024
+    placement:
+      floor_id: hicampus_f1_11f
+      floor_no: 11
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L11
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_11f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第11层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_11f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_11f_circulation_01_lounge_furniture_01
+    asset_tag: HC-DAF5CDEA
+    placement:
+      floor_id: hicampus_f1_11f
+      floor_no: 11
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L11
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_11f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第11层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_11f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L11
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 115
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_11f_circulation_01_wifi_ap_01
+    asset_tag: HC-AAF59C78
+    placement:
+      floor_id: hicampus_f1_11f
+      floor_no: 11
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L11
   presentation_domains:
   - room
   access_locks:
@@ -6001,6 +7221,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_12f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第12层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_12f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_12f_circulation_01_lighting_fixture_01
+    asset_tag: HC-64B5253C
+    placement:
+      floor_id: hicampus_f1_12f
+      floor_no: 12
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L12
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_12f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第12层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_12f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_12f_circulation_01_lounge_furniture_01
+    asset_tag: HC-38FE4210
+    placement:
+      floor_id: hicampus_f1_12f
+      floor_no: 12
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L12
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_12f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第12层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_12f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L12
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 146
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_12f_circulation_01_wifi_ap_01
+    asset_tag: HC-D6A20C15
+    placement:
+      floor_id: hicampus_f1_12f
+      floor_no: 12
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L12
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_12f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -6583,6 +7925,128 @@ items:
       layer_role: office_mixed
       layer: mid
       floor_uns: hicampus/F1/L12
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_13f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第13层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_13f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_13f_circulation_01_lighting_fixture_01
+    asset_tag: HC-B607834F
+    placement:
+      floor_id: hicampus_f1_13f
+      floor_no: 13
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L13
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_13f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第13层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_13f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_13f_circulation_01_lounge_furniture_01
+    asset_tag: HC-4C7073D6
+    placement:
+      floor_id: hicampus_f1_13f
+      floor_no: 13
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L13
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_13f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第13层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_13f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L13
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 148
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_13f_circulation_01_wifi_ap_01
+    asset_tag: HC-FDE685BB
+    placement:
+      floor_id: hicampus_f1_13f
+      floor_no: 13
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L13
   presentation_domains:
   - room
   access_locks:
@@ -7187,6 +8651,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_14f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第14层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_14f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_14f_circulation_01_lighting_fixture_01
+    asset_tag: HC-4DFEF71D
+    placement:
+      floor_id: hicampus_f1_14f
+      floor_no: 14
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L14
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_14f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第14层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_14f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_14f_circulation_01_lounge_furniture_01
+    asset_tag: HC-82E10468
+    placement:
+      floor_id: hicampus_f1_14f
+      floor_no: 14
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L14
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_14f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第14层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_14f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L14
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 120
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_14f_circulation_01_wifi_ap_01
+    asset_tag: HC-FD020B3B
+    placement:
+      floor_id: hicampus_f1_14f
+      floor_no: 14
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L14
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_14f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -7769,6 +9355,128 @@ items:
       layer_role: office_mixed
       layer: mid
       floor_uns: hicampus/F1/L14
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_15f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第15层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_15f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_15f_circulation_01_lighting_fixture_01
+    asset_tag: HC-3CF59EC5
+    placement:
+      floor_id: hicampus_f1_15f
+      floor_no: 15
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L15
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_15f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第15层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_15f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_15f_circulation_01_lounge_furniture_01
+    asset_tag: HC-082C2832
+    placement:
+      floor_id: hicampus_f1_15f
+      floor_no: 15
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L15
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_15f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第15层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_15f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L15
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 135
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_15f_circulation_01_wifi_ap_01
+    asset_tag: HC-30617C44
+    placement:
+      floor_id: hicampus_f1_15f
+      floor_no: 15
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L15
   presentation_domains:
   - room
   access_locks:
@@ -8373,6 +10081,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_16f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第16层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_16f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_16f_circulation_01_lighting_fixture_01
+    asset_tag: HC-D8BB24F4
+    placement:
+      floor_id: hicampus_f1_16f
+      floor_no: 16
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L16
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_16f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第16层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_16f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_16f_circulation_01_lounge_furniture_01
+    asset_tag: HC-D89D1166
+    placement:
+      floor_id: hicampus_f1_16f
+      floor_no: 16
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L16
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_16f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第16层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_16f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L16
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 121
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_16f_circulation_01_wifi_ap_01
+    asset_tag: HC-1B9F7A4F
+    placement:
+      floor_id: hicampus_f1_16f
+      floor_no: 16
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: office_mixed
+      layer: mid
+      floor_uns: hicampus/F1/L16
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_16f_meeting_01_av_display_01
   world_id: hicampus
   type_code: av_display
@@ -8955,6 +10785,128 @@ items:
       layer_role: office_mixed
       layer: mid
       floor_uns: hicampus/F1/L16
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_17f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第17层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_17f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_17f_circulation_01_lighting_fixture_01
+    asset_tag: HC-D777DC48
+    placement:
+      floor_id: hicampus_f1_17f
+      floor_no: 17
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L17
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_17f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第17层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_17f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_17f_circulation_01_lounge_furniture_01
+    asset_tag: HC-1A243612
+    placement:
+      floor_id: hicampus_f1_17f
+      floor_no: 17
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L17
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_17f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第17层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_17f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L17
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 121
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_17f_circulation_01_wifi_ap_01
+    asset_tag: HC-2F8BE69D
+    placement:
+      floor_id: hicampus_f1_17f
+      floor_no: 17
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L17
   presentation_domains:
   - room
   access_locks:
@@ -9596,6 +11548,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_18f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第18层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_18f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_18f_circulation_01_lighting_fixture_01
+    asset_tag: HC-73251152
+    placement:
+      floor_id: hicampus_f1_18f
+      floor_no: 18
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L18
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_18f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第18层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_18f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_18f_circulation_01_lounge_furniture_01
+    asset_tag: HC-BEFEC631
+    placement:
+      floor_id: hicampus_f1_18f
+      floor_no: 18
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L18
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_18f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第18层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_18f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L18
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 130
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_18f_circulation_01_wifi_ap_01
+    asset_tag: HC-DF5CA47D
+    placement:
+      floor_id: hicampus_f1_18f
+      floor_no: 18
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L18
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_18f_manager_01_furniture_manager_01
   world_id: hicampus
   type_code: furniture
@@ -10215,6 +12289,128 @@ items:
       layer_role: meeting_heavy
       layer: collab
       floor_uns: hicampus/F1/L18
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_19f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第19层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_19f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_19f_circulation_01_lighting_fixture_01
+    asset_tag: HC-58ADB2C8
+    placement:
+      floor_id: hicampus_f1_19f
+      floor_no: 19
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L19
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_19f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第19层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_19f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_19f_circulation_01_lounge_furniture_01
+    asset_tag: HC-46FAA409
+    placement:
+      floor_id: hicampus_f1_19f
+      floor_no: 19
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L19
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_19f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第19层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_19f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L19
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 114
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_19f_circulation_01_wifi_ap_01
+    asset_tag: HC-1B342D82
+    placement:
+      floor_id: hicampus_f1_19f
+      floor_no: 19
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L19
   presentation_domains:
   - room
   access_locks:
@@ -10856,6 +13052,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_20f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第20层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_20f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_20f_circulation_01_lighting_fixture_01
+    asset_tag: HC-9ADA334F
+    placement:
+      floor_id: hicampus_f1_20f
+      floor_no: 20
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L20
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_20f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第20层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_20f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_20f_circulation_01_lounge_furniture_01
+    asset_tag: HC-65B86EFE
+    placement:
+      floor_id: hicampus_f1_20f
+      floor_no: 20
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L20
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_20f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第20层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_20f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L20
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 147
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_20f_circulation_01_wifi_ap_01
+    asset_tag: HC-A985E124
+    placement:
+      floor_id: hicampus_f1_20f
+      floor_no: 20
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: meeting_heavy
+      layer: collab
+      floor_uns: hicampus/F1/L20
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_20f_manager_01_furniture_manager_01
   world_id: hicampus
   type_code: furniture
@@ -11475,6 +13793,128 @@ items:
       layer_role: meeting_heavy
       layer: collab
       floor_uns: hicampus/F1/L20
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_21f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第21层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_21f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_21f_circulation_01_lighting_fixture_01
+    asset_tag: HC-BD64602D
+    placement:
+      floor_id: hicampus_f1_21f
+      floor_no: 21
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L21
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_21f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第21层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_21f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_21f_circulation_01_lounge_furniture_01
+    asset_tag: HC-B13D5071
+    placement:
+      floor_id: hicampus_f1_21f
+      floor_no: 21
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L21
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_21f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第21层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_21f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L21
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 137
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_21f_circulation_01_wifi_ap_01
+    asset_tag: HC-1B7D994F
+    placement:
+      floor_id: hicampus_f1_21f
+      floor_no: 21
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L21
   presentation_domains:
   - room
   access_locks:
@@ -12151,6 +14591,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f1_22f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第22层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_22f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_22f_circulation_01_lighting_fixture_01
+    asset_tag: HC-3FE037D2
+    placement:
+      floor_id: hicampus_f1_22f
+      floor_no: 22
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L22
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_22f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第22层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_22f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_22f_circulation_01_lounge_furniture_01
+    asset_tag: HC-9634093D
+    placement:
+      floor_id: hicampus_f1_22f
+      floor_no: 22
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L22
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_22f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第22层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_22f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L22
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 123
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_22f_circulation_01_wifi_ap_01
+    asset_tag: HC-197BD101
+    placement:
+      floor_id: hicampus_f1_22f
+      floor_no: 22
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L22
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f1_22f_manager_01_furniture_manager_01
   world_id: hicampus
   type_code: furniture
@@ -12805,6 +15367,128 @@ items:
       layer_role: executive
       layer: executive
       floor_uns: hicampus/F1/L22
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f1_23f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F1 办公楼 · 第23层 交通核 1 · 照明回路
+  location_ref: hicampus_f1_23f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f1_23f_circulation_01_lighting_fixture_01
+    asset_tag: HC-794B76D1
+    placement:
+      floor_id: hicampus_f1_23f
+      floor_no: 23
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L23
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f1_23f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F1 办公楼 · 第23层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f1_23f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f1_23f_circulation_01_lounge_furniture_01
+    asset_tag: HC-DD6E21BD
+    placement:
+      floor_id: hicampus_f1_23f
+      floor_no: 23
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L23
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f1_23f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F1 办公楼 · 第23层 交通核 1 · 无线接入点
+  location_ref: hicampus_f1_23f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F1-L23
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 104
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f1_23f_circulation_01_wifi_ap_01
+    asset_tag: HC-61165838
+    placement:
+      floor_id: hicampus_f1_23f
+      floor_no: 23
+      building_id: hicampus_f1
+      building_code: F1
+      building_type: administrative
+      layer_role: executive
+      layer: executive
+      floor_uns: hicampus/F1/L23
   presentation_domains:
   - room
   access_locks:
@@ -13721,6 +16405,129 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f2_01f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F2 餐饮中心 · 首层 交通核 1 · 照明回路
+  location_ref: hicampus_f2_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f2_01f_circulation_01_lighting_fixture_01
+    asset_tag: HC-DF1DD39D
+    placement:
+      floor_id: hicampus_f2_01f
+      floor_no: 1
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f2_01f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F2 餐饮中心 · 首层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f2_01f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f2_01f_circulation_01_lounge_furniture_01
+    asset_tag: HC-133D312E
+    placement:
+      floor_id: hicampus_f2_01f
+      floor_no: 1
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f2_01f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F2 餐饮中心 · 首层 交通核 1 · 无线接入点
+  location_ref: hicampus_f2_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F2-L01
+      encryption: wpa2
+      ip_mode: dhcp
+      guest_ssid: HiCampus-Guest-F2
+      vlan_hint: 123
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f2_01f_circulation_01_wifi_ap_01
+    asset_tag: HC-58C3E575
+    placement:
+      floor_id: hicampus_f2_01f
+      floor_no: 1
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f2_01f_kitchen_01_lighting_fixture_01
   world_id: hicampus
   type_code: lighting_fixture
@@ -14258,6 +17065,129 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f2_02f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F2 餐饮中心 · 第2层 交通核 1 · 照明回路
+  location_ref: hicampus_f2_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f2_02f_circulation_01_lighting_fixture_01
+    asset_tag: HC-794230C2
+    placement:
+      floor_id: hicampus_f2_02f
+      floor_no: 2
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f2_02f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F2 餐饮中心 · 第2层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f2_02f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f2_02f_circulation_01_lounge_furniture_01
+    asset_tag: HC-446D779B
+    placement:
+      floor_id: hicampus_f2_02f
+      floor_no: 2
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f2_02f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F2 餐饮中心 · 第2层 交通核 1 · 无线接入点
+  location_ref: hicampus_f2_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F2-L02
+      encryption: wpa2
+      ip_mode: dhcp
+      guest_ssid: HiCampus-Guest-F2
+      vlan_hint: 103
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f2_02f_circulation_01_wifi_ap_01
+    asset_tag: HC-50DF0289
+    placement:
+      floor_id: hicampus_f2_02f
+      floor_no: 2
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f2_02f_kitchen_01_lighting_fixture_01
   world_id: hicampus
   type_code: lighting_fixture
@@ -14775,6 +17705,129 @@ items:
     room_list_name: 无线接入点
     device_id: hicampus_f2_03f_canteen_dining_02_wifi_ap_01
     asset_tag: HC-B569D7DA
+    placement:
+      floor_id: hicampus_f2_03f
+      floor_no: 3
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f2_03f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F2 餐饮中心 · 第3层 交通核 1 · 照明回路
+  location_ref: hicampus_f2_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f2_03f_circulation_01_lighting_fixture_01
+    asset_tag: HC-3B1E94D0
+    placement:
+      floor_id: hicampus_f2_03f
+      floor_no: 3
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f2_03f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F2 餐饮中心 · 第3层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f2_03f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f2_03f_circulation_01_lounge_furniture_01
+    asset_tag: HC-36A82B5A
+    placement:
+      floor_id: hicampus_f2_03f
+      floor_no: 3
+      building_id: hicampus_f2
+      building_code: F2
+      building_type: dining
+      layer_role: canteen
+      layer: ''
+      floor_uns: hicampus/F2/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f2_03f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F2 餐饮中心 · 第3层 交通核 1 · 无线接入点
+  location_ref: hicampus_f2_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F2-L03
+      encryption: wpa2
+      ip_mode: dhcp
+      guest_ssid: HiCampus-Guest-F2
+      vlan_hint: 148
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f2_03f_circulation_01_wifi_ap_01
+    asset_tag: HC-94A0A6F4
     placement:
       floor_id: hicampus_f2_03f
       floor_no: 3
@@ -16174,6 +19227,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f3_03f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F3 培训中心 · 第3层 交通核 1 · 照明回路
+  location_ref: hicampus_f3_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f3_03f_circulation_01_lighting_fixture_01
+    asset_tag: HC-7DBBFE62
+    placement:
+      floor_id: hicampus_f3_03f
+      floor_no: 3
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f3_03f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F3 培训中心 · 第3层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f3_03f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f3_03f_circulation_01_lounge_furniture_01
+    asset_tag: HC-8C65C5FA
+    placement:
+      floor_id: hicampus_f3_03f
+      floor_no: 3
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f3_03f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F3 培训中心 · 第3层 交通核 1 · 无线接入点
+  location_ref: hicampus_f3_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F3-L03
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 107
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f3_03f_circulation_01_wifi_ap_01
+    asset_tag: HC-CB59F2B3
+    placement:
+      floor_id: hicampus_f3_03f
+      floor_no: 3
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f3_03f_classroom_01_furniture_classroom_01
   world_id: hicampus
   type_code: furniture
@@ -16777,6 +19952,128 @@ items:
       layer_role: training_upper
       layer: upper
       floor_uns: hicampus/F3/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f3_04f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F3 培训中心 · 第4层 交通核 1 · 照明回路
+  location_ref: hicampus_f3_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f3_04f_circulation_01_lighting_fixture_01
+    asset_tag: HC-C000F7BF
+    placement:
+      floor_id: hicampus_f3_04f
+      floor_no: 4
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f3_04f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F3 培训中心 · 第4层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f3_04f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f3_04f_circulation_01_lounge_furniture_01
+    asset_tag: HC-66FB0E03
+    placement:
+      floor_id: hicampus_f3_04f
+      floor_no: 4
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f3_04f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F3 培训中心 · 第4层 交通核 1 · 无线接入点
+  location_ref: hicampus_f3_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F3-L04
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 101
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f3_04f_circulation_01_wifi_ap_01
+    asset_tag: HC-8C0BA2E8
+    placement:
+      floor_id: hicampus_f3_04f
+      floor_no: 4
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L04
   presentation_domains:
   - room
   access_locks:
@@ -17402,6 +20699,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f3_05f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F3 培训中心 · 第5层 交通核 1 · 照明回路
+  location_ref: hicampus_f3_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f3_05f_circulation_01_lighting_fixture_01
+    asset_tag: HC-5CF7CE5C
+    placement:
+      floor_id: hicampus_f3_05f
+      floor_no: 5
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f3_05f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F3 培训中心 · 第5层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f3_05f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f3_05f_circulation_01_lounge_furniture_01
+    asset_tag: HC-3F48701F
+    placement:
+      floor_id: hicampus_f3_05f
+      floor_no: 5
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f3_05f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F3 培训中心 · 第5层 交通核 1 · 无线接入点
+  location_ref: hicampus_f3_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F3-L05
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 126
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f3_05f_circulation_01_wifi_ap_01
+    asset_tag: HC-9DB8B152
+    placement:
+      floor_id: hicampus_f3_05f
+      floor_no: 5
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f3_05f_classroom_01_furniture_classroom_01
   world_id: hicampus
   type_code: furniture
@@ -18005,6 +21424,128 @@ items:
       layer_role: training_upper
       layer: upper
       floor_uns: hicampus/F3/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f3_06f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F3 培训中心 · 第6层 交通核 1 · 照明回路
+  location_ref: hicampus_f3_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f3_06f_circulation_01_lighting_fixture_01
+    asset_tag: HC-FFE737CF
+    placement:
+      floor_id: hicampus_f3_06f
+      floor_no: 6
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f3_06f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F3 培训中心 · 第6层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f3_06f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f3_06f_circulation_01_lounge_furniture_01
+    asset_tag: HC-0D260877
+    placement:
+      floor_id: hicampus_f3_06f
+      floor_no: 6
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f3_06f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F3 培训中心 · 第6层 交通核 1 · 无线接入点
+  location_ref: hicampus_f3_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F3-L06
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 105
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f3_06f_circulation_01_wifi_ap_01
+    asset_tag: HC-83456C4E
+    placement:
+      floor_id: hicampus_f3_06f
+      floor_no: 6
+      building_id: hicampus_f3
+      building_code: F3
+      building_type: academic
+      layer_role: training_upper
+      layer: upper
+      floor_uns: hicampus/F3/L06
   presentation_domains:
   - room
   access_locks:
@@ -18630,6 +22171,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f4_01f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F4 实验楼 · 首层 交通核 1 · 照明回路
+  location_ref: hicampus_f4_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f4_01f_circulation_01_lighting_fixture_01
+    asset_tag: HC-6FF6F210
+    placement:
+      floor_id: hicampus_f4_01f
+      floor_no: 1
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_service
+      layer: service
+      floor_uns: hicampus/F4/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f4_01f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F4 实验楼 · 首层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f4_01f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f4_01f_circulation_01_lounge_furniture_01
+    asset_tag: HC-96C89043
+    placement:
+      floor_id: hicampus_f4_01f
+      floor_no: 1
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_service
+      layer: service
+      floor_uns: hicampus/F4/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f4_01f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F4 实验楼 · 首层 交通核 1 · 无线接入点
+  location_ref: hicampus_f4_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F4-L01
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 138
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f4_01f_circulation_01_wifi_ap_01
+    asset_tag: HC-FD462278
+    placement:
+      floor_id: hicampus_f4_01f
+      floor_no: 1
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_service
+      layer: service
+      floor_uns: hicampus/F4/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f4_01f_electrical_01_lighting_fixture_01
   world_id: hicampus
   type_code: lighting_fixture
@@ -19166,6 +22829,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f4_02f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F4 实验楼 · 第2层 交通核 1 · 照明回路
+  location_ref: hicampus_f4_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f4_02f_circulation_01_lighting_fixture_01
+    asset_tag: HC-7A24C35E
+    placement:
+      floor_id: hicampus_f4_02f
+      floor_no: 2
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_service
+      layer: service
+      floor_uns: hicampus/F4/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f4_02f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F4 实验楼 · 第2层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f4_02f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f4_02f_circulation_01_lounge_furniture_01
+    asset_tag: HC-C811C05F
+    placement:
+      floor_id: hicampus_f4_02f
+      floor_no: 2
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_service
+      layer: service
+      floor_uns: hicampus/F4/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f4_02f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F4 实验楼 · 第2层 交通核 1 · 无线接入点
+  location_ref: hicampus_f4_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F4-L02
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 113
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f4_02f_circulation_01_wifi_ap_01
+    asset_tag: HC-5A7B199F
+    placement:
+      floor_id: hicampus_f4_02f
+      floor_no: 2
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_service
+      layer: service
+      floor_uns: hicampus/F4/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f4_02f_electrical_01_lighting_fixture_01
   world_id: hicampus
   type_code: lighting_fixture
@@ -19691,6 +23476,128 @@ items:
       layer_role: lab_service
       layer: service
       floor_uns: hicampus/F4/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f4_03f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F4 实验楼 · 第3层 交通核 1 · 照明回路
+  location_ref: hicampus_f4_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f4_03f_circulation_01_lighting_fixture_01
+    asset_tag: HC-B040FD4B
+    placement:
+      floor_id: hicampus_f4_03f
+      floor_no: 3
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f4_03f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F4 实验楼 · 第3层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f4_03f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f4_03f_circulation_01_lounge_furniture_01
+    asset_tag: HC-E12F5FBB
+    placement:
+      floor_id: hicampus_f4_03f
+      floor_no: 3
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f4_03f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F4 实验楼 · 第3层 交通核 1 · 无线接入点
+  location_ref: hicampus_f4_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F4-L03
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 141
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f4_03f_circulation_01_wifi_ap_01
+    asset_tag: HC-341D84D1
+    placement:
+      floor_id: hicampus_f4_03f
+      floor_no: 3
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L03
   presentation_domains:
   - room
   access_locks:
@@ -20273,6 +24180,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f4_04f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F4 实验楼 · 第4层 交通核 1 · 照明回路
+  location_ref: hicampus_f4_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f4_04f_circulation_01_lighting_fixture_01
+    asset_tag: HC-31AF511E
+    placement:
+      floor_id: hicampus_f4_04f
+      floor_no: 4
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f4_04f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F4 实验楼 · 第4层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f4_04f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f4_04f_circulation_01_lounge_furniture_01
+    asset_tag: HC-9BD91686
+    placement:
+      floor_id: hicampus_f4_04f
+      floor_no: 4
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f4_04f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F4 实验楼 · 第4层 交通核 1 · 无线接入点
+  location_ref: hicampus_f4_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F4-L04
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 132
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f4_04f_circulation_01_wifi_ap_01
+    asset_tag: HC-6EACB696
+    placement:
+      floor_id: hicampus_f4_04f
+      floor_no: 4
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f4_04f_lab_01_furniture_lab_01
   world_id: hicampus
   type_code: furniture
@@ -20833,6 +24862,128 @@ items:
       layer_role: lab_zone
       layer: research
       floor_uns: hicampus/F4/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f4_05f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F4 实验楼 · 第5层 交通核 1 · 照明回路
+  location_ref: hicampus_f4_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f4_05f_circulation_01_lighting_fixture_01
+    asset_tag: HC-7CC3140B
+    placement:
+      floor_id: hicampus_f4_05f
+      floor_no: 5
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f4_05f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F4 实验楼 · 第5层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f4_05f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f4_05f_circulation_01_lounge_furniture_01
+    asset_tag: HC-7582F576
+    placement:
+      floor_id: hicampus_f4_05f
+      floor_no: 5
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f4_05f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F4 实验楼 · 第5层 交通核 1 · 无线接入点
+  location_ref: hicampus_f4_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F4-L05
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 135
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f4_05f_circulation_01_wifi_ap_01
+    asset_tag: HC-83C789A2
+    placement:
+      floor_id: hicampus_f4_05f
+      floor_no: 5
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L05
   presentation_domains:
   - room
   access_locks:
@@ -21415,6 +25566,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f4_06f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F4 实验楼 · 第6层 交通核 1 · 照明回路
+  location_ref: hicampus_f4_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f4_06f_circulation_01_lighting_fixture_01
+    asset_tag: HC-47BD4354
+    placement:
+      floor_id: hicampus_f4_06f
+      floor_no: 6
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f4_06f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F4 实验楼 · 第6层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f4_06f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f4_06f_circulation_01_lounge_furniture_01
+    asset_tag: HC-FA274B5C
+    placement:
+      floor_id: hicampus_f4_06f
+      floor_no: 6
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f4_06f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F4 实验楼 · 第6层 交通核 1 · 无线接入点
+  location_ref: hicampus_f4_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F4-L06
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 117
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f4_06f_circulation_01_wifi_ap_01
+    asset_tag: HC-AA2FD8DB
+    placement:
+      floor_id: hicampus_f4_06f
+      floor_no: 6
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f4_06f_lab_01_furniture_lab_01
   world_id: hicampus
   type_code: furniture
@@ -21975,6 +26248,128 @@ items:
       layer_role: lab_zone
       layer: research
       floor_uns: hicampus/F4/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f4_07f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F4 实验楼 · 第7层 交通核 1 · 照明回路
+  location_ref: hicampus_f4_07f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f4_07f_circulation_01_lighting_fixture_01
+    asset_tag: HC-A4E1D1A6
+    placement:
+      floor_id: hicampus_f4_07f
+      floor_no: 7
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L07
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f4_07f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F4 实验楼 · 第7层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f4_07f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f4_07f_circulation_01_lounge_furniture_01
+    asset_tag: HC-1CAF7BBF
+    placement:
+      floor_id: hicampus_f4_07f
+      floor_no: 7
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L07
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f4_07f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F4 实验楼 · 第7层 交通核 1 · 无线接入点
+  location_ref: hicampus_f4_07f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F4-L07
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 127
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f4_07f_circulation_01_wifi_ap_01
+    asset_tag: HC-004D2B98
+    placement:
+      floor_id: hicampus_f4_07f
+      floor_no: 7
+      building_id: hicampus_f4
+      building_code: F4
+      building_type: research
+      layer_role: lab_zone
+      layer: research
+      floor_uns: hicampus/F4/L07
   presentation_domains:
   - room
   access_locks:
@@ -22644,6 +27039,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f5_01f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F5 展厅 · 首层 交通核 1 · 照明回路
+  location_ref: hicampus_f5_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f5_01f_circulation_01_lighting_fixture_01
+    asset_tag: HC-C0C6DEC0
+    placement:
+      floor_id: hicampus_f5_01f
+      floor_no: 1
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f5_01f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F5 展厅 · 首层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f5_01f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f5_01f_circulation_01_lounge_furniture_01
+    asset_tag: HC-4932992C
+    placement:
+      floor_id: hicampus_f5_01f
+      floor_no: 1
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f5_01f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F5 展厅 · 首层 交通核 1 · 无线接入点
+  location_ref: hicampus_f5_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F5-L01
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 129
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f5_01f_circulation_01_wifi_ap_01
+    asset_tag: HC-35D335E9
+    placement:
+      floor_id: hicampus_f5_01f
+      floor_no: 1
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f5_01f_expo_hall_01_furniture_expo_01
   world_id: hicampus
   type_code: furniture
@@ -23206,6 +27723,128 @@ items:
     room_list_name: 无线接入点
     device_id: hicampus_f5_02f_av_room_01_wifi_ap_01
     asset_tag: HC-815F67EA
+    placement:
+      floor_id: hicampus_f5_02f
+      floor_no: 2
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f5_02f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F5 展厅 · 第2层 交通核 1 · 照明回路
+  location_ref: hicampus_f5_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f5_02f_circulation_01_lighting_fixture_01
+    asset_tag: HC-9E41F13E
+    placement:
+      floor_id: hicampus_f5_02f
+      floor_no: 2
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f5_02f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F5 展厅 · 第2层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f5_02f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f5_02f_circulation_01_lounge_furniture_01
+    asset_tag: HC-9A633CC4
+    placement:
+      floor_id: hicampus_f5_02f
+      floor_no: 2
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f5_02f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F5 展厅 · 第2层 交通核 1 · 无线接入点
+  location_ref: hicampus_f5_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F5-L02
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 146
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f5_02f_circulation_01_wifi_ap_01
+    asset_tag: HC-1BEA51A1
     placement:
       floor_id: hicampus_f5_02f
       floor_no: 2
@@ -23808,6 +28447,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f5_03f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F5 展厅 · 第3层 交通核 1 · 照明回路
+  location_ref: hicampus_f5_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f5_03f_circulation_01_lighting_fixture_01
+    asset_tag: HC-A065FC4A
+    placement:
+      floor_id: hicampus_f5_03f
+      floor_no: 3
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f5_03f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F5 展厅 · 第3层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f5_03f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f5_03f_circulation_01_lounge_furniture_01
+    asset_tag: HC-06EFF43B
+    placement:
+      floor_id: hicampus_f5_03f
+      floor_no: 3
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f5_03f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F5 展厅 · 第3层 交通核 1 · 无线接入点
+  location_ref: hicampus_f5_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F5-L03
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 133
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f5_03f_circulation_01_wifi_ap_01
+    asset_tag: HC-046DE9AE
+    placement:
+      floor_id: hicampus_f5_03f
+      floor_no: 3
+      building_id: hicampus_f5
+      building_code: F5
+      building_type: commercial
+      layer_role: expo
+      layer: ''
+      floor_uns: hicampus/F5/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f5_03f_expo_hall_01_furniture_expo_01
   world_id: hicampus
   type_code: furniture
@@ -24303,6 +29064,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f6_01f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 首层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_01f_circulation_01_lighting_fixture_01
+    asset_tag: HC-3097CA28
+    placement:
+      floor_id: hicampus_f6_01f
+      floor_no: 1
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_01f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 首层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_01f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_01f_circulation_01_lounge_furniture_01
+    asset_tag: HC-E1AA4DF6
+    placement:
+      floor_id: hicampus_f6_01f
+      floor_no: 1
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_01f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 首层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_01f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L01
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 148
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_01f_circulation_01_wifi_ap_01
+    asset_tag: HC-0AEE3039
+    placement:
+      floor_id: hicampus_f6_01f
+      floor_no: 1
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f6_01f_dorm_unit_01_furniture_dorm_01
   world_id: hicampus
   type_code: furniture
@@ -24745,6 +29628,128 @@ items:
       layer_role: dorm
       layer: residential
       floor_uns: hicampus/F6/L01
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f6_02f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第2层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_02f_circulation_01_lighting_fixture_01
+    asset_tag: HC-0B273199
+    placement:
+      floor_id: hicampus_f6_02f
+      floor_no: 2
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_02f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第2层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_02f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_02f_circulation_01_lounge_furniture_01
+    asset_tag: HC-5D4898CB
+    placement:
+      floor_id: hicampus_f6_02f
+      floor_no: 2
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L02
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_02f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第2层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_02f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L02
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 101
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_02f_circulation_01_wifi_ap_01
+    asset_tag: HC-D8FF82A2
+    placement:
+      floor_id: hicampus_f6_02f
+      floor_no: 2
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L02
   presentation_domains:
   - room
   access_locks:
@@ -25209,6 +30214,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f6_03f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第3层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_03f_circulation_01_lighting_fixture_01
+    asset_tag: HC-D75321A7
+    placement:
+      floor_id: hicampus_f6_03f
+      floor_no: 3
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_03f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第3层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_03f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_03f_circulation_01_lounge_furniture_01
+    asset_tag: HC-B90DC841
+    placement:
+      floor_id: hicampus_f6_03f
+      floor_no: 3
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_03f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第3层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_03f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L03
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 149
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_03f_circulation_01_wifi_ap_01
+    asset_tag: HC-B189F2DD
+    placement:
+      floor_id: hicampus_f6_03f
+      floor_no: 3
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f6_03f_dorm_unit_01_furniture_dorm_01
   world_id: hicampus
   type_code: furniture
@@ -25651,6 +30778,128 @@ items:
       layer_role: dorm
       layer: residential
       floor_uns: hicampus/F6/L03
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f6_04f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第4层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_04f_circulation_01_lighting_fixture_01
+    asset_tag: HC-7E62EBAE
+    placement:
+      floor_id: hicampus_f6_04f
+      floor_no: 4
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_04f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第4层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_04f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_04f_circulation_01_lounge_furniture_01
+    asset_tag: HC-F237882D
+    placement:
+      floor_id: hicampus_f6_04f
+      floor_no: 4
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L04
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_04f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第4层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_04f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L04
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 105
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_04f_circulation_01_wifi_ap_01
+    asset_tag: HC-AE3D635B
+    placement:
+      floor_id: hicampus_f6_04f
+      floor_no: 4
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L04
   presentation_domains:
   - room
   access_locks:
@@ -26115,6 +31364,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f6_05f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第5层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_05f_circulation_01_lighting_fixture_01
+    asset_tag: HC-539A3FE7
+    placement:
+      floor_id: hicampus_f6_05f
+      floor_no: 5
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_05f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第5层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_05f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_05f_circulation_01_lounge_furniture_01
+    asset_tag: HC-6362D590
+    placement:
+      floor_id: hicampus_f6_05f
+      floor_no: 5
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_05f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第5层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_05f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L05
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 134
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_05f_circulation_01_wifi_ap_01
+    asset_tag: HC-7A029245
+    placement:
+      floor_id: hicampus_f6_05f
+      floor_no: 5
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f6_05f_dorm_unit_01_furniture_dorm_01
   world_id: hicampus
   type_code: furniture
@@ -26557,6 +31928,128 @@ items:
       layer_role: dorm
       layer: residential
       floor_uns: hicampus/F6/L05
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f6_06f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第6层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_06f_circulation_01_lighting_fixture_01
+    asset_tag: HC-484F5EB6
+    placement:
+      floor_id: hicampus_f6_06f
+      floor_no: 6
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_06f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第6层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_06f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_06f_circulation_01_lounge_furniture_01
+    asset_tag: HC-BE299E3A
+    placement:
+      floor_id: hicampus_f6_06f
+      floor_no: 6
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L06
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_06f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第6层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_06f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L06
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 142
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_06f_circulation_01_wifi_ap_01
+    asset_tag: HC-DA864523
+    placement:
+      floor_id: hicampus_f6_06f
+      floor_no: 6
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L06
   presentation_domains:
   - room
   access_locks:
@@ -27021,6 +32514,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f6_07f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第7层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_07f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_07f_circulation_01_lighting_fixture_01
+    asset_tag: HC-75ED41CD
+    placement:
+      floor_id: hicampus_f6_07f
+      floor_no: 7
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L07
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_07f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第7层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_07f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_07f_circulation_01_lounge_furniture_01
+    asset_tag: HC-B4D00F66
+    placement:
+      floor_id: hicampus_f6_07f
+      floor_no: 7
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L07
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_07f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第7层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_07f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L07
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 121
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_07f_circulation_01_wifi_ap_01
+    asset_tag: HC-70636E7E
+    placement:
+      floor_id: hicampus_f6_07f
+      floor_no: 7
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L07
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f6_07f_dorm_unit_01_furniture_dorm_01
   world_id: hicampus
   type_code: furniture
@@ -27474,6 +33089,128 @@ items:
   - controllable
   - network
   source_ref: entities/items.yaml
+- id: hicampus_f6_08f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第8层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_08f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_08f_circulation_01_lighting_fixture_01
+    asset_tag: HC-D4890600
+    placement:
+      floor_id: hicampus_f6_08f
+      floor_no: 8
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_08f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第8层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_08f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_08f_circulation_01_lounge_furniture_01
+    asset_tag: HC-B4B98D0F
+    placement:
+      floor_id: hicampus_f6_08f
+      floor_no: 8
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_08f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第8层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_08f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L08
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 111
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_08f_circulation_01_wifi_ap_01
+    asset_tag: HC-06E15C3D
+    placement:
+      floor_id: hicampus_f6_08f
+      floor_no: 8
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
 - id: hicampus_f6_08f_dorm_unit_01_furniture_dorm_01
   world_id: hicampus
   type_code: furniture
@@ -27916,6 +33653,128 @@ items:
       layer_role: dorm
       layer: residential
       floor_uns: hicampus/F6/L08
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - network
+  source_ref: entities/items.yaml
+- id: hicampus_f6_09f_circulation_01_lighting_fixture_01
+  world_id: hicampus
+  type_code: lighting_fixture
+  entity_kind: item
+  display_name: F6 公寓 · 第9层 交通核 1 · 照明回路
+  location_ref: hicampus_f6_09f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: lighting
+    controllable: true
+    status: 'on'
+    lighting:
+      brightness_pct: 80
+      color_temp_k: 4000
+      scene: work
+    telemetry:
+      power_w: null
+    room_list_name: 照明回路
+    device_id: hicampus_f6_09f_circulation_01_lighting_fixture_01
+    asset_tag: HC-33C6E5A6
+    placement:
+      floor_id: hicampus_f6_09f
+      floor_no: 9
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L09
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - device
+  - controllable
+  - lighting
+  source_ref: entities/items.yaml
+- id: hicampus_f6_09f_circulation_01_lounge_furniture_01
+  world_id: hicampus
+  type_code: lounge_furniture
+  entity_kind: item
+  display_name: F6 公寓 · 第9层 交通核 1 · 沙发与等候座
+  location_ref: hicampus_f6_09f_circulation_01
+  attributes:
+    item_kind: furniture
+    furniture_role: lounge
+    pieces:
+      sofa_count: 2
+      chair_count: 4
+      table_count: 1
+    room_list_name: 沙发与等候座
+    device_id: hicampus_f6_09f_circulation_01_lounge_furniture_01
+    asset_tag: HC-9214CDE9
+    placement:
+      floor_id: hicampus_f6_09f
+      floor_no: 9
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L09
+  presentation_domains:
+  - room
+  access_locks:
+    view: all()
+    interact: all()
+  tags:
+  - item
+  - furniture
+  - lounge
+  source_ref: entities/items.yaml
+- id: hicampus_f6_09f_circulation_01_wifi_ap_01
+  world_id: hicampus
+  type_code: network_access_point
+  entity_kind: item
+  display_name: F6 公寓 · 第9层 交通核 1 · 无线接入点
+  location_ref: hicampus_f6_09f_circulation_01
+  attributes:
+    item_kind: device
+    device_role: wifi_ap
+    controllable: true
+    status: 'on'
+    network:
+      mode: ap
+      bands:
+      - 2.4g
+      - 5g
+      ssid: HiCampus-F6-L09
+      encryption: wpa2
+      ip_mode: dhcp
+      vlan_hint: 146
+    telemetry:
+      rssi_dbm: null
+      clients: 0
+      uplink_mbps: null
+    room_list_name: 无线接入点
+    device_id: hicampus_f6_09f_circulation_01_wifi_ap_01
+    asset_tag: HC-B0BE82FB
+    placement:
+      floor_id: hicampus_f6_09f
+      floor_no: 9
+      building_id: hicampus_f6
+      building_code: F6
+      building_type: residential
+      layer_role: dorm
+      layer: residential
+      floor_uns: hicampus/F6/L09
   presentation_domains:
   - room
   access_locks:

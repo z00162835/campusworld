@@ -156,6 +156,31 @@ rooms:
   - space:core
   - plaza
   - layer:public
+- id: hicampus_f1_02f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_02f
+  type_code: room
+  display_name: F1 办公楼 · 第2层 交通核 1
+  room_name: F1 办公楼 · 第2层 交通核 1
+  room_name_en: Circulation Core F1L02COR01
+  room_type: circulation
+  room_code: F1L02COR01
+  uns: hicampus/F1/L02/F1L02COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 2
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - layer_role:office_open
+  - space:circulation
+  - zone:public
 - id: hicampus_f1_02f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_02f
@@ -5980,4 +6005,1126 @@ rooms:
   - layer:residential
   - space:restroom
   - function:sanitary
+  - zone:public
+- id: hicampus_f1_03f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_03f
+  type_code: room
+  display_name: F1 办公楼 · 第3层 交通核 1
+  room_name: F1 办公楼 · 第3层 交通核 1
+  room_name_en: Circulation Core F1L03COR01
+  room_type: circulation
+  room_code: F1L03COR01
+  uns: hicampus/F1/L03/F1L03COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 3
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_04f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_04f
+  type_code: room
+  display_name: F1 办公楼 · 第4层 交通核 1
+  room_name: F1 办公楼 · 第4层 交通核 1
+  room_name_en: Circulation Core F1L04COR01
+  room_type: circulation
+  room_code: F1L04COR01
+  uns: hicampus/F1/L04/F1L04COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 4
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_05f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_05f
+  type_code: room
+  display_name: F1 办公楼 · 第5层 交通核 1
+  room_name: F1 办公楼 · 第5层 交通核 1
+  room_name_en: Circulation Core F1L05COR01
+  room_type: circulation
+  room_code: F1L05COR01
+  uns: hicampus/F1/L05/F1L05COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 5
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_06f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_06f
+  type_code: room
+  display_name: F1 办公楼 · 第6层 交通核 1
+  room_name: F1 办公楼 · 第6层 交通核 1
+  room_name_en: Circulation Core F1L06COR01
+  room_type: circulation
+  room_code: F1L06COR01
+  uns: hicampus/F1/L06/F1L06COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 6
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_07f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_07f
+  type_code: room
+  display_name: F1 办公楼 · 第7层 交通核 1
+  room_name: F1 办公楼 · 第7层 交通核 1
+  room_name_en: Circulation Core F1L07COR01
+  room_type: circulation
+  room_code: F1L07COR01
+  uns: hicampus/F1/L07/F1L07COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 7
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_08f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_08f
+  type_code: room
+  display_name: F1 办公楼 · 第8层 交通核 1
+  room_name: F1 办公楼 · 第8层 交通核 1
+  room_name_en: Circulation Core F1L08COR01
+  room_type: circulation
+  room_code: F1L08COR01
+  uns: hicampus/F1/L08/F1L08COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 8
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_09f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_09f
+  type_code: room
+  display_name: F1 办公楼 · 第9层 交通核 1
+  room_name: F1 办公楼 · 第9层 交通核 1
+  room_name_en: Circulation Core F1L09COR01
+  room_type: circulation
+  room_code: F1L09COR01
+  uns: hicampus/F1/L09/F1L09COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 9
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_10f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_10f
+  type_code: room
+  display_name: F1 办公楼 · 第10层 交通核 1
+  room_name: F1 办公楼 · 第10层 交通核 1
+  room_name_en: Circulation Core F1L10COR01
+  room_type: circulation
+  room_code: F1L10COR01
+  uns: hicampus/F1/L10/F1L10COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 10
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_11f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_11f
+  type_code: room
+  display_name: F1 办公楼 · 第11层 交通核 1
+  room_name: F1 办公楼 · 第11层 交通核 1
+  room_name_en: Circulation Core F1L11COR01
+  room_type: circulation
+  room_code: F1L11COR01
+  uns: hicampus/F1/L11/F1L11COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 11
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_12f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_12f
+  type_code: room
+  display_name: F1 办公楼 · 第12层 交通核 1
+  room_name: F1 办公楼 · 第12层 交通核 1
+  room_name_en: Circulation Core F1L12COR01
+  room_type: circulation
+  room_code: F1L12COR01
+  uns: hicampus/F1/L12/F1L12COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 12
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_13f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_13f
+  type_code: room
+  display_name: F1 办公楼 · 第13层 交通核 1
+  room_name: F1 办公楼 · 第13层 交通核 1
+  room_name_en: Circulation Core F1L13COR01
+  room_type: circulation
+  room_code: F1L13COR01
+  uns: hicampus/F1/L13/F1L13COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 13
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_14f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_14f
+  type_code: room
+  display_name: F1 办公楼 · 第14层 交通核 1
+  room_name: F1 办公楼 · 第14层 交通核 1
+  room_name_en: Circulation Core F1L14COR01
+  room_type: circulation
+  room_code: F1L14COR01
+  uns: hicampus/F1/L14/F1L14COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 14
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_15f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_15f
+  type_code: room
+  display_name: F1 办公楼 · 第15层 交通核 1
+  room_name: F1 办公楼 · 第15层 交通核 1
+  room_name_en: Circulation Core F1L15COR01
+  room_type: circulation
+  room_code: F1L15COR01
+  uns: hicampus/F1/L15/F1L15COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 15
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_16f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_16f
+  type_code: room
+  display_name: F1 办公楼 · 第16层 交通核 1
+  room_name: F1 办公楼 · 第16层 交通核 1
+  room_name_en: Circulation Core F1L16COR01
+  room_type: circulation
+  room_code: F1L16COR01
+  uns: hicampus/F1/L16/F1L16COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 16
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:mid
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_17f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_17f
+  type_code: room
+  display_name: F1 办公楼 · 第17层 交通核 1
+  room_name: F1 办公楼 · 第17层 交通核 1
+  room_name_en: Circulation Core F1L17COR01
+  room_type: circulation
+  room_code: F1L17COR01
+  uns: hicampus/F1/L17/F1L17COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 17
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_18f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_18f
+  type_code: room
+  display_name: F1 办公楼 · 第18层 交通核 1
+  room_name: F1 办公楼 · 第18层 交通核 1
+  room_name_en: Circulation Core F1L18COR01
+  room_type: circulation
+  room_code: F1L18COR01
+  uns: hicampus/F1/L18/F1L18COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 18
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_19f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_19f
+  type_code: room
+  display_name: F1 办公楼 · 第19层 交通核 1
+  room_name: F1 办公楼 · 第19层 交通核 1
+  room_name_en: Circulation Core F1L19COR01
+  room_type: circulation
+  room_code: F1L19COR01
+  uns: hicampus/F1/L19/F1L19COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 19
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_20f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_20f
+  type_code: room
+  display_name: F1 办公楼 · 第20层 交通核 1
+  room_name: F1 办公楼 · 第20层 交通核 1
+  room_name_en: Circulation Core F1L20COR01
+  room_type: circulation
+  room_code: F1L20COR01
+  uns: hicampus/F1/L20/F1L20COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 20
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:collab
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_21f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_21f
+  type_code: room
+  display_name: F1 办公楼 · 第21层 交通核 1
+  room_name: F1 办公楼 · 第21层 交通核 1
+  room_name_en: Circulation Core F1L21COR01
+  room_type: circulation
+  room_code: F1L21COR01
+  uns: hicampus/F1/L21/F1L21COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 21
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_22f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_22f
+  type_code: room
+  display_name: F1 办公楼 · 第22层 交通核 1
+  room_name: F1 办公楼 · 第22层 交通核 1
+  room_name_en: Circulation Core F1L22COR01
+  room_type: circulation
+  room_code: F1L22COR01
+  uns: hicampus/F1/L22/F1L22COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 22
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:circulation
+  - zone:public
+- id: hicampus_f1_23f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_23f
+  type_code: room
+  display_name: F1 办公楼 · 第23层 交通核 1
+  room_name: F1 办公楼 · 第23层 交通核 1
+  room_name_en: Circulation Core F1L23COR01
+  room_type: circulation
+  room_code: F1L23COR01
+  uns: hicampus/F1/L23/F1L23COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 23
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:executive
+  - space:circulation
+  - zone:public
+- id: hicampus_f2_01f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f2_01f
+  type_code: room
+  display_name: F2 餐饮中心 · 首层 交通核 1
+  room_name: F2 餐饮中心 · 首层 交通核 1
+  room_name_en: Circulation Core F2L01COR01
+  room_type: circulation
+  room_code: F2L01COR01
+  uns: hicampus/F2/L01/F2L01COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 1
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:circulation
+  - zone:public
+- id: hicampus_f2_02f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f2_02f
+  type_code: room
+  display_name: F2 餐饮中心 · 第2层 交通核 1
+  room_name: F2 餐饮中心 · 第2层 交通核 1
+  room_name_en: Circulation Core F2L02COR01
+  room_type: circulation
+  room_code: F2L02COR01
+  uns: hicampus/F2/L02/F2L02COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 2
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:circulation
+  - zone:public
+- id: hicampus_f2_03f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f2_03f
+  type_code: room
+  display_name: F2 餐饮中心 · 第3层 交通核 1
+  room_name: F2 餐饮中心 · 第3层 交通核 1
+  room_name_en: Circulation Core F2L03COR01
+  room_type: circulation
+  room_code: F2L03COR01
+  uns: hicampus/F2/L03/F2L03COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 3
+  room_building: F2 餐饮中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f2
+  - canteen
+  - floor
+  - space:circulation
+  - zone:public
+- id: hicampus_f3_03f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f3_03f
+  type_code: room
+  display_name: F3 培训中心 · 第3层 交通核 1
+  room_name: F3 培训中心 · 第3层 交通核 1
+  room_name_en: Circulation Core F3L03COR01
+  room_type: circulation
+  room_code: F3L03COR01
+  uns: hicampus/F3/L03/F3L03COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 3
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:circulation
+  - zone:public
+- id: hicampus_f3_04f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f3_04f
+  type_code: room
+  display_name: F3 培训中心 · 第4层 交通核 1
+  room_name: F3 培训中心 · 第4层 交通核 1
+  room_name_en: Circulation Core F3L04COR01
+  room_type: circulation
+  room_code: F3L04COR01
+  uns: hicampus/F3/L04/F3L04COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 4
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:circulation
+  - zone:public
+- id: hicampus_f3_05f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f3_05f
+  type_code: room
+  display_name: F3 培训中心 · 第5层 交通核 1
+  room_name: F3 培训中心 · 第5层 交通核 1
+  room_name_en: Circulation Core F3L05COR01
+  room_type: circulation
+  room_code: F3L05COR01
+  uns: hicampus/F3/L05/F3L05COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 5
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:circulation
+  - zone:public
+- id: hicampus_f3_06f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f3_06f
+  type_code: room
+  display_name: F3 培训中心 · 第6层 交通核 1
+  room_name: F3 培训中心 · 第6层 交通核 1
+  room_name_en: Circulation Core F3L06COR01
+  room_type: circulation
+  room_code: F3L06COR01
+  uns: hicampus/F3/L06/F3L06COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 6
+  room_building: F3 培训中心
+  room_campus: hicampus
+  tags:
+  - building
+  - f3
+  - training
+  - floor
+  - layer:upper
+  - space:circulation
+  - zone:public
+- id: hicampus_f4_01f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f4_01f
+  type_code: room
+  display_name: F4 实验楼 · 首层 交通核 1
+  room_name: F4 实验楼 · 首层 交通核 1
+  room_name_en: Circulation Core F4L01COR01
+  room_type: circulation
+  room_code: F4L01COR01
+  uns: hicampus/F4/L01/F4L01COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 1
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:circulation
+  - zone:public
+- id: hicampus_f4_02f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f4_02f
+  type_code: room
+  display_name: F4 实验楼 · 第2层 交通核 1
+  room_name: F4 实验楼 · 第2层 交通核 1
+  room_name_en: Circulation Core F4L02COR01
+  room_type: circulation
+  room_code: F4L02COR01
+  uns: hicampus/F4/L02/F4L02COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 2
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:service
+  - space:circulation
+  - zone:public
+- id: hicampus_f4_03f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f4_03f
+  type_code: room
+  display_name: F4 实验楼 · 第3层 交通核 1
+  room_name: F4 实验楼 · 第3层 交通核 1
+  room_name_en: Circulation Core F4L03COR01
+  room_type: circulation
+  room_code: F4L03COR01
+  uns: hicampus/F4/L03/F4L03COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 3
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:circulation
+  - zone:public
+- id: hicampus_f4_04f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f4_04f
+  type_code: room
+  display_name: F4 实验楼 · 第4层 交通核 1
+  room_name: F4 实验楼 · 第4层 交通核 1
+  room_name_en: Circulation Core F4L04COR01
+  room_type: circulation
+  room_code: F4L04COR01
+  uns: hicampus/F4/L04/F4L04COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 4
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:circulation
+  - zone:public
+- id: hicampus_f4_05f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f4_05f
+  type_code: room
+  display_name: F4 实验楼 · 第5层 交通核 1
+  room_name: F4 实验楼 · 第5层 交通核 1
+  room_name_en: Circulation Core F4L05COR01
+  room_type: circulation
+  room_code: F4L05COR01
+  uns: hicampus/F4/L05/F4L05COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 5
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:circulation
+  - zone:public
+- id: hicampus_f4_06f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f4_06f
+  type_code: room
+  display_name: F4 实验楼 · 第6层 交通核 1
+  room_name: F4 实验楼 · 第6层 交通核 1
+  room_name_en: Circulation Core F4L06COR01
+  room_type: circulation
+  room_code: F4L06COR01
+  uns: hicampus/F4/L06/F4L06COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 6
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:circulation
+  - zone:public
+- id: hicampus_f4_07f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f4_07f
+  type_code: room
+  display_name: F4 实验楼 · 第7层 交通核 1
+  room_name: F4 实验楼 · 第7层 交通核 1
+  room_name_en: Circulation Core F4L07COR01
+  room_type: circulation
+  room_code: F4L07COR01
+  uns: hicampus/F4/L07/F4L07COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 7
+  room_building: F4 实验楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f4
+  - lab
+  - floor
+  - layer:research
+  - space:circulation
+  - zone:public
+- id: hicampus_f5_01f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f5_01f
+  type_code: room
+  display_name: F5 展厅 · 首层 交通核 1
+  room_name: F5 展厅 · 首层 交通核 1
+  room_name_en: Circulation Core F5L01COR01
+  room_type: circulation
+  room_code: F5L01COR01
+  uns: hicampus/F5/L01/F5L01COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 1
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:circulation
+  - zone:public
+- id: hicampus_f5_02f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f5_02f
+  type_code: room
+  display_name: F5 展厅 · 第2层 交通核 1
+  room_name: F5 展厅 · 第2层 交通核 1
+  room_name_en: Circulation Core F5L02COR01
+  room_type: circulation
+  room_code: F5L02COR01
+  uns: hicampus/F5/L02/F5L02COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 2
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:circulation
+  - zone:public
+- id: hicampus_f5_03f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f5_03f
+  type_code: room
+  display_name: F5 展厅 · 第3层 交通核 1
+  room_name: F5 展厅 · 第3层 交通核 1
+  room_name_en: Circulation Core F5L03COR01
+  room_type: circulation
+  room_code: F5L03COR01
+  uns: hicampus/F5/L03/F5L03COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 3
+  room_building: F5 展厅
+  room_campus: hicampus
+  tags:
+  - building
+  - f5
+  - expo
+  - floor
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_01f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_01f
+  type_code: room
+  display_name: F6 公寓 · 首层 交通核 1
+  room_name: F6 公寓 · 首层 交通核 1
+  room_name_en: Circulation Core F6L01COR01
+  room_type: circulation
+  room_code: F6L01COR01
+  uns: hicampus/F6/L01/F6L01COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 1
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_02f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_02f
+  type_code: room
+  display_name: F6 公寓 · 第2层 交通核 1
+  room_name: F6 公寓 · 第2层 交通核 1
+  room_name_en: Circulation Core F6L02COR01
+  room_type: circulation
+  room_code: F6L02COR01
+  uns: hicampus/F6/L02/F6L02COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 2
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_03f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_03f
+  type_code: room
+  display_name: F6 公寓 · 第3层 交通核 1
+  room_name: F6 公寓 · 第3层 交通核 1
+  room_name_en: Circulation Core F6L03COR01
+  room_type: circulation
+  room_code: F6L03COR01
+  uns: hicampus/F6/L03/F6L03COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 3
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_04f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_04f
+  type_code: room
+  display_name: F6 公寓 · 第4层 交通核 1
+  room_name: F6 公寓 · 第4层 交通核 1
+  room_name_en: Circulation Core F6L04COR01
+  room_type: circulation
+  room_code: F6L04COR01
+  uns: hicampus/F6/L04/F6L04COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 4
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_05f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_05f
+  type_code: room
+  display_name: F6 公寓 · 第5层 交通核 1
+  room_name: F6 公寓 · 第5层 交通核 1
+  room_name_en: Circulation Core F6L05COR01
+  room_type: circulation
+  room_code: F6L05COR01
+  uns: hicampus/F6/L05/F6L05COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 5
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_06f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_06f
+  type_code: room
+  display_name: F6 公寓 · 第6层 交通核 1
+  room_name: F6 公寓 · 第6层 交通核 1
+  room_name_en: Circulation Core F6L06COR01
+  room_type: circulation
+  room_code: F6L06COR01
+  uns: hicampus/F6/L06/F6L06COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 6
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_07f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_07f
+  type_code: room
+  display_name: F6 公寓 · 第7层 交通核 1
+  room_name: F6 公寓 · 第7层 交通核 1
+  room_name_en: Circulation Core F6L07COR01
+  room_type: circulation
+  room_code: F6L07COR01
+  uns: hicampus/F6/L07/F6L07COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 7
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_08f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_08f
+  type_code: room
+  display_name: F6 公寓 · 第8层 交通核 1
+  room_name: F6 公寓 · 第8层 交通核 1
+  room_name_en: Circulation Core F6L08COR01
+  room_type: circulation
+  room_code: F6L08COR01
+  uns: hicampus/F6/L08/F6L08COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 8
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
+  - zone:public
+- id: hicampus_f6_09f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f6_09f
+  type_code: room
+  display_name: F6 公寓 · 第9层 交通核 1
+  room_name: F6 公寓 · 第9层 交通核 1
+  room_name_en: Circulation Core F6L09COR01
+  room_type: circulation
+  room_code: F6L09COR01
+  uns: hicampus/F6/L09/F6L09COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 9
+  room_building: F6 公寓
+  room_campus: hicampus
+  tags:
+  - building
+  - f6
+  - dormitory
+  - floor
+  - layer:residential
+  - space:circulation
   - zone:public

@@ -272,6 +272,37 @@ def _effective_strict_relationships(
     return bool(getattr(profile, "strict_relationships", False))
 
 
+def _prune_world_topology_auto_connects(session: Session, world_node_ids: Set[int]) -> int:
+    """
+    Remove stale auto-generated in-world connects_to edges before re-applying snapshot relationships.
+
+    Reason: graph seed upsert is additive by (source,target,type). If a topology generator changed
+    direction/target strategy, old auto edges may linger and cause duplicate-direction conflicts at runtime.
+    """
+    if not world_node_ids:
+        return 0
+    rows = (
+        session.query(Relationship)
+        .filter(
+            Relationship.type_code == "connects_to",
+            Relationship.is_active.is_(True),
+            Relationship.source_id.in_(world_node_ids),
+            Relationship.target_id.in_(world_node_ids),
+        )
+        .all()
+    )
+    removed = 0
+    for rel in rows:
+        attrs = dict(rel.attributes or {})
+        if attrs.get("topology_auto") is True:
+            rel.is_active = False
+            session.add(rel)
+            removed += 1
+    if removed:
+        session.flush()
+    return removed
+
+
 def run_graph_seed(
     session: Session,
     world_id: str,
@@ -312,6 +343,9 @@ def run_graph_seed(
             nodes_created += 1
         else:
             nodes_skipped += 1
+
+    world_node_ids: Set[int] = {int(n.id) for n in id_to_node.values() if getattr(n, "id", None) is not None}
+    pruned_topology_auto = _prune_world_topology_auto_connects(session, world_node_ids)
 
     rels: List[Dict[str, Any]] = list(snap.get("relationships") or [])
     connects_pairs: Set[Tuple[str, str]] = set()
@@ -404,6 +438,7 @@ def run_graph_seed(
             "relationships_ignored_count": ign_total,
             "relationships_ignored_by_type": dict(sorted(ign_by_type.items())),
             "relationships_ignored_sample": ign_sample,
+            "relationships_pruned_topology_auto": pruned_topology_auto,
             "strict_relationships": strict,
             "duration_ms": duration_ms,
         },

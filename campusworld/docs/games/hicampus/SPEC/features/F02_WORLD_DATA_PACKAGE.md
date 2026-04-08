@@ -93,6 +93,14 @@ games/hicampus/data/
 
 - `package_meta.schema_version` 必须为当前工具链支持的整数集合（HiCampus 实现为 `2`）；不兼容时返回 `WORLD_DATA_SCHEMA_UNSUPPORTED`。
 
+## 程序化生成（`package/`）
+
+空间层、拓扑连边与部分实体/关系可由 `games/hicampus/package/` 下模块重写 YAML。**命令顺序、保留的手工关系 id、与 `world reload` 的配合**以仓库内真源为准：
+
+- [`backend/app/games/hicampus/package/README.md`](../../../../../backend/app/games/hicampus/package/README.md)
+
+要点：`topology_connect_generate` 会替换非保留集内的 `connects_to`；`entity_relationship_generate` 主要合并 `located_in` 等，与 `connects_to` 共存。
+
 ## Migration Strategy
 
 - world-scoped migration 目录：`games/hicampus/data/migrations`

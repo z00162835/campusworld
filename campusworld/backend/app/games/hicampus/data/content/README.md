@@ -1,5 +1,7 @@
 # HiCampus 内容资产说明（F07）
 
+空间拓扑、物品与 `located_in` 的再生成命令见上级包目录 [`../package/README.md`](../package/README.md)（与 F07 侧车独立）。
+
 ## 主包 YAML
 
 `../buildings.yaml`、`../floors.yaml`、`../rooms.yaml` 已包含空间叙事 **P0** 字段（与 `Room` / `Building` / `BuildingFloor` 模型键对齐）。图种子会把除 `id`、`type_code`、`display_name`、`tags` 外的键写入节点 `attributes`。

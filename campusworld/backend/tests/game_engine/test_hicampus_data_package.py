@@ -101,6 +101,22 @@ def test_validate_rejects_unknown_rel_type(tmp_path: Path):
     assert exc.value.error_code == ERROR_WORLD_DATA_SEMANTIC_CONFLICT
 
 
+@pytest.mark.game
+@pytest.mark.unit
+def test_validate_rejects_direction_conflict(tmp_path: Path):
+    dst = tmp_path / "data"
+    shutil.copytree(DATA_ROOT, dst)
+    rel_path = dst / "relationships.yaml"
+    text = rel_path.read_text(encoding="utf-8")
+    # Create same-source same-direction ambiguity on purpose.
+    text = text.replace("direction: southeast", "direction: east", 1)
+    rel_path.write_text(text, encoding="utf-8")
+    with pytest.raises(DataPackageError) as exc:
+        validate_data_package(dst)
+    assert exc.value.error_code == ERROR_WORLD_DATA_SEMANTIC_CONFLICT
+    assert "direction conflict" in exc.value.message
+
+
 def _build_loader_with_stubbed_service():
     from unittest.mock import MagicMock
 
