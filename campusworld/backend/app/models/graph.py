@@ -10,7 +10,7 @@
 
 import uuid as uuidlib
 from typing import Dict, Any, List, Optional, Type, Union, TYPE_CHECKING
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index, UniqueConstraint, or_, and_, SmallInteger
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Index, UniqueConstraint, or_, and_, SmallInteger, BigInteger
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, declarative_base, Session
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -24,6 +24,32 @@ from geoalchemy2 import Geometry
 from pgvector.sqlalchemy import Vector
 
 from app.core.database import Base
+
+# ==================== Mixin 类 ====================
+
+
+class TraitFilterMixin:
+    """Trait 过滤 mixin，提供 `filter_by_trait_any` 和 `filter_by_trait_all` 方法。
+
+    Node 和 Relationship 共享此 mixin 以消除重复代码。
+    """
+
+    @classmethod
+    def filter_by_trait_any(cls, query, mask: int):
+        """按 trait_mask 任一位命中过滤；mask=0 表示不过滤。"""
+        m = int(mask or 0)
+        if m == 0:
+            return query
+        return query.filter(cls.trait_mask.op("&")(m) != 0)
+
+    @classmethod
+    def filter_by_trait_all(cls, query, mask: int):
+        """按 trait_mask 全命中过滤；mask=0 表示不过滤。"""
+        m = int(mask or 0)
+        if m == 0:
+            return query
+        return query.filter(cls.trait_mask.op("&")(m) == m)
+
 
 # ==================== 基础类型定义 ====================
 
@@ -95,7 +121,7 @@ class BaseRelationship:
 
 # ==================== 数据库模型定义 ====================
 
-class Node(Base, BaseNode):
+class Node(TraitFilterMixin, Base, BaseNode):
     """
     图节点基础类型 - 纯图数据设计
     
@@ -118,6 +144,8 @@ class Node(Base, BaseNode):
     is_active = Column(Boolean, default=True, index=True)
     is_public = Column(Boolean, default=True)
     access_level = Column(String(50), default="normal")
+    trait_class = Column(String(64), nullable=False, default="UNKNOWN", index=True)
+    trait_mask = Column(BigInteger, nullable=False, default=0)
     
     # 位置信息（图内引用 + PostGIS + GeoJSON 互换）
     location_id = Column(Integer, ForeignKey("nodes.id"), nullable=True)
@@ -265,13 +293,24 @@ class Node(Base, BaseNode):
         return session.query(cls).filter(cls.type_code == type_code).all()
     
     @classmethod
-    def get_active_nodes(cls, session: Session, type_code: str = None) -> List['Node']:
+    def get_active_nodes(
+        cls,
+        session: Session,
+        type_code: str = None,
+        trait_class: str = None,
+        required_any_mask: int = 0,
+        required_all_mask: int = 0,
+    ) -> List['Node']:
         """获取活跃节点"""
         query = session.query(cls).filter(cls.is_active == True)
         if type_code:
             query = query.filter(cls.type_code == type_code)
+        if trait_class:
+            query = query.filter(cls.trait_class == trait_class)
+        query = cls.filter_by_trait_any(query, required_any_mask)
+        query = cls.filter_by_trait_all(query, required_all_mask)
         return query.all()
-    
+
     @classmethod
     def search_by_attribute(cls, session: Session, key: str, value: Any, type_code: str = None) -> List['Node']:
         """根据属性搜索节点"""
@@ -387,6 +426,8 @@ class Node(Base, BaseNode):
             'is_active': self.is_active,
             'is_public': self.is_public,
             'access_level': self.access_level,
+            'trait_class': self.trait_class,
+            'trait_mask': int(self.trait_mask or 0),
             'location_id': self.location_id,
             'home_id': self.home_id,
             'geom_geojson': self.geom_geojson,
@@ -398,7 +439,7 @@ class Node(Base, BaseNode):
         }
 
 
-class Relationship(Base, BaseRelationship):
+class Relationship(TraitFilterMixin, Base, BaseRelationship):
     """
     图关系基础类型
     
@@ -428,6 +469,8 @@ class Relationship(Base, BaseRelationship):
     # 关系状态
     is_active = Column(Boolean, default=True, index=True)
     weight = Column(Integer, default=1)
+    trait_class = Column(String(64), nullable=False, default="UNKNOWN", index=True)
+    trait_mask = Column(BigInteger, nullable=False, default=0)
     
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -539,13 +582,24 @@ class Relationship(Base, BaseRelationship):
         return query.all()
     
     @classmethod
-    def get_active_relationships(cls, session: Session, type_code: str = None) -> List['Relationship']:
+    def get_active_relationships(
+        cls,
+        session: Session,
+        type_code: str = None,
+        trait_class: str = None,
+        required_any_mask: int = 0,
+        required_all_mask: int = 0,
+    ) -> List['Relationship']:
         """获取活跃关系"""
         query = session.query(cls).filter(cls.is_active == True)
         if type_code:
             query = query.filter(cls.type_code == type_code)
+        if trait_class:
+            query = query.filter(cls.trait_class == trait_class)
+        query = cls.filter_by_trait_any(query, required_any_mask)
+        query = cls.filter_by_trait_all(query, required_all_mask)
         return query.all()
-    
+
     @classmethod
     def search_by_attribute(cls, session: Session, key: str, value: Any, type_code: str = None) -> List['Relationship']:
         """根据属性搜索关系"""
@@ -566,6 +620,8 @@ class Relationship(Base, BaseRelationship):
             'target_role': self.target_role,
             'is_active': self.is_active,
             'weight': self.weight,
+            'trait_class': self.trait_class,
+            'trait_mask': int(self.trait_mask or 0),
             'attributes': self.attributes,
             'tags': self.tags,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -594,6 +650,8 @@ class NodeType(Base):
     inferred_rules = Column(JSONB, nullable=False, default=dict)
     tags = Column(JSONB, nullable=False, default=list)
     ui_config = Column(JSONB, nullable=False, default=dict)
+    trait_class = Column(String(64), nullable=False, default="UNKNOWN")
+    trait_mask = Column(BigInteger, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -648,6 +706,8 @@ class NodeType(Base):
             "inferred_rules": self.inferred_rules,
             "tags": self.tags,
             "ui_config": self.ui_config,
+            "trait_class": self.trait_class,
+            "trait_mask": int(self.trait_mask or 0),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -669,6 +729,8 @@ class RelationshipType(Base):
     inferred_rules = Column(JSONB, nullable=False, default=dict)
     tags = Column(JSONB, nullable=False, default=list)
     ui_config = Column(JSONB, nullable=False, default=dict)
+    trait_class = Column(String(64), nullable=False, default="UNKNOWN")
+    trait_mask = Column(BigInteger, nullable=False, default=0)
     is_directed = Column(Boolean, nullable=False, default=True)
     is_symmetric = Column(Boolean, nullable=False, default=False)
     is_transitive = Column(Boolean, nullable=False, default=False)
@@ -721,6 +783,8 @@ class RelationshipType(Base):
             "inferred_rules": self.inferred_rules,
             "tags": self.tags,
             "ui_config": self.ui_config,
+            "trait_class": self.trait_class,
+            "trait_mask": int(self.trait_mask or 0),
             "is_directed": self.is_directed,
             "is_symmetric": self.is_symmetric,
             "is_transitive": self.is_transitive,

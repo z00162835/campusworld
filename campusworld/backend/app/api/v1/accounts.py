@@ -4,9 +4,10 @@
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.constants.trait_mask import MASK_QUERY_ZERO_DESCRIPTION
 from app.core.database import get_db
 from app.core.authorization import require_permission, require_role, require_admin
 from app.models.graph import Node, NodeType
@@ -31,6 +32,9 @@ async def list_accounts(
     limit: int = 100,
     account_type: Optional[str] = None,
     is_active: Optional[bool] = None,
+    trait_class: Optional[str] = None,
+    required_any_mask: int = Query(0, description=MASK_QUERY_ZERO_DESCRIPTION),
+    required_all_mask: int = Query(0, description=MASK_QUERY_ZERO_DESCRIPTION),
     db: Session = Depends(get_db)
 ):
     """
@@ -44,6 +48,12 @@ async def list_accounts(
     
     if is_active is not None:
         query = query.filter(Node.attributes['is_active'].astext.cast(bool) == is_active)
+    if trait_class:
+        query = query.filter(Node.trait_class == trait_class)
+    if required_any_mask:
+        query = Node.filter_by_trait_any(query, required_any_mask)
+    if required_all_mask:
+        query = Node.filter_by_trait_all(query, required_all_mask)
     
     total = query.count()
     accounts = query.offset(skip).limit(limit).all()
