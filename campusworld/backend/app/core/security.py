@@ -4,9 +4,12 @@
 """
 
 import os
+import hashlib
 import uuid
+import secrets
+import hmac
 from datetime import datetime, timedelta
-from typing import Optional, Union, Any, Callable
+from typing import Optional, Union, Any, Callable, Dict
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
@@ -39,9 +42,23 @@ def _get_config_manager():
     return get_config()
 
 def _get_secret_key() -> str:
-    """获取 _get_secret_key()（延迟加载）"""
+    """获取 JWT 签名密钥（延迟加载）
+
+    Raises:
+        ValueError: 当未配置密钥时抛出，明确禁止使用不安全的默认值
+    """
     from app.core.config_manager import get_setting
-    return get_setting('security.secret_key', 'your-secret-key-here')
+    secret_key = get_setting('security.secret_key', None)
+    if not secret_key:
+        logger.critical("JWT secret key is not configured. Set 'security.secret_key' in config.")
+        raise ValueError(
+            "CRITICAL: JWT secret key is not configured. "
+            "Please set 'security.secret_key' in your config/settings.yaml or environment variable."
+        )
+    # 验证密钥长度（JWT HS256 推荐至少 32 字节）
+    if len(secret_key) < 32:
+        logger.warning(f"JWT secret key is too short ({len(secret_key)} bytes). Recommended: 32+ bytes.")
+    return secret_key
 
 def _get_token_expire_minutes() -> int:
     """获取 token 过期时间（延迟加载）"""
@@ -363,13 +380,93 @@ def generate_api_key(user_id: str, permissions: list = None) -> str:
     Returns:
         str: API密钥
     """
-    # 生成随机密钥
-    api_key = os.urandom(32).hex()
-    
-    # 创建API密钥记录（这里可以存储到数据库）
-    # 实际应用中应该将API密钥存储到数据库并关联用户
-    
-    return api_key
+    _ = user_id
+    _ = permissions
+    kid = secrets.token_hex(8)
+    secret = secrets.token_hex(24)
+    return f"cwk_{kid}_{secret}"
+
+
+def hash_api_key(api_key: str) -> str:
+    """
+    使用 PBKDF2-SHA256 生成 API key 哈希。
+
+    注意：为了兼容旧调用，salt 缺省时会使用固定占位 salt；
+    生产校验请始终显式传入每条 key 记录的 salt 与 iterations。
+    """
+    return hash_api_key_pbkdf2(api_key, "default_salt", 210000)
+
+
+def parse_api_key(api_key: str) -> Optional[tuple[str, str]]:
+    """解析 cwk_<kid>_<secret>。"""
+    if not api_key or not api_key.startswith("cwk_"):
+        return None
+    parts = api_key.split("_", 2)
+    if len(parts) != 3:
+        return None
+    _, kid, secret = parts
+    if not kid or not secret:
+        return None
+    return kid, secret
+
+
+def hash_api_key_pbkdf2(api_key: str, salt: str, iterations: int = 210000) -> str:
+    dk = hashlib.pbkdf2_hmac(
+        "sha256",
+        api_key.encode("utf-8"),
+        salt.encode("utf-8"),
+        int(iterations),
+    )
+    return dk.hex()
+
+
+def build_api_key_record() -> tuple[str, str, str, int, str]:
+    """返回 (raw_key, kid, salt, iterations, key_hash)。"""
+    kid = secrets.token_hex(8)
+    secret = secrets.token_hex(24)
+    raw_key = f"cwk_{kid}_{secret}"
+    salt = secrets.token_hex(16)
+    iterations = 210000
+    key_hash = hash_api_key_pbkdf2(raw_key, salt=salt, iterations=iterations)
+    return raw_key, kid, salt, iterations, key_hash
+
+
+def resolve_api_key_principal(api_key: str) -> Optional[Dict[str, Any]]:
+    """解析并校验 API key，返回主体信息。"""
+    parsed = parse_api_key(api_key)
+    if not parsed:
+        return None
+
+    try:
+        from app.core.database import db_session_context
+        from app.models.system import ApiKey
+
+        kid, _secret = parsed
+        with db_session_context() as db_session:
+            key_row = (
+                db_session.query(ApiKey)
+                .filter(ApiKey.kid == kid, ApiKey.revoked == False)
+                .first()
+            )
+            if not key_row:
+                return None
+            if key_row.expires_at and key_row.expires_at < datetime.utcnow():
+                return None
+
+            computed = hash_api_key_pbkdf2(api_key, salt=key_row.salt, iterations=key_row.iterations)
+            if not hmac.compare_digest(computed, key_row.key_hash):
+                return None
+
+            key_row.last_used_at = datetime.utcnow()
+            db_session.commit()
+            return {
+                "user_id": str(key_row.owner_account_id),
+                "kid": key_row.kid,
+                "scopes": list(key_row.scopes or []),
+            }
+    except Exception as e:
+        logger.warning(f"API key verification failed: {e}")
+        return None
 
 
 def verify_api_key(api_key: str) -> Optional[str]:
@@ -382,20 +479,10 @@ def verify_api_key(api_key: str) -> Optional[str]:
     Returns:
         Optional[str]: 用户ID，如果密钥无效则返回None
     """
-    # 实际应用中应该从数据库查询API密钥
-    # 这里只是示例实现
-    
-    # 检查密钥格式
-    if len(api_key) != 64:  # 32字节的十六进制字符串
+    principal = resolve_api_key_principal(api_key)
+    if not principal:
         return None
-    
-    try:
-        # 这里应该查询数据库验证API密钥
-        # 暂时返回None表示需要实现
-        return None
-    except Exception as e:
-        logger.warning(f"API key verification failed: {e}")
-        return None
+    return principal["user_id"]
 
 
 def hash_sensitive_data(data: str) -> str:
