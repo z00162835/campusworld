@@ -543,16 +543,17 @@ class WSHandler:
                         "description": f"alias of {name}"
                     })
         else:
-            # 前缀匹配
+            # 前缀匹配（不区分大小写）
             commands = []
+            partial_lower = partial.lower()
             for name, cmd in command_registry.commands.items():
-                if name.startswith(partial.lower()):
+                if name.lower().startswith(partial_lower):
                     commands.append({
                         "name": name,
                         "description": cmd.description or ""
                     })
                 for alias in cmd.aliases:
-                    if alias.startswith(partial.lower()):
+                    if alias.lower().startswith(partial_lower):
                         commands.append({
                             "name": alias,
                             "description": f"alias of {name}"

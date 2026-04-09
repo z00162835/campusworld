@@ -168,14 +168,16 @@ class CampusTerminal(App):
     def __init__(self, completions: List[str], on_command: Optional[Callable] = None):
         super().__init__()
         self._completions = completions
-        self._agents: List[str] = []  # 可用 Agent 列表
+        self._agents: List[str] = []
         self._on_command = on_command
         self._command_palette: Optional[CommandPalette] = None
-        self._current_agent: Optional[str] = None  # 当前 Agent 环境
+        self._current_agent: Optional[str] = None
         self._suggester = CommandSuggester(completions)
-        self._history: List[str] = []  # 命令历史
-        self._history_index: int = -1  # 历史索引
-        self._connection = None  # WebSocket 连接
+        self._history: List[str] = []
+        self._history_index: int = -1
+        self._connection = None
+        self._completion_index: int = -1
+        self._current_matches: List[str] = []
 
     def compose(self) -> ComposeResult:
         """构建 UI"""
@@ -186,7 +188,7 @@ class CampusTerminal(App):
             yield Input(
                 placeholder="输入命令",
                 id="command-input",
-                suggester=self._suggester
+                suggester=self._suggester,
             )
 
     @on(Input.Changed)
@@ -218,10 +220,6 @@ class CampusTerminal(App):
             output.write_line("")
         # 聚焦输入框
         self.query_one("#command-input", Input).focus()
-
-        # 注意：CommandPalette 是 Screen 类型，不应 mount 到当前 screen
-        # 而是通过 push_screen 打开。保持 self._command_palette 为 None，
-        # 在 toggle 时动态创建和 push。
 
     @on(Input.Submitted)
     async def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -317,6 +315,36 @@ class CampusTerminal(App):
             self._current_agent = None
             self.update_status()
 
+    def action_focus_next(self) -> None:
+        """Override Screen's Tab binding so Tab triggers command completion."""
+        self.action_complete_command()
+
+    def action_complete_command(self) -> None:
+        """Tab 补全：单匹配直接填充，多匹配循环填充"""
+        input_widget = self.query_one("#command-input", Input)
+        value = input_widget.value
+
+        if not self._completions:
+            return
+
+        # 查找匹配的命令
+        value_lower = value.lower().strip()
+        matches = [cmd for cmd in self._completions if cmd.lower().startswith(value_lower)]
+
+        if not matches:
+            return
+
+        if len(matches) == 1:
+            # 唯一匹配，直接填充
+            self._completion_index = -1
+            self._current_matches = []
+            input_widget.value = matches[0]
+        else:
+            # 多个匹配：循环填充下一个
+            self._current_matches = matches
+            self._completion_index = (self._completion_index + 1) % len(matches)
+            input_widget.value = matches[self._completion_index]
+
     def action_open_command_palette(self) -> None:
         """打开命令面板"""
         self.push_screen(CommandPalette())
@@ -331,26 +359,6 @@ class CampusTerminal(App):
             input_widget = self.query_one("#command-input", Input)
             input_widget.value = ""
             self.set_focus(self.query_one("#command-input", Input))
-
-    def action_complete_command(self) -> None:
-        """Tab 补全"""
-        input_widget = self.query_one("#command-input", Input)
-        value = input_widget.value
-
-        if not value or not self._completions:
-            return
-
-        # 查找匹配的命令
-        value_lower = value.lower().strip()
-        matches = [cmd for cmd in self._completions if cmd.lower().startswith(value_lower)]
-
-        if len(matches) == 1:
-            # 唯一匹配，自动补全
-            input_widget.value = matches[0]
-        elif len(matches) > 1:
-            # 多个匹配，显示选项
-            output = self.query_one("#output", Log)
-            output.write_line("可能的补全: " + ", ".join(matches))
 
     def action_history_up(self) -> None:
         """历史上一条命令"""

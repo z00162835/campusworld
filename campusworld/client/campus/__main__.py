@@ -140,8 +140,17 @@ class CampusClient:
             self.terminal.username = self._username
             self.terminal.set_connection(self.connection)
 
-            # 获取命令补全
-            completions = await self.connection.request_completions("")
+            # 获取命令补全（带重试，最多 3 次，每次等待更长时间）
+            completions = []
+            for attempt in range(3):
+                completions = await self.connection.request_completions("")
+                if completions:
+                    break
+                if attempt < 2:
+                    await asyncio.sleep(0.5)  # 等待后重试
+
+            if not completions:
+                print("Warning: failed to fetch command completions from server")
             self.terminal.set_completions(completions)
 
             self._retry_count = 0
