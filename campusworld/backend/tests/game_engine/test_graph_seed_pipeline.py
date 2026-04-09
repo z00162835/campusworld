@@ -207,8 +207,9 @@ def _cleanup_test_graph(world_key: str) -> None:
 def test_run_graph_seed_creates_reverse_connects_to():
     _require_postgres_engine()
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import ensure_graph_seed_ontology
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     world_key = "graph_seed_test"
     _cleanup_test_graph(world_key)
@@ -262,8 +263,9 @@ def test_run_graph_seed_creates_reverse_connects_to():
 def test_run_graph_seed_located_in_sets_location_id():
     _require_postgres_engine()
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import ensure_graph_seed_ontology
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     world_key = "graph_seed_test"
     _cleanup_test_graph(world_key)
@@ -336,8 +338,9 @@ def test_run_graph_seed_located_in_sets_location_id():
 def test_run_graph_seed_counts_ignored_relationship_types():
     _require_postgres_engine()
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import ensure_graph_seed_ontology
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     world_key = "graph_seed_test"
     _cleanup_test_graph(world_key)
@@ -369,8 +372,9 @@ def test_run_graph_seed_counts_ignored_relationship_types():
 def test_run_graph_seed_strict_rejects_unsupported_relationship():
     _require_postgres_engine()
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import ensure_graph_seed_ontology
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     world_key = "graph_seed_test"
     _cleanup_test_graph(world_key)
@@ -407,8 +411,9 @@ def test_run_graph_seed_strict_rejects_unsupported_relationship():
 def test_run_graph_seed_second_run_idempotent():
     _require_postgres_engine()
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import ensure_graph_seed_ontology
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     world_key = "graph_seed_test"
     _cleanup_test_graph(world_key)
@@ -462,8 +467,9 @@ def test_ensure_graph_seed_ontology_applies_yaml_schema_definitions():
     from sqlalchemy import text
 
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import ensure_graph_seed_ontology
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     with db_session_context() as session:
         row = session.execute(
@@ -484,8 +490,9 @@ def test_ensure_graph_seed_ontology_room_schema_from_yaml():
     from sqlalchemy import text
 
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import ensure_graph_seed_ontology
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     with db_session_context() as session:
         row = session.execute(
@@ -504,8 +511,9 @@ def test_ensure_graph_seed_ontology_parent_type_codes_match_python_mro():
     """T9: node_types.parent_type_code aligns with GRAPH_SEED_NODE_TYPES_MATRIX."""
     _require_postgres_engine()
     from app.core.database import db_session_context, engine
-    from db.schema_migrations import GRAPH_SEED_ONTOLOGY_NODE_ROWS, ensure_graph_seed_ontology
+    from db.schema_migrations import GRAPH_SEED_ONTOLOGY_NODE_ROWS, ensure_graph_schema, ensure_graph_seed_ontology
 
+    ensure_graph_schema(engine)
     ensure_graph_seed_ontology(engine)
     expected = {row[0]: row[1] for row in GRAPH_SEED_ONTOLOGY_NODE_ROWS}
     with db_session_context() as session:

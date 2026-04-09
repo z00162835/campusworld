@@ -20,6 +20,7 @@ from .contracts import (
 )
 from .content_merge import merge_description_sidecars, normalize_spatial_rows, validate_spatial_p0
 from .graph_profile import _PACKAGE_TO_DB_NODE_TYPE
+from db.ontology.load import load_graph_seed_node_type_overrides
 
 # Schema versions supported by this validator (see package_meta.schema_version).
 SUPPORTED_SCHEMA_VERSIONS = frozenset({2})
@@ -513,6 +514,25 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
                         ERROR_WORLD_DATA_SEMANTIC_CONFLICT,
                         f"concept.scope=zone should bind at least one zone id: {cid}",
                     )
+
+    # L5c: trait profile completeness for HiCampus mapped DB node types.
+    overlays = load_graph_seed_node_type_overrides()
+    missing_trait: List[str] = []
+    for db_type_code in sorted(set(_PACKAGE_TO_DB_NODE_TYPE.values())):
+        ov = overlays.get(db_type_code) or {}
+        tc = str(ov.get("trait_class") or "").strip().upper()
+        tm = ov.get("trait_mask", None)
+        try:
+            tm_int = int(tm) if tm is not None else -1
+        except (TypeError, ValueError):
+            tm_int = -1
+        if not tc or tc == "UNKNOWN" or tm_int < 0:
+            missing_trait.append(db_type_code)
+    if missing_trait:
+        raise DataPackageError(
+            ERROR_WORLD_DATA_SCHEMA_UNSUPPORTED,
+            f"missing trait profile for mapped node types: {missing_trait}",
+        )
 
     return {
         "world": world,

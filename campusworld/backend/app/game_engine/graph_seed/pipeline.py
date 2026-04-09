@@ -176,6 +176,67 @@ def _load_rel_type_map(session: Session) -> Dict[str, RelationshipType]:
     return {r.type_code: r for r in rows}
 
 
+def _validate_trait_ready_for_seed(
+    profile: WorldGraphProfile,
+    nt_map: Dict[str, NodeType],
+    rt_map: Dict[str, RelationshipType],
+) -> None:
+    missing: List[str] = []
+    for pkg_type in _PACKAGE_TYPES_FROM_PROFILE(profile):
+        db_type = profile.map_node_type(pkg_type)
+        nt = nt_map.get(db_type)
+        if not nt:
+            missing.append(f"node:{db_type}:missing")
+            continue
+        if str(getattr(nt, "trait_class", "") or "").upper() == "UNKNOWN":
+            missing.append(f"node:{db_type}:trait_class")
+        if int(getattr(nt, "trait_mask", 0) or 0) < 0:
+            missing.append(f"node:{db_type}:trait_mask")
+    for rel_code in sorted(profile.allowed_relationship_type_codes):
+        rt = rt_map.get(rel_code)
+        if not rt:
+            missing.append(f"relationship:{rel_code}:missing")
+            continue
+        if str(getattr(rt, "trait_class", "") or "").upper() == "UNKNOWN":
+            missing.append(f"relationship:{rel_code}:trait_class")
+        if int(getattr(rt, "trait_mask", 0) or 0) < 0:
+            missing.append(f"relationship:{rel_code}:trait_mask")
+    if missing:
+        raise GraphSeedError(
+            WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value,
+            f"trait profile missing for graph seed: {missing}",
+        )
+
+
+def _PACKAGE_TYPES_FROM_PROFILE(profile: WorldGraphProfile) -> Set[str]:
+    # Minimal extraction from the known hicampus profile mapping function by probing known package buckets.
+    # Kept generic enough for profile implementations that expose static mapping.
+    candidates = {
+        "world",
+        "building",
+        "building_floor",
+        "room",
+        "npc_agent",
+        "access_terminal",
+        "world_object",
+        "furniture",
+        "network_access_point",
+        "av_display",
+        "lighting_fixture",
+        "conference_seating",
+        "lounge_furniture",
+        "logical_zone",
+    }
+    out: Set[str] = set()
+    for c in candidates:
+        try:
+            profile.map_node_type(c)
+            out.add(c)
+        except Exception:
+            continue
+    return out
+
+
 def _upsert_node(
     session: Session,
     world_id: str,
@@ -204,6 +265,8 @@ def _upsert_node(
         existing.tags = spec.tags
         existing.type_id = nt.id
         existing.type_code = db_type
+        existing.trait_class = nt.trait_class
+        existing.trait_mask = nt.trait_mask
         return existing, "skipped"
 
     node = Node(
@@ -215,6 +278,8 @@ def _upsert_node(
         is_active=True,
         is_public=True,
         access_level="normal",
+        trait_class=nt.trait_class,
+        trait_mask=nt.trait_mask,
         attributes=merged_attrs,
         tags=spec.tags,
     )
@@ -257,6 +322,8 @@ def _ensure_relationship(
         target_id=target.id,
         is_active=True,
         attributes=attributes or {},
+        trait_class=rt.trait_class,
+        trait_mask=rt.trait_mask,
         tags=[],
     )
     session.add(rel)
@@ -329,6 +396,7 @@ def run_graph_seed(
 
     nt_map = _load_node_type_map(session)
     rt_map = _load_rel_type_map(session)
+    _validate_trait_ready_for_seed(profile, nt_map, rt_map)
     allowed_rels = profile.allowed_relationship_type_codes
 
     specs = _build_specs(world_id, snap, profile)
@@ -426,6 +494,19 @@ def run_graph_seed(
 
     duration_ms = int((time.perf_counter() - t0) * 1000)
     ign_total = sum(ign_by_type.values())
+    node_trait_distribution: Dict[str, int] = {}
+    rel_trait_distribution: Dict[str, int] = {}
+    for n in id_to_node.values():
+        key = f"{str(n.trait_class or 'UNKNOWN')}:{int(n.trait_mask or 0)}"
+        node_trait_distribution[key] = node_trait_distribution.get(key, 0) + 1
+    rel_rows = (
+        session.query(Relationship)
+        .filter(Relationship.source_id.in_(world_node_ids), Relationship.target_id.in_(world_node_ids))
+        .all()
+    )
+    for rel in rel_rows:
+        key = f"{str(rel.trait_class or 'UNKNOWN')}:{int(rel.trait_mask or 0)}"
+        rel_trait_distribution[key] = rel_trait_distribution.get(key, 0) + 1
     return {
         "ok": True,
         "error_code": None,
@@ -441,5 +522,7 @@ def run_graph_seed(
             "relationships_pruned_topology_auto": pruned_topology_auto,
             "strict_relationships": strict,
             "duration_ms": duration_ms,
+            "node_trait_distribution": dict(sorted(node_trait_distribution.items())),
+            "relationship_trait_distribution": dict(sorted(rel_trait_distribution.items())),
         },
     }
