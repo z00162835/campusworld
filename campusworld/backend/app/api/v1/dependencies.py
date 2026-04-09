@@ -6,11 +6,11 @@ API 依赖注入
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
 
-from app.core.security import verify_token, ALGORITHM
+from app.core.security import verify_token, verify_api_key, resolve_api_key_principal, ALGORITHM
 from app.core.database import db_session_context
 from app.models.graph import Node
 
@@ -28,6 +28,26 @@ class AuthenticatedUser:
     roles: List[str]
     permissions: List[str]
     user_attrs: Dict[str, Any]
+
+
+@dataclass
+class APIPrincipal:
+    """统一身份主体（JWT 或 API Key）。"""
+
+    subject: str
+    auth_type: str
+    roles: List[str]
+    permissions: List[str]
+    user_attrs: Dict[str, Any]
+    scopes: List[str]
+    api_key_kid: Optional[str] = None
+
+    def has_permission(self, permission_code: str) -> bool:
+        if self.auth_type == "api_key" and self.scopes:
+            return permission_code in self.scopes or "*" in self.scopes
+        if "admin" in self.roles:
+            return True
+        return permission_code in self.permissions
 
 
 def _get_secret_key() -> str:
@@ -141,3 +161,83 @@ async def get_optional_http_user(
         return await get_current_http_user(credentials)
     except HTTPException:
         return None
+
+
+async def get_api_principal(
+    optional_user: Optional[AuthenticatedUser] = Depends(get_optional_http_user),
+    x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
+) -> APIPrincipal:
+    """
+    F10 API 统一鉴权主体。
+
+    支持二选一：
+    - Bearer JWT（复用 HTTP 用户上下文）
+    - X-API-Key（当前为占位实现，可由配置静态 Key 放行）
+    """
+    if optional_user and x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Use either Bearer token or X-API-Key, not both.",
+        )
+
+    if optional_user:
+        return APIPrincipal(
+            subject=optional_user.user_id,
+            auth_type="jwt",
+            roles=optional_user.roles,
+            permissions=optional_user.permissions,
+            user_attrs=optional_user.user_attrs,
+            scopes=[],
+            api_key_kid=None,
+        )
+
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing credentials. Provide Bearer token or X-API-Key.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    key_principal = resolve_api_key_principal(x_api_key)
+    if key_principal:
+        verified_user_id = key_principal["user_id"]
+        key_scopes = list(key_principal.get("scopes", []))
+        with db_session_context() as db_session:
+            user_node = db_session.query(Node).filter(
+                Node.id == int(verified_user_id),
+                Node.type_code == "account",
+            ).first()
+            attrs = dict(user_node.attributes or {}) if user_node else {}
+            base_permissions = list(attrs.get("permissions", []))
+            if key_scopes:
+                effective_permissions = sorted(set(base_permissions).intersection(set(key_scopes)))
+            else:
+                effective_permissions = base_permissions
+        return APIPrincipal(
+            subject=verified_user_id,
+            auth_type="api_key",
+            roles=list(attrs.get("roles", [])),
+            permissions=effective_permissions,
+            user_attrs=attrs,
+            scopes=key_scopes,
+            api_key_kid=key_principal.get("kid"),
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid API key.",
+    )
+
+
+def require_api_permission(permission_code: str):
+    """返回可注入依赖：校验 APIPrincipal 权限。"""
+
+    async def _dependency(principal: APIPrincipal = Depends(get_api_principal)) -> APIPrincipal:
+        if not principal.has_permission(permission_code):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission denied: {permission_code}",
+            )
+        return principal
+
+    return _dependency

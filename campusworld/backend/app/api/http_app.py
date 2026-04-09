@@ -5,10 +5,14 @@ HTTP 应用
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.api import api_router
+from app.api.v1.endpoints.auth import limiter as auth_limiter
 from app.api.ws_handler import ws_handler
 from app.core.log import get_logger, LoggerNames
 from app.core.config_manager import get_config
@@ -42,21 +46,24 @@ def create_http_app() -> FastAPI:
         lifespan=_http_app_lifespan,
     )
 
+    # Add slowapi rate limiting state and handlers
+    app.state.limiter = auth_limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     # CORS - 生产环境应配置具体域名
     # 注意: allow_origins=["*"] 与 allow_credentials=True 不能同时使用
-    # 这是一个安全配置，frontend 需要通过环境变量配置具体来源
+    # 使用 settings.yaml 中的 cors.allowed_origins 配置
     _config = get_config()
-    _cors_origins = ["http://localhost:3000", "http://localhost:8080"]  # 默认开发 origins
-    _env_origins = _config.get("cors_allowed_origins", "")
-    if _env_origins:
-        _cors_origins = [o.strip() for o in _env_origins.split(",") if o.strip()]
+    _cors_origins = _config.get("cors.allowed_origins", ["http://localhost:3000"])
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"],
+        expose_headers=["X-Request-ID"],
+        max_age=86400,
     )
 
     # API 路由
