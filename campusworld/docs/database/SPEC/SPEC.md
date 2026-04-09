@@ -54,6 +54,13 @@ nodes (1) ───< relationships (N) >─── (N) nodes
 1. **为何用 PostgreSQL**: 支持 JSONB 属性（Node.attributes），支持复杂查询，支持向量扩展
 2. **为何分离 schema 和数据**: schema 定义与种子数据分离，便于版本管理和部署
 
+## Feature Specs
+
+- `F01` Trait Class & 64-bit Trait Mask for Agent-Friendly Graph  
+  [`features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md`](./features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)
+- `F10`（HTTP 管理面，初稿）本体与图谱原子服务 REST API  
+  [`../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md`](../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)
+
 ## Dependencies
 
 - 依赖 `backend/app/models/`（ORM 模型）

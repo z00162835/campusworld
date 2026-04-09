@@ -46,3 +46,35 @@
 - [ ] 密码使用 bcrypt 加密（不可逆）
 - [ ] JWT Token 包含过期时间（`exp` claim）
 - [ ] 错误响应不泄露敏感信息（数据库结构等）
+
+## F10 本体与图谱原子服务（实现后验收）
+
+契约见 [`features/F10_ONTOLOGY_AND_GRAPH_API.md`](features/F10_ONTOLOGY_AND_GRAPH_API.md) 文末检查清单；下列为 **占位**，待路由落地后勾选。
+
+### OpenAPI 与错误体
+
+- [ ] 导出 `openapi.json` 含 `/ontology/*`、`/graph/*`（或实现所选路径）全部 operation 与 `operationId`
+- [ ] `components.securitySchemes` 含 **`bearerAuth`** 与 **`apiKeyAuth`**（或文档约定的 `X-Api-Key` / `Authorization: ApiKey` 唯一方案）
+- [ ] 4xx/5xx 支持 `application/problem+json`（RFC 9457 最小字段），或与 SPEC 过渡期映射一致
+
+### API Key（若实现）
+
+- [ ] 仅 HTTPS；密钥仅存哈希；创建时一次性明文展示
+- [ ] `X-Api-Key` 或 `Authorization: ApiKey` 与 JWT **互斥** 策略与 400/401 行为符合 F10
+- [ ] scope 与 `ontology.*` / `graph.*` 权限映射一致
+
+### Ontology
+
+- [ ] `GET /ontology/node-types` 分页与过滤符合 F10；无权限返回 403
+- [ ] `PATCH /ontology/node-types/{type_code}` 对图种子锁定类型返回 409/403（与策略一致）
+- [ ] `relationship-types` 路径行为与 node-types 对称
+
+### Graph
+
+- [ ] `GET /graph/nodes` 支持 `trait_class`、`required_any_mask`、`required_all_mask`；`mask=0` 不过滤
+- [ ] `POST /graph/nodes` 创建后响应 201 + `Location`；持久化后 `trait_*` 与类型表一致（触发器）
+- [ ] `GET /graph/relationships` 支持按 `source_id`/`target_id`/`type_code` 过滤
+- [ ] `GET /worlds/{world_id}/nodes` 仅返回该 world 作用域节点（基于 `attributes.world_id` 或等价规则）
+- [ ] `POST /worlds/{world_id}/nodes` 自动补齐/校验 `attributes.world_id={world_id}`，冲突时返回 409/400（与 OpenAPI 一致）
+- [ ] `POST /worlds/{world_id}/relationships` 仅允许连接同一 world 内节点；跨 world 返回 404 或 409（与策略一致）
+- [ ] `GET /worlds/{world_id}/relationships` 支持按 `source_id`/`target_id`/`type_code` 在 world 内过滤

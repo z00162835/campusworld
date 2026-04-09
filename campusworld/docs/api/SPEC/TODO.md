@@ -27,6 +27,11 @@
 
 ### 中优先级
 
+- [ ] **F10 本体与图谱原子服务**（契约见 [`features/F10_ONTOLOGY_AND_GRAPH_API.md`](features/F10_ONTOLOGY_AND_GRAPH_API.md)）
+  - `ontology/node-types`、`ontology/relationship-types`、`graph/nodes`、`graph/relationships` CRUD + 列表过滤
+  - OpenAPI 3.x、RFC 9457 Problem Details、权限 `ontology.*` / `graph.*`
+  - 与 F01 trait 触发器语义一致（实例 `trait_*` 文档只读）
+
 - [ ] **当前用户信息端点** `GET /accounts/me`
   - 返回当前认证用户信息
   - 权限：已认证
