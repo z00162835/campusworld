@@ -6,6 +6,8 @@ from .bulletin_board import BulletinBoard
 from .command_ability import SystemCommandAbility
 from .system_notice import SystemNotice
 from .world_runtime import WorldRuntimeState, WorldInstallJob
+from .trait_sync_job import TraitSyncJob
+from .api_key import ApiKey
 
 __all__ = [
     "BulletinBoard",
@@ -13,4 +15,6 @@ __all__ = [
     "SystemNotice",
     "WorldRuntimeState",
     "WorldInstallJob",
+    "TraitSyncJob",
+    "ApiKey",
 ]

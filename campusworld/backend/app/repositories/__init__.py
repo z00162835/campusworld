@@ -58,10 +58,22 @@ class NodeRepository:
         with db_session_context() as session:
             return Node.get_by_type(session, type_code)
 
-    def get_active_nodes(self, type_code: str = None) -> List[Node]:
-        """获取活跃节点"""
+    def get_active_nodes(
+        self,
+        type_code: str = None,
+        trait_class: str = None,
+        required_any_mask: int = 0,
+        required_all_mask: int = 0,
+    ) -> List[Node]:
+        """获取活跃节点；trait 过滤语义与 `Node.get_active_nodes` / F01 一致（mask=0 不过滤）。"""
         with db_session_context() as session:
-            return Node.get_active_nodes(session, type_code)
+            return Node.get_active_nodes(
+                session,
+                type_code,
+                trait_class=trait_class,
+                required_any_mask=required_any_mask,
+                required_all_mask=required_all_mask,
+            )
 
     def search_by_attribute(self, key: str, value: Any, type_code: str = None) -> List[Node]:
         """根据属性搜索节点"""

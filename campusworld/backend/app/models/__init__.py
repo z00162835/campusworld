@@ -17,6 +17,8 @@ from .system import (
     SystemNotice,
     WorldRuntimeState,
     WorldInstallJob,
+    TraitSyncJob,
+    ApiKey,
 )
 from .exit import Exit
 from .world_entrance import WorldEntrance
@@ -68,6 +70,8 @@ __all__ = [
     "SystemNotice",
     "WorldRuntimeState",
     "WorldInstallJob",
+    "TraitSyncJob",
+    "ApiKey",
     "Exit",
     "WorldEntrance",
     "AccessTerminal",
