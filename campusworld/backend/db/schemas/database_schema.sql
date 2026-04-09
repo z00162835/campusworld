@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS node_types (
     inferred_rules JSONB NOT NULL DEFAULT '{}',
     tags JSONB NOT NULL DEFAULT '[]',
     ui_config JSONB NOT NULL DEFAULT '{}',
+    trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN',
+    trait_mask BIGINT NOT NULL DEFAULT 0 CHECK (trait_mask >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -64,6 +66,8 @@ CREATE TABLE IF NOT EXISTS relationship_types (
     inferred_rules JSONB NOT NULL DEFAULT '{}',
     tags JSONB NOT NULL DEFAULT '[]',
     ui_config JSONB NOT NULL DEFAULT '{}',
+    trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN',
+    trait_mask BIGINT NOT NULL DEFAULT 0 CHECK (trait_mask >= 0),
     description TEXT,
     is_directed BOOLEAN NOT NULL DEFAULT TRUE,
     is_symmetric BOOLEAN NOT NULL DEFAULT FALSE,
@@ -89,6 +93,8 @@ CREATE TABLE IF NOT EXISTS nodes (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_public BOOLEAN NOT NULL DEFAULT TRUE,
     access_level VARCHAR(50) NOT NULL DEFAULT 'normal',
+    trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN',
+    trait_mask BIGINT NOT NULL DEFAULT 0 CHECK (trait_mask >= 0),
     location_id INTEGER REFERENCES nodes (id),
     home_id INTEGER REFERENCES nodes (id),
     location_geom geometry(Geometry, 4326),
@@ -117,6 +123,8 @@ CREATE TABLE IF NOT EXISTS relationships (
     target_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     weight INTEGER NOT NULL DEFAULT 1,
+    trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN',
+    trait_mask BIGINT NOT NULL DEFAULT 0 CHECK (trait_mask >= 0),
     source_role VARCHAR(128),
     target_role VARCHAR(128),
     attributes JSONB NOT NULL DEFAULT '{}',
@@ -208,6 +216,49 @@ CREATE TABLE IF NOT EXISTS world_install_jobs (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS trait_sync_jobs (
+    job_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    domain VARCHAR(32) NOT NULL,
+    type_code VARCHAR(128) NOT NULL,
+    reason VARCHAR(64) NOT NULL DEFAULT 'type_trait_changed',
+    status VARCHAR(32) NOT NULL DEFAULT 'pending',
+    retries INTEGER NOT NULL DEFAULT 0,
+    max_retries INTEGER NOT NULL DEFAULT 5,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    error_message TEXT,
+    started_at TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_trait_sync_jobs_status_created_at
+    ON trait_sync_jobs (status, created_at);
+CREATE INDEX IF NOT EXISTS ix_trait_sync_jobs_type_code
+    ON trait_sync_jobs (domain, type_code);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+    id SERIAL PRIMARY KEY,
+    kid VARCHAR(64) UNIQUE NOT NULL,
+    owner_account_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    key_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(128) NOT NULL,
+    algorithm VARCHAR(32) NOT NULL DEFAULT 'pbkdf2_sha256',
+    iterations INTEGER NOT NULL DEFAULT 210000,
+    name VARCHAR(128),
+    scopes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    revoked_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    last_used_at TIMESTAMPTZ,
+    last_used_ip VARCHAR(64),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS ix_api_keys_owner_account_id ON api_keys (owner_account_id);
+CREATE INDEX IF NOT EXISTS ix_api_keys_owner_revoked ON api_keys (owner_account_id, revoked);
+CREATE INDEX IF NOT EXISTS ix_api_keys_expires_at ON api_keys (expires_at);
+CREATE INDEX IF NOT EXISTS ix_api_keys_last_used_at ON api_keys (last_used_at);
+
 CREATE INDEX IF NOT EXISTS ix_world_install_jobs_world_id
     ON world_install_jobs (world_id);
 CREATE INDEX IF NOT EXISTS ix_world_install_jobs_status
@@ -245,6 +296,7 @@ CREATE INDEX IF NOT EXISTS idx_nodes_geom_geojson_gin ON nodes USING GIN (geom_g
 CREATE INDEX IF NOT EXISTS idx_nodes_type_active ON nodes (type_code, is_active);
 CREATE INDEX IF NOT EXISTS idx_nodes_type_public ON nodes (type_code, is_public);
 CREATE INDEX IF NOT EXISTS idx_nodes_location_active ON nodes (location_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_nodes_active_trait_class ON nodes (is_active, trait_class);
 
 CREATE INDEX IF NOT EXISTS idx_nodes_name_trgm ON nodes USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_nodes_description_trgm ON nodes USING GIN (description gin_trgm_ops);
@@ -271,6 +323,7 @@ CREATE INDEX IF NOT EXISTS idx_relationships_source_type ON relationships (sourc
 CREATE INDEX IF NOT EXISTS idx_relationships_target_type ON relationships (target_id, type_code);
 CREATE INDEX IF NOT EXISTS idx_relationships_source_target ON relationships (source_id, target_id);
 CREATE INDEX IF NOT EXISTS idx_relationships_type_active ON relationships (type_code, is_active);
+CREATE INDEX IF NOT EXISTS idx_relationships_active_trait_class ON relationships (is_active, trait_class);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_relationships_unique_active
     ON relationships (source_id, target_id, type_code)
@@ -327,6 +380,94 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION sync_node_traits_from_type()
+RETURNS TRIGGER AS $$
+DECLARE
+    nt_trait_class VARCHAR(64);
+    nt_trait_mask BIGINT;
+BEGIN
+    SELECT trait_class, trait_mask
+      INTO nt_trait_class, nt_trait_mask
+      FROM node_types
+     WHERE type_code = NEW.type_code
+     LIMIT 1;
+
+    IF nt_trait_class IS NULL THEN
+        RAISE EXCEPTION 'node_types.type_code % not found for node trait sync', NEW.type_code;
+    END IF;
+
+    NEW.trait_class := nt_trait_class;
+    NEW.trait_mask := nt_trait_mask;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION sync_relationship_traits_from_type()
+RETURNS TRIGGER AS $$
+DECLARE
+    rt_trait_class VARCHAR(64);
+    rt_trait_mask BIGINT;
+BEGIN
+    SELECT trait_class, trait_mask
+      INTO rt_trait_class, rt_trait_mask
+      FROM relationship_types
+     WHERE type_code = NEW.type_code
+     LIMIT 1;
+
+    IF rt_trait_class IS NULL THEN
+        RAISE EXCEPTION 'relationship_types.type_code % not found for relationship trait sync', NEW.type_code;
+    END IF;
+
+    NEW.trait_class := rt_trait_class;
+    NEW.trait_mask := rt_trait_mask;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION enqueue_node_trait_sync_job()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (OLD.trait_class IS DISTINCT FROM NEW.trait_class)
+       OR (OLD.trait_mask IS DISTINCT FROM NEW.trait_mask) THEN
+        INSERT INTO trait_sync_jobs(domain, type_code, reason, payload)
+        VALUES (
+            'node',
+            NEW.type_code,
+            'type_trait_changed',
+            jsonb_build_object(
+                'before_trait_class', OLD.trait_class,
+                'after_trait_class', NEW.trait_class,
+                'before_trait_mask', OLD.trait_mask,
+                'after_trait_mask', NEW.trait_mask
+            )
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION enqueue_relationship_trait_sync_job()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (OLD.trait_class IS DISTINCT FROM NEW.trait_class)
+       OR (OLD.trait_mask IS DISTINCT FROM NEW.trait_mask) THEN
+        INSERT INTO trait_sync_jobs(domain, type_code, reason, payload)
+        VALUES (
+            'relationship',
+            NEW.type_code,
+            'type_trait_changed',
+            jsonb_build_object(
+                'before_trait_class', OLD.trait_class,
+                'after_trait_class', NEW.trait_class,
+                'before_trait_mask', OLD.trait_mask,
+                'after_trait_mask', NEW.trait_mask
+            )
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 DROP TRIGGER IF EXISTS trigger_update_node_attribute_indexes ON nodes;
 CREATE TRIGGER trigger_update_node_attribute_indexes
     AFTER INSERT OR UPDATE OF attributes ON nodes
@@ -338,6 +479,30 @@ CREATE TRIGGER trigger_update_node_tag_indexes
     AFTER INSERT OR UPDATE OF tags ON nodes
     FOR EACH ROW
     EXECUTE PROCEDURE update_node_tag_indexes();
+
+DROP TRIGGER IF EXISTS trigger_sync_node_traits_from_type ON nodes;
+CREATE TRIGGER trigger_sync_node_traits_from_type
+    BEFORE INSERT OR UPDATE OF type_code, trait_class, trait_mask ON nodes
+    FOR EACH ROW
+    EXECUTE PROCEDURE sync_node_traits_from_type();
+
+DROP TRIGGER IF EXISTS trigger_sync_relationship_traits_from_type ON relationships;
+CREATE TRIGGER trigger_sync_relationship_traits_from_type
+    BEFORE INSERT OR UPDATE OF type_code, trait_class, trait_mask ON relationships
+    FOR EACH ROW
+    EXECUTE PROCEDURE sync_relationship_traits_from_type();
+
+DROP TRIGGER IF EXISTS trigger_enqueue_node_trait_sync_job ON node_types;
+CREATE TRIGGER trigger_enqueue_node_trait_sync_job
+    AFTER UPDATE OF trait_class, trait_mask ON node_types
+    FOR EACH ROW
+    EXECUTE PROCEDURE enqueue_node_trait_sync_job();
+
+DROP TRIGGER IF EXISTS trigger_enqueue_relationship_trait_sync_job ON relationship_types;
+CREATE TRIGGER trigger_enqueue_relationship_trait_sync_job
+    AFTER UPDATE OF trait_class, trait_mask ON relationship_types
+    FOR EACH ROW
+    EXECUTE PROCEDURE enqueue_relationship_trait_sync_job();
 
 -- ==================================================
 -- 第五阶段：视图
@@ -398,31 +563,31 @@ WHERE r.is_active = TRUE AND rt.status = 0;
 
 INSERT INTO node_types (
     type_code, parent_type_code, type_name, typeclass, status, classname, module_path, description,
-    schema_definition, schema_default, inferred_rules, tags, ui_config
+    schema_definition, schema_default, inferred_rules, tags, ui_config, trait_class, trait_mask
 ) VALUES
 ('user', NULL, '用户', 'app.models.user.User', 0, 'User', 'app.models.user', '系统用户',
- '{}', '{}', '{}', '[]', '{}'),
+ '{}', '{}', '{}', '[]', '{}', 'PERSON', 0),
 ('campus', NULL, '园区', 'app.models.campus.Campus', 0, 'Campus', 'app.models.campus', '校园实体',
- '{}', '{}', '{}', '[]', '{}'),
+ '{}', '{}', '{}', '[]', '{}', 'SPACE', 0),
 ('world', NULL, '世界', 'app.models.world.World', 0, 'World', 'app.models.world', '场景世界',
- '{}', '{}', '{}', '[]', '{}'),
+ '{}', '{}', '{}', '[]', '{}', 'SPACE', 0),
 ('world_object', NULL, '世界对象', 'app.models.world.WorldObject', 0, 'WorldObject', 'app.models.world', '世界中的对象',
- '{}', '{}', '{}', '[]', '{}')
+ '{}', '{}', '{}', '[]', '{}', 'ITEM', 0)
 ON CONFLICT (type_code) DO NOTHING;
 
 INSERT INTO relationship_types (
     type_code, type_name, typeclass, status, description,
     constraints, schema_definition, inferred_rules, tags, ui_config,
-    is_directed, is_symmetric, is_transitive
+    is_directed, is_symmetric, is_transitive, trait_class, trait_mask
 ) VALUES
 ('member', '成员关系', 'app.models.relationships.MemberRelationship', 0, '用户与校园/世界的成员关系',
- '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE),
+ '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE, 'PROCESS', 0),
 ('friend', '朋友关系', 'app.models.relationships.FriendRelationship', 0, '用户间的朋友关系',
- '{}', '{}', '{}', '[]', '{}', FALSE, TRUE, FALSE),
+ '{}', '{}', '{}', '[]', '{}', FALSE, TRUE, FALSE, 'EVENT', 0),
 ('owns', '拥有关系', 'app.models.relationships.OwnershipRelationship', 0, '所有权关系',
- '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE),
+ '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE, 'RULE', 0),
 ('location', '位置关系', 'app.models.relationships.LocationRelationship', 0, '位置关系',
- '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE)
+ '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE, 'SPACE', 0)
 ON CONFLICT (type_code) DO NOTHING;
 
 -- ==================================================

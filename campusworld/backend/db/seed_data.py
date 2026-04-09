@@ -117,6 +117,8 @@ def ensure_account_type(session) -> bool:
         module_path="app.models.accounts",
         description="用户账号类型，支持管理员、开发者和普通用户",
         schema_definition=account_node_type_schema_definition(),
+        trait_class="PERSON",
+        trait_mask=0,
         is_active=True,
     )
     session.add(node_type)

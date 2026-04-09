@@ -95,10 +95,22 @@ def node_type_jsonb_params(overlay: Optional[Dict[str, Any]]) -> Dict[str, str]:
         ui = {}
     elif ui is None:
         ui = {}
+    trait_class = o.get("trait_class")
+    if not isinstance(trait_class, str) or not trait_class.strip():
+        trait_class = "UNKNOWN"
+    trait_mask = o.get("trait_mask", 0)
+    try:
+        trait_mask = int(trait_mask)
+    except (TypeError, ValueError):
+        trait_mask = 0
+    if trait_mask < 0:
+        trait_mask = 0
     return {
         "schema_definition": json.dumps(sd, ensure_ascii=False),
         "schema_default": json.dumps(sdef, ensure_ascii=False),
         "inferred_rules": json.dumps(ir, ensure_ascii=False),
         "tags": json.dumps(tags, ensure_ascii=False),
         "ui_config": json.dumps(ui, ensure_ascii=False),
+        "trait_class": trait_class,
+        "trait_mask": trait_mask,
     }

@@ -12,6 +12,7 @@ from typing import Optional, Tuple
 
 from sqlalchemy import text
 
+from app.constants.trait_mask import LOCATION_RELATIONSHIP_EDGE
 from db.ontology.load import load_graph_seed_node_type_overrides, node_type_jsonb_params
 
 
@@ -168,6 +169,10 @@ def ensure_graph_schema(engine) -> None:
         _try_exec(conn, "ALTER TABLE node_types ADD COLUMN IF NOT EXISTS inferred_rules JSONB NOT NULL DEFAULT '{}'::jsonb;")
         _try_exec(conn, "ALTER TABLE node_types ADD COLUMN IF NOT EXISTS tags JSONB NOT NULL DEFAULT '[]'::jsonb;")
         _try_exec(conn, "ALTER TABLE node_types ADD COLUMN IF NOT EXISTS ui_config JSONB NOT NULL DEFAULT '{}'::jsonb;")
+        _try_exec(conn, "ALTER TABLE node_types ADD COLUMN IF NOT EXISTS trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN';")
+        _try_exec(conn, "ALTER TABLE node_types ADD COLUMN IF NOT EXISTS trait_mask BIGINT NOT NULL DEFAULT 0;")
+        _try_exec(conn, "ALTER TABLE node_types DROP CONSTRAINT IF EXISTS chk_node_types_trait_mask_non_negative;")
+        _try_exec(conn, "ALTER TABLE node_types ADD CONSTRAINT chk_node_types_trait_mask_non_negative CHECK (trait_mask >= 0);")
         _try_exec(conn, "ALTER TABLE node_types ALTER COLUMN type_code TYPE VARCHAR(128);")
         _try_exec(
             conn,
@@ -181,6 +186,10 @@ def ensure_graph_schema(engine) -> None:
         _try_exec(conn, "ALTER TABLE relationship_types ADD COLUMN IF NOT EXISTS inferred_rules JSONB NOT NULL DEFAULT '{}'::jsonb;")
         _try_exec(conn, "ALTER TABLE relationship_types ADD COLUMN IF NOT EXISTS tags JSONB NOT NULL DEFAULT '[]'::jsonb;")
         _try_exec(conn, "ALTER TABLE relationship_types ADD COLUMN IF NOT EXISTS ui_config JSONB NOT NULL DEFAULT '{}'::jsonb;")
+        _try_exec(conn, "ALTER TABLE relationship_types ADD COLUMN IF NOT EXISTS trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN';")
+        _try_exec(conn, "ALTER TABLE relationship_types ADD COLUMN IF NOT EXISTS trait_mask BIGINT NOT NULL DEFAULT 0;")
+        _try_exec(conn, "ALTER TABLE relationship_types DROP CONSTRAINT IF EXISTS chk_relationship_types_trait_mask_non_negative;")
+        _try_exec(conn, "ALTER TABLE relationship_types ADD CONSTRAINT chk_relationship_types_trait_mask_non_negative CHECK (trait_mask >= 0);")
         _try_exec(conn, "ALTER TABLE relationship_types ALTER COLUMN type_code TYPE VARCHAR(128);")
 
         # nodes
@@ -191,12 +200,227 @@ def ensure_graph_schema(engine) -> None:
         _try_exec(conn, "ALTER TABLE nodes ADD COLUMN IF NOT EXISTS semantic_embedding vector(1536);")
         _try_exec(conn, "ALTER TABLE nodes ADD COLUMN IF NOT EXISTS structure_embedding vector(256);")
         _try_exec(conn, "ALTER TABLE nodes ADD COLUMN IF NOT EXISTS ts_data_ref_id UUID UNIQUE;")
+        _try_exec(conn, "ALTER TABLE nodes ADD COLUMN IF NOT EXISTS trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN';")
+        _try_exec(conn, "ALTER TABLE nodes ADD COLUMN IF NOT EXISTS trait_mask BIGINT NOT NULL DEFAULT 0;")
+        _try_exec(conn, "ALTER TABLE nodes DROP CONSTRAINT IF EXISTS chk_nodes_trait_mask_non_negative;")
+        _try_exec(conn, "ALTER TABLE nodes ADD CONSTRAINT chk_nodes_trait_mask_non_negative CHECK (trait_mask >= 0);")
+        _try_exec(conn, "CREATE INDEX IF NOT EXISTS idx_nodes_active_trait_class ON nodes (is_active, trait_class);")
 
         # relationships
         _try_exec(conn, "ALTER TABLE relationships ALTER COLUMN type_code TYPE VARCHAR(128);")
         _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS source_role VARCHAR(128);")
         _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS target_role VARCHAR(128);")
         _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS tags JSONB NOT NULL DEFAULT '[]'::jsonb;")
+        _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS trait_class VARCHAR(64) NOT NULL DEFAULT 'UNKNOWN';")
+        _try_exec(conn, "ALTER TABLE relationships ADD COLUMN IF NOT EXISTS trait_mask BIGINT NOT NULL DEFAULT 0;")
+        _try_exec(conn, "ALTER TABLE relationships DROP CONSTRAINT IF EXISTS chk_relationships_trait_mask_non_negative;")
+        _try_exec(conn, "ALTER TABLE relationships ADD CONSTRAINT chk_relationships_trait_mask_non_negative CHECK (trait_mask >= 0);")
+        _try_exec(
+            conn,
+            "CREATE INDEX IF NOT EXISTS idx_relationships_active_trait_class ON relationships (is_active, trait_class);",
+        )
+
+        # trait sync jobs
+        _try_exec(
+            conn,
+            """
+CREATE TABLE IF NOT EXISTS trait_sync_jobs (
+    job_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    domain VARCHAR(32) NOT NULL,
+    type_code VARCHAR(128) NOT NULL,
+    reason VARCHAR(64) NOT NULL DEFAULT 'type_trait_changed',
+    status VARCHAR(32) NOT NULL DEFAULT 'pending',
+    retries INTEGER NOT NULL DEFAULT 0,
+    max_retries INTEGER NOT NULL DEFAULT 5,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    error_message TEXT,
+    started_at TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_trait_sync_jobs_status_created_at ON trait_sync_jobs (status, created_at);
+CREATE INDEX IF NOT EXISTS ix_trait_sync_jobs_type_code ON trait_sync_jobs (domain, type_code);
+            """.strip(),
+        )
+
+        _try_exec(
+            conn,
+            """
+CREATE TABLE IF NOT EXISTS api_keys (
+    id SERIAL PRIMARY KEY,
+    kid VARCHAR(64) UNIQUE NOT NULL,
+    owner_account_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    key_hash VARCHAR(256) NOT NULL,
+    salt VARCHAR(128) NOT NULL,
+    algorithm VARCHAR(32) NOT NULL DEFAULT 'pbkdf2_sha256',
+    iterations INTEGER NOT NULL DEFAULT 210000,
+    name VARCHAR(128),
+    scopes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    revoked_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    last_used_at TIMESTAMPTZ,
+    last_used_ip VARCHAR(64),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS ix_api_keys_owner_account_id ON api_keys (owner_account_id);
+CREATE INDEX IF NOT EXISTS ix_api_keys_owner_revoked ON api_keys (owner_account_id, revoked);
+CREATE INDEX IF NOT EXISTS ix_api_keys_expires_at ON api_keys (expires_at);
+CREATE INDEX IF NOT EXISTS ix_api_keys_last_used_at ON api_keys (last_used_at);
+            """.strip(),
+        )
+
+        # trigger functions: instance inherits trait by type_code
+        _try_exec(
+            conn,
+            """
+CREATE OR REPLACE FUNCTION sync_node_traits_from_type()
+RETURNS TRIGGER AS $$
+DECLARE
+    nt_trait_class VARCHAR(64);
+    nt_trait_mask BIGINT;
+BEGIN
+    SELECT trait_class, trait_mask INTO nt_trait_class, nt_trait_mask
+      FROM node_types WHERE type_code = NEW.type_code LIMIT 1;
+    IF nt_trait_class IS NULL THEN
+        RAISE EXCEPTION 'node_types.type_code % not found for node trait sync', NEW.type_code;
+    END IF;
+    NEW.trait_class := nt_trait_class;
+    NEW.trait_mask := nt_trait_mask;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            """
+CREATE OR REPLACE FUNCTION sync_relationship_traits_from_type()
+RETURNS TRIGGER AS $$
+DECLARE
+    rt_trait_class VARCHAR(64);
+    rt_trait_mask BIGINT;
+BEGIN
+    SELECT trait_class, trait_mask INTO rt_trait_class, rt_trait_mask
+      FROM relationship_types WHERE type_code = NEW.type_code LIMIT 1;
+    IF rt_trait_class IS NULL THEN
+        RAISE EXCEPTION 'relationship_types.type_code % not found for relationship trait sync', NEW.type_code;
+    END IF;
+    NEW.trait_class := rt_trait_class;
+    NEW.trait_mask := rt_trait_mask;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            """
+DROP TRIGGER IF EXISTS trigger_sync_node_traits_from_type ON nodes;
+CREATE TRIGGER trigger_sync_node_traits_from_type
+    BEFORE INSERT OR UPDATE OF type_code, trait_class, trait_mask ON nodes
+    FOR EACH ROW EXECUTE PROCEDURE sync_node_traits_from_type();
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            """
+DROP TRIGGER IF EXISTS trigger_sync_relationship_traits_from_type ON relationships;
+CREATE TRIGGER trigger_sync_relationship_traits_from_type
+    BEFORE INSERT OR UPDATE OF type_code, trait_class, trait_mask ON relationships
+    FOR EACH ROW EXECUTE PROCEDURE sync_relationship_traits_from_type();
+            """.strip(),
+        )
+
+        # enqueue sync jobs on type change (eventual consistency)
+        _try_exec(
+            conn,
+            """
+CREATE OR REPLACE FUNCTION enqueue_node_trait_sync_job()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (OLD.trait_class IS DISTINCT FROM NEW.trait_class)
+       OR (OLD.trait_mask IS DISTINCT FROM NEW.trait_mask) THEN
+        INSERT INTO trait_sync_jobs(domain, type_code, reason, payload)
+        VALUES ('node', NEW.type_code, 'type_trait_changed',
+            jsonb_build_object(
+                'before_trait_class', OLD.trait_class,
+                'after_trait_class', NEW.trait_class,
+                'before_trait_mask', OLD.trait_mask,
+                'after_trait_mask', NEW.trait_mask
+            ));
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            """
+CREATE OR REPLACE FUNCTION enqueue_relationship_trait_sync_job()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (OLD.trait_class IS DISTINCT FROM NEW.trait_class)
+       OR (OLD.trait_mask IS DISTINCT FROM NEW.trait_mask) THEN
+        INSERT INTO trait_sync_jobs(domain, type_code, reason, payload)
+        VALUES ('relationship', NEW.type_code, 'type_trait_changed',
+            jsonb_build_object(
+                'before_trait_class', OLD.trait_class,
+                'after_trait_class', NEW.trait_class,
+                'before_trait_mask', OLD.trait_mask,
+                'after_trait_mask', NEW.trait_mask
+            ));
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            """
+DROP TRIGGER IF EXISTS trigger_enqueue_node_trait_sync_job ON node_types;
+CREATE TRIGGER trigger_enqueue_node_trait_sync_job
+    AFTER UPDATE OF trait_class, trait_mask ON node_types
+    FOR EACH ROW EXECUTE PROCEDURE enqueue_node_trait_sync_job();
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            """
+DROP TRIGGER IF EXISTS trigger_enqueue_relationship_trait_sync_job ON relationship_types;
+CREATE TRIGGER trigger_enqueue_relationship_trait_sync_job
+    AFTER UPDATE OF trait_class, trait_mask ON relationship_types
+    FOR EACH ROW EXECUTE PROCEDURE enqueue_relationship_trait_sync_job();
+            """.strip(),
+        )
+
+        # one-time backfill to align instance copy with type source of truth
+        _try_exec(
+            conn,
+            """
+UPDATE nodes n
+SET trait_class = nt.trait_class,
+    trait_mask = nt.trait_mask
+FROM node_types nt
+WHERE nt.type_code = n.type_code
+  AND (n.trait_class IS DISTINCT FROM nt.trait_class OR n.trait_mask IS DISTINCT FROM nt.trait_mask);
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            """
+UPDATE relationships r
+SET trait_class = rt.trait_class,
+    trait_mask = rt.trait_mask
+FROM relationship_types rt
+WHERE rt.type_code = r.type_code
+  AND (r.trait_class IS DISTINCT FROM rt.trait_class OR r.trait_mask IS DISTINCT FROM rt.trait_mask);
+            """.strip(),
+        )
     finally:
         conn.close()
 
@@ -358,12 +582,12 @@ def ensure_graph_seed_ontology(engine) -> None:
                 """
                 INSERT INTO node_types (
                     type_code, parent_type_code, type_name, typeclass, status, classname, module_path, description,
-                    schema_definition, schema_default, inferred_rules, tags, ui_config
+                    schema_definition, schema_default, inferred_rules, tags, ui_config, trait_class, trait_mask
                 )
                 VALUES (
                     :type_code, :parent_type_code, :type_name, :typeclass, 0, :classname, :module_path, :description,
                     CAST(:schema_definition AS jsonb), CAST(:schema_default AS jsonb), CAST(:inferred_rules AS jsonb),
-                    CAST(:tags AS jsonb), CAST(:ui_config AS jsonb)
+                    CAST(:tags AS jsonb), CAST(:ui_config AS jsonb), :trait_class, :trait_mask
                 )
                 ON CONFLICT (type_code) DO UPDATE SET
                     parent_type_code = EXCLUDED.parent_type_code,
@@ -376,39 +600,46 @@ def ensure_graph_seed_ontology(engine) -> None:
                     schema_default = EXCLUDED.schema_default,
                     inferred_rules = EXCLUDED.inferred_rules,
                     tags = EXCLUDED.tags,
-                    ui_config = EXCLUDED.ui_config;
+                    ui_config = EXCLUDED.ui_config,
+                    trait_class = EXCLUDED.trait_class,
+                    trait_mask = EXCLUDED.trait_mask;
                 """,
                 params,
             )
 
+        # trait_mask: Conceptual + Spatial; see F01 + app.constants.trait_mask.LOCATION_RELATIONSHIP_EDGE
         rel_rows = [
-            ("connects_to", "连接到", "app.models.relationships.LocationRelationship"),
-            ("contains", "包含", "app.models.relationships.LocationRelationship"),
-            ("located_in", "位于", "app.models.relationships.LocationRelationship"),
+            ("connects_to", "连接到", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
+            ("contains", "包含", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
+            ("located_in", "位于", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
         ]
-        for type_code, type_name, typeclass in rel_rows:
+        for type_code, type_name, typeclass, trait_class, trait_mask in rel_rows:
             _try_exec_mapped(
                 conn,
                 """
                 INSERT INTO relationship_types (
                     type_code, type_name, typeclass, status, description,
                     constraints, schema_definition, inferred_rules, tags, ui_config,
-                    is_directed, is_symmetric, is_transitive
+                    is_directed, is_symmetric, is_transitive, trait_class, trait_mask
                 )
                 VALUES (
                     :type_code, :type_name, :typeclass, 0, :description,
                     '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '[]'::jsonb, '{}'::jsonb,
-                    TRUE, FALSE, FALSE
+                    TRUE, FALSE, FALSE, :trait_class, :trait_mask
                 )
                 ON CONFLICT (type_code) DO UPDATE SET
                     type_name = EXCLUDED.type_name,
-                    typeclass = EXCLUDED.typeclass;
+                    typeclass = EXCLUDED.typeclass,
+                    trait_class = EXCLUDED.trait_class,
+                    trait_mask = EXCLUDED.trait_mask;
                 """,
                 {
                     "type_code": type_code,
                     "type_name": type_name,
                     "typeclass": typeclass,
                     "description": f"graph seed ontology ensured: {type_code}",
+                    "trait_class": trait_class,
+                    "trait_mask": trait_mask,
                 },
             )
     finally:

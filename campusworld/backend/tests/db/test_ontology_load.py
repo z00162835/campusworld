@@ -49,9 +49,20 @@ def test_load_overrides_missing_file_returns_empty(tmp_path):
 
 @pytest.mark.unit
 def test_node_type_jsonb_params_roundtrip():
-    jb = node_type_jsonb_params({"schema_definition": {"type": "object"}, "tags": ["a"]})
+    jb = node_type_jsonb_params(
+        {"schema_definition": {"type": "object"}, "tags": ["a"], "trait_class": "DEVICE", "trait_mask": 5}
+    )
     assert json.loads(jb["schema_definition"]) == {"type": "object"}
     assert json.loads(jb["tags"]) == ["a"]
+    assert jb["trait_class"] == "DEVICE"
+    assert jb["trait_mask"] == 5
+
+
+@pytest.mark.unit
+def test_node_type_jsonb_params_trait_defaults():
+    jb = node_type_jsonb_params({})
+    assert jb["trait_class"] == "UNKNOWN"
+    assert jb["trait_mask"] == 0
 
 
 @pytest.mark.unit

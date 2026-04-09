@@ -15,6 +15,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 
 def _bootstrap_path() -> Path:
@@ -77,6 +78,73 @@ def _run_seed_if_enabled(schema_ok: bool) -> bool:
         return True
 
 
+def _precheck_postgres_lock_contention(engine: Any) -> bool:
+    """
+    迁移前检查 PostgreSQL 锁竞争风险，避免“无输出卡住”。
+
+    返回:
+      True  -> 未发现明显锁风险，可继续
+      False -> 发现高风险锁，建议先清理后再执行迁移
+    """
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            # 1) 明显风险：idle in transaction（可能长期持锁）
+            idle_rows = conn.execute(
+                text(
+                    """
+                    SELECT pid, now() - xact_start AS xact_age, left(query, 120) AS q
+                    FROM pg_stat_activity
+                    WHERE datname = current_database()
+                      AND pid <> pg_backend_pid()
+                      AND state = 'idle in transaction'
+                    ORDER BY xact_start NULLS LAST
+                    LIMIT 10
+                    """
+                )
+            ).fetchall()
+
+            # 2) 正在等待锁的会话
+            blocked_rows = conn.execute(
+                text(
+                    """
+                    SELECT a.pid,
+                           pg_blocking_pids(a.pid) AS blockers,
+                           left(a.query, 120) AS q
+                    FROM pg_stat_activity a
+                    WHERE a.datname = current_database()
+                      AND a.pid <> pg_backend_pid()
+                      AND cardinality(pg_blocking_pids(a.pid)) > 0
+                    ORDER BY a.pid
+                    LIMIT 20
+                    """
+                )
+            ).fetchall()
+
+            if not idle_rows and not blocked_rows:
+                return True
+
+            print("⚠️  检测到潜在锁竞争，迁移可能超时。")
+            if idle_rows:
+                print("   - idle in transaction 会话：")
+                for r in idle_rows:
+                    print(f"     pid={r[0]} xact_age={r[1]} query={r[2]}")
+            if blocked_rows:
+                print("   - 被阻塞会话：")
+                for r in blocked_rows:
+                    print(f"     pid={r[0]} blockers={r[1]} query={r[2]}")
+
+            print("💡 建议：先终止阻塞会话/遗留 pytest 进程，再执行迁移。")
+            print("💡 允许强行继续：设置 CAMPUSWORLD_DB_MIGRATE_IGNORE_LOCKS=true")
+            ignore_locks = os.getenv("CAMPUSWORLD_DB_MIGRATE_IGNORE_LOCKS", "").lower() == "true"
+            return ignore_locks
+    except Exception as e:
+        # 仅预检，不阻断主流程；但给出提醒
+        print(f"⚠️  锁预检失败（忽略并继续）: {e}")
+        return True
+
+
 def _run_migrate(engine, *, json_report: bool) -> tuple[bool, list]:
     from app.core.database import init_db
     from db.migrate_report import (
@@ -88,6 +156,9 @@ def _run_migrate(engine, *, json_report: bool) -> tuple[bool, list]:
     from db.schema_migrations import SchemaMigrationError, ensure_required_extensions
 
     if is_postgresql_engine(engine):
+        if not _precheck_postgres_lock_contention(engine):
+            print("❌ 锁预检未通过，迁移中止。")
+            return False, []
         print("确保 PostgreSQL 扩展（postgis、vector 等，create_all 依赖 geometry/vector 类型）…")
         try:
             ensure_required_extensions(engine)

@@ -1,6 +1,8 @@
-schema_revision: 2
+schema_revision: 3
 node_types:
   network_access_point:
+    trait_class: DEVICE
+    trait_mask: 58
     tags:
     - graph_seed
     - device
@@ -57,6 +59,8 @@ node_types:
               - number
               - 'null'
   access_terminal:
+    trait_class: DEVICE
+    trait_mask: 126
     tags:
     - graph_seed
     - device
@@ -82,6 +86,8 @@ node_types:
             mode:
               type: string
   lighting_fixture:
+    trait_class: DEVICE
+    trait_mask: 58
     tags:
     - graph_seed
     - device
@@ -121,6 +127,8 @@ node_types:
               - string
               - 'null'
   av_display:
+    trait_class: DEVICE
+    trait_mask: 58
     tags:
     - graph_seed
     - device
@@ -154,6 +162,8 @@ node_types:
               - integer
               - 'null'
   furniture:
+    trait_class: ITEM
+    trait_mask: 516
     tags:
     - graph_seed
     - hicampus
@@ -182,6 +192,8 @@ node_types:
             floor_no:
               type: integer
   conference_seating:
+    trait_class: ITEM
+    trait_mask: 516
     tags:
     - graph_seed
     - hicampus
@@ -204,6 +216,8 @@ node_types:
           mutability: package_seed
           properties: {}
   lounge_furniture:
+    trait_class: ITEM
+    trait_mask: 516
     tags:
     - graph_seed
     - hicampus
@@ -226,6 +240,8 @@ node_types:
           mutability: package_seed
           properties: {}
   room:
+    trait_class: SPACE
+    trait_mask: 516
     tags:
     - graph_seed
     - hicampus
@@ -267,6 +283,8 @@ node_types:
           value_kind: static
           mutability: package_seed
   building:
+    trait_class: SPACE
+    trait_mask: 516
     tags:
     - graph_seed
     - hicampus
@@ -296,6 +314,8 @@ node_types:
           value_kind: static
           mutability: package_seed
   building_floor:
+    trait_class: SPACE
+    trait_mask: 516
     tags:
     - graph_seed
     - hicampus
@@ -313,6 +333,8 @@ node_types:
           value_kind: static
           mutability: package_seed
   world:
+    trait_class: SPACE
+    trait_mask: 516
     tags:
     - graph_seed
     - hicampus
@@ -329,6 +351,8 @@ node_types:
           value_kind: static
           mutability: package_seed
   world_object:
+    trait_class: ITEM
+    trait_mask: 520
     tags:
     - graph_seed
     - abstract_parent
@@ -337,6 +361,8 @@ node_types:
       title: world_object base
       properties: {}
   npc_agent:
+    trait_class: AGENT
+    trait_mask: 498
     tags:
     - graph_seed
     - hicampus
@@ -349,6 +375,8 @@ node_types:
           value_kind: static
           mutability: package_seed
   logical_zone:
+    trait_class: ENV
+    trait_mask: 65
     tags:
     - graph_seed
     - hicampus
@@ -361,6 +389,8 @@ node_types:
           value_kind: static
           mutability: package_seed
   world_entrance:
+    trait_class: PROCESS
+    trait_mask: 101
     tags:
     - graph_seed
     - hicampus
