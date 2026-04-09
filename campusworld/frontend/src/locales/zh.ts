@@ -8,6 +8,17 @@ export default {
     logout: '退出',
     username: '用户名',
     password: '密码',
+    errors: {
+      invalidCredentials: '用户名或密码错误',
+      accountDisabled: '账户已被禁用',
+      accountLocked: '账户已被锁定，请稍后再试',
+      rateLimited: '操作过于频繁，请稍后再试',
+      networkError: '网络连接失败',
+      loginFailed: '登录失败，请稍后重试',
+      invalidRegistration: '注册信息无效',
+      usernameExists: '用户名已存在',
+      registerFailed: '注册失败，请稍后重试',
+    },
   },
   nav: {
     works: '工作台',

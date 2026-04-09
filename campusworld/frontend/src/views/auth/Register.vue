@@ -43,10 +43,13 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { authApi } from '@/api/auth'
+import { getRegisterErrorMessage } from '@/stores/auth'
 import type { FormInstance, FormRules } from 'element-plus'
 
+const { t } = useI18n()
 const router = useRouter()
 const registerFormRef = ref<FormInstance>()
 const loading = ref(false)
@@ -100,7 +103,10 @@ const handleRegister = async () => {
         ElMessage.success('注册成功，请登录')
         router.push('/login')
       } catch (error: any) {
-        ElMessage.error(error.response?.data?.detail || '注册失败')
+        // Use safe i18n error messages - never expose raw server details
+        const status = error.response?.status || 0
+        const i18nKey = getRegisterErrorMessage(status)
+        ElMessage.error(t(i18nKey))
       } finally {
         loading.value = false
       }

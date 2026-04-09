@@ -12,7 +12,10 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AgentsActivity: typeof import('./src/components/works/AgentsActivity.vue')['default']
+    BootSequence: typeof import('./src/components/auth/BootSequence.vue')['default']
     ChatInput: typeof import('./src/components/works/ChatInput.vue')['default']
+    CyberButton: typeof import('./src/components/auth/CyberButton.vue')['default']
+    CyberInput: typeof import('./src/components/auth/CyberInput.vue')['default']
     Dashboard: typeof import('./src/components/works/Dashboard.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElButton: typeof import('element-plus/es')['ElButton']
@@ -33,10 +36,14 @@ declare module 'vue' {
     ElResult: typeof import('element-plus/es')['ElResult']
     ErrorBoundary: typeof import('./src/components/common/ErrorBoundary.vue')['default']
     Footer: typeof import('./src/components/layout/Footer.vue')['default']
+    GlitchText: typeof import('./src/components/auth/GlitchText.vue')['default']
     NavBar: typeof import('./src/components/layout/NavBar.vue')['default']
+    ParticleBackground: typeof import('./src/components/auth/ParticleBackground.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    ScanlineOverlay: typeof import('./src/components/auth/ScanlineOverlay.vue')['default']
     Sidebar: typeof import('./src/components/layout/Sidebar.vue')['default']
+    SystemStatus: typeof import('./src/components/auth/SystemStatus.vue')['default']
     TabBar: typeof import('./src/components/layout/TabBar.vue')['default']
     TodoList: typeof import('./src/components/works/TodoList.vue')['default']
   }

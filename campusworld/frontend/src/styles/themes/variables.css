@@ -105,6 +105,65 @@
   --z-index-header: 200;
   --z-index-dropdown: 1000;
   --z-index-modal: 2000;
+
+  /* === OS科技风格配色系统 === */
+  /* Primary Cyber Accent - Cyan/Teal glow */
+  --cyber-primary: #00f5ff;
+  --cyber-primary-glow: rgba(0, 245, 255, 0.4);
+  --cyber-primary-dim: rgba(0, 245, 255, 0.15);
+
+  /* Secondary Accent - Electric Blue */
+  --cyber-secondary: #0080ff;
+  --cyber-secondary-glow: rgba(0, 128, 255, 0.4);
+
+  /* Alert/Error - Neon Red */
+  --cyber-danger: #ff3366;
+  --cyber-danger-glow: rgba(255, 51, 102, 0.4);
+
+  /* Success - Matrix Green */
+  --cyber-success: #00ff88;
+  --cyber-success-glow: rgba(0, 255, 136, 0.4);
+
+  /* Warning - Amber */
+  --cyber-warning: #ffaa00;
+  --cyber-warning-glow: rgba(255, 170, 0, 0.4);
+
+  /* Background Gradient Colors */
+  --cyber-bg-dark: #0a0a0f;
+  --cyber-bg-mid: #12121a;
+  --cyber-bg-light: #1a1a25;
+
+  /* Grid/Scanline Colors */
+  --cyber-grid: rgba(0, 245, 255, 0.03);
+  --cyber-scanline: rgba(0, 0, 0, 0.15);
+
+  /* Text Colors */
+  --cyber-text-bright: #ffffff;
+  --cyber-text-normal: rgba(255, 255, 255, 0.85);
+  --cyber-text-dim: rgba(255, 255, 255, 0.5);
+  --cyber-text-glow: rgba(0, 245, 255, 0.8);
+
+  /* Glow Effects */
+  --glow-primary: 0 0 20px var(--cyber-primary-glow), 0 0 40px var(--cyber-primary-dim);
+  --glow-text: 0 0 10px var(--cyber-primary-glow), 0 0 20px var(--cyber-primary-dim);
+  --border-glow: 0 0 8px var(--cyber-primary-dim), inset 0 0 8px var(--cyber-primary-dim);
+
+  /* OS科技风格 Typography */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', monospace;
+  --font-display: 'Orbitron', 'Rajdhani', 'Exo 2', sans-serif;
+
+  /* Font Sizes for OS aesthetic */
+  --font-size-display: 32px;
+  --font-size-mono: 14px;
+  --font-size-label: 12px;
+
+  /* Letter spacing for tech feel */
+  --letter-spacing-wide: 0.1em;
+  --letter-spacing-wider: 0.2em;
+
+  /* Animation Timings */
+  --transition-glow: 0.3s ease;
+  --transition-boot: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 浅色主题（未来扩展） */

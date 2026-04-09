@@ -1,0 +1,118 @@
+/* === Cyber Input - Terminal-style input with OS aesthetic === */
+
+.cyber-input {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+}
+
+.cyber-input__wrapper {
+  position: relative;
+  background: var(--cyber-bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-glow);
+}
+
+.cyber-input__wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--cyber-primary) 20%,
+    var(--cyber-primary) 80%,
+    transparent);
+  opacity: 0;
+  transition: opacity var(--transition-glow);
+}
+
+.cyber-input--focused .cyber-input__wrapper {
+  border-color: var(--cyber-primary);
+  box-shadow: var(--glow-primary);
+}
+
+.cyber-input--focused .cyber-input__wrapper::before {
+  opacity: 1;
+}
+
+.cyber-input--error .cyber-input__wrapper {
+  border-color: var(--cyber-danger);
+  box-shadow: 0 0 15px var(--cyber-danger-glow);
+}
+
+.cyber-input__label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  letter-spacing: var(--letter-spacing-wider);
+  color: var(--cyber-text-dim);
+  margin-bottom: var(--spacing-xs);
+  text-transform: uppercase;
+}
+
+.cyber-input--focused .cyber-input__label {
+  color: var(--cyber-primary);
+  text-shadow: var(--glow-text);
+}
+
+.cyber-input__field {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
+  color: var(--cyber-text-bright);
+  outline: none;
+}
+
+.cyber-input__field::placeholder {
+  color: var(--cyber-text-dim);
+  opacity: 0.6;
+}
+
+.cyber-input__cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: var(--cyber-primary);
+  animation: cursor-blink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cyber-input__error {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--cyber-danger);
+  margin-top: var(--spacing-xs);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/* Error shake animation */
+@keyframes error-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.cyber-input--error .cyber-input__wrapper {
+  animation: error-shake 0.3s ease;
+}
+
+.cyber-input--disabled .cyber-input__wrapper {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cyber-input--disabled .cyber-input__label {
+  color: var(--text-disabled);
+}

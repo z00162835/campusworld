@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { resolve } from 'path'
+import fs from 'fs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -19,10 +20,12 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    https: getHttpsConfig(),
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: getProxyTarget(),
         changeOrigin: true,
+        secure: true, // Verify SSL certificates
       },
     },
   },
@@ -38,3 +41,27 @@ export default defineConfig({
     },
   },
 })
+
+function getHttpsConfig() {
+  const useHttps = process.env.VITE_USE_HTTPS === 'true'
+  if (!useHttps) return false
+
+  const certPath = process.env.VITE_SSL_CERT_PATH
+  const keyPath = process.env.VITE_SSL_KEY_PATH
+
+  if (certPath && keyPath && fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    return {
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(keyPath),
+    }
+  }
+
+  // Generate self-signed cert if no certs provided (dev only)
+  console.warn('HTTPS enabled but no certificates found. Using self-signed cert.')
+  return true
+}
+
+function getProxyTarget() {
+  const useHttps = process.env.VITE_USE_HTTPS === 'true'
+  return useHttps ? 'https://localhost:8000' : 'http://localhost:8000'
+}

@@ -10,3 +10,13 @@
 @import './components/button.css';
 @import './components/form.css';
 
+/* OS科技风格 - Cyber 组件 */
+@import './components/cyber-input.css';
+@import './components/cyber-button.css';
+@import './components/auth-layout.css';
+
+/* 动画效果 */
+@import './animations/glitch.css';
+@import './animations/scanline.css';
+@import './animations/pulse.css';
+
