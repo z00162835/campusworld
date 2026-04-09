@@ -54,10 +54,12 @@ ssh:
 
 # 安全配置
 security:
-  secret_key: "your-secret-key-here-change-in-production"
+  # IMPORTANT: Change this secret key in production! Use a secure random string (32+ bytes)
+  # Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
+  secret_key: "${SECRET_KEY}"
   algorithm: "HS256"
-  access_token_expire_minutes: 11520  # 8 days
-  refresh_token_expire_days: 30
+  access_token_expire_minutes: 15  # 15 minutes - production should be even shorter
+  refresh_token_expire_days: 7  # 7 days - shorter refresh token lifetime
   password_min_length: 8
   bcrypt_rounds: 12
 
@@ -112,8 +114,11 @@ logging:
 
 # CORS配置
 cors:
+  # Must be explicit origins when credentials are enabled - no wildcards allowed
+  # Add your frontend origin(s) here. Example: "http://localhost:3000" for dev
   allowed_origins:
-    - "*"
+    - "http://localhost:3000"  # Development
+    - "https://campusworld.example.com"  # Production - replace with actual domain
   allowed_methods:
     - "GET"
     - "POST"
@@ -122,9 +127,15 @@ cors:
     - "PATCH"
     - "OPTIONS"
   allowed_headers:
-    - "*"
+    - "Authorization"
+    - "Content-Type"
+    - "X-Requested-With"
+    - "Accept"
+    - "Origin"
   allow_credentials: true
   max_age: 86400
+  expose_headers:
+    - "X-Request-ID"
 
 # 邮件配置
 email:

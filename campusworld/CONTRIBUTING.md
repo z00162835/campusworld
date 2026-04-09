@@ -149,6 +149,9 @@ pip install -r requirements/dev.txt
 # 运行测试
 pytest
 
+# PostgreSQL 集成测试（F10 过滤语义）
+./scripts/run_f10_pg_integration_tests.sh
+
 # 启动系统（主程序）
 python campusworld.py
 ```
