@@ -8,6 +8,12 @@ from .system_notice import SystemNotice
 from .world_runtime import WorldRuntimeState, WorldInstallJob
 from .trait_sync_job import TraitSyncJob
 from .api_key import ApiKey
+from .agent_memory_tables import (
+    AgentLongTermMemory,
+    AgentLongTermMemoryLink,
+    AgentMemoryEntry,
+    AgentRunRecord,
+)
 
 __all__ = [
     "BulletinBoard",
@@ -17,4 +23,8 @@ __all__ = [
     "WorldInstallJob",
     "TraitSyncJob",
     "ApiKey",
+    "AgentMemoryEntry",
+    "AgentRunRecord",
+    "AgentLongTermMemory",
+    "AgentLongTermMemoryLink",
 ]

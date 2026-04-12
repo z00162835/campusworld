@@ -502,6 +502,92 @@ def ensure_world_runtime_schema(engine) -> None:
         conn.close()
 
 
+def ensure_f02_agent_memory_schema(engine) -> None:
+    """
+    F02: agent_memory_entries, agent_run_records, agent_long_term_memory.
+
+    Source of truth: `db/schemas/database_schema.sql` (f02_agent_memory section).
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        mem_ok = bool(conn.execute(text("select to_regclass('public.agent_memory_entries');")).scalar())
+        run_ok = bool(conn.execute(text("select to_regclass('public.agent_run_records');")).scalar())
+        ltm_ok = bool(conn.execute(text("select to_regclass('public.agent_long_term_memory');")).scalar())
+        if mem_ok and run_ok and ltm_ok:
+            return
+
+        sql_path = Path(__file__).parent / "schemas" / "database_schema.sql"
+        schema_sql = sql_path.read_text(encoding="utf-8")
+        start = "-- BEGIN f02_agent_memory"
+        end = "-- END f02_agent_memory"
+        if start not in schema_sql or end not in schema_sql:
+            raise SchemaMigrationError("f02_agent_memory section not found in database_schema.sql")
+
+        section = schema_sql.split(start, 1)[1].split(end, 1)[0].strip()
+        if not section:
+            raise SchemaMigrationError("f02_agent_memory section is empty")
+
+        _must_exec(conn, section, "apply f02_agent_memory schema from database_schema.sql failed")
+    finally:
+        conn.close()
+
+
+def ensure_f02_ltm_semantic_extension(engine) -> None:
+    """
+    F02 extension: LTM embedding columns + agent_long_term_memory_links + indexes.
+
+    Idempotent for existing DBs that only had base f02_agent_memory tables.
+    HNSW index is best-effort (_try_exec) for older pgvector builds.
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        _try_exec(conn, "ALTER TABLE agent_long_term_memory ADD COLUMN IF NOT EXISTS embedding vector(1536);")
+        _try_exec(conn, "ALTER TABLE agent_long_term_memory ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(64);")
+        _try_exec(conn, "ALTER TABLE agent_long_term_memory ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;")
+
+        _try_exec(
+            conn,
+            """
+CREATE TABLE IF NOT EXISTS agent_long_term_memory_links (
+    id BIGSERIAL PRIMARY KEY,
+    agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    source_ltm_id BIGINT NOT NULL REFERENCES agent_long_term_memory (id) ON DELETE CASCADE,
+    target_ltm_id BIGINT NOT NULL REFERENCES agent_long_term_memory (id) ON DELETE CASCADE,
+    link_type VARCHAR(64) NOT NULL,
+    weight REAL DEFAULT 1.0,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_agent_ltm_link_distinct CHECK (source_ltm_id <> target_ltm_id)
+);
+            """.strip(),
+        )
+        _try_exec(
+            conn,
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_agent_ltm_links_src_tgt_type "
+            "ON agent_long_term_memory_links (source_ltm_id, target_ltm_id, link_type);",
+        )
+        _try_exec(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_ltm_links_agent_source "
+            "ON agent_long_term_memory_links (agent_node_id, source_ltm_id);",
+        )
+        _try_exec(
+            conn,
+            "CREATE INDEX IF NOT EXISTS ix_ltm_links_agent_target "
+            "ON agent_long_term_memory_links (agent_node_id, target_ltm_id);",
+        )
+        _try_exec(
+            conn,
+            """
+CREATE INDEX IF NOT EXISTS ix_agent_ltm_embedding_hnsw
+    ON agent_long_term_memory USING hnsw (embedding vector_cosine_ops)
+    WHERE embedding IS NOT NULL;
+            """.strip(),
+        )
+    finally:
+        conn.close()
+
+
 def ensure_content_visibility_backfill(engine) -> None:
     """
     Backfill semantic content visibility attributes for existing nodes.

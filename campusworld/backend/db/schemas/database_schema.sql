@@ -272,6 +272,76 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_world_install_jobs_running_action
     WHERE status = 'running';
 -- END world_runtime
 
+-- BEGIN f02_agent_memory
+-- F02: npc_agent memory + run audit (see docs/models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md §9)
+CREATE TABLE IF NOT EXISTS agent_memory_entries (
+    id BIGSERIAL PRIMARY KEY,
+    agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    session_id UUID,
+    kind VARCHAR(32) NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_agent_memory_entries_agent_created
+    ON agent_memory_entries (agent_node_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ix_agent_memory_entries_kind_agent
+    ON agent_memory_entries (kind, agent_node_id);
+
+CREATE TABLE IF NOT EXISTS agent_run_records (
+    id BIGSERIAL PRIMARY KEY,
+    agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    run_id UUID NOT NULL,
+    correlation_id TEXT,
+    phase VARCHAR(32) NOT NULL,
+    command_trace JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status VARCHAR(32) NOT NULL,
+    graph_ops_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS ix_agent_run_records_agent_started
+    ON agent_run_records (agent_node_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS ix_agent_run_records_run_id ON agent_run_records (run_id);
+
+CREATE TABLE IF NOT EXISTS agent_long_term_memory (
+    id BIGSERIAL PRIMARY KEY,
+    agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    summary TEXT NOT NULL DEFAULT '',
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    source_memory_entry_id BIGINT REFERENCES agent_memory_entries (id) ON DELETE SET NULL,
+    graph_node_id INTEGER,
+    relationship_id INTEGER,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    embedding vector(1536),
+    embedding_model VARCHAR(64),
+    embedding_updated_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS ix_agent_ltm_agent_updated
+    ON agent_long_term_memory (agent_node_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS ix_agent_ltm_graph_node ON agent_long_term_memory (graph_node_id)
+    WHERE graph_node_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS agent_long_term_memory_links (
+    id BIGSERIAL PRIMARY KEY,
+    agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    source_ltm_id BIGINT NOT NULL REFERENCES agent_long_term_memory (id) ON DELETE CASCADE,
+    target_ltm_id BIGINT NOT NULL REFERENCES agent_long_term_memory (id) ON DELETE CASCADE,
+    link_type VARCHAR(64) NOT NULL,
+    weight REAL DEFAULT 1.0,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_agent_ltm_link_distinct CHECK (source_ltm_id <> target_ltm_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_agent_ltm_links_src_tgt_type
+    ON agent_long_term_memory_links (source_ltm_id, target_ltm_id, link_type);
+CREATE INDEX IF NOT EXISTS ix_ltm_links_agent_source
+    ON agent_long_term_memory_links (agent_node_id, source_ltm_id);
+CREATE INDEX IF NOT EXISTS ix_ltm_links_agent_target
+    ON agent_long_term_memory_links (agent_node_id, target_ltm_id);
+-- END f02_agent_memory
+
 -- ==================================================
 -- 第三阶段：索引（几何 / 向量 / 查询）
 -- ==================================================

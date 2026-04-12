@@ -19,6 +19,10 @@ from .system import (
     WorldInstallJob,
     TraitSyncJob,
     ApiKey,
+    AgentMemoryEntry,
+    AgentRunRecord,
+    AgentLongTermMemory,
+    AgentLongTermMemoryLink,
 )
 from .exit import Exit
 from .world_entrance import WorldEntrance
@@ -72,6 +76,10 @@ __all__ = [
     "WorldInstallJob",
     "TraitSyncJob",
     "ApiKey",
+    "AgentMemoryEntry",
+    "AgentRunRecord",
+    "AgentLongTermMemory",
+    "AgentLongTermMemoryLink",
     "Exit",
     "WorldEntrance",
     "AccessTerminal",
