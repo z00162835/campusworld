@@ -93,9 +93,17 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials: LoginRequest) => {
     loading.value = true
     try {
-      await authApi.login(credentials)
-      // Tokens are set via httpOnly cookies on the backend
-      syncFromStorage()
+      const response = await authApi.login(credentials)
+      // Backend sets httpOnly cookie for API security, but we need the token
+      // in memory for frontend state. Use response body directly.
+      const tokenData = response.data
+      if (tokenData.access_token) {
+        token.value = tokenData.access_token
+        tokenExpiresAt.value = decodeTokenExp(tokenData.access_token)
+      }
+      if (tokenData.refresh_token) {
+        refreshToken.value = tokenData.refresh_token
+      }
       // Fetch user profile after successful login
       await fetchUser()
       return true

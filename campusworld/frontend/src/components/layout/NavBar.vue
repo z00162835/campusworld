@@ -45,13 +45,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { Setting } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const isAuthenticated = computed(() => {
-  return !!localStorage.getItem('access_token')
+  return authStore.isAuthenticated
 })
 
 const handleLogin = () => {
@@ -66,8 +67,7 @@ const handleCommand = (command: string) => {
   if (command === 'profile') {
     router.push('/profile')
   } else if (command === 'logout') {
-    localStorage.removeItem('access_token')
-    ElMessage.success('已退出登录')
+    authStore.logout()
     router.push('/')
   }
 }

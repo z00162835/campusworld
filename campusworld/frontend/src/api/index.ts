@@ -6,7 +6,7 @@ import router from '@/router'
 import { tokenApi } from './token'
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -27,16 +27,22 @@ const onTokenRefreshed = (token: string) => {
   refreshSubscribers = []
 }
 
-// Helper to get access token from cookie
-const getAccessTokenFromCookie = (): string | null => {
-  const match = document.cookie.match(/access_token=([^;]+)/)
-  return match ? match[1] : null
+// Helper to get access token from authStore (memory)
+const getAccessToken = async (): Promise<string | null> => {
+  try {
+    // Dynamic import to avoid circular dependency and timing issues
+    const { useAuthStore } = await import('@/stores/auth')
+    const authStore = useAuthStore()
+    return authStore.token
+  } catch {
+    return null
+  }
 }
 
-// Request interceptor: attach JWT token from cookie
+// Request interceptor: attach JWT token from authStore (memory)
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = getAccessTokenFromCookie()
+  async (config) => {
+    const token = await getAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }

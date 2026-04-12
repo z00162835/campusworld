@@ -63,5 +63,6 @@ function getHttpsConfig() {
 
 function getProxyTarget() {
   const useHttps = process.env.VITE_USE_HTTPS === 'true'
-  return useHttps ? 'https://localhost:8000' : 'http://localhost:8000'
+  // Use 127.0.0.1 explicitly instead of localhost to avoid IPv6 issues
+  return useHttps ? 'https://127.0.0.1:8000' : 'http://127.0.0.1:8000'
 }

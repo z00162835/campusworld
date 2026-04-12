@@ -35,6 +35,7 @@ const handleClick = (e: MouseEvent) => {
 
 <template>
   <button
+    type="submit"
     :class="buttonClasses"
     :disabled="disabled || loading"
     @click="handleClick"
