@@ -36,5 +36,22 @@ export default {
     cancel: 'Cancel',
     notFound: 'Page not found',
     goHome: 'Go Home',
+    edit: 'Edit',
+    save: 'Save',
+  },
+  spaces: {
+    tabs: {
+      world: 'World',
+      building: 'Building',
+      floor: 'Floor',
+      room: 'Room',
+    },
+    items: 'items',
+    search: {
+      placeholder: 'Search by name...',
+    },
+    empty: {
+      description: 'No data',
+    },
   },
 }

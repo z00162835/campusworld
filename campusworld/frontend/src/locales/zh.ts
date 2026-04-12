@@ -36,5 +36,22 @@ export default {
     cancel: '取消',
     notFound: '页面不存在',
     goHome: '返回首页',
+    edit: '编辑',
+    save: '保存',
+  },
+  spaces: {
+    tabs: {
+      world: '世界',
+      building: '建筑',
+      floor: '楼层',
+      room: '房间',
+    },
+    items: '项',
+    search: {
+      placeholder: '搜索空间名称...',
+    },
+    empty: {
+      description: '暂无数据',
+    },
   },
 }
