@@ -18,24 +18,16 @@ const store = useSpacesStore()
 // Local filter state
 const localFilters = ref({ ...store.filters })
 
-// Fetch dropdown options when needed
+// Fetch world options on mount (needed for building filter)
 onMounted(async () => {
   await store.fetchWorlds()
 })
 
-// Watch for tab changes to load appropriate dropdown data
-watch(() => store.activeTab, async (tab) => {
-  if (tab === 'building' || tab === 'floor' || tab === 'room') {
-    await store.fetchBuildings(localFilters.value.world_id)
-  }
-  if (tab === 'floor' || tab === 'room') {
-    await store.fetchFloors()
-  }
-}, { immediate: true })
-
-// Watch for world_id changes to reload buildings
+// Watch for world_id changes to reload buildings dropdown
 watch(() => localFilters.value.world_id, async (worldId) => {
   if (worldId) {
+    // Clear cached buildings when world changes to get buildings for new world
+    store.buildings.splice(0, store.buildings.length)
     await store.fetchBuildings(worldId)
     // Reset building and floor filters when world changes
     localFilters.value.building_id = undefined
@@ -44,10 +36,10 @@ watch(() => localFilters.value.world_id, async (worldId) => {
   }
 })
 
-// Watch for building_id changes to reload floors
+// Watch for building_id changes to reload floors dropdown
 watch(() => localFilters.value.building_id, async (buildingId) => {
   if (buildingId) {
-    await store.fetchFloors()
+    // Note: building_id filtering not supported by API, so we don't clear floors cache
     // Reset floor filter when building changes
     localFilters.value.floor_id = undefined
     store.setFilters({ building_id: buildingId })

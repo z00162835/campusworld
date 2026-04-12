@@ -13,7 +13,7 @@ const TAB_TYPE_CODE_MAP: Record<string, string> = {
   world: 'world',
   building: 'building',
   floor: 'building_floor',
-  room: 'building_room',
+  room: 'room',
 }
 
 export const spacesApi = {

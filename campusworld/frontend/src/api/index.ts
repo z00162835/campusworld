@@ -16,16 +16,7 @@ const apiClient = axios.create({
 
 // Track if we're already handling a 401 to prevent infinite loops
 let isRefreshing = false
-let refreshSubscribers: Array<(token: string) => void> = []
-
-const subscribeTokenRefresh = (callback: (token: string) => void) => {
-  refreshSubscribers.push(callback)
-}
-
-const onTokenRefreshed = (token: string) => {
-  refreshSubscribers.forEach(callback => callback(token))
-  refreshSubscribers = []
-}
+let refreshPromise: Promise<string> | null = null
 
 // Helper to get access token from authStore (memory)
 const getAccessToken = async (): Promise<string | null> => {
@@ -59,44 +50,54 @@ apiClient.interceptors.response.use(
 
     // Handle 401 - attempt token refresh or redirect to login
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        // Already refreshing, queue the request
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            resolve(apiClient(originalRequest))
-          })
+      if (isRefreshing && refreshPromise) {
+        // Already refreshing, wait for the refresh to complete
+        return refreshPromise.then((token: string) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return apiClient(originalRequest)
+        }).catch(() => {
+          // If refresh fails, reject
+          return Promise.reject(error)
         })
       }
 
       originalRequest._retry = true
       isRefreshing = true
 
-      try {
-        // Try to refresh using cookie-based refresh endpoint
-        const data = await tokenApi.refreshWithCookie()
+      // Create a refresh promise that all queued requests will wait for
+      refreshPromise = (async () => {
+        try {
+          // Try to refresh using cookie-based refresh endpoint
+          const data = await tokenApi.refreshWithCookie()
 
-        if (data.access_token) {
-          // Sync auth store with new tokens
-          const { useAuthStore } = await import('@/stores/auth')
-          const authStore = useAuthStore()
-          authStore.syncFromStorage()
+          if (data.access_token) {
+            // Sync auth store with new tokens
+            const { useAuthStore } = await import('@/stores/auth')
+            const authStore = useAuthStore()
+            authStore.syncFromStorage()
 
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${data.access_token}`
-          onTokenRefreshed(data.access_token)
+            return data.access_token
+          }
+          throw new Error('No access token in refresh response')
+        } catch (refreshError) {
+          // Refresh failed, clear cookies and redirect to login
+          document.cookie = 'access_token=; Max-Age=0; path=/'
+          document.cookie = 'refresh_token=; Max-Age=0; path=/'
+          router.push('/login')
+          throw refreshError
+        } finally {
           isRefreshing = false
-          return apiClient(originalRequest)
+          refreshPromise = null
         }
-      } catch (refreshError) {
-        // Refresh failed, clear cookies and redirect to login
-        isRefreshing = false
-        // Clear cookies via document.cookie
-        document.cookie = 'access_token=; Max-Age=0; path=/'
-        document.cookie = 'refresh_token=; Max-Age=0; path=/'
-        router.push('/login')
-        return Promise.reject(refreshError)
-      }
+      })()
+
+      return refreshPromise.then((token: string) => {
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${token}`
+        return apiClient(originalRequest)
+      }).catch(() => {
+        return Promise.reject(error)
+      })
     }
 
     return Promise.reject(error)

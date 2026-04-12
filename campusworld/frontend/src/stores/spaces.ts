@@ -61,25 +61,16 @@ export const useSpacesStore = defineStore('spaces', () => {
         world_id: targetTab !== 'world' ? filters.value.world_id : undefined,
         building_id: targetTab === 'floor' || targetTab === 'room' ? filters.value.building_id : undefined,
         floor_id: targetTab === 'room' ? filters.value.floor_id : undefined,
-        offset: targetTab === activeTab.value ? currentNodes.value.length : 0,
+        offset: 0, // Always start from 0 for fresh load
         limit: pageSize.value,
       })
 
       const { items, page } = response.data
 
-      if (targetTab === activeTab.value) {
-        // Append or replace based on whether this is a fresh load
-        if (currentPage.value === 0) {
-          nodes.value[targetTab] = items
-        } else {
-          nodes.value[targetTab] = [...nodes.value[targetTab], ...items]
-        }
-      } else {
-        nodes.value[targetTab] = items
-      }
-
+      // Store data for the target tab
+      nodes.value[targetTab] = items
       totalCounts.value[targetTab] = page.total
-      currentPage.value = Math.floor(items.length / pageSize.value)
+      currentPage.value = 0
     } catch (error) {
       console.error('Failed to fetch spaces:', error)
     } finally {
@@ -109,10 +100,8 @@ export const useSpacesStore = defineStore('spaces', () => {
         world_id: filters.value.world_id,
       }
     }
-    // Fetch data if not loaded yet
-    if (nodes.value[tab].length === 0) {
-      fetchSpaces(tab)
-    }
+    // Always fetch data when switching tabs
+    fetchSpaces(tab)
   }
 
   function setViewMode(mode: ViewMode) {
@@ -147,7 +136,6 @@ export const useSpacesStore = defineStore('spaces', () => {
 
   // Filter dropdown data
   async function fetchWorlds() {
-    if (worlds.value.length > 0) return worlds.value
     try {
       const response = await spacesApi.getNodesByType('world')
       worlds.value = response.data.items
@@ -171,8 +159,6 @@ export const useSpacesStore = defineStore('spaces', () => {
 
   async function fetchFloors() {
     try {
-      // Note: building_id filtering is not supported by the API
-      // This returns all floors; frontend should filter client-side if needed
       const response = await spacesApi.getNodesByType('building_floor')
       floors.value = response.data.items
       return floors.value
