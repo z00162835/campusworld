@@ -30,6 +30,7 @@ db/
 | `relationship_types` | 关系类型注册 |
 | `api_keys` | API Key 元数据（与账号关联，见 HTTP 鉴权） |
 | `trait_sync_jobs` 等 | 运维/同步类辅助表（见 `database_schema.sql`） |
+| `agent_memory_entries` / `agent_run_records` / `agent_long_term_memory` | **F02** 智能体原始记忆、运行轨迹、长期记忆（逻辑模型见 F02；DDL 见 Phase B） |
 
 **`schema_definition` 与实例 `attributes` 的约定**见 [`backend/db/schemas/README.md`](../../../backend/db/schemas/README.md)。
 
@@ -63,7 +64,7 @@ nodes (1) ───< relationships (N) >─── (N) nodes
 
 - `F01` Trait Class & 64-bit Trait Mask for Agent-Friendly Graph  
   [`features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md`](./features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)
-- `F02` Intelligent Agent Service（`npc_agent`、记忆/运行表逻辑模型）  
+- `F02` Intelligent Agent Service（`npc_agent`、原始/长期记忆与运行表逻辑模型）  
   [`../../models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](../../models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)
 - `F10` 本体与图谱原子服务 REST API  
   [`../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md`](../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)
