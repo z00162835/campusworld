@@ -342,6 +342,8 @@ with httpx.Client(base_url=base, timeout=30.0) as client:
 | PATCH | `/worlds/{world_id}/relationships/{id}` | 更新关系属性（需属于该 world） | `graph.write` |
 | DELETE | `/worlds/{world_id}/relationships/{id}` | 删除/停用关系（需属于该 world） | `graph.write` |
 
+**与 `/graph` 下嵌套的 world 路径（双路径）**：实现中另登记 **`/graph/worlds/{world_id}/nodes`**、**`/graph/worlds/{world_id}/relationships`**（及带 `{id}` 的详情/变更操作），与上表 **`/worlds/{world_id}/...`** **语义一致**（同一服务、同一 F11 数据策略与 world 归属校验）。**文档、示例与集成测试优先使用 `/worlds/{world_id}/...`**，以避免与「全库」路径 `/graph/nodes` 混淆；客户端任选其一即可，OpenAPI 中会同时出现两组 path。
+
 **作用域判定规则（v1 建议）**：
 - 节点属于 world：`nodes.attributes.world_id == {world_id}`（与 graph seed 现有字段约定一致）。
 - 关系属于 world：`source_node.world_id == {world_id}` 且 `target_node.world_id == {world_id}`。

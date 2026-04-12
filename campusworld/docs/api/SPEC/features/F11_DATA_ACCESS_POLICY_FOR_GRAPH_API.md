@@ -36,7 +36,7 @@
 ## 数据层：不设 admin 短路
 
 - **实现要求**：图实例与（若适用）本体列表的过滤逻辑 **无** `if "admin" in roles: return unfiltered`。
-- **管理员「宽」**：通过 **初始 seed / 迁移** 写入 **空 deny 列表**（四类 `denied_*` 均为 `[]`）及 **宽松或空 `permission_template`**（空语义在实现与本文中 **唯一写死**，见下节）。
+- **管理员「宽」**：通过 **初始 seed / 迁移** 写入 **空 deny 列表**（四类 `denied_*` 均为 `[]`）及 **宽松的 `permission_template`**（各子字段空列表表示该维度**不额外收紧**，见下节「`permission_template` 必填」）。
 - **与 RBAC 区分**：`admin` 在 `has_permission` 中的行为属于 **API 能力**；F11 **不复制**该语义到数据层。
 
 ## `attributes.data_access` 结构（v1 规范）
@@ -46,7 +46,7 @@
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `version` | `integer` | 策略 schema 版本；**v1 = 1** |
-| `permission_template` | `object` | **允许集**（见下）；缺省语义见「无模版」 |
+| `permission_template` | `object` | **必填**。允许集（见下）；与 [`DataAccessV1`](../../../../backend/app/schemas/data_access.py) 一致 |
 | `denied_world_ids` | `integer[]` | **拒绝**的世界 id（deny 语义） |
 | `denied_type_codes` | `string[]` | **拒绝**的节点 `type_code` |
 | `denied_relationships_codes` | `string[]` | **拒绝**的关系 `type_code`（与 `relationship_types.type_code` 对齐） |
@@ -62,9 +62,9 @@
 | `node_ids` | `integer[]` | **可选**显式允许的节点 id（若与 Layer3 组合使用） |
 | `exclude_nodes_without_world_id` | `boolean`（可选，默认 `false`） | 为 `true` 时拒绝 **`attributes` 无有效 `world_id`** 的节点；与 **`denied_type_codes`**（如 `account`）组合用于 `user` 类默认 |
 
-**实现侧（v1 后端）**：缺失或无法解析的 `data_access` → **拒绝一切**图/受策略约束的本体列表；单条 GET 对不可见资源返回 **404**。数据过滤 **无** `role=admin` 短路。
+**实现侧（v1 后端）**：缺失或无法解析的 `data_access`（含校验失败）→ **拒绝一切**图/受策略约束的本体列表；单条 GET 对不可见资源返回 **404**。数据过滤 **无** `role=admin` 短路。
 
-**deny 语义**：在「模版允许」的集合上 **再剔除** `denied_*`；若模板为「无」或空，**默认行为**须在实现中**唯一写死**（推荐：**无模版则拒绝一切图数据**，或 **模版必填**；产品选定后不得混用）。
+**`permission_template` 必填**：顶层必须提供 **`permission_template` 对象**（可为空对象 `{}`）。各子字段（`world_ids`、`type_codes` 等）为 **`null` 或缺省** 表示该维度**不施加 allow 列表限制**；**非空列表**表示仅允许列表内取值。在 allow 语义之上再应用 **`denied_*`** 剔除。
 
 **拼写**：`denied_relationships_codes` 固定，与 `relationship_types.type_code` 一致。
 
@@ -113,7 +113,8 @@ flowchart TD
 |------|------|------|
 | `/graph/nodes`、`/graph/nodes/{id}` | GET/POST/PATCH/DELETE | 节点读写 |
 | `/graph/relationships`、`* /{id}` | GET/POST/PATCH/DELETE | 关系读写 |
-| `/worlds/{world_id}/nodes`、`* /relationships` | * | world 作用域下仍须校验（与 Layer1 一致） |
+| `/graph/worlds/{world_id}/nodes`、`.../relationships` | * | 与 `/worlds/{world_id}/...` 同语义；须应用同一数据策略 |
+| `/worlds/{world_id}/nodes`、`* /relationships` | * | world 作用域；仍须校验（与 Layer1 一致） |
 | `/ontology/*`（若暴露） | GET/POST/… | 是否在 v1 对 **非 admin** 套用类型层策略（与实例区分）— **实现须与 OpenAPI 一致** |
 
 **写路径**：建议与 **读** 一致，避免「不可见却可写」。
@@ -147,7 +148,7 @@ flowchart TD
 | `dev` | `DeveloperAccount` | `['dev']` | `developer` | 含 `world.view` 等**非** F10 `graph.*` 字符串 |
 | `campus` | `CampusUserAccount` | `['user','campus_user']` | `normal` | 校园扩展 permissions |
 
-**当前状态**：种子写入 `roles`、`permissions` 等，**未**写入 `data_access`；上线 F11 前需 **迁移或脚本** 补全与本文一致的初始 JSON（**禁止**覆盖运营已手工修改的策略，见附录 C）。
+**当前状态**：新建默认账号时 **`ensure_default_accounts`** 写入 **`data_access`**（见 [`seed_data.py`](../../../../backend/db/seed_data.py) 与 [`data_access_defaults`](../../../../backend/app/constants/data_access_defaults.py)）。已存在库由 **迁移** 幂等补全缺省 `data_access`（**禁止**覆盖运营已手工修改的策略，见附录 C）。
 
 ---
 
@@ -185,11 +186,10 @@ flowchart TD
 - [ ] **无 admin 数据短路**（代码审查可检索 `admin` 与 `skip`/`bypass` 组合）。
 - [ ] 种子或迁移后，默认账号 **`attributes`** 含 **`data_access`** 或明确「缺省=拒绝」语义（与实现一致）。
 
-## Implementation backlog（后续 PR）
+## Implementation backlog（维护项）
 
-- 在 `graph` / `ontology` 端点统一加载 `data_access` 并应用过滤。
-- 种子与 DB 迁移写入 **`data_access`**；与 **`accounts.py` 权限**修订可并行或分 PR。
-- 契约测试：附录 C 验收用例自动化。
+- 契约测试与 CI：附录 C 验收用例、OpenAPI 与 F10/F11 字段名持续对齐。
+- 可选：全域将 FastAPI `422` 映射为 RFC 9457 `application/problem+json`（见 F10）。
 
 ## 相关文档
 

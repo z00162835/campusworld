@@ -20,25 +20,11 @@
   - 返回成功/失败统计
   - 权限：`user.manage`
 
-- [ ] **刷新 Token 端点** `POST /auth/refresh`
-  - 接收 `RefreshTokenRequest`
-  - 返回新的 access_token
-  - 权限：公开
-
 ### 中优先级
 
-- [ ] **F10 本体与图谱原子服务**（契约见 [`features/F10_ONTOLOGY_AND_GRAPH_API.md`](features/F10_ONTOLOGY_AND_GRAPH_API.md)）
-  - `ontology/node-types`、`ontology/relationship-types`、`graph/nodes`、`graph/relationships` CRUD + 列表过滤
-  - OpenAPI 3.x、RFC 9457 Problem Details、权限 `ontology.*` / `graph.*`
-  - 与 F01 trait 触发器语义一致（实例 `trait_*` 文档只读）
-
-- [ ] **当前用户信息端点** `GET /accounts/me`
-  - 返回当前认证用户信息
-  - 权限：已认证
-
-- [ ] **Token 撤销端点** `POST /auth/logout`
-  - 将 Token 加入黑名单（Redis）
-  - 权限：已认证
+- [ ] **Token 服务端黑名单 / 全量撤销增强**（可选）
+  - 当前：`POST /auth/logout`、`POST /auth/logout-all` 已存在，刷新令牌按服务端存储撤销（见实现）
+  - 增强：Redis 等集中式黑名单、审计与多实例一致撤销（若需要）
 
 - [ ] **密码重置请求端点** `POST /auth/password-reset-request`
   - 发送邮件/生成 Token
@@ -58,12 +44,21 @@
   - 实现 `/api/v2/` 版本
   - v1 兼容策略
 
+## 已实现（近期交付，契约见 F10/F11 与 OpenAPI）
+
+- [x] **刷新 Token**：`POST /auth/refresh`（见 `auth` 端点）
+- [x] **当前用户**：`GET /accounts/me`（需已认证）
+- [x] **F10 本体与图谱原子服务**：`ontology/*`、`graph/*`、`worlds/{world_id}/*`（见 [`features/F10_ONTOLOGY_AND_GRAPH_API.md`](features/F10_ONTOLOGY_AND_GRAPH_API.md)）
+- [x] **F11 数据访问策略**：账号 `attributes.data_access` 与图/本体查询过滤（见 [`features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md`](features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)）
+
 ## 已实现端点检查清单
 
 确保以下端点测试通过：
 
 - [ ] `POST /auth/register` — 注册并返回 Token
 - [ ] `POST /auth/login` — OAuth2 登录并返回 Token
+- [ ] `POST /auth/refresh` — 刷新 access_token
+- [ ] `GET /accounts/me` — 当前登录账号信息
 - [ ] `GET /accounts/` — 列表（分页 + 筛选）
 - [ ] `GET /accounts/{id}` — 详情
 - [ ] `POST /accounts/` — 创建
