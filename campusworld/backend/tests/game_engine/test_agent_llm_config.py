@@ -8,6 +8,7 @@ import pytest
 
 from app.core.settings import AgentLlmServiceConfig
 from app.game_engine.agent_runtime.agent_llm_config import (
+    apply_model_config_from_attributes,
     apply_prompt_overrides,
     apply_prompt_overrides_from_attributes,
     resolve_agent_llm_config,
@@ -42,6 +43,57 @@ def test_apply_prompt_overrides_ignores_unknown_keys():
     )
     assert out.system_prompt == "y"
     assert out.model == "gpt-4o-mini"
+
+
+@pytest.mark.unit
+def test_apply_model_config_from_attributes_whitelist():
+    base = AgentLlmServiceConfig(
+        temperature=0.2,
+        max_tokens=4096,
+        model="gpt-4o-mini",
+        api_key_env="AICO_OPENAI_API_KEY",
+    )
+    out = apply_model_config_from_attributes(
+        base,
+        {
+            "model_config": {
+                "temperature": 0.9,
+                "max_tokens": 100,
+                "model": "gpt-4o",
+                "api_key_env": "SHOULD_NOT_MERGE",
+            },
+        },
+    )
+    assert out.temperature == 0.9
+    assert out.max_tokens == 100
+    assert out.model == "gpt-4o"
+    assert out.api_key_env == "AICO_OPENAI_API_KEY"
+
+
+@pytest.mark.unit
+def test_resolve_agent_llm_config_order_yaml_model_config_prompt_overrides(monkeypatch):
+    mock_cm = MagicMock()
+    mock_cm.get_nested.return_value = {
+        "aico": {
+            "system_prompt": "yaml_sys",
+            "temperature": 0.2,
+            "model": "base-model",
+        },
+    }
+    monkeypatch.setattr(
+        "app.game_engine.agent_runtime.agent_llm_config.get_config",
+        lambda: mock_cm,
+    )
+    cfg = resolve_agent_llm_config(
+        "aico",
+        node_attributes={
+            "model_config": {"temperature": 0.5},
+            "prompt_overrides": {"system_prompt": "final_sys"},
+        },
+    )
+    assert cfg.temperature == 0.5
+    assert cfg.system_prompt == "final_sys"
+    assert cfg.model == "base-model"
 
 
 @pytest.mark.unit

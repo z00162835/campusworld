@@ -156,3 +156,39 @@ def set_ltm_embedding(
     n.embedding_model = embedding_model
     n.embedding_updated_at = datetime.now(timezone.utc)
     session.flush()
+
+
+def build_ltm_memory_context_for_tick(
+    session: Session,
+    agent_node_id: int,
+    *,
+    user_message: str,
+    limit: int = 8,
+    max_chars: int = 2000,
+) -> Optional[str]:
+    """
+    Concatenate recent LTM row summaries for NLP memory_context injection (F03 optional).
+
+    Newest rows first. Does not require embeddings; semantic KNN via
+    search_ltm_by_embedding can be added when a query embedding pipeline exists.
+    user_message is reserved for future relevance ranking.
+    """
+    _ = user_message
+    rows = (
+        session.query(AgentLongTermMemory)
+        .filter(AgentLongTermMemory.agent_node_id == agent_node_id)
+        .order_by(AgentLongTermMemory.id.desc())
+        .limit(limit)
+        .all()
+    )
+    parts: List[str] = []
+    for r in rows:
+        s = str(r.summary or "").strip()
+        if s:
+            parts.append(s)
+    if not parts:
+        return None
+    text = "\n".join(parts)
+    if len(text) > max_chars:
+        text = text[: max_chars - 3] + "..."
+    return text

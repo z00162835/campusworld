@@ -6,7 +6,9 @@
 
 **交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)、[`F03`](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（`service_id=aico`）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)（若涉及呈现过滤）。
 
-**实现锚点（非 exhaustive）：** [`backend/app/commands/registry.py`](../../../../backend/app/commands/registry.py)、[`backend/app/commands/invoke.py`](../../../../backend/app/commands/invoke.py)、[`backend/app/commands/shell_words.py`](../../../../backend/app/commands/shell_words.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/policy_store.py`](../../../../backend/app/commands/policy_store.py)（`command_policies`）。
+**实现锚点（非 exhaustive）：** [`npc_agent_resolve.py`](../../../../backend/app/commands/npc_agent_resolve.py)（**`resolve_npc_agent_by_handle`**：`service_id` / **`handle_aliases`**、歧义、`enabled`）、[`at_agent_dispatch.py`](../../../../backend/app/commands/at_agent_dispatch.py)（**`try_dispatch_at_line`**）、[`protocols/ssh_handler.py`](../../../../backend/app/protocols/ssh_handler.py) / [`protocols/http_handler.py`](../../../../backend/app/protocols/http_handler.py)（`@` 行优先于注册表解析）、[`agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（**`agent_nlp`**、**`aico`**，与 `@` 共用 resolver）、[`shell_words.py`](../../../../backend/app/commands/shell_words.py)、[`registry.py`](../../../../backend/app/commands/registry.py)、[`agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`policy_store.py`](../../../../backend/app/commands/policy_store.py)（`command_policies`）。
+
+**与 `help`：** `help` 为注册表命令；**`@` 不是注册表首词**，在协议层先经 `try_dispatch_at_line`。**鉴权**与 **`agent_nlp`** 同源（`authorize_command(agent_nlp)`）。详见附录「与 help 的类比」。
 
 ---
 
@@ -60,8 +62,9 @@
 
 ## 6. 可见性与命令系统
 
-- **`@`** 交互作为 **系统级能力**，应与 **`help`** 在 **同一 cmdset / 可见性策略** 下可用（例如 SSH 游戏会话内全局可输入）；具体 **command_type**（`SystemCommand` / `GameCommand`）由实现选型，但 **不得**默认因 `location_id` 不同而禁用。
-- **鉴权**：若实现为 **注册表中的命令**（如 `at`、`aico`），则须经过 **`command_policies`** 与 **`authorize_command`**（与现有 HTTP/SSH 同源）；策略行需为相关命令名单独配置或继承默认。
+- **`@`** 交互作为 **系统级能力**，应与 **`help`** 在 **同一会话内全局可输入**（SSH/HTTP 与 `help` 同源入口）；**不得**默认因 `location_id` 不同而禁用。
+- **鉴权**：**`@` 行**在实现中与 **`agent_nlp`** 对齐——**`authorize_command(agent_nlp)`**（与 HTTP/SSH 同源）。注册表命令 **`aico`** / **`agent_nlp`** 仍各自走 **`authorize_command`**。错误提示与「命令未找到」叙事一致时可附带 **`Type 'help' for available commands.`**
+- **Evennia 参照**：分词与引号行为与 **Evennia 式 shell** 一致（见 [`shell_words.py`](../../../../backend/app/commands/shell_words.py)）；**未**实现完整 CmdSet 栈，**`@`** 采用 **传输层前缀分发**（见架构讨论与 [`ADR-F04-AT-Dispatch.md`](../../../architecture/adr/ADR-F04-AT-Dispatch.md)）。
 
 ## 7. 执行链（逻辑）
 
@@ -103,9 +106,11 @@ sequenceDiagram
 
 ## 10. 验收标准（建议）
 
+**自动化：** `cd backend && conda run -n campusworld pytest tests/commands/test_npc_agent_resolve.py tests/commands/test_f04_at_dispatch.py -q`
+
 - [ ] 在 **非奇点屋** 房间可输入 **`@aico`**（或与 `help` 同策略的等价命令）并得到 **非「必须回奇点屋」** 的响应（实现阶段）。
-- [ ] `handle` 解析 **唯一**、未知 handle **错误明确**。
-- [ ] 与 **`command_policies`** 集成：拒绝路径可审计。
+- [ ] `handle` 解析 **唯一**（歧义报错）、**`handle_aliases`** 与 **`enabled`** 行为符合 §5、§8；未知 handle **错误明确**（不泄露内部节点 id）。
+- [ ] 与 **`command_policies`** / **`authorize_command(agent_nlp)`** 集成：拒绝路径可审计。
 
 ---
 
@@ -115,4 +120,8 @@ sequenceDiagram
 |------|--------|-------------|
 | 触发范围 | 全局会话 | 全局会话（本 SPEC） |
 | 依赖 `location_id` | 否 | 否 |
+| 注册表 | 是（`SystemCommand`），出现在 `get_available_commands` 策略结果中 | 否（前缀行，不占首词命令名） |
+| 鉴权 | `authorize_command(help, …)` | `authorize_command(agent_nlp, …)`（`@` 路径） |
 | 主要用途 | 列出命令/帮助 | 与指定 Agent 对话 |
+
+**`help agent_nlp`**：详细说明中含 **F04** 与 **`@<handle>`** 等价语义（见 `AgentNlpCommand._get_specific_help`）。

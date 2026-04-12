@@ -12,21 +12,24 @@ from app.commands.base import CommandContext
 from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config
 from app.game_engine.agent_runtime.worker import LlmPdcaAssistantWorker
 from app.models.graph import Node
+from app.services.ltm_semantic_retrieval import build_ltm_memory_context_for_tick
 
 
 def maybe_ltm_memory_context(session, agent_node_id: int, user_message: str, cfg_extra: Dict[str, Any]) -> Optional[str]:
     """
-    Optional LTM injection (Phase D). Disabled unless extra.enable_ltm is true and embedding env exists.
+    Optional LTM injection. Disabled unless extra.enable_ltm is true in agents.llm YAML extra.
     """
     if not cfg_extra.get("enable_ltm"):
         return None
     if not user_message.strip():
         return None
-    # Embedding pipeline not wired in v1: placeholder for future promote_raw_to_ltm + search.
-    _ = (session, agent_node_id)
     if os.environ.get("AICO_SKIP_LTM_PLACEHOLDER"):
         return None
-    return None
+    return build_ltm_memory_context_for_tick(
+        session,
+        agent_node_id,
+        user_message=user_message,
+    )
 
 
 def run_npc_agent_nlp_tick(

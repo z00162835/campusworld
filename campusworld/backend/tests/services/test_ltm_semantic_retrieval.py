@@ -8,6 +8,7 @@ from app.models.graph import Node, NodeType
 from app.models.system import AgentLongTermMemory
 from app.services.ltm_semantic_retrieval import (
     EMBEDDING_DIM,
+    build_ltm_memory_context_for_tick,
     create_ltm_link,
     expand_ltm_linked_neighbors,
     search_ltm_by_embedding,
@@ -122,3 +123,39 @@ def test_search_requires_dimension():
     session = MagicMock()
     with pytest.raises(ValueError, match="1536"):
         search_ltm_by_embedding(session, 1, [0.0] * 10, k=1)
+
+
+@pytest.mark.unit
+def test_build_ltm_memory_context_for_tick_empty():
+    from unittest.mock import MagicMock
+
+    from app.models.system import AgentLongTermMemory
+
+    session = MagicMock()
+    chain = session.query.return_value
+    chain.filter.return_value = chain
+    chain.order_by.return_value = chain
+    chain.limit.return_value.all.return_value = []
+    assert build_ltm_memory_context_for_tick(session, 1, user_message="hi") is None
+    session.query.assert_called_once_with(AgentLongTermMemory)
+
+
+@pytest.mark.unit
+def test_build_ltm_memory_context_for_tick_joins_summaries():
+    from unittest.mock import MagicMock
+
+    from app.models.system import AgentLongTermMemory
+
+    r1 = MagicMock()
+    r1.summary = "alpha"
+    r2 = MagicMock()
+    r2.summary = "beta"
+    session = MagicMock()
+    chain = session.query.return_value
+    chain.filter.return_value = chain
+    chain.order_by.return_value = chain
+    chain.limit.return_value.all.return_value = [r1, r2]
+    out = build_ltm_memory_context_for_tick(session, 7, user_message="q")
+    assert out is not None
+    assert "alpha" in out and "beta" in out
+    session.query.assert_called_once_with(AgentLongTermMemory)

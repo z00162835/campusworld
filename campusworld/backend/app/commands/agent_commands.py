@@ -13,20 +13,9 @@ from app.commands.registry import command_registry
 from app.game_engine.agent_runtime.registry import get_worker_for_typeclass
 from app.game_engine.agent_runtime.tooling import RegistryToolExecutor, ToolRouter
 from app.commands.npc_agent_nlp import format_nlp_tick_result, run_npc_agent_nlp_tick
+from app.commands.npc_agent_resolve import resolve_npc_agent_by_handle
 from app.game_engine.agent_runtime.worker import SysSampleWorker
 from app.models.graph import Node, NodeType
-
-
-def _find_agent_by_service_id(session, service_id: str) -> Node | None:
-    return (
-        session.query(Node)
-        .filter(
-            Node.type_code == "npc_agent",
-            Node.attributes["service_id"].astext == service_id,
-            Node.is_active == True,  # noqa: E712
-        )
-        .first()
-    )
 
 
 class AgentCapabilitiesCommand(SystemCommand):
@@ -45,9 +34,9 @@ class AgentCapabilitiesCommand(SystemCommand):
         if not context.db_session:
             return CommandResult.error_result("database session required")
         sid = args[0]
-        node = _find_agent_by_service_id(context.db_session, sid)
-        if node is None:
-            return CommandResult.error_result(f"no npc_agent with service_id={sid!r}")
+        node, rerr = resolve_npc_agent_by_handle(context.db_session, sid)
+        if rerr:
+            return CommandResult.error_result(rerr)
         nt = context.db_session.query(NodeType).filter(NodeType.id == node.type_id).first()
         typeclass = nt.typeclass if nt else None
         data = {
@@ -78,9 +67,9 @@ class AgentToolsCommand(SystemCommand):
             return CommandResult.success_result(json.dumps({"tools": ids}, ensure_ascii=False))
         if not context.db_session:
             return CommandResult.error_result("database session required")
-        node = _find_agent_by_service_id(context.db_session, args[0])
-        if node is None:
-            return CommandResult.error_result(f"no npc_agent with service_id={args[0]!r}")
+        node, rerr = resolve_npc_agent_by_handle(context.db_session, args[0])
+        if rerr:
+            return CommandResult.error_result(rerr)
         raw = (node.attributes or {}).get("tool_allowlist") or []
         allowlist: List[str] | None = None
         if isinstance(raw, list):
@@ -114,9 +103,9 @@ class AgentRunCommand(SystemCommand):
             device_node_id = int(device_s)
         except ValueError:
             return CommandResult.error_result("device_node_id must be integer")
-        node = _find_agent_by_service_id(context.db_session, service_id)
-        if node is None:
-            return CommandResult.error_result(f"no npc_agent with service_id={service_id!r}")
+        node, rerr = resolve_npc_agent_by_handle(context.db_session, service_id)
+        if rerr:
+            return CommandResult.error_result(rerr)
         nt = context.db_session.query(NodeType).filter(NodeType.id == node.type_id).first()
         typeclass = (
             nt.typeclass if nt else "app.models.things.agents.NpcAgent"
@@ -147,6 +136,14 @@ class AgentNlpCommand(SystemCommand):
     def __init__(self):
         super().__init__("agent_nlp", "Run NLP assistant tick (LLM + PDCA)", [])
 
+    def get_usage(self) -> str:
+        return "agent_nlp <service_id> <message...>"
+
+    def _get_specific_help(self) -> str:
+        return (
+            "\nSame semantics as F04 @<handle> <message> (prefix line handled before command lookup).\n"
+        )
+
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if len(args) < 2:
             return CommandResult.error_result("usage: agent_nlp <service_id> <message...>")
@@ -155,9 +152,9 @@ class AgentNlpCommand(SystemCommand):
         service_id, message = args[0], " ".join(args[1:]).strip()
         if not message:
             return CommandResult.error_result("message must not be empty")
-        node = _find_agent_by_service_id(context.db_session, service_id)
-        if node is None:
-            return CommandResult.error_result(f"no npc_agent with service_id={service_id!r}")
+        node, rerr = resolve_npc_agent_by_handle(context.db_session, service_id)
+        if rerr:
+            return CommandResult.error_result(rerr)
         attrs = node.attributes or {}
         if str(attrs.get("decision_mode", "")).lower() != "llm":
             return CommandResult.error_result("agent_nlp requires decision_mode=llm on the agent node")
@@ -172,15 +169,21 @@ class AicoCommand(SystemCommand):
     def __init__(self):
         super().__init__("aico", "Talk to default assistant AICO (same as @aico)", [])
 
+    def get_usage(self) -> str:
+        return "aico <message...>"
+
+    def _get_specific_help(self) -> str:
+        return "\nEquivalent to: @aico <message>\n"
+
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
             return CommandResult.error_result("usage: aico <message...>")
         if not context.db_session:
             return CommandResult.error_result("database session required")
         message = " ".join(args).strip()
-        node = _find_agent_by_service_id(context.db_session, "aico")
-        if node is None:
-            return CommandResult.error_result("no npc_agent with service_id='aico'")
+        node, rerr = resolve_npc_agent_by_handle(context.db_session, "aico")
+        if rerr:
+            return CommandResult.error_result(rerr)
         attrs = node.attributes or {}
         if str(attrs.get("decision_mode", "")).lower() != "llm":
             return CommandResult.error_result("aico requires decision_mode=llm on the agent node")

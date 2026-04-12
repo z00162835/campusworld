@@ -6,4 +6,5 @@
 | [ADR-F02-Memory-Promotion](ADR-F02-Memory-Promotion.md) | Raw → long-term memory promotion |
 | [ADR-F02-Cognition-PDCA](ADR-F02-Cognition-PDCA.md) | Pluggable cognition, PDCA default |
 | [ADR-F03-AICO-NL-Pipeline](ADR-F03-AICO-NL-Pipeline.md) | AICO NLP + LLM + PDCA, prompts, memory context |
+| [ADR-F04-AT-Dispatch](ADR-F04-AT-Dispatch.md) | `@` prefix dispatch vs CmdSet, auth via `agent_nlp` |
 | [REVIEW-AICO](REVIEW-AICO.md) | PR checklist for agent NLP / `@` / YAML changes |

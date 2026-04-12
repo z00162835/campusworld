@@ -6,6 +6,38 @@ from app.core.config_manager import get_config
 from app.core.settings import AgentLlmServiceConfig
 
 
+def apply_model_config_from_attributes(
+    cfg: AgentLlmServiceConfig,
+    node_attributes: Optional[Dict[str, Any]],
+) -> AgentLlmServiceConfig:
+    """
+    Merge F03 nodes.attributes.model_config (non-secret whitelist only).
+
+    Allowed keys: temperature, max_tokens, model. Applied after YAML, before prompt_overrides.
+    """
+    if not node_attributes:
+        return cfg
+    raw = node_attributes.get("model_config")
+    if not isinstance(raw, dict):
+        return cfg
+    updates: Dict[str, Any] = {}
+    if "temperature" in raw and raw["temperature"] is not None:
+        try:
+            updates["temperature"] = float(raw["temperature"])
+        except (TypeError, ValueError):
+            pass
+    if "max_tokens" in raw and raw["max_tokens"] is not None:
+        try:
+            updates["max_tokens"] = int(raw["max_tokens"])
+        except (TypeError, ValueError):
+            pass
+    if "model" in raw and isinstance(raw["model"], str) and raw["model"].strip():
+        updates["model"] = raw["model"].strip()
+    if not updates:
+        return cfg
+    return cfg.model_copy(update=updates)
+
+
 def apply_prompt_overrides(cfg: AgentLlmServiceConfig, prompt_overrides: Dict[str, Any]) -> AgentLlmServiceConfig:
     """
     Merge F03 nodes.attributes.prompt_overrides into YAML-resolved config.
@@ -58,7 +90,8 @@ def resolve_agent_llm_config(
 
     Priority: YAML `agents.llm.by_service_id[<model_config_ref>]` if set,
     else `agents.llm.by_service_id[<service_id>]`, else Pydantic defaults;
-    then optional nodes.attributes.prompt_overrides (system_prompt / phase_prompts only, F03 §5.4).
+    then nodes.attributes.model_config (whitelist: temperature, max_tokens, model);
+    then nodes.attributes.prompt_overrides (system_prompt / phase_prompts only, F03 §5.4).
     """
     cfg = AgentLlmServiceConfig()
     cm = get_config()
@@ -70,4 +103,5 @@ def resolve_agent_llm_config(
             raw = by_sid.get(service_id)
         if raw is not None and isinstance(raw, dict):
             cfg = AgentLlmServiceConfig.model_validate(raw)
+    cfg = apply_model_config_from_attributes(cfg, node_attributes)
     return apply_prompt_overrides_from_attributes(cfg, node_attributes)
