@@ -162,6 +162,28 @@ storage:
     - "doc"
     - "docx"
 
+# 系统 Agent LLM（F03）：按 npc_agent.attributes.service_id 或 model_config_ref 索引
+agents:
+  llm:
+    by_service_id:
+      aico:
+        provider: openai_compatible
+        base_url: ""
+        api_key_env: "AICO_OPENAI_API_KEY"
+        model: "gpt-4o-mini"
+        temperature: 0.2
+        max_tokens: 4096
+        extra: {}
+        system_prompt: >-
+          You are AICO, the default CampusWorld assistant. Help users understand the world,
+          commands, and ontology. Be concise; prefer pointing to in-world actions when relevant.
+        phase_prompts:
+          plan: "Break down the user request and decide what information or tools are needed."
+          do: "Produce a helpful answer or describe tool/command steps. Use memory context when provided."
+          check: "Verify the answer is consistent with CampusWorld rules and the user question."
+          act: "Finalize the user-facing reply."
+        use_http_llm: false
+
 # 游戏引擎 / 世界包
 game_engine:
   # true：启动时从 world_runtime_states 读取已 install 的世界并 load_game（保留安装状态，重启后自动进内存）

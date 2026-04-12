@@ -3,9 +3,10 @@
 提供类型安全的配置访问和验证
 """
 
-from typing import List, Optional
-from pydantic import BaseModel, Field, validator
-from pydantic_settings import BaseSettings
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class AppConfig(BaseModel):
@@ -191,6 +192,62 @@ class DevelopmentConfig(BaseModel):
     seed_data: bool = Field(default=True, description="种子数据")
 
 
+class PhaseLlmMode(str, Enum):
+    """PDCA phase LLM routing mode (F03 §1.4 end-to-end plan)."""
+
+    fast = "fast"
+    plan = "plan"
+    think = "think"
+    skip = "skip"
+
+
+class PhaseLlmPhaseConfig(BaseModel):
+    """Per-phase overrides from npc_agent.attributes.phase_llm; model via mode_models or phase model."""
+
+    mode: PhaseLlmMode = PhaseLlmMode.plan
+    model: str = ""
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+    timeout_sec: Optional[float] = None
+    extra: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentLlmServiceConfig(BaseModel):
+    """Per-service_id LLM connection + prompt defaults (F03 §5.3 / §5.5)."""
+
+    provider: str = Field(default="openai_compatible", description="LLM provider id")
+    base_url: str = ""
+    api_key_env: str = ""
+    model: str = ""
+    temperature: float = 0.2
+    max_tokens: int = 4096
+    extra: Dict[str, Any] = Field(default_factory=dict)
+    system_prompt: str = Field(
+        default="You are AICO, the CampusWorld assistant. Answer concisely and helpfully.",
+        description="Default system prompt for NLP + LLM path",
+    )
+    phase_prompts: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Optional instruction suffix per PDCA phase: plan, do, check, act",
+    )
+    use_http_llm: bool = Field(
+        default=False,
+        description="If true and api_key_env resolves, use HTTP OpenAI-compatible client",
+    )
+
+
+class AgentsLlmConfig(BaseModel):
+    """agents.llm — keyed by npc_agent service_id or model_config_ref."""
+
+    by_service_id: Dict[str, AgentLlmServiceConfig] = Field(default_factory=dict)
+
+
+class AgentsConfig(BaseModel):
+    """System Agent bundle (F03)."""
+
+    llm: AgentsLlmConfig = Field(default_factory=AgentsLlmConfig)
+
+
 class Settings(BaseModel):
     """应用设置"""
     app: AppConfig = Field(default_factory=AppConfig)
@@ -208,10 +265,11 @@ class Settings(BaseModel):
     external_services: ExternalServicesConfig = Field(default_factory=ExternalServicesConfig)
     business: BusinessConfig = Field(default_factory=BusinessConfig)
     development: DevelopmentConfig = Field(default_factory=DevelopmentConfig)
-    
-    @validator('security')
-    def validate_secret_key(cls, v):
-        # 在开发环境中允许使用默认密钥
+    agents: AgentsConfig = Field(default_factory=AgentsConfig)
+
+    @field_validator("security")
+    @classmethod
+    def validate_secret_key(cls, v: SecurityConfig) -> SecurityConfig:
         if not v.secret_key:
             raise ValueError("Secret key must be set")
         return v
