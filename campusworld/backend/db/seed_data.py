@@ -14,6 +14,13 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
+from app.constants.data_access_defaults import (
+    ADMIN_DATA_ACCESS,
+    DEV_DATA_ACCESS,
+    USER_LIKE_DATA_ACCESS,
+)
 from app.core.log import get_logger
 from sqlalchemy import text
 
@@ -158,12 +165,13 @@ def ensure_default_accounts(session) -> bool:
         logger.info(f"Default accounts already exist, skipping creation (idempotent)")
         return True
 
-    def _attrs(obj) -> dict:
+    def _attrs(obj, data_access: dict) -> dict:
         attrs = dict(obj._node_attributes or {})
         logger.debug(f"_attrs called for {obj.username}, keys: {list(attrs.keys())}")
         for k, v in list(attrs.items()):
             if isinstance(v, datetime):
                 attrs[k] = v.isoformat()
+        attrs["data_access"] = deepcopy(data_access)
         return attrs
 
     logger.info("Starting default account creation...")
@@ -205,7 +213,7 @@ def ensure_default_accounts(session) -> bool:
             is_active=True,
             is_public=False,
             access_level="admin",
-            attributes=_attrs(admin),
+            attributes=_attrs(admin, ADMIN_DATA_ACCESS),
             tags=["system", "admin", "default"],
         ),
         Node(
@@ -217,7 +225,7 @@ def ensure_default_accounts(session) -> bool:
             is_active=True,
             is_public=False,
             access_level="developer",
-            attributes=_attrs(dev),
+            attributes=_attrs(dev, DEV_DATA_ACCESS),
             tags=["system", "dev", "default"],
         ),
         Node(
@@ -229,7 +237,7 @@ def ensure_default_accounts(session) -> bool:
             is_active=True,
             is_public=True,
             access_level="normal",
-            attributes=_attrs(campus),
+            attributes=_attrs(campus, USER_LIKE_DATA_ACCESS),
             tags=["system", "user", "campus", "default"],
         ),
     ]

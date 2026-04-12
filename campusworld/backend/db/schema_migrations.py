@@ -684,3 +684,63 @@ def ensure_builtin_node_type_schema_envelopes(engine) -> None:
             )
     finally:
         conn.close()
+
+
+def ensure_nodes_world_id_index(engine) -> None:
+    """
+    F11: partial B-tree on (attributes->>'world_id') for world-scoped graph policy filters.
+    Idempotent: CREATE INDEX IF NOT EXISTS.
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        _try_exec(
+            conn,
+            """
+            CREATE INDEX IF NOT EXISTS idx_nodes_attributes_world_id_text
+                ON nodes ((attributes->>'world_id'))
+                WHERE attributes ? 'world_id'
+            """,
+        )
+    finally:
+        conn.close()
+
+
+def ensure_account_data_access_defaults(engine) -> None:
+    """
+    F11: merge default `data_access` into seeded account nodes when missing.
+    Idempotent: does not overwrite existing data_access.
+    """
+    import json
+
+    from app.constants.data_access_defaults import (
+        ADMIN_DATA_ACCESS,
+        DEV_DATA_ACCESS,
+        USER_LIKE_DATA_ACCESS,
+    )
+
+    mapping = (
+        ("admin", ADMIN_DATA_ACCESS),
+        ("dev", DEV_DATA_ACCESS),
+        ("campus", USER_LIKE_DATA_ACCESS),
+    )
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        for name, policy in mapping:
+            merge = json.dumps({"data_access": policy}, ensure_ascii=False)
+            conn.execute(
+                text(
+                    """
+                    UPDATE nodes
+                    SET attributes = attributes || CAST(:merge AS jsonb)
+                    WHERE type_code = 'account'
+                      AND name = :name
+                      AND (
+                        attributes->'data_access' IS NULL
+                        OR attributes->'data_access' = 'null'::jsonb
+                      )
+                    """
+                ),
+                {"name": name, "merge": merge},
+            )
+    finally:
+        conn.close()

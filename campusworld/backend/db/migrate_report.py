@@ -62,11 +62,13 @@ def reset_public_schema(engine) -> None:
 def run_schema_migrations(engine) -> List[MigrationStepResult]:
     from db.schema_migrations import (
         SchemaMigrationError,
+        ensure_account_data_access_defaults,
         ensure_builtin_node_type_schema_envelopes,
         ensure_command_policy_schema,
         ensure_content_visibility_backfill,
         ensure_graph_schema,
         ensure_graph_seed_ontology,
+        ensure_nodes_world_id_index,
         ensure_world_runtime_schema,
     )
 
@@ -77,6 +79,8 @@ def run_schema_migrations(engine) -> List[MigrationStepResult]:
         ("ensure_content_visibility_backfill", ensure_content_visibility_backfill),
         ("ensure_graph_seed_ontology", ensure_graph_seed_ontology),
         ("ensure_builtin_node_type_schema_envelopes", ensure_builtin_node_type_schema_envelopes),
+        ("ensure_account_data_access_defaults", ensure_account_data_access_defaults),
+        ("ensure_nodes_world_id_index", ensure_nodes_world_id_index),
     ]
     results: List[MigrationStepResult] = []
     for name, fn in steps:

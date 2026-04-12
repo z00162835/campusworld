@@ -22,6 +22,7 @@ sys.path.insert(0, str(project_root))
 
 from app.api.v1.api import api_router
 from app.api.v1.dependencies import APIPrincipal, get_api_principal
+from app.constants.data_access_defaults import ADMIN_DATA_ACCESS
 from app.core.database import db_session_context, engine
 
 
@@ -82,7 +83,7 @@ def _client() -> TestClient:
             auth_type="jwt",
             roles=["admin"],
             permissions=["ontology.read", "ontology.write", "graph.read", "graph.write"],
-            user_attrs={},
+            user_attrs={"data_access": ADMIN_DATA_ACCESS},
             scopes=[],
             api_key_kid=None,
         )

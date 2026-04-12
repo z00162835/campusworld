@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse
@@ -8,9 +8,28 @@ from sqlalchemy.orm import Session, aliased
 from app.api.v1.dependencies import APIPrincipal, require_api_permission
 from app.core.database import get_db
 from app.models.graph import Node, NodeType, Relationship, RelationshipType
+from app.schemas.data_access import DataAccessV1
 from app.schemas.graph_ontology import NodeIn, RelationshipIn
+from app.services.data_access_policy import (
+    apply_node_read_policy,
+    apply_relationship_read_policy,
+    apply_world_scoped_node_read_policy,
+    load_policy,
+    node_row_visible,
+    proposed_node_visible,
+    proposed_relationship_visible,
+    relationship_row_visible,
+)
 
 router = APIRouter(prefix="/graph", tags=["graph"])
+
+
+def _policy_from_principal(principal: APIPrincipal) -> Tuple[Optional[DataAccessV1], bool]:
+    return load_policy(principal.user_attrs or {})
+
+
+def _forbidden_data_access(request: Request) -> JSONResponse:
+    return _problem(403, "Forbidden", "Data access policy denies this operation.", request)
 
 
 def _problem(status_code: int, title: str, detail: str, request: Request) -> JSONResponse:
@@ -79,15 +98,16 @@ def list_nodes(
     is_active: Optional[bool] = None,
     is_public: Optional[bool] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     err = _validate_query(name_eq, name_like, tags_any, request)
     if err:
         return err
     query = db.query(Node)
+    query = apply_node_read_policy(query, policy, deny_all)
     if type_code:
         query = query.filter(Node.type_code == type_code)
     if name_eq:
@@ -116,10 +136,13 @@ def create_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     node_type = db.query(NodeType).filter(NodeType.type_code == payload.type_code).first()
     if not node_type:
         return _problem(400, "Bad Request", f"unknown node type `{payload.type_code}`.", request)
+
+    if not proposed_node_visible(payload.type_code, payload.attributes, policy, deny_all):
+        return _forbidden_data_access(request)
 
     row = Node(
         type_id=node_type.id,
@@ -150,9 +173,11 @@ def get_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Node).filter(Node.id == node_id).first()
     if not row:
+        return _problem(404, "Not Found", f"node `{node_id}` not found.", request)
+    if not node_row_visible(row, policy, deny_all):
         return _problem(404, "Not Found", f"node `{node_id}` not found.", request)
     return row.to_dict()
 
@@ -165,10 +190,12 @@ def patch_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Node).filter(Node.id == node_id).first()
     if not row:
         return _problem(404, "Not Found", f"node `{node_id}` not found.", request)
+    if not node_row_visible(row, policy, deny_all):
+        return _forbidden_data_access(request)
 
     allowed_fields = {
         "name",
@@ -184,6 +211,11 @@ def patch_node(
     for key, value in payload.items():
         if key in allowed_fields:
             setattr(row, key, value)
+    # Re-evaluate after patch (attributes/type may change)
+    db.flush()
+    if not node_row_visible(row, policy, deny_all):
+        db.rollback()
+        return _forbidden_data_access(request)
     db.commit()
     db.refresh(row)
     return row.to_dict()
@@ -196,10 +228,12 @@ def delete_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Node).filter(Node.id == node_id).first()
     if not row:
         return _problem(404, "Not Found", f"node `{node_id}` not found.", request)
+    if not node_row_visible(row, policy, deny_all):
+        return _forbidden_data_access(request)
     db.delete(row)
     db.commit()
     return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
@@ -217,15 +251,23 @@ def list_relationships(
     source_id: Optional[int] = None,
     target_id: Optional[int] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     err = _validate_query(name_eq, name_like, tags_any, request)
     if err:
         return err
-    query = db.query(Relationship).join(RelationshipType, RelationshipType.type_code == Relationship.type_code)
+    source_n = aliased(Node)
+    target_n = aliased(Node)
+    query = (
+        db.query(Relationship)
+        .join(RelationshipType, RelationshipType.type_code == Relationship.type_code)
+        .join(source_n, source_n.id == Relationship.source_id)
+        .join(target_n, target_n.id == Relationship.target_id)
+    )
+    query = apply_relationship_read_policy(query, policy, deny_all, source_n, target_n)
     if type_code:
         query = query.filter(Relationship.type_code == type_code)
     if name_eq:
@@ -254,9 +296,15 @@ def get_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Relationship).filter(Relationship.id == relationship_id).first()
     if not row:
+        return _problem(404, "Not Found", f"relationship `{relationship_id}` not found.", request)
+    source = db.query(Node).filter(Node.id == row.source_id).first()
+    target = db.query(Node).filter(Node.id == row.target_id).first()
+    if not source or not target:
+        return _problem(404, "Not Found", f"relationship `{relationship_id}` not found.", request)
+    if not relationship_row_visible(row, source, target, policy, deny_all):
         return _problem(404, "Not Found", f"relationship `{relationship_id}` not found.", request)
     return row.to_dict()
 
@@ -268,7 +316,7 @@ def create_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     rel_type = db.query(RelationshipType).filter(RelationshipType.type_code == payload.type_code).first()
     if not rel_type:
         return _problem(400, "Bad Request", f"unknown relationship type `{payload.type_code}`.", request)
@@ -277,6 +325,8 @@ def create_relationship(
     target = db.query(Node).filter(Node.id == payload.target_id).first()
     if not source or not target:
         return _problem(400, "Bad Request", "source_id or target_id does not exist.", request)
+    if not proposed_relationship_visible(payload.type_code, source, target, policy, deny_all):
+        return _forbidden_data_access(request)
 
     row = Relationship(
         type_id=rel_type.id,
@@ -307,10 +357,14 @@ def patch_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Relationship).filter(Relationship.id == relationship_id).first()
     if not row:
         return _problem(404, "Not Found", f"relationship `{relationship_id}` not found.", request)
+    source = db.query(Node).filter(Node.id == row.source_id).first()
+    target = db.query(Node).filter(Node.id == row.target_id).first()
+    if not source or not target or not relationship_row_visible(row, source, target, policy, deny_all):
+        return _forbidden_data_access(request)
     allowed = {
         "source_role",
         "target_role",
@@ -334,10 +388,14 @@ def delete_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Relationship).filter(Relationship.id == relationship_id).first()
     if not row:
         return _problem(404, "Not Found", f"relationship `{relationship_id}` not found.", request)
+    source = db.query(Node).filter(Node.id == row.source_id).first()
+    target = db.query(Node).filter(Node.id == row.target_id).first()
+    if not source or not target or not relationship_row_visible(row, source, target, policy, deny_all):
+        return _forbidden_data_access(request)
     db.delete(row)
     db.commit()
     return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
@@ -357,15 +415,16 @@ def list_world_nodes(
     is_active: Optional[bool] = None,
     is_public: Optional[bool] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     err = _validate_query(name_eq, name_like, tags_any, request)
     if err:
         return err
     query = db.query(Node).filter(Node.attributes["world_id"].astext == world_id)
+    query = apply_world_scoped_node_read_policy(query, policy, deny_all, world_id)
     if type_code:
         query = query.filter(Node.type_code == type_code)
     if name_eq:
@@ -395,9 +454,11 @@ def get_world_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Node).filter(Node.id == node_id).first()
     if not row or (row.attributes or {}).get("world_id") != world_id:
+        return _problem(404, "Not Found", f"node is not in world scope: {world_id}", request)
+    if not node_row_visible(row, policy, deny_all):
         return _problem(404, "Not Found", f"node is not in world scope: {world_id}", request)
     return row.to_dict()
 
@@ -410,11 +471,14 @@ def create_world_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     attrs = dict(payload.attributes or {})
     if _scope_node_world_conflict(attrs, world_id):
         return _problem(409, "Conflict", "world_id path conflicts with body attributes.world_id.", request)
     attrs["world_id"] = world_id
+
+    if not proposed_node_visible(payload.type_code, attrs, policy, deny_all):
+        return _forbidden_data_access(request)
 
     node_type = db.query(NodeType).filter(NodeType.type_code == payload.type_code).first()
     if not node_type:
@@ -449,10 +513,12 @@ def patch_world_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Node).filter(Node.id == node_id).first()
     if not row or (row.attributes or {}).get("world_id") != world_id:
         return _problem(404, "Not Found", f"node is not in world scope: {world_id}", request)
+    if not node_row_visible(row, policy, deny_all):
+        return _forbidden_data_access(request)
     if "attributes" in payload and _scope_node_world_conflict(payload.get("attributes", {}), world_id):
         return _problem(409, "Conflict", "world_id path conflicts with body attributes.world_id.", request)
     for k in {"name", "description", "is_active", "is_public", "access_level", "location_id", "home_id", "attributes", "tags"}:
@@ -463,6 +529,10 @@ def patch_world_node(
                 setattr(row, "attributes", attrs)
             else:
                 setattr(row, k, payload[k])
+    db.flush()
+    if not node_row_visible(row, policy, deny_all):
+        db.rollback()
+        return _forbidden_data_access(request)
     db.commit()
     db.refresh(row)
     return row.to_dict()
@@ -476,10 +546,12 @@ def delete_world_node(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(Node).filter(Node.id == node_id).first()
     if not row or (row.attributes or {}).get("world_id") != world_id:
         return _problem(404, "Not Found", f"node is not in world scope: {world_id}", request)
+    if not node_row_visible(row, policy, deny_all):
+        return _forbidden_data_access(request)
     db.delete(row)
     db.commit()
     return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
@@ -498,11 +570,11 @@ def list_world_relationships(
     source_id: Optional[int] = None,
     target_id: Optional[int] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     err = _validate_query(name_eq, name_like, tags_any, request)
     if err:
         return err
@@ -520,6 +592,7 @@ def list_world_relationships(
             )
         )
     )
+    query = apply_relationship_read_policy(query, policy, deny_all, source_node, target_node)
     if type_code:
         query = query.filter(Relationship.type_code == type_code)
     if name_eq:
@@ -549,7 +622,7 @@ def get_world_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     source_node = aliased(Node)
     target_node = aliased(Node)
     row = (
@@ -565,6 +638,10 @@ def get_world_relationship(
     )
     if not row:
         return _problem(404, "Not Found", f"relationship is not in world scope: {world_id}", request)
+    src = db.query(Node).filter(Node.id == row.source_id).first()
+    tgt = db.query(Node).filter(Node.id == row.target_id).first()
+    if not src or not tgt or not relationship_row_visible(row, src, tgt, policy, deny_all):
+        return _problem(404, "Not Found", f"relationship is not in world scope: {world_id}", request)
     return row.to_dict()
 
 
@@ -576,7 +653,7 @@ def create_world_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     rel_type = db.query(RelationshipType).filter(RelationshipType.type_code == payload.type_code).first()
     if not rel_type:
         return _problem(400, "Bad Request", f"unknown relationship type `{payload.type_code}`.", request)
@@ -586,6 +663,8 @@ def create_world_relationship(
         return _problem(400, "Bad Request", "source_id or target_id does not exist.", request)
     if (source.attributes or {}).get("world_id") != world_id or (target.attributes or {}).get("world_id") != world_id:
         return _problem(404, "Not Found", f"source/target is not in world scope: {world_id}", request)
+    if not proposed_relationship_visible(payload.type_code, source, target, policy, deny_all):
+        return _forbidden_data_access(request)
     row = Relationship(
         type_id=rel_type.id,
         type_code=payload.type_code,
@@ -615,7 +694,7 @@ def patch_world_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     source_node = aliased(Node)
     target_node = aliased(Node)
     row = (
@@ -631,6 +710,10 @@ def patch_world_relationship(
     )
     if not row:
         return _problem(404, "Not Found", f"relationship is not in world scope: {world_id}", request)
+    src = db.query(Node).filter(Node.id == row.source_id).first()
+    tgt = db.query(Node).filter(Node.id == row.target_id).first()
+    if not src or not tgt or not relationship_row_visible(row, src, tgt, policy, deny_all):
+        return _forbidden_data_access(request)
     for k in {"source_role", "target_role", "attributes", "tags", "is_active", "weight"}:
         if k in payload:
             setattr(row, k, payload[k])
@@ -647,7 +730,7 @@ def delete_world_relationship(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     source_node = aliased(Node)
     target_node = aliased(Node)
     row = (
@@ -663,6 +746,10 @@ def delete_world_relationship(
     )
     if not row:
         return _problem(404, "Not Found", f"relationship is not in world scope: {world_id}", request)
+    src = db.query(Node).filter(Node.id == row.source_id).first()
+    tgt = db.query(Node).filter(Node.id == row.target_id).first()
+    if not src or not tgt or not relationship_row_visible(row, src, tgt, policy, deny_all):
+        return _forbidden_data_access(request)
     db.delete(row)
     db.commit()
     return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)

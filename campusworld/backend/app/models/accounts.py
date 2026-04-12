@@ -101,6 +101,10 @@ class DeveloperAccount(DefaultAccount):
                 'system.test',         # 测试模式
                 'system.develop',      # 开发功能
                 'logs.view',           # 查看日志
+                'ontology.read',
+                'ontology.write',
+                'graph.read',
+                'graph.write',
             ],
             'access_level': 'developer',
             'is_verified': True,
@@ -221,6 +225,8 @@ class CampusUserAccount(UserAccount):
                 'campus.leave',        # 离开校园
                 'campus.participate',  # 参与校园活动
                 'world.view',          # 查看世界
+                'ontology.read',
+                'graph.read',
             ],
             'campus_memberships': [],  # 校园成员关系
             'campus_activities': [],   # 校园活动参与记录

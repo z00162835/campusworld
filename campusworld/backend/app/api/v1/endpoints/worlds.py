@@ -25,7 +25,7 @@ def list_world_nodes(
     is_active: Optional[bool] = None,
     is_public: Optional[bool] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):
@@ -106,7 +106,7 @@ def list_world_relationships(
     source_id: Optional[int] = None,
     target_id: Optional[int] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("graph.read")),
 ):

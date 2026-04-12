@@ -298,6 +298,11 @@ CREATE INDEX IF NOT EXISTS idx_nodes_type_public ON nodes (type_code, is_public)
 CREATE INDEX IF NOT EXISTS idx_nodes_location_active ON nodes (location_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_nodes_active_trait_class ON nodes (is_active, trait_class);
 
+-- F11: 按 attributes.world_id 过滤（表达式 B-tree）；部分索引缩小体积（仅含存在 world_id 键的行）
+CREATE INDEX IF NOT EXISTS idx_nodes_attributes_world_id_text
+    ON nodes ((attributes->>'world_id'))
+    WHERE attributes ? 'world_id';
+
 CREATE INDEX IF NOT EXISTS idx_nodes_name_trgm ON nodes USING GIN (name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_nodes_description_trgm ON nodes USING GIN (description gin_trgm_ops);
 

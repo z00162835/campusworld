@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse
@@ -7,9 +7,25 @@ from sqlalchemy.orm import Session
 from app.api.v1.dependencies import APIPrincipal, require_api_permission
 from app.core.database import get_db
 from app.models.graph import NodeType, RelationshipType
+from app.schemas.data_access import DataAccessV1
 from app.schemas.graph_ontology import NodeTypeIn, RelationshipTypeIn
+from app.services.data_access_policy import (
+    apply_ontology_node_type_read_policy,
+    apply_ontology_relationship_type_read_policy,
+    load_policy,
+    ontology_relationship_type_visible,
+    ontology_type_visible,
+)
 
 router = APIRouter(prefix="/ontology", tags=["ontology"])
+
+
+def _policy_from_principal(principal: APIPrincipal) -> Tuple[Optional[DataAccessV1], bool]:
+    return load_policy(principal.user_attrs or {})
+
+
+def _forbidden_data_access(request: Request) -> JSONResponse:
+    return _problem(403, "Forbidden", "Data access policy denies this operation.", request)
 
 
 def _problem(status_code: int, title: str, detail: str, request: Request) -> JSONResponse:
@@ -57,15 +73,16 @@ def list_node_types(
     trait_class: Optional[str] = None,
     is_active: Optional[bool] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     err = _validate_query(name_like, tags_any, request)
     if err:
         return err
     query = db.query(NodeType)
+    query = apply_ontology_node_type_read_policy(query, policy, deny_all)
     if type_code:
         query = query.filter(NodeType.type_code == type_code)
     if parent_type_code:
@@ -95,7 +112,9 @@ def create_node_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
+    if not ontology_type_visible(payload.type_code, policy, deny_all):
+        return _forbidden_data_access(request)
     exists = db.query(NodeType).filter(NodeType.type_code == payload.type_code).first()
     if exists:
         return _problem(409, "Conflict", f"node type `{payload.type_code}` already exists.", request)
@@ -130,9 +149,11 @@ def get_node_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(NodeType).filter(NodeType.type_code == type_code).first()
     if not row:
+        return _problem(404, "Not Found", f"node type `{type_code}` not found.", request)
+    if not ontology_type_visible(type_code, policy, deny_all):
         return _problem(404, "Not Found", f"node type `{type_code}` not found.", request)
     return row.to_dict()
 
@@ -145,10 +166,12 @@ def patch_node_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(NodeType).filter(NodeType.type_code == type_code).first()
     if not row:
         return _problem(404, "Not Found", f"node type `{type_code}` not found.", request)
+    if not ontology_type_visible(type_code, policy, deny_all):
+        return _forbidden_data_access(request)
     if "graph_seed" in list(row.tags or []):
         if "trait_class" in payload or "trait_mask" in payload:
             return _problem(409, "Conflict", "graph_seed type is locked for trait mutation.", request)
@@ -186,10 +209,12 @@ def delete_node_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(NodeType).filter(NodeType.type_code == type_code).first()
     if not row:
         return _problem(404, "Not Found", f"node type `{type_code}` not found.", request)
+    if not ontology_type_visible(type_code, policy, deny_all):
+        return _forbidden_data_access(request)
     if "graph_seed" in list(row.tags or []):
         return _problem(409, "Conflict", "graph_seed type cannot be deleted.", request)
     db.delete(row)
@@ -208,15 +233,16 @@ def list_relationship_types(
     trait_class: Optional[str] = None,
     is_active: Optional[bool] = None,
     offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     err = _validate_query(name_like, tags_any, request)
     if err:
         return err
     query = db.query(RelationshipType)
+    query = apply_ontology_relationship_type_read_policy(query, policy, deny_all)
     if type_code:
         query = query.filter(RelationshipType.type_code == type_code)
     if name_eq:
@@ -244,7 +270,9 @@ def create_relationship_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
+    if not ontology_relationship_type_visible(payload.type_code, policy, deny_all):
+        return _forbidden_data_access(request)
     exists = db.query(RelationshipType).filter(RelationshipType.type_code == payload.type_code).first()
     if exists:
         return _problem(409, "Conflict", f"relationship type `{payload.type_code}` already exists.", request)
@@ -279,9 +307,11 @@ def get_relationship_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.read")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(RelationshipType).filter(RelationshipType.type_code == type_code).first()
     if not row:
+        return _problem(404, "Not Found", f"relationship type `{type_code}` not found.", request)
+    if not ontology_relationship_type_visible(type_code, policy, deny_all):
         return _problem(404, "Not Found", f"relationship type `{type_code}` not found.", request)
     return row.to_dict()
 
@@ -294,10 +324,12 @@ def patch_relationship_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(RelationshipType).filter(RelationshipType.type_code == type_code).first()
     if not row:
         return _problem(404, "Not Found", f"relationship type `{type_code}` not found.", request)
+    if not ontology_relationship_type_visible(type_code, policy, deny_all):
+        return _forbidden_data_access(request)
     allowed = {
         "type_name",
         "typeclass",
@@ -332,10 +364,12 @@ def delete_relationship_type(
     db: Session = Depends(get_db),
     principal: APIPrincipal = Depends(require_api_permission("ontology.write")),
 ):
-    _ = principal
+    policy, deny_all = _policy_from_principal(principal)
     row = db.query(RelationshipType).filter(RelationshipType.type_code == type_code).first()
     if not row:
         return _problem(404, "Not Found", f"relationship type `{type_code}` not found.", request)
+    if not ontology_relationship_type_visible(type_code, policy, deny_all):
+        return _forbidden_data_access(request)
     db.delete(row)
     db.commit()
     return JSONResponse(status_code=status.HTTP_204_NO_CONTENT, content=None)
