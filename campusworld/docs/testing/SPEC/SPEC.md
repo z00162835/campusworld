@@ -61,6 +61,7 @@ conda run -n campusworld pytest
 | **快速验证（无 PostgreSQL）** | `conda run -n campusworld pytest -m "not integration"` | 跳过 `@pytest.mark.integration`（如 `test_graph_seed_pipeline` 中需真实 PG 的用例、`test_database`、`test_singularity_room` 中部分用例），适合本地与 IDE 自动化，避免连库阻塞或超长等待。 |
 | **全量后端** | `conda run -n campusworld pytest` | 含集成测试；需 `app.core.database` 指向 **PostgreSQL**（见 `backend/config`），否则部分用例会 `skip` 或失败。 |
 | **最慢用例自检** | `conda run -n campusworld pytest --durations=15` | 列出耗时最长的 15 条，便于排查「超长」。 |
+| **F02 / PostgreSQL** | `conda run -n campusworld pytest -m postgres_integration` | 需可达 PostgreSQL + **pgvector**；含 `tests/db/test_agent_memory_tables.py`、`tests/commands/test_agent_f02_commands.py`、`tests/services/test_ltm_semantic_retrieval.py`（LTM 向量 + 链接扩展）等。 |
 
 **收集阶段失败（历史常见）**
 

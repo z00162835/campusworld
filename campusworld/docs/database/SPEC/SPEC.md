@@ -30,7 +30,7 @@ db/
 | `relationship_types` | 关系类型注册 |
 | `api_keys` | API Key 元数据（与账号关联，见 HTTP 鉴权） |
 | `trait_sync_jobs` 等 | 运维/同步类辅助表（见 `database_schema.sql`） |
-| `agent_memory_entries` / `agent_run_records` / `agent_long_term_memory` | **F02** 智能体原始记忆、运行轨迹、长期记忆（逻辑模型见 F02；DDL 见 Phase B） |
+| `agent_memory_entries` / `agent_run_records` / `agent_long_term_memory` | **F02** 智能体原始记忆、运行轨迹、长期记忆；DDL 见 [`database_schema.sql`](../../../backend/db/schemas/database_schema.sql) `f02_agent_memory` 段；迁移 `ensure_f02_agent_memory_schema` + **`ensure_f02_ltm_semantic_extension`**（LTM `embedding` / `agent_long_term_memory_links` / HNSW 索引，见 [`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](../../models/SPEC/features/F02_LTM_VECTORS_AND_MEMORY_LINKS.md)） |
 
 **`schema_definition` 与实例 `attributes` 的约定**见 [`backend/db/schemas/README.md`](../../../backend/db/schemas/README.md)。
 

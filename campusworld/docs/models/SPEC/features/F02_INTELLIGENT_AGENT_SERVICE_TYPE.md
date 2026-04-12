@@ -2,7 +2,9 @@
 
 > **For agentic workers:** 实现本 SPEC 时请与 [`docs/commands/SPEC/SPEC.md`](../../../commands/SPEC/SPEC.md)、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)、[`F10`](../../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 交叉评审；DDL 变更需走 `schema_migrations.py`。
 
-**文档状态：Draft — 待人工审核与修订**
+**文档状态：RC — 2026-04-09**（与实现里程碑对齐；定稿时改为 Accepted）
+
+**Changelog：** 2026-04-09 — 与 ADR-F02-*（Agent 运行时、记忆晋升、PDCA 认知）及 Phase B/C 首版实现对齐。
 
 **Architecture Role：** 在知识本体中，将 **`type_code=npc_agent`** 的节点定义为可配置的 **智能体服务**（及叙事 NPC）载体：通过 **思维模型**、**命令/工具** 与 **独立记忆/运行表** 表达「类用户 Actor」的自主行为能力；**默认**经 **命令系统** 读写本体，语义世界（图），与 F10 Graph API 解耦。
 
@@ -129,6 +131,8 @@
 | `agent_kind` | string | 否 | **保留** 图种子已有字段 | — | 与 `agent_role` 并存时：**实例以 `agent_role` 为准** |
 
 **错误配置：** `supported_decision_modes` 为空且实例声明 `decision_mode: llm` → 校验失败；`cognition_models` 为空且 `decision_mode` 需阶段化运行 → 实现应拒绝启动或降级为 `rules`。
+
+**LLM + PDCA 分阶段 Prompt（与类型层 `cognition_models[].steps` 对齐）：** 系统级默认与合并优先级见 [**F03**](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md) **§5.5–5.6**（`system_prompt`、`phase_prompts`、`FrameworkRunContext`）；实例级非密钥覆盖见 F03 **`prompt_overrides`**。不在本表重复列字段，以免与 F03 漂移。
 
 ### 7.2 `model_config`（类型默认与实例覆盖）
 
@@ -392,6 +396,7 @@ flowchart LR
 
 ## 15. 相关文档
 
+- **扩展设计（Phase 2）：** 语义向量检索与长期记忆条目间关联 — [`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](F02_LTM_VECTORS_AND_MEMORY_LINKS.md)
 - [`docs/models/SPEC/SPEC.md`](../SPEC.md)
 - [`docs/commands/SPEC/SPEC.md`](../../../commands/SPEC/SPEC.md)
 - [`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)

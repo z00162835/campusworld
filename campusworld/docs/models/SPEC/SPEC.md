@@ -125,7 +125,18 @@
 ## Feature Specs
 
 - `F02` Intelligent Agent Service（`npc_agent` 扩展、命令优先、记忆/运行独立表）  
-  [`features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)
+  [`features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)  
+  实现锚点：`app/models/system/agent_memory_tables.py`（ORM）、`app/game_engine/agent_runtime/`（PDCA / MemoryPort / 注册表）、`app/commands/agent_commands.py`（`agent_capabilities` / `agent_tools` / `agent_run`）。  
+  扩展（向量检索、LTM 间关联）：[`features/F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](features/F02_LTM_VECTORS_AND_MEMORY_LINKS.md) — 检索与扩展实现见 `app/services/ltm_semantic_retrieval.py`。
+
+- `F03` 系统默认助手 AICO（`npc_agent` 单例、奇点屋锚点、trait 不可移动、初始配置与 schema）  
+  [`features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md`](features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)
+
+- `F04` `@` 与智能体交互命令特性（`@<handle>` 全局可用、handle 解析、与 `help` 同级可见性）  
+  [`features/F04_AT_AGENT_INTERACTION_PROTOCOL.md`](features/F04_AT_AGENT_INTERACTION_PROTOCOL.md)
+
+- `F05` `agent` 命令：`agent list` 列出可见 Agent、`agent status` 查询状态（不可用 / 空闲 / 工作中）；用户与 Agent 共用  
+  [`features/F05_AGENT_COMMAND_LIST_AND_STATUS.md`](features/F05_AGENT_COMMAND_LIST_AND_STATUS.md)
 
 ## Open Questions
 
