@@ -8,7 +8,7 @@ import hashlib
 import uuid
 import secrets
 import hmac
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Union, Any, Callable, Dict
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -45,7 +45,7 @@ def _get_secret_key() -> str:
     """获取 JWT 签名密钥（延迟加载）
 
     Raises:
-        ValueError: 当未配置密钥时抛出，明确禁止使用不安全的默认值
+        ValueError: 当未配置密钥时抛出，明确禁止使用不安全的默认值或占位符
     """
     from app.core.config_manager import get_setting
     secret_key = get_setting('security.secret_key', None)
@@ -54,6 +54,14 @@ def _get_secret_key() -> str:
         raise ValueError(
             "CRITICAL: JWT secret key is not configured. "
             "Please set 'security.secret_key' in your config/settings.yaml or environment variable."
+        )
+    # Detect common placeholder patterns that should not be used in production
+    placeholder_patterns = ('${SECRET_KEY}', 'your-secret-key-here', 'changeme', 'secret')
+    if secret_key.startswith('${') and secret_key.endswith('}'):
+        logger.critical(f"JWT secret key appears to be an unexpanded environment variable placeholder: {secret_key}")
+        raise ValueError(
+            f"CRITICAL: JWT secret key is a placeholder '{secret_key}' that was not expanded. "
+            "Please set the SECRET_KEY environment variable or update 'security.secret_key' in config/settings.yaml."
         )
     # 验证密钥长度（JWT HS256 推荐至少 32 字节）
     if len(secret_key) < 32:
@@ -450,14 +458,16 @@ def resolve_api_key_principal(api_key: str) -> Optional[Dict[str, Any]]:
             )
             if not key_row:
                 return None
-            if key_row.expires_at and key_row.expires_at < datetime.utcnow():
+            # expires_at 为 TIMESTAMPTZ（timezone-aware），须与 aware UTC 比较；用 utcnow() 会引发 TypeError 并被下方 except 吞掉，表现为「Invalid API key」。
+            now_utc = datetime.now(timezone.utc)
+            if key_row.expires_at and key_row.expires_at < now_utc:
                 return None
 
             computed = hash_api_key_pbkdf2(api_key, salt=key_row.salt, iterations=key_row.iterations)
             if not hmac.compare_digest(computed, key_row.key_hash):
                 return None
 
-            key_row.last_used_at = datetime.utcnow()
+            key_row.last_used_at = now_utc
             db_session.commit()
             return {
                 "user_id": str(key_row.owner_account_id),

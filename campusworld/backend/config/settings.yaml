@@ -56,7 +56,8 @@ ssh:
 security:
   # IMPORTANT: Change this secret key in production! Use a secure random string (32+ bytes)
   # Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
-  secret_key: "${SECRET_KEY}"
+  # For development, a default key is provided below. Set SECRET_KEY env var to override.
+  secret_key: "dev-secret-key-change-in-production-min-32-bytes-long"
   algorithm: "HS256"
   access_token_expire_minutes: 15  # 15 minutes - production should be even shorter
   refresh_token_expire_days: 7  # 7 days - shorter refresh token lifetime

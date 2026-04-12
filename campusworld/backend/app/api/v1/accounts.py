@@ -14,15 +14,52 @@ from app.models.graph import Node, NodeType
 from app.models.accounts import create_account, get_account_class, ACCOUNT_TYPES
 from app.core.security import get_password_hash, verify_password
 from app.schemas.account import (
-    AccountCreate, 
-    AccountUpdate, 
-    AccountResponse, 
+    AccountCreate,
+    AccountUpdate,
+    AccountResponse,
     AccountListResponse,
     AccountStatusUpdate,
     PasswordChange
 )
+from app.api.v1.dependencies import get_current_http_user, AuthenticatedUser
 
 router = APIRouter(prefix="/accounts", tags=["账号管理"])
+
+
+@router.get("/me", response_model=AccountResponse)
+async def get_current_account(
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+    db: Session = Depends(get_db)
+):
+    """
+    获取当前登录账号的信息
+    """
+    account = db.query(Node).filter(
+        Node.id == int(current_user.user_id),
+        Node.type_code == "account"
+    ).first()
+
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="账号不存在"
+        )
+
+    attrs = account.attributes
+    return AccountResponse(
+        id=account.id,
+        uuid=str(account.uuid),
+        username=attrs.get("username", ""),
+        email=attrs.get("email", ""),
+        account_type=attrs.get("type", ""),
+        roles=attrs.get("roles", []),
+        is_active=attrs.get("is_active", True),
+        is_verified=attrs.get("is_verified", False),
+        access_level=attrs.get("access_level", "normal"),
+        created_at=account.created_at,
+        last_login=attrs.get("last_login"),
+        last_activity=attrs.get("last_activity")
+    )
 
 
 @router.get("/", response_model=AccountListResponse)

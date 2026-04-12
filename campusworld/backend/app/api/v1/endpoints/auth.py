@@ -41,6 +41,17 @@ MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
 
 
+def _is_secure_cookie() -> bool:
+    """Determine if cookies should have Secure flag.
+
+    In production, Secure should be True (requires HTTPS).
+    In development, False allows HTTP for local testing.
+    """
+    from app.core.config_manager import get_setting
+    debug = get_setting('app.debug', False)
+    return not debug
+
+
 class ApiKeyIssueRequest(BaseModel):
     name: Optional[str] = Field(default=None, max_length=128)
     scopes: List[str] = Field(default_factory=list)
@@ -211,8 +222,8 @@ def login(
         value=access_token,
         max_age=cookie_max_age,
         httponly=True,
-        samesite="strict",
-        secure=True,  # Require HTTPS
+        samesite="lax",  # lax allows cookie on cross-origin top-level nav (works with frontend on different port)
+        secure=_is_secure_cookie(),
     )
 
     # Also set refresh token cookie for seamless renewal
@@ -223,8 +234,8 @@ def login(
             value=tokens["refresh_token"],
             max_age=refresh_max_age,
             httponly=True,
-            samesite="strict",
-            secure=True,
+            samesite="lax",
+            secure=_is_secure_cookie(),
         )
 
     db.commit()
@@ -312,8 +323,8 @@ def refresh_token(
         value=access_token,
         max_age=cookie_max_age,
         httponly=True,
-        samesite="strict",
-        secure=True,
+        samesite="lax",  # lax allows cookie on cross-origin top-level nav
+        secure=_is_secure_cookie(),
     )
 
     if result.get("refresh_token"):
@@ -323,8 +334,8 @@ def refresh_token(
             value=result["refresh_token"],
             max_age=refresh_max_age,
             httponly=True,
-            samesite="strict",
-            secure=True,
+            samesite="lax",
+            secure=_is_secure_cookie(),
         )
 
     return {
@@ -356,8 +367,8 @@ def logout(
             AuthService.revoke_refresh_token(db, validation["user_id"], validation["jti"])
 
     # Clear cookies regardless of token revocation result
-    response.delete_cookie(key="access_token", httponly=True, samesite="strict", secure=True)
-    response.delete_cookie(key="refresh_token", httponly=True, samesite="strict", secure=True)
+    response.delete_cookie(key="access_token", httponly=True, samesite="lax", secure=_is_secure_cookie())
+    response.delete_cookie(key="refresh_token", httponly=True, samesite="lax", secure=_is_secure_cookie())
 
     return {"message": "Logged out successfully"}
 
