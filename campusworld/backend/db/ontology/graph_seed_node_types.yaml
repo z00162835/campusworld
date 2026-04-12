@@ -368,12 +368,91 @@ node_types:
     - hicampus
     schema_definition:
       type: object
-      title: npc_agent attributes (P0)
+      title: npc_agent extended (F02)
       properties:
         agent_kind:
           type: string
           value_kind: static
           mutability: package_seed
+        cognition_models:
+          type: array
+          value_kind: static
+          mutability: ontology_managed
+          items:
+            type: object
+            properties:
+              framework:
+                type: string
+                enum:
+                - PDCA
+                - OODA
+              version:
+                type: string
+              steps:
+                type: array
+                items:
+                  type: string
+              description:
+                type: string
+        supported_decision_modes:
+          type: array
+          value_kind: static
+          mutability: ontology_managed
+          items:
+            type: string
+            enum:
+            - llm
+            - rules
+            - hybrid
+        tool_categories:
+          type: array
+          value_kind: static
+          mutability: ontology_managed
+          items:
+            type: string
+        default_model_config:
+          type: object
+          value_kind: static
+          mutability: ontology_managed
+          properties:
+            provider:
+              type: string
+            model_name:
+              type: string
+        agent_role:
+          type: string
+          enum:
+          - sys_worker
+          - narrative_npc
+          value_kind: static
+          mutability: instance_managed
+        enabled:
+          type: boolean
+          value_kind: static
+          mutability: instance_managed
+        service_id:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        decision_mode:
+          type: string
+          enum:
+          - llm
+          - rules
+          - hybrid
+          value_kind: static
+          mutability: instance_managed
+        service_account_id:
+          type: integer
+          description: F11 principal — bound account node id (optional)
+          value_kind: static
+          mutability: instance_managed
+        tool_allowlist:
+          type: array
+          value_kind: static
+          mutability: instance_managed
+          items:
+            type: string
   logical_zone:
     trait_class: ENV
     trait_mask: 65
