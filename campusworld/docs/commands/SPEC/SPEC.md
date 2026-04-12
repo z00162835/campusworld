@@ -6,6 +6,8 @@
 
 命令系统（`backend/app/commands/`）提供类似 MUD 终端的命令执行框架，命令是**系统命令**，通过 `CommandRegistry` 自动发现和管理。
 
+智能体服务（`type_code=npc_agent`）**默认**经本命令层操作图语义，契约见 [`docs/models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](../../models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)。
+
 ```
 输入 → CommandRegistry → BaseCommand.execute() → CommandResult → 输出
 ```

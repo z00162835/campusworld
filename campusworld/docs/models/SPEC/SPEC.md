@@ -122,6 +122,11 @@
 2. **为何用 ModelFactory**: 支持动态模型发现，新增实体类型无需修改核心代码
 3. **为何区分 DefaultObject 和 DefaultAccount**: 账户（User）和非账户实体（图节点）在身份认证上有本质区别
 
+## Feature Specs
+
+- `F02` Intelligent Agent Service（`npc_agent` 扩展、命令优先、记忆/运行独立表）  
+  [`features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)
+
 ## Open Questions
 
 - [ ] GraphNode/GraphEdge 表是否需要支持向量属性（用于语义搜索）？
