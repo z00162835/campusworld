@@ -5,6 +5,7 @@
 
 from .registry import command_registry
 from .system_commands import SYSTEM_COMMANDS
+from .agent_commands import AGENT_COMMANDS
 from .game import GAME_COMMANDS
 from .builder import build_cmdset
 import threading
@@ -31,6 +32,11 @@ def initialize_commands(force_reinit: bool = False) -> bool:
             # 注册系统命令
             system_success = 0
             for command in SYSTEM_COMMANDS:
+                if command_registry.register_command(command):
+                    system_success += 1
+                else:
+                    logger.error(f"系统命令 '{command.name}' 注册失败")
+            for command in AGENT_COMMANDS:
                 if command_registry.register_command(command):
                     system_success += 1
                 else:
@@ -73,7 +79,8 @@ def initialize_commands(force_reinit: bool = False) -> bool:
             summary = command_registry.get_commands_summary()
             
             _commands_initialized = True
-            return system_success == len(SYSTEM_COMMANDS) and game_success == len(GAME_COMMANDS)
+            expected_sys = len(SYSTEM_COMMANDS) + len(AGENT_COMMANDS)
+            return system_success == expected_sys and game_success == len(GAME_COMMANDS)
             
         except Exception as e:
             logger.error(f"命令系统初始化失败: {e}")
