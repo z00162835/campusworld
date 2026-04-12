@@ -71,12 +71,13 @@ def ensure_command_policies_seed(session) -> bool:
     from app.commands.base import CommandType
     from app.commands.policy_bootstrap import policy_seed_for
     from app.commands.policy_store import CommandPolicyRepository
+    from app.commands.agent_commands import AGENT_COMMANDS
     from app.commands.system_commands import SYSTEM_COMMANDS
     from app.commands.game import GAME_COMMANDS
     from app.commands.builder import build_cmdset
 
     repo = CommandPolicyRepository(session)
-    commands = list(SYSTEM_COMMANDS) + list(GAME_COMMANDS)
+    commands = list(SYSTEM_COMMANDS) + list(GAME_COMMANDS) + list(AGENT_COMMANDS)
     if build_cmdset:
         commands.extend(list(build_cmdset.get_commands().values()))
 
@@ -133,11 +134,112 @@ def ensure_account_type(session) -> bool:
     return True
 
 
+# F03: PDCA per-phase LLM routing lives on npc_agent.attributes (not agents.llm YAML).
+_AICO_DEFAULT_MODE_MODELS = {
+    "fast": "gpt-4o-mini",
+    "plan": "gpt-4o-mini",
+    "think": "gpt-4o",
+}
+_AICO_DEFAULT_PHASE_LLM = {
+    "plan": {"mode": "fast"},
+    "do": {"mode": "plan"},
+    "check": {"mode": "skip"},
+    "act": {"mode": "skip"},
+}
+
+
 def ensure_root_node(session=None) -> bool:
     """确保根节点存在（奇点房间）。"""
     from app.models.root_manager import root_manager
 
     return root_manager.ensure_root_node_exists()
+
+
+def ensure_aico_npc_agent(session) -> bool:
+    """
+    Idempotent: default assistant AICO (F03) as npc_agent in Singularity Room, trait_mask=370.
+    Requires npc_agent NodeType and root room; no-op if already present.
+    """
+    import uuid as uuid_lib
+
+    from app.constants.trait_mask import MOBILE, NPC_AGENT
+    from app.models.graph import Node, NodeType
+
+    existing = (
+        session.query(Node)
+        .filter(
+            Node.type_code == "npc_agent",
+            Node.attributes["service_id"].astext == "aico",
+            Node.is_active == True,  # noqa: E712
+        )
+        .first()
+    )
+    if existing:
+        attrs = existing.attributes or {}
+        merged = dict(attrs)
+        changed = False
+        if "mode_models" not in merged:
+            merged["mode_models"] = dict(_AICO_DEFAULT_MODE_MODELS)
+            changed = True
+        if "phase_llm" not in merged:
+            merged["phase_llm"] = {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()}
+            changed = True
+        if changed:
+            existing.attributes = merged
+            session.commit()
+        return True
+
+    nt = session.query(NodeType).filter(NodeType.type_code == "npc_agent").first()
+    if not nt:
+        logger.warning("ensure_aico_npc_agent: npc_agent NodeType missing")
+        return False
+
+    root = (
+        session.query(Node)
+        .filter(
+            Node.type_code == "room",
+            Node.attributes["is_root"].astext == "true",
+            Node.is_active == True,  # noqa: E712
+        )
+        .first()
+    )
+    if not root:
+        logger.warning("ensure_aico_npc_agent: root room missing")
+        return False
+
+    trait = int(NPC_AGENT & ~MOBILE)
+    node = Node(
+        uuid=uuid_lib.uuid4(),
+        type_id=nt.id,
+        type_code="npc_agent",
+        name="AICO",
+        description="CampusWorld default assistant (F03)",
+        is_active=True,
+        is_public=True,
+        access_level="normal",
+        trait_class=nt.trait_class or "AGENT",
+        trait_mask=trait,
+        location_id=root.id,
+        attributes={
+            "agent_role": "narrative_npc",
+            "enabled": True,
+            "service_id": "aico",
+            "trigger_mode": "nlp",
+            "decision_mode": "llm",
+            "cognition_profile_ref": "pdca_v1",
+            "tool_allowlist": ["help", "look", "time", "version", "agent_capabilities", "agent_tools"],
+            "model_config_ref": "aico",
+            "service_account_id": None,
+            "version": "1",
+            "mode_models": dict(_AICO_DEFAULT_MODE_MODELS),
+            "phase_llm": {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()},
+        },
+        tags=["system", "aico", "default"],
+    )
+    session.add(node)
+    session.commit()
+    logger.info("ensure_aico_npc_agent: created AICO node id=%s", node.id)
+    return True
 
 
 def ensure_default_accounts(session) -> bool:
@@ -267,6 +369,10 @@ def seed_minimal() -> bool:
         # 根节点初始化同样是幂等的
         if not ensure_root_node():
             return False
+
+        with db_session_context() as session:
+            if not ensure_aico_npc_agent(session):
+                logger.warning("ensure_aico_npc_agent skipped or failed")
 
         logger.info("seed_minimal completed")
         return True
