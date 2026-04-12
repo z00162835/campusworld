@@ -7,6 +7,7 @@ import logging
 import json
 from typing import List, Dict, Any, Optional
 from .base import ProtocolHandler
+from app.commands.at_agent_dispatch import try_dispatch_at_line
 from app.commands.registry import command_registry
 from app.commands.base import CommandContext, CommandResult
 from app.commands.shell_words import split_command_line
@@ -29,10 +30,6 @@ class HTTPHandler(ProtocolHandler):
             if not command_line.strip():
                 return json.dumps({"success": True, "message": ""})
 
-            parts = split_command_line(command_line)
-            command_name = parts[0].lower()
-            args = parts[1:] if len(parts) > 1 else []
-
             with db_session_context() as db_session:
                 context = self.create_context(
                     user_id=user_id,
@@ -43,6 +40,18 @@ class HTTPHandler(ProtocolHandler):
                     game_state=game_state,
                     db_session=db_session,
                 )
+                at_res = try_dispatch_at_line(command_line, context)
+                if at_res is not None:
+                    return json.dumps({
+                        "success": at_res.success,
+                        "message": at_res.message,
+                        "data": at_res.data,
+                        "error": at_res.error,
+                    })
+
+                parts = split_command_line(command_line)
+                command_name = parts[0].lower()
+                args = parts[1:] if len(parts) > 1 else []
 
                 command = command_registry.get_command(command_name)
                 if not command:
@@ -64,7 +73,7 @@ class HTTPHandler(ProtocolHandler):
                     "success": result.success,
                     "message": result.message,
                     "data": result.data,
-                    "error": result.error
+                    "error": result.error,
                 })
 
         except Exception as e:

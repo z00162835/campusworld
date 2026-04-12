@@ -7,6 +7,7 @@ import logging
 import time
 from typing import List, Dict, Any, Optional
 from .base import ProtocolHandler
+from app.commands.at_agent_dispatch import try_dispatch_at_line
 from app.commands.registry import command_registry
 from app.commands.base import CommandContext, CommandResult
 from app.commands.shell_words import split_command_line
@@ -29,11 +30,6 @@ class SSHHandler(ProtocolHandler):
             if not command_line.strip():
                 return ""
             
-            # 解析命令（支持引号包裹含空格的参数，与常见 MUD/Evennia shell 一致）
-            parts = split_command_line(command_line)
-            command_name = parts[0].lower()
-            args = parts[1:] if len(parts) > 1 else []
-            
             with db_session_context() as db_session:
                 context = self.create_context(
                     user_id,
@@ -44,6 +40,14 @@ class SSHHandler(ProtocolHandler):
                     game_state,
                     db_session=db_session,
                 )
+                at_res = try_dispatch_at_line(command_line, context)
+                if at_res is not None:
+                    return self._format_command_result(at_res)
+
+                # 解析命令（支持引号包裹含空格的参数，与常见 MUD/Evennia shell 一致）
+                parts = split_command_line(command_line)
+                command_name = parts[0].lower()
+                args = parts[1:] if len(parts) > 1 else []
 
                 command = command_registry.get_command(command_name)
                 if not command:
