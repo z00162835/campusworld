@@ -92,6 +92,8 @@
 
 ### 权限与审计
 
+- **`graph.read` / `ontology.read` 不隐含全库或全类型可见**：在账号节点上另有 **数据范围**（`attributes.data_access`），与 RBAC **组合**（能力 ∧ 数据）。详见 **`F11`**：[`F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md`](F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)。
+
 - 装饰器风格与 [`require_permission`](../../../../backend/app/core/authorization.py) 一致；建议权限前缀：
 
 | 权限 | 用途 |
@@ -155,6 +157,130 @@
 
 - **mTLS**、**WAF**、**每租户速率限制** 由部署架构处理；F10 在应用层仍必须做 **认证 + 权限检查**。
 - **`X-Request-Id`**：入口生成并透传，便于与 API Key / 用户 id 一起写入审计。
+
+<a id="tooling-http-clients"></a>
+
+## 业界工具调用样例（HTTP 客户端）
+
+本节说明如何用常见工具调用 **同一套** F10 与既有 `/api/v1` 接口；凭据与错误语义仍遵循上文 **JWT / API Key** 与 **RFC 9457**。
+
+### 环境与 OpenAPI 入口
+
+| 项 | 说明 |
+|----|------|
+| **Base URL** | 部署根地址，例如 `https://api.example.com`；本地开发多为 `http://127.0.0.1:8000`（端口以后端实际监听为准）。 |
+| **API 前缀** | 业务路由统一在 **`/api/v1`** 下（如 `GET /api/v1/graph/nodes`）。 |
+| **OpenAPI JSON** | FastAPI 默认 **`GET /openapi.json`**（与 `/api/v1` 并列，**无** `/api/v1` 前缀）。 |
+| **交互文档** | **`GET /docs`**（Swagger UI）、**`GET /redoc`**（ReDoc）。 |
+
+导入契约到 GUI 客户端时，通常填写：`{BASE_URL}/openapi.json`。
+
+### curl
+
+**OAuth2 密码模式登录**（与 `POST /api/v1/auth/login` 的 `OAuth2PasswordRequestForm` 一致；`username` 为校园账号名）：
+
+```bash
+BASE="http://127.0.0.1:8000"
+TOKEN="$(curl -sS -X POST "$BASE/api/v1/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=your_password" \
+  | jq -r '.access_token')"
+```
+
+**Bearer 调用 F10 列表接口**：
+
+```bash
+curl -sS -G "$BASE/api/v1/graph/nodes" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode "limit=50" \
+  --data-urlencode "offset=0" \
+  --data-urlencode "name_like=room"
+```
+
+**API Key**（推荐头 **`X-Api-Key`**；实现若支持 **`Authorization: ApiKey <secret>`** 亦可二选一，勿与 `Bearer` 同请求混用）：
+
+```bash
+curl -sS -G "$BASE/api/v1/ontology/node-types" \
+  -H "X-Api-Key: cwk_<kid>_<secret>" \
+  --data-urlencode "limit=20"
+```
+
+**查看 Problem Details**（4xx/5xx 时关注 `Content-Type` 与 JSON 体）：
+
+```bash
+curl -sS -D - -o /tmp/body.json "$BASE/api/v1/graph/nodes?name_like=%20" \
+  -H "Authorization: Bearer $TOKEN" | head
+cat /tmp/body.json
+```
+
+### HTTPie（httpie）
+
+安装见 [HTTPie 文档](https://httpie.io/docs)；适合命令行可读输出。
+
+```bash
+export BASE=http://127.0.0.1:8000
+http --form POST "$BASE/api/v1/auth/login" username=admin password=your_password
+http GET "$BASE/api/v1/graph/nodes" "Authorization:Bearer $TOKEN" limit==50 offset==0
+http GET "$BASE/api/v1/ontology/node-types" "X-Api-Key:cwk_<kid>_<secret>"
+```
+
+### Postman / Insomnia / Bruno（GUI）
+
+共性步骤：
+
+1. **Import OpenAPI**：从 URL 导入 `{BASE_URL}/openapi.json`，或下载 JSON 后本地导入。
+2. **环境变量**：定义 `baseUrl`（如 `http://127.0.0.1:8000`）、`token`、`apiKey`。
+3. **认证**：
+   - **Bearer**：在 Collection / Request 的 **Auth** 中选 *Bearer Token*，填 `{{token}}`；或在 Header 中写 `Authorization: Bearer {{token}}`。
+   - **API Key**：在 **Auth** 中选 *API Key*，`Key`=`X-Api-Key`，`Value`=`{{apiKey}}`，`Add to`=header。
+4. **登录换 token**：对 `POST /api/v1/auth/login` 使用 **x-www-form-urlencoded**，字段 `username`、`password`；从响应复制 `access_token` 写入环境变量。
+
+首次联调可用 **`/docs`** 中 “Try it out” 校验路径与参数是否与 OpenAPI 一致。
+
+### OpenAPI Generator（生成强类型客户端）
+
+适合在 CI 或仓库内固定契约版本后生成 Java / TypeScript / Python 等客户端（[OpenAPI Generator](https://openapi-generator.tech/)）。
+
+```bash
+# 示例：生成 Python 客户端到 ./out/cw-client（需本地已安装 openapi-generator-cli）
+openapi-generator-cli generate \
+  -i http://127.0.0.1:8000/openapi.json \
+  -g python \
+  -o ./out/cw-client \
+  --additional-properties=packageName=campusworld_client
+```
+
+生成代码中通常可配置 `host`、默认 Header 中的 `Authorization` 或 `X-Api-Key`，与上文语义一致。
+
+### Python（httpx / requests）
+
+```python
+import httpx
+
+base = "http://127.0.0.1:8000"
+with httpx.Client(base_url=base, timeout=30.0) as client:
+    r = client.post(
+        "/api/v1/auth/login",
+        data={"username": "admin", "password": "your_password"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    r.raise_for_status()
+    token = r.json()["access_token"]
+
+    nodes = client.get(
+        "/api/v1/graph/nodes",
+        params={"limit": 50, "offset": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    nodes.raise_for_status()
+    print(nodes.json())
+```
+
+使用 API Key 时将 `headers` 改为 `{"X-Api-Key": "cwk_<kid>_<secret>"}` 即可。
+
+### 浏览器与 CORS
+
+浏览器发起的跨域请求若需携带 **`X-Api-Key`**，服务端 CORS 的 **`allow_headers`** 须包含该头（与 `Authorization` 并列）；纯服务端脚本不受此限制。
 
 ## Trait 与类型变更语义（F01）
 
@@ -239,8 +365,23 @@
 | `name_eq` | string | `node-types` / `relationship-types` / `relationships` | 无 | 空串返回 400 | 精确匹配；type 表作用于 `type_name` |
 | `name_like` | string | `nodes` / `node-types` / `relationship-types` / `relationships` | 无 | 空白返回 400 | `ILIKE` 模糊匹配 |
 | `tags_any` | string | 支持 tags 的列表端点 | 无 | 解析后空集返回 400 | 逗号分隔，任一命中 |
-| `is_public` | boolean | `nodes` / `worlds/{world_id}/nodes` | 不过滤 | 非布尔返回 400 | 可见性过滤 |
+| `is_public` | boolean | `nodes` / `worlds/{world_id}/nodes` | 不过滤 | 非法布尔（见下「422」说明） | 可见性过滤 |
 | `parent_type_code` | string | `node-types` | 不过滤 | - | 父类型过滤 |
+| `is_active` | boolean |  ontology / graph 各列表 | 不过滤 | 非法布尔（见下「422」说明） | 是否启用过滤 |
+
+**实现注记（ontology 列表）**：OpenAPI 中另登记 **`type_name_eq`**，与 **`name_eq`** 同义（均作用于 `type_name`）；文档与集成测试以 **`name_eq`** 为准，新客户端优先只用 `name_eq`。
+
+### 列表接口无参与 GUI 客户端（RapidAPI / Postman）
+
+- **可以不传任何 query**：例如 `GET /api/v1/ontology/node-types` 在携带有效 **`Authorization: Bearer`** 或 **`X-API-Key`** 时即可；服务端使用 **`offset=0`、`limit=100`**（与上表一致）。**不要求**客户端填写全部过滤字段。
+- **`is_active` / `is_public`（boolean）**：须为 **`true` / `false`**（大小写不敏感，具体以 OpenAPI 为准）。若工具把未使用的参数绑成 **JavaScript 对象**，可能被序列化为字面量 **`[object Object]`**，Pydantic 无法解析为布尔，报错 **`Input should be a valid boolean, unable to interpret input`**。
+- **`limit`**：须满足 **`1 <= limit <= 500`**。传 **`limit=0`** 或超出上限会报错 **`greater than or equal to 1`** / 类似校验信息。需要默认分页大小时，**直接省略 `limit` 参数**即可。
+- **排查建议**：在 GUI 中 **清空或删除** 未使用的 Query 行，避免占位对象；最小化复现为「仅 Method + URL + 鉴权头、无 Query」。
+
+### 422 与 `application/problem+json`（实现差异）
+
+- 路由**业务规则**（如空白 `name_like`、空集 `tags_any`）由应用返回 **`400`** + **`application/problem+json`**（RFC 9457 形态）。
+- **FastAPI / Pydantic** 对 Query 的**类型、范围**（如 `limit` 下界、`bool` 解析）校验失败时，默认返回 **`422 Unprocessable Entity`** + **`application/json`**，`detail` 为验证错误列表；**与**上表「非法值返回 400」在**形态上不完全一致**（框架层先于路由执行）。若产品要求全域统一 Problem Details，需在 HTTP 层增加 **`RequestValidationError` → problem+json** 的映射（可选后续工作）。
 
 ## 响应体形状（草案）
 
