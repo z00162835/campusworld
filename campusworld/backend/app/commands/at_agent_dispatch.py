@@ -1,6 +1,4 @@
-"""
-F04: dispatch `@<handle> <payload>` to npc_agent NLP tick (same semantics as agent_nlp).
-"""
+"""Dispatch `@<handle> <payload>` to npc_agent NLP tick (same behavior as agent_nlp)."""
 
 from __future__ import annotations
 

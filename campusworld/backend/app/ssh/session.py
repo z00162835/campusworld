@@ -48,9 +48,24 @@ class SSHSession:
     def __post_init__(self):
         """初始化后处理"""
         # 从用户属性中提取信息
-        self.roles = self.user_attrs.get("roles", [])
-        self.permissions = self.user_attrs.get("permissions", [])
-        self.access_level = self.user_attrs.get("access_level", "normal")
+        self.roles = list(self.user_attrs.get("roles") or [])
+        raw_p = self.user_attrs.get("permissions")
+        if isinstance(raw_p, list):
+            self.permissions = [str(x) for x in raw_p]
+        elif raw_p is not None and str(raw_p).strip():
+            self.permissions = [str(raw_p).strip()]
+        else:
+            self.permissions = []
+        self.access_level = str(self.user_attrs.get("access_level") or "normal")
+
+        # 图账号节点通常只有 data_access / access_level，不显式存 permissions。
+        # command_policies 里大量要求 admin.* / admin.world.*；空列表会导致 check_permission 全拒。
+        if not self.permissions:
+            al = self.access_level.lower()
+            if al in ("admin", "developer", "dev", "development"):
+                self.permissions = ["admin.*"]
+            elif al in ("normal", "user", "campus"):
+                self.permissions = ["player"]
     
     def update_activity(self):
         """更新最后活动时间"""

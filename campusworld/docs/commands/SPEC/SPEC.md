@@ -120,6 +120,10 @@ CommandResult.success_result("向北移动到食堂")
 | `set exit` | ADMIN | 设置出口 |
 | `dig` | ADMIN | 挖掘房间（快捷方式）|
 
+### 知识库命令（规划）
+
+内置知识世界 **campuslibrary**（OS 级全局知识库）通过顶层命令 **`cl`** 维护与检索；子命令 **`search`**（检索）、**`ingest`**（录入）、**`del`**（软删除，`is_active=false`）。奇点屋可见该世界入口但 **不可 `enter` 穿越**，须用 `cl`。契约见 [`docs/models/SPEC/features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md`](../../models/SPEC/features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)。
+
 ## Acceptance Criteria
 
 - [ ] 命令注册表自动发现 `commands/` 下的所有命令子类
@@ -147,3 +151,4 @@ CommandResult.success_result("向北移动到食堂")
 - 依赖 `backend/app/models/`（图数据模型，命令操作实体）
 - 依赖 `backend/app/game_engine/`（游戏状态）
 - 被 `backend/app/ssh/` 和 `backend/app/protocols/` 调用
+- 知识库命令 **`cl`** 契约见 [`docs/models/SPEC/features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md`](../../models/SPEC/features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)（实现待落地）

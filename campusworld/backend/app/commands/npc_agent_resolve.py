@@ -1,6 +1,4 @@
-"""
-F04: resolve npc_agent by handle (service_id or handle_aliases), with ambiguity and enabled checks.
-"""
+"""Resolve npc_agent by handle (service_id or handle_aliases), with ambiguity and enabled checks."""
 
 from __future__ import annotations
 
@@ -22,6 +20,11 @@ def _enabled_allows(attrs: dict) -> bool:
     if isinstance(v, str) and v.strip().lower() in ("false", "0", "no"):
         return False
     return True
+
+
+def enabled_allows(attrs: dict) -> bool:
+    """Whether attributes.enabled allows use (same rules as resolve_npc_agent_by_handle)."""
+    return _enabled_allows(attrs)
 
 
 def resolve_npc_agent_by_handle(session: Session, handle: str) -> Tuple[Optional[Node], Optional[str]]:

@@ -17,7 +17,7 @@ from app.game_engine.subgraph_boundary import (
 )
 from app.models.graph import Node, Relationship, RelationshipType
 
-# Error codes (strings) aligned with F04/F06 plan
+# Stable string error codes for bridge operations (document in world bridge SPEC).
 WORLD_BRIDGE_PERMISSION_DENIED = "WORLD_BRIDGE_PERMISSION_DENIED"
 WORLD_BRIDGE_INVALID_ARGUMENT = "WORLD_BRIDGE_INVALID_ARGUMENT"
 WORLD_BRIDGE_NOT_FOUND = "WORLD_BRIDGE_NOT_FOUND"

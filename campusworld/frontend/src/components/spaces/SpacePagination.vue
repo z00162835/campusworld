@@ -7,9 +7,12 @@ import { useSpacesStore } from '@/stores/spaces'
 
 const store = useSpacesStore()
 
-const handlePageChange = (page: number) => {
-  store.currentPage = page
-  store.refresh()
+// v-model:current-page is 1-indexed, store.currentPage is also 1-indexed
+const handlePageChange = () => {
+  // store.currentPage is already updated by v-model binding
+  // Convert to offset: (page - 1) * pageSize
+  const offset = (store.currentPage - 1) * store.pageSize
+  store.fetchSpaces(undefined, offset, false)
 }
 
 const handleSizeChange = (size: number) => {

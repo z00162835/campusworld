@@ -1,4 +1,4 @@
-"""Unit tests for F04 npc_agent_resolve."""
+"""Unit tests for npc_agent_resolve."""
 
 from __future__ import annotations
 

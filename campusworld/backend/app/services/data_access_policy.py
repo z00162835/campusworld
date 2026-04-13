@@ -1,5 +1,5 @@
 """
-F11 data access policy: parse account attributes and build SQLAlchemy filters.
+Data access policy: parse account attributes and build SQLAlchemy filters.
 
 No admin short-circuit: callers pass policy derived only from `user_attrs`;
 wide access is achieved via permissive templates in seed data, not role checks.
@@ -88,7 +88,7 @@ def apply_world_scoped_node_read_policy(
     deny_all: bool,
     world_id_path: str,
 ) -> Query:
-    """Apply F11 on top of an existing world-scoped node query."""
+    """Apply data_access policy on top of an existing world-scoped node query."""
     if deny_all or policy is None:
         return query.filter(false())
     # Path world must be allowed when template restricts world_ids
@@ -259,7 +259,7 @@ def proposed_relationship_visible(
 
 
 def ontology_type_visible(type_code: str, policy: Optional[DataAccessV1], deny_all: bool) -> bool:
-    """Hide ontology rows for denied node/rel type codes (F11 alignment)."""
+    """Hide ontology rows for denied node or relationship type codes when policy applies."""
     if deny_all or policy is None:
         return False
     if policy.denied_type_codes and type_code in policy.denied_type_codes:

@@ -1,7 +1,7 @@
 """
-PDCA per-phase LLM routing (phase_llm, mode_models) — source of truth: npc_agent nodes.attributes.
+PDCA per-phase LLM routing (phase_llm, mode_models); source of truth: npc_agent nodes.attributes.
 
-System YAML (agents.llm) supplies connection parameters only; see F03.
+System YAML (agents.llm) supplies connection parameters only.
 """
 
 from __future__ import annotations

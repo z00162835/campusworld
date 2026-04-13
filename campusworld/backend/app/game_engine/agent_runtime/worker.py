@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from app.commands.agent_command_context import command_context_for_npc_agent
 from app.commands.base import CommandContext
-from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config
-from app.game_engine.agent_runtime.agent_node_phase_llm import parse_phase_llm_from_attributes
 from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, ThinkingFramework
-from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
-from app.game_engine.agent_runtime.frameworks.pdca import PDCAFramework
-from app.game_engine.agent_runtime.llm_client import LlmClient, build_llm_client_from_service_config
 from app.game_engine.agent_runtime.memory_port import MemoryPort, SqlAlchemyMemoryPort
-from app.game_engine.agent_runtime.tooling import RegistryToolExecutor, ToolExecutor
 from app.models.graph import Node
+
+if TYPE_CHECKING:
+    from app.game_engine.agent_runtime.llm_client import LlmClient
+    from app.game_engine.agent_runtime.tooling import ToolExecutor
+else:
+    ToolExecutor = Any
 
 
 class AgentWorker:
@@ -63,6 +63,9 @@ class SysSampleWorker(AgentWorker):
         agent_node_id: int,
         invoker_context: Optional[CommandContext] = None,
     ) -> "SysSampleWorker":
+        from app.game_engine.agent_runtime.frameworks.pdca import PDCAFramework
+        from app.game_engine.agent_runtime.tooling import RegistryToolExecutor
+
         agent = session.query(Node).filter(Node.id == agent_node_id).first()
         if agent is None:
             raise ValueError(f"agent node {agent_node_id} not found")
@@ -87,7 +90,7 @@ class SysSampleWorker(AgentWorker):
 
 
 class LlmPdcaAssistantWorker(AgentWorker):
-    """NLP + LLM + PDCA for `decision_mode: llm` assistants (F03 AICO)."""
+    """NLP + LLM + PDCA for assistants with ``decision_mode: llm``."""
 
     @classmethod
     def create(
@@ -98,6 +101,12 @@ class LlmPdcaAssistantWorker(AgentWorker):
         *,
         llm_client: Optional[LlmClient] = None,
     ) -> "LlmPdcaAssistantWorker":
+        from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config
+        from app.game_engine.agent_runtime.agent_node_phase_llm import parse_phase_llm_from_attributes
+        from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
+        from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config
+        from app.game_engine.agent_runtime.tooling import RegistryToolExecutor
+
         agent = session.query(Node).filter(Node.id == agent_node_id).first()
         if agent is None:
             raise ValueError(f"agent node {agent_node_id} not found")

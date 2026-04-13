@@ -12,11 +12,11 @@ class FrameworkRunContext:
     agent_node_id: int
     correlation_id: Optional[str] = None
     payload: Dict[str, Any] = field(default_factory=dict)
-    # NL + LLM + PDCA (F03 §5.5): optional overrides per tick; base prompts live in YAML.
+    # Optional NL + LLM + PDCA overrides per tick; base prompts live in YAML.
     system_prompt: Optional[str] = None
     phase_prompts: Dict[str, str] = field(default_factory=dict)
     memory_context: Optional[str] = None
-    # Raw dict per phase -> merged into PhaseLlmPhaseConfig (F03 phase_llm tick overrides)
+    # Raw dict per phase -> merged into PhaseLlmPhaseConfig (tick-level phase_llm overrides)
     phase_llm_overrides: Dict[str, Any] = field(default_factory=dict)
 
 

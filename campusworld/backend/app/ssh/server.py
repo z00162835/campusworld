@@ -12,6 +12,7 @@ SSH服务器实现
 import socket
 import threading
 import time
+
 from typing import Dict, Optional
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, Future
@@ -215,6 +216,7 @@ class CampusWorldSSHServer:
         try:
             # 创建传输
             t = paramiko.Transport(client)
+            transport = t
             t.add_server_key(self.ssh_interface.host_key)
             t.start_server(server=self.ssh_interface)
 
@@ -229,13 +231,11 @@ class CampusWorldSSHServer:
                 })
                 return
 
-            # 创建控制台实例
-            console = SSHConsole(channel, None)
-
-            # 设置会话
+            # 先解析 SSHSession，再构造控制台（避免 welcome/命令上下文在无会话时退化为 guest）
+            ssh_session = None
             try:
                 transport = channel.get_transport()
-                if hasattr(transport, 'get_username'):
+                if transport and hasattr(transport, "get_username"):
                     username = transport.get_username()
                     self.logger.info(f"设置SSH控制台", extra={
                         'username': username,
@@ -243,19 +243,14 @@ class CampusWorldSSHServer:
                         'connection_id': connection_id,
                         'event_type': 'ssh_console_setup'
                     })
-
-                    # 查找对应的会话
                     for session_id, session in self.ssh_interface.sessions.items():
                         if session.username == username:
-                            session.set_channel(channel)  # 存储 channel 引用
-                            console.current_session = session
-
-                            # 触发用户spawn到初始位置（Game Layer）
+                            ssh_session = session
+                            session.set_channel(channel)
                             game_handler.spawn_user(
                                 user_id=session.user_id,
                                 username=username
                             )
-
                             self.logger.info(f"SSH会话已设置", extra={
                                 'username': username,
                                 'session_id': session_id,
@@ -286,7 +281,7 @@ class CampusWorldSSHServer:
                     'event_type': 'ssh_console_setup_error'
                 })
 
-            # 运行控制台
+            console = SSHConsole(channel, ssh_session)
             console.run()
 
         except Exception as e:

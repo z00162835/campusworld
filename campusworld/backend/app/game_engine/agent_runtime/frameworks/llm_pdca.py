@@ -35,7 +35,7 @@ def _phase_system(base_system: str, phase: str, phase_prompts: Dict[str, str]) -
 
 class LlmPDCAFramework(ThinkingFramework):
     """
-    PDCA with optional LLM calls per phase (F03 AICO path).
+    PDCA with optional LLM calls per phase (assistant / llm decision_mode path).
 
     Per-phase mode: fast | plan | think | skip from npc_agent.attributes.phase_llm (+ tick overrides).
     """

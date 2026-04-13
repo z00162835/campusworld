@@ -65,7 +65,7 @@ class NodeRepository:
         required_any_mask: int = 0,
         required_all_mask: int = 0,
     ) -> List[Node]:
-        """获取活跃节点；trait 过滤语义与 `Node.get_active_nodes` / F01 一致（mask=0 不过滤）。"""
+        """获取活跃节点；trait 过滤语义与 ``Node.get_active_nodes`` 一致（mask=0 不过滤）。"""
         with db_session_context() as session:
             return Node.get_active_nodes(
                 session,

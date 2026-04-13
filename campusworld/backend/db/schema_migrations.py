@@ -504,7 +504,7 @@ def ensure_world_runtime_schema(engine) -> None:
 
 def ensure_f02_agent_memory_schema(engine) -> None:
     """
-    F02: agent_memory_entries, agent_run_records, agent_long_term_memory.
+    Ensure agent_memory_entries, agent_run_records, agent_long_term_memory exist.
 
     Source of truth: `db/schemas/database_schema.sql` (f02_agent_memory section).
     """
@@ -534,7 +534,7 @@ def ensure_f02_agent_memory_schema(engine) -> None:
 
 def ensure_f02_ltm_semantic_extension(engine) -> None:
     """
-    F02 extension: LTM embedding columns + agent_long_term_memory_links + indexes.
+    LTM embedding columns, agent_long_term_memory_links, and related indexes.
 
     Idempotent for existing DBs that only had base f02_agent_memory tables.
     HNSW index is best-effort (_try_exec) for older pgvector builds.
@@ -693,7 +693,7 @@ def ensure_graph_seed_ontology(engine) -> None:
                 params,
             )
 
-        # trait_mask: Conceptual + Spatial; see F01 + app.constants.trait_mask.LOCATION_RELATIONSHIP_EDGE
+        # trait_mask: Conceptual + Spatial; see app.constants.trait_mask.LOCATION_RELATIONSHIP_EDGE
         rel_rows = [
             ("connects_to", "连接到", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
             ("contains", "包含", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
@@ -774,7 +774,7 @@ def ensure_builtin_node_type_schema_envelopes(engine) -> None:
 
 def ensure_nodes_world_id_index(engine) -> None:
     """
-    F11: partial B-tree on (attributes->>'world_id') for world-scoped graph policy filters.
+    Partial B-tree on (attributes->>'world_id') for world-scoped graph read filters.
     Idempotent: CREATE INDEX IF NOT EXISTS.
     """
     conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
@@ -793,7 +793,7 @@ def ensure_nodes_world_id_index(engine) -> None:
 
 def ensure_account_data_access_defaults(engine) -> None:
     """
-    F11: merge default `data_access` into seeded account nodes when missing.
+    Merge default `data_access` into seeded account nodes when missing.
     Idempotent: does not overwrite existing data_access.
     """
     import json

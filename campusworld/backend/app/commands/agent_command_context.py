@@ -1,5 +1,5 @@
 """
-CommandContext for npc_agent tool execution (F02 / F11).
+CommandContext for npc_agent tool execution.
 
 When the agent node has ``attributes.service_account_id`` pointing to an account
 ``Node``, tools use that account's permissions/roles; otherwise the invoker's

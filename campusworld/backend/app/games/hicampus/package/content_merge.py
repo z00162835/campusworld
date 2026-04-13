@@ -1,5 +1,5 @@
 """
-F07: optional description sidecars, spatial row normalization, and P0 completeness checks.
+Optional description sidecars, spatial row normalization, and P0 completeness checks.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import yaml
 from .contracts import DataPackageError, ERROR_WORLD_DATA_INVALID, ERROR_WORLD_DATA_REFERENCE_BROKEN
 
 # ---------------------------------------------------------------------------
-# P0 keys (non-empty string after strip) — see F07_SPATIAL_DESCRIPTION_CONTENT_PACK.md
+# P0 keys (non-empty string after strip) — see HiCampus package SPEC under docs/games/hicampus/
 # ---------------------------------------------------------------------------
 
 ROOM_P0_STR = (

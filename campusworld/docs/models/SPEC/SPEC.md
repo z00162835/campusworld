@@ -138,6 +138,9 @@
 - `F05` `agent` 命令：`agent list` 列出可见 Agent、`agent status` 查询状态（不可用 / 空闲 / 工作中）；用户与 Agent 共用  
   [`features/F05_AGENT_COMMAND_LIST_AND_STATUS.md`](features/F05_AGENT_COMMAND_LIST_AND_STATUS.md)
 
+- `F06` CampusLibrary 内置知识世界（OS 级全局知识库、`cl search|ingest|del`、GraphRAG 式语义、pgvector、奇点屋可见不可 enter、软删 `is_active`）  
+  [`features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md`](features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)
+
 ## Open Questions
 
 - [ ] GraphNode/GraphEdge 表是否需要支持向量属性（用于语义搜索）？

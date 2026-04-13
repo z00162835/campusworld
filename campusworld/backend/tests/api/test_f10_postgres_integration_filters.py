@@ -1,5 +1,5 @@
 """
-PostgreSQL integration tests for F10 filter semantics.
+PostgreSQL integration tests for graph list filter semantics.
 
 These tests validate SQL-level behavior on a real database:
 - ILIKE name_like

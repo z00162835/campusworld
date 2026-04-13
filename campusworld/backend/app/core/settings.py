@@ -193,7 +193,7 @@ class DevelopmentConfig(BaseModel):
 
 
 class PhaseLlmMode(str, Enum):
-    """PDCA phase LLM routing mode (F03 §1.4 end-to-end plan)."""
+    """PDCA phase LLM routing mode (per-phase fast/plan/think/skip)."""
 
     fast = "fast"
     plan = "plan"
@@ -213,7 +213,7 @@ class PhaseLlmPhaseConfig(BaseModel):
 
 
 class AgentLlmServiceConfig(BaseModel):
-    """Per-service_id LLM connection + prompt defaults (F03 §5.3 / §5.5)."""
+    """Per-service_id LLM connection and prompt defaults (YAML + node overrides)."""
 
     provider: str = Field(default="openai_compatible", description="LLM provider id")
     base_url: str = ""
@@ -243,7 +243,7 @@ class AgentsLlmConfig(BaseModel):
 
 
 class AgentsConfig(BaseModel):
-    """System Agent bundle (F03)."""
+    """System agent configuration bundle (e.g. agents.llm)."""
 
     llm: AgentsLlmConfig = Field(default_factory=AgentsLlmConfig)
 

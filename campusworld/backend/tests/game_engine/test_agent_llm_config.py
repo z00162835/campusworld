@@ -1,4 +1,4 @@
-"""Unit tests for agent_llm_config (F03 prompt_overrides)."""
+"""Unit tests for agent_llm_config (node prompt_overrides merge)."""
 
 from __future__ import annotations
 

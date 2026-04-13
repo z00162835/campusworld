@@ -1,6 +1,4 @@
-"""
-Shared NLP tick for npc_agent (F03/F04): used by agent_nlp, @handle, and aico shorthand.
-"""
+"""Shared NLP tick for npc_agent: used by agent_nlp, line-prefix dispatch, and aico shorthand."""
 
 from __future__ import annotations
 
@@ -9,10 +7,7 @@ import os
 from typing import Any, Dict, Optional
 
 from app.commands.base import CommandContext
-from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config
-from app.game_engine.agent_runtime.worker import LlmPdcaAssistantWorker
 from app.models.graph import Node
-from app.services.ltm_semantic_retrieval import build_ltm_memory_context_for_tick
 
 
 def maybe_ltm_memory_context(session, agent_node_id: int, user_message: str, cfg_extra: Dict[str, Any]) -> Optional[str]:
@@ -25,6 +20,8 @@ def maybe_ltm_memory_context(session, agent_node_id: int, user_message: str, cfg
         return None
     if os.environ.get("AICO_SKIP_LTM_PLACEHOLDER"):
         return None
+    from app.services.ltm_semantic_retrieval import build_ltm_memory_context_for_tick
+
     return build_ltm_memory_context_for_tick(
         session,
         agent_node_id,
@@ -42,6 +39,9 @@ def run_npc_agent_nlp_tick(
     phase_llm_overrides: Optional[Dict[str, Any]] = None,
 ):
     """Run one LlmPdcaAssistantWorker tick; caller commits session."""
+    from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config
+    from app.game_engine.agent_runtime.worker import LlmPdcaAssistantWorker
+
     attrs = node.attributes or {}
     service_id = str(attrs.get("service_id") or "aico")
     model_ref = attrs.get("model_config_ref")

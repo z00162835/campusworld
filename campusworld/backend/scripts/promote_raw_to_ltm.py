@@ -2,8 +2,8 @@
 """
 Placeholder: promote agent_memory_entries (raw/working) → agent_long_term_memory.
 
-Product rules (batch size, summarization, TTL) are TBD; see
-docs/architecture/adr/ADR-F02-Memory-Promotion.md
+Product rules (batch size, summarization, TTL) are TBD; see architecture ADRs under
+docs/architecture/adr/
 """
 
 from __future__ import annotations

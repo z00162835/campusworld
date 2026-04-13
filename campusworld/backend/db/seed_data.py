@@ -71,13 +71,14 @@ def ensure_command_policies_seed(session) -> bool:
     from app.commands.base import CommandType
     from app.commands.policy_bootstrap import policy_seed_for
     from app.commands.policy_store import CommandPolicyRepository
-    from app.commands.agent_commands import AGENT_COMMANDS
+    from app.commands.agent_commands import get_agent_commands
     from app.commands.system_commands import SYSTEM_COMMANDS
     from app.commands.game import GAME_COMMANDS
-    from app.commands.builder import build_cmdset
+    from app.commands.builder import get_build_cmdset
 
     repo = CommandPolicyRepository(session)
-    commands = list(SYSTEM_COMMANDS) + list(GAME_COMMANDS) + list(AGENT_COMMANDS)
+    commands = list(SYSTEM_COMMANDS) + list(GAME_COMMANDS) + list(get_agent_commands())
+    build_cmdset = get_build_cmdset()
     if build_cmdset:
         commands.extend(list(build_cmdset.get_commands().values()))
 
@@ -100,9 +101,11 @@ def ensure_command_policies_seed(session) -> bool:
             required_roles_any=seed["required_roles_any"],
             enabled=True,
             updated_by="seed",
+            commit=False,
         )
         created += 1
 
+    session.commit()
     logger.info("ensure_command_policies_seed created=%s", created)
     return True
 
@@ -134,7 +137,7 @@ def ensure_account_type(session) -> bool:
     return True
 
 
-# F03: PDCA per-phase LLM routing lives on npc_agent.attributes (not agents.llm YAML).
+# Default AICO phase_llm / mode_models when seeding npc_agent (instance attributes, not agents.llm YAML).
 _AICO_DEFAULT_MODE_MODELS = {
     "fast": "gpt-4o-mini",
     "plan": "gpt-4o-mini",
@@ -157,7 +160,7 @@ def ensure_root_node(session=None) -> bool:
 
 def ensure_aico_npc_agent(session) -> bool:
     """
-    Idempotent: default assistant AICO (F03) as npc_agent in Singularity Room, trait_mask=370.
+    Idempotent: default assistant AICO as npc_agent in Singularity Room, trait_mask=370.
     Requires npc_agent NodeType and root room; no-op if already present.
     """
     import uuid as uuid_lib
@@ -213,7 +216,7 @@ def ensure_aico_npc_agent(session) -> bool:
         type_id=nt.id,
         type_code="npc_agent",
         name="AICO",
-        description="CampusWorld default assistant (F03)",
+        description="CampusWorld default assistant",
         is_active=True,
         is_public=True,
         access_level="normal",
@@ -227,7 +230,7 @@ def ensure_aico_npc_agent(session) -> bool:
             "trigger_mode": "nlp",
             "decision_mode": "llm",
             "cognition_profile_ref": "pdca_v1",
-            "tool_allowlist": ["help", "look", "time", "version", "agent_capabilities", "agent_tools"],
+            "tool_allowlist": ["help", "look", "time", "version", "agent", "agent_capabilities", "agent_tools"],
             "model_config_ref": "aico",
             "service_account_id": None,
             "version": "1",

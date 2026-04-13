@@ -1,7 +1,7 @@
 """
-F01 bit semantics v1 for `trait_mask` (BIGINT).
+Bit semantics for ``trait_mask`` (BIGINT) on graph nodes.
 
-Canonical documentation: docs/database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md
+Canonical documentation: ``docs/database/SPEC/features/`` (trait class / mask).
 """
 
 from __future__ import annotations
@@ -32,5 +32,5 @@ LOCATION_RELATIONSHIP_EDGE = CONCEPTUAL | SPATIAL  # 5 (connects_to / contains /
 
 MASK_QUERY_ZERO_DESCRIPTION = (
     "trait_mask 过滤：0 表示不按位过滤（全量）。非 0 时使用按位与匹配；"
-    "各位含义见 F01 SPEC 与 app.constants.trait_mask。"
+    "各位含义见数据库 SPEC 与本模块常量说明。"
 )

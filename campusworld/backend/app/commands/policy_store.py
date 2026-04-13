@@ -73,6 +73,7 @@ class CommandPolicyRepository:
         enabled: bool = True,
         scope: str = "global",
         updated_by: Optional[str] = None,
+        commit: bool = True,
     ) -> CommandPolicy:
         row = self.get_policy(command_name)
         if row is None:
@@ -98,8 +99,11 @@ class CommandPolicyRepository:
             row.updated_at = datetime.utcnow()
             self.session.add(row)
 
-        self.session.commit()
-        self.session.refresh(row)
+        if commit:
+            self.session.commit()
+            self.session.refresh(row)
+        else:
+            self.session.flush()
         return row
 
     def to_policy_dict(self, row: CommandPolicy) -> Dict[str, Any]:
@@ -148,7 +152,9 @@ def ensure_default_command_policies(session: Session) -> int:
             required_roles_any=seed["required_roles_any"],
             enabled=True,
             updated_by="bootstrap",
+            commit=False,
         )
         created += 1
+    session.commit()
     return created
 

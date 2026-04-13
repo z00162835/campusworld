@@ -1,4 +1,4 @@
-"""F02 Agent runtime: cognition frameworks, memory port, tools, worker registry."""
+"""Agent runtime: cognition frameworks, memory port, tools, worker registry."""
 
 from app.game_engine.agent_runtime.registry import (
     AgentWorkerRegistry,

@@ -1,4 +1,4 @@
-"""F02 agent commands integration (PostgreSQL)."""
+"""Agent commands integration: capabilities, tools, run, NLP (PostgreSQL)."""
 
 from __future__ import annotations
 

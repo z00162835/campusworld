@@ -1,5 +1,5 @@
 """
-Default F11 `data_access` blobs for seeded accounts (see F11 SPEC).
+Default ``data_access`` blobs for seeded accounts (see ``docs/models/SPEC/``).
 
 Admin: open template (empty lists = no restriction per axis), empty denies.
 Dev: open graph for debugging; still no RBAC data short-circuit — wide template.

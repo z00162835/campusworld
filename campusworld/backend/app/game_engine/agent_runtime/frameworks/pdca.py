@@ -22,8 +22,8 @@ class PDCAPhase(str, Enum):
 
 class PDCAFramework(ThinkingFramework):
     """
-    Plan → Do → Check → Act. Sample D (rules): high-severity ticket → record
-    `graph.patch_device_state` in command_trace (placeholder command name per F02).
+    Plan → Do → Check → Act. Rules sample: high-severity ticket → record
+    ``graph.patch_device_state`` in command_trace (placeholder command name).
     """
 
     def __init__(self, memory: MemoryPort, tools: Optional[ToolExecutor] = None):
@@ -56,7 +56,7 @@ class PDCAFramework(ThinkingFramework):
             "running",
         )
 
-        # Do — rules path (F02 sample D)
+        # Do — rules-based sample path
         severity = str(ctx.payload.get("severity", "")).lower()
         device_node_id = ctx.payload.get("device_node_id")
         patch: Dict[str, Any] = {}

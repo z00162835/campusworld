@@ -168,7 +168,7 @@ async def get_api_principal(
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ) -> APIPrincipal:
     """
-    F10 API 统一鉴权主体。
+    HTTP API 统一鉴权主体（图读等端点复用）。
 
     支持二选一：
     - Bearer JWT（复用 HTTP 用户上下文）

@@ -1,7 +1,6 @@
-"""
-F02: Long-term memory semantic search (pgvector) and LTM–LTM link expansion.
+"""Long-term memory semantic search (pgvector) and LTM–LTM link expansion.
 
-See docs/models/SPEC/features/F02_LTM_VECTORS_AND_MEMORY_LINKS.md
+Schema and behavior contracts live under ``docs/models/SPEC/features/``.
 """
 
 from __future__ import annotations
@@ -167,7 +166,7 @@ def build_ltm_memory_context_for_tick(
     max_chars: int = 2000,
 ) -> Optional[str]:
     """
-    Concatenate recent LTM row summaries for NLP memory_context injection (F03 optional).
+    Concatenate recent LTM row summaries for optional NLP memory_context injection.
 
     Newest rows first. Does not require embeddings; semantic KNN via
     search_ltm_by_embedding can be added when a query embedding pipeline exists.

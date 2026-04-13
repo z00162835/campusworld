@@ -28,7 +28,7 @@ class ToolExecutor(Protocol):
 
 @dataclass
 class RegistryToolExecutor:
-    """Command-registry backed executor (F02 default)."""
+    """Command-registry backed tool executor (default integration)."""
 
     def list_tool_ids(
         self,
@@ -61,7 +61,7 @@ class RegistryToolExecutor:
 
 @dataclass
 class ToolRouter:
-    """Resolves tool ids from agent node allowlist (F02 §10)."""
+    """Resolves tool ids from the agent node's tool allowlist."""
 
     allowlist: List[str] = field(default_factory=list)
 

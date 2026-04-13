@@ -9,7 +9,6 @@ from app.commands.init_commands import initialize_commands
 from app.commands.invoke import invoke_command_line
 from app.commands.policy_store import CommandPolicyRepository
 
-
 def _policy(*, enabled=True, any_perms=None, all_perms=None, roles_any=None):
     m = MagicMock()
     m.enabled = enabled

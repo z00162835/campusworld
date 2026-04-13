@@ -37,7 +37,7 @@ export const useSpacesStore = defineStore('spaces', () => {
 
   // UI state
   const loading = ref(false)
-  const currentPage = ref(0)
+  const currentPage = ref(1)  // 1-indexed for pagination compatibility
   const pageSize = ref(24)
 
   // Detail drawer state
@@ -50,27 +50,43 @@ export const useSpacesStore = defineStore('spaces', () => {
   const hasMore = computed(() => currentNodes.value.length < currentTotal.value)
 
   // Actions
-  async function fetchSpaces(tab?: SpaceTab) {
+  async function fetchSpaces(tab?: SpaceTab, offset?: number, append = false) {
     const targetTab = tab || activeTab.value
     loading.value = true
 
     try {
+      // For load more (append), offset is current length
+      // For fresh load (not append), use provided offset or calculate from currentPage
+      // currentPage is 1-indexed, so offset = (currentPage - 1) * pageSize
+      const apiOffset = append
+        ? nodes.value[targetTab].length
+        : (offset ?? (currentPage.value - 1) * pageSize.value)
+
       const response = await spacesApi.getSpaces({
         type_code: targetTab,
         name_like: searchKeyword.value || undefined,
         world_id: targetTab !== 'world' ? filters.value.world_id : undefined,
         building_id: targetTab === 'floor' || targetTab === 'room' ? filters.value.building_id : undefined,
         floor_id: targetTab === 'room' ? filters.value.floor_id : undefined,
-        offset: 0, // Always start from 0 for fresh load
+        offset: apiOffset,
         limit: pageSize.value,
       })
 
       const { items, page } = response.data
 
-      // Store data for the target tab
-      nodes.value[targetTab] = items
+      // Store data for the target tab - append or replace
+      if (append) {
+        nodes.value[targetTab] = [...nodes.value[targetTab], ...items]
+      } else {
+        nodes.value[targetTab] = items
+      }
       totalCounts.value[targetTab] = page.total
-      currentPage.value = 0
+      // Update currentPage after fetch
+      if (append) {
+        // For load more, calculate the page we ended up on
+        currentPage.value = Math.ceil(nodes.value[targetTab].length / pageSize.value)
+      }
+      // For non-append, currentPage is already correct (set by pagination or setActiveTab)
     } catch (error) {
       console.error('Failed to fetch spaces:', error)
     } finally {
@@ -80,12 +96,11 @@ export const useSpacesStore = defineStore('spaces', () => {
 
   async function loadMore() {
     if (loading.value || !hasMore.value) return
-    currentPage.value++
-    await fetchSpaces()
+    await fetchSpaces(undefined, undefined, true)
   }
 
   async function refresh() {
-    currentPage.value = 0
+    currentPage.value = 1
     nodes.value[activeTab.value] = []
     await fetchSpaces()
   }
@@ -93,15 +108,15 @@ export const useSpacesStore = defineStore('spaces', () => {
   function setActiveTab(tab: SpaceTab) {
     if (activeTab.value === tab) return
     activeTab.value = tab
-    currentPage.value = 0
+    currentPage.value = 1  // Reset to first page
     // Reset filters when switching tabs (except world-level filters)
     if (tab !== 'world') {
       filters.value = {
         world_id: filters.value.world_id,
       }
     }
-    // Always fetch data when switching tabs
-    fetchSpaces(tab)
+    // Always fetch data when switching tabs with explicit offset=0
+    fetchSpaces(tab, 0, false)
   }
 
   function setViewMode(mode: ViewMode) {

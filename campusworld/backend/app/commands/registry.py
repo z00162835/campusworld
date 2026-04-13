@@ -34,10 +34,11 @@ class CommandRegistry:
             if not command.name:
                 self.logger.error("命令名称不能为空")
                 return False
-            
-            # 检查命令名是否已存在
+
+            # force_reinit 等场景会重复注册同一批命令实例；若不先卸下旧索引，
+            # commands_by_type / command_groups 会累积重复引用，拖慢后续遍历（如策略引导）。
             if command.name in self.commands:
-                self.logger.warning(f"命令 '{command.name}' 已存在，将被覆盖")
+                self.unregister_command(command.name)
             
             # 注册主命令名
             self.commands[command.name] = command

@@ -1,4 +1,4 @@
-"""F02 LTM semantic extension: vector KNN + link graph (PostgreSQL + pgvector)."""
+"""LTM semantic retrieval: vector KNN + link graph (PostgreSQL + pgvector)."""
 
 from __future__ import annotations
 

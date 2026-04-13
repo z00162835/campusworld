@@ -1,4 +1,4 @@
-"""Unit tests for F04 try_dispatch_at_line."""
+"""Unit tests for try_dispatch_at_line (line-prefix assistant dispatch)."""
 
 from __future__ import annotations
 

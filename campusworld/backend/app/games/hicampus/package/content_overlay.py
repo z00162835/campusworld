@@ -1,5 +1,5 @@
 """
-F07: apply spatial description attributes to existing graph nodes (package_node_id + world_id).
+Apply spatial description attributes to existing graph nodes (package_node_id + world_id).
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Unit tests: F01 v1 trait_mask constants match documented composites."""
+"""Unit tests: trait_mask constants match documented composites."""
 
 from __future__ import annotations
 

@@ -47,7 +47,7 @@ class MemoryPort(Protocol):
 
 
 class SqlAlchemyMemoryPort:
-    """F02 tables backed MemoryPort."""
+    """MemoryPort backed by agent_memory / agent_run / LTM SQL tables."""
 
     def __init__(self, session: Session, agent_node_id: int):
         self._session = session

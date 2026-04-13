@@ -1,4 +1,4 @@
-"""F02 agent memory tables: migration + ORM roundtrip."""
+"""Agent memory tables: migration + ORM roundtrip."""
 
 from __future__ import annotations
 

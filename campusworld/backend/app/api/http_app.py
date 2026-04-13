@@ -22,17 +22,10 @@ logger = get_logger(LoggerNames.API)
 
 @asynccontextmanager
 async def _http_app_lifespan(app: FastAPI):
-    """注册命令系统：原先仅在 SSH 控制台首次连接时 initialize_commands，CLI/纯 WS 会拿到空 registry。"""
-    from app.commands.init_commands import initialize_commands
+    """轻量 lifespan：触发命令系统后台预热，不阻塞 HTTP 启动。"""
+    from app.commands.init_commands import trigger_command_init_warmup
 
-    ok = initialize_commands()
-    if not ok:
-        logger.error(
-            "initialize_commands returned false (e.g. DB/policy bootstrap); "
-            "commands may be partially registered — check logs"
-        )
-    else:
-        logger.info("Command registry initialized for HTTP/WebSocket/CLI")
+    trigger_command_init_warmup()
     yield
 
 

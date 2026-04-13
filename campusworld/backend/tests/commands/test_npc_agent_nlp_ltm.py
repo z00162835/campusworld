@@ -1,4 +1,4 @@
-"""Contract tests for optional LTM hook in npc_agent_nlp (F03)."""
+"""Contract tests for optional LTM hook in npc_agent_nlp."""
 
 from __future__ import annotations
 

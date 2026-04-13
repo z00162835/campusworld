@@ -1,4 +1,4 @@
-"""Unit tests for F11 data_access policy (no DB)."""
+"""Unit tests for data_access policy helpers (no DB)."""
 
 from unittest.mock import MagicMock
 

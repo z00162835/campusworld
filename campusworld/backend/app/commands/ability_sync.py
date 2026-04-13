@@ -123,9 +123,13 @@ def ensure_command_ability_nodes(session: Session) -> int:
             tags=["system", "ability", "command_ability", "command", command_type],
         )
         session.add(node)
-        session.commit()
-        session.refresh(node)
         touched += 1
 
+    try:
+        session.commit()
+    except Exception as e:
+        logger.error("command ability batch commit failed: %s", e)
+        session.rollback()
+        raise
     return touched
 

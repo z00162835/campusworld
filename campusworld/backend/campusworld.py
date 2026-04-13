@@ -223,7 +223,6 @@ class CampusWorld:
             max_connections = ssh_config.get('max_connections', 10)
 
             self.logger.info(f"SSH配置: host={host}, port={port}, max_connections={max_connections}")
-
             self.ssh_server = CampusWorldSSHServer(host=host, port=port)
             self.ssh_server.start()
 

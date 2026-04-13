@@ -33,5 +33,13 @@ def initialize_build_commands():
         return None
 
 
-# 自动初始化
-build_cmdset = initialize_build_commands()
+# 惰性初始化：禁止在模块 import 时访问 DB（否则 campusworld 导入链会在 PostgreSQL 不可达时长时间挂死）
+_build_cmdset = None
+
+
+def get_build_cmdset():
+    """首次调用时初始化建造命令（需数据库可用）。"""
+    global _build_cmdset
+    if _build_cmdset is None:
+        _build_cmdset = initialize_build_commands()
+    return _build_cmdset

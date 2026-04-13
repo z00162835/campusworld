@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
-from app.game_engine.agent_runtime.worker import AgentWorker, SysSampleWorker
+if TYPE_CHECKING:
+    from app.game_engine.agent_runtime.worker import AgentWorker
+else:
+    AgentWorker = Any
 
 
 class AgentWorkerRegistry:
@@ -26,6 +29,8 @@ default_worker_registry = AgentWorkerRegistry()
 
 
 def get_worker_for_typeclass(typeclass: str) -> Type[AgentWorker]:
+    from app.game_engine.agent_runtime.worker import SysSampleWorker
+
     # app.models.things.agents.NpcAgent — default sample worker
     if "NpcAgent" in typeclass or typeclass.endswith("agents.NpcAgent"):
         return SysSampleWorker

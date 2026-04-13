@@ -11,7 +11,7 @@ def apply_model_config_from_attributes(
     node_attributes: Optional[Dict[str, Any]],
 ) -> AgentLlmServiceConfig:
     """
-    Merge F03 nodes.attributes.model_config (non-secret whitelist only).
+    Merge ``nodes.attributes.model_config`` (non-secret whitelist only).
 
     Allowed keys: temperature, max_tokens, model. Applied after YAML, before prompt_overrides.
     """
@@ -40,7 +40,7 @@ def apply_model_config_from_attributes(
 
 def apply_prompt_overrides(cfg: AgentLlmServiceConfig, prompt_overrides: Dict[str, Any]) -> AgentLlmServiceConfig:
     """
-    Merge F03 nodes.attributes.prompt_overrides into YAML-resolved config.
+    Merge ``nodes.attributes.prompt_overrides`` into YAML-resolved config.
 
     Only non-secret fields allowed: system_prompt, phase_prompts (same keys as YAML).
     Unknown keys are ignored. phase_prompts merges by key on top of cfg.phase_prompts.
@@ -91,7 +91,7 @@ def resolve_agent_llm_config(
     Priority: YAML `agents.llm.by_service_id[<model_config_ref>]` if set,
     else `agents.llm.by_service_id[<service_id>]`, else Pydantic defaults;
     then nodes.attributes.model_config (whitelist: temperature, max_tokens, model);
-    then nodes.attributes.prompt_overrides (system_prompt / phase_prompts only, F03 §5.4).
+    then nodes.attributes.prompt_overrides (system_prompt / phase_prompts only).
     """
     cfg = AgentLlmServiceConfig()
     cm = get_config()

@@ -1,4 +1,4 @@
-"""F07: spatial description merge, P0 validation, and overlay helpers."""
+"""HiCampus spatial description merge, P0 validation, and overlay helpers."""
 
 from __future__ import annotations
 

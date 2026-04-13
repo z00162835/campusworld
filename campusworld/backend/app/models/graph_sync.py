@@ -612,7 +612,8 @@ class GraphSynchronizer:
         """获取所有节点类型"""
         try:
             session = self._get_db_session()
-            return NodeType.get_active_types(session)
+            rows = NodeType.get_active_types(session)
+            return rows
         except Exception as e:
             self.logger.error(f"获取所有节点类型失败: {e}")
             return []

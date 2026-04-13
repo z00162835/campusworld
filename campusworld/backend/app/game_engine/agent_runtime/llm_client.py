@@ -5,8 +5,6 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Protocol, runtime_checkable
 
-import httpx
-
 from app.core.settings import PhaseLlmMode
 
 
@@ -65,6 +63,8 @@ class OpenAiCompatibleHttpLlmClient:
         self._timeout = timeout_sec
 
     def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec] = None) -> str:
+        import httpx
+
         spec = call_spec or LlmCallSpec()
         model = (spec.model or self._default_model).strip() or self._default_model
         temperature = (

@@ -114,6 +114,32 @@
 | **M1** | 注册 **`agent`**，`list` + `status`；状态推导 **仅依赖** `nodes` + `agent_run_records`。 |
 | **M2** | F11 细粒度过滤；与 **`enabled`** 之外的维护模式字段对齐（若有）。 |
 
+## 11. 实现缺口、优化 backlog 与依赖 TODO（后续修改）
+
+> 本节记录 **当前实现与 §4–§7 目标之间的差距**、**非阻塞优化**，以及 **按依赖排序的待办**，供后续迭代勾选。实现锚点见文首 [`agent_commands.py`](../../../../backend/app/commands/agent_commands.py)。
+
+### 11.1 主要缺口（相对本 SPEC）
+
+| 缺口 | 说明 | 依赖 |
+|------|------|------|
+| **§4 可见性未按 F11 过滤** | 若未做细粒度 `data_access`，允许退化为「已认证可读全部活跃 `npc_agent`」（§4.2）；当前实现等价于该退化，但 **未** 在代码路径上预留/接入「按主体可读节点」过滤。 | **F11**（[`F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)）；图读 API 与 `CommandContext` 主体对齐后，在 `agent list` / `agent status` 前统一过滤。 |
+| **`working` 推导与 §5 文字口径** | §5 允许「`status=running`」**或**「`ended_at` 空且 `phase` 非终态」；实现若 **仅** 认 `status='running'` + `ended_at IS NULL`，须在 **写入侧** 保证运行中记录始终满足该组合，否则脏数据可能误显 `idle`。 | 与 **`agent_run` / Worker 写入**（F02）约定单一真源；若需兼容历史脏数据，再扩展查询条件（需与 DBA/运维对齐）。 |
+| **§7 `policy_bootstrap` 显式性** | `agent` 默认可与 `agent_capabilities` 同级（空要求即放行）；若代码侧 **`DEFAULT_COMMAND_POLICIES` 无显式条目**，易误判为漏配。 | 文档/种子策略（[`policy_bootstrap.py`](../../../../backend/app/commands/policy_bootstrap.py)）补一行说明或显式空 seed，**不**改变默认放行语义。 |
+
+### 11.2 优化 backlog（非功能缺口）
+
+- **`agent list` 查询效率**：对每个 agent 单独查 `agent_run_records` 易产生 N+1；宜改为一次查询得到「当前 `working`」的 `agent_node_id` 集合，再组装行（仍仅以库表为准，§5）。
+- **`agent status` 的 `detail`（§6.2）**：首版可不实现；需要运维排障时再 join 当前运行行，输出 `phase`、`correlation_id` 等（与 list 同构 + 扩展字段）。
+- **实现注释**：在 list/status 入口注明「§4 v1 退化 / 待 F11 过滤」，避免后续读者误以为已做图级 ACL。
+
+### 11.3 依赖 TODO 清单（后续修改时按序勾选）
+
+- [ ] **F11 就绪后**：实现 `npc_agent` 节点集合的 **读可见性过滤**（与 HTTP/SSH 图读一致），接入 `agent list`；`agent status` 在解析到节点后同样校验「对当前主体可读」，不可读则走 §6.2 统一错误（与「不存在」不区分）。
+- [ ] **与 F02 对齐**：文档或代码注释中明确 **`working`** 的 **单一真源**（推荐：`agent_run_records.status='running'` 且 `ended_at` 为空）；若 Worker 写入规范变更，同步更新 §5 表格与 `derive_agent_status` 实现。
+- [ ] **`policy_bootstrap`**：为命令名 **`agent`** 增加与 `agent_capabilities` 一致的说明或显式空策略条目（见 §11.1），并视需要在迁移/种子文档中提及。
+- [ ] **性能**：`agent list` 批量解析 `working` 状态，避免按行查询 `agent_run_records`（见 §11.2）。
+- [ ] **可选**：`agent status` 在 M2 增加 **`detail`** 块（运行中 `phase`、`correlation_id` 等），字段与 F02 表结构一致。
+
 ---
 
 ## 附录 — 与 F03 AICO

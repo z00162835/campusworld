@@ -152,7 +152,7 @@ def create_node(
         is_active=payload.is_active,
         is_public=payload.is_public,
         access_level=payload.access_level,
-        # Instance trait fields are derived from type_code (F01/F10 contract).
+        # Instance trait fields are derived from the node type (type_code).
         trait_class=node_type.trait_class,
         trait_mask=int(node_type.trait_mask or 0),
         location_id=payload.location_id,
@@ -339,7 +339,7 @@ def create_relationship(
         tags=payload.tags,
         is_active=payload.is_active,
         weight=payload.weight,
-        # Instance trait fields are derived from type_code (F01/F10 contract).
+        # Instance trait fields are derived from the node type (type_code).
         trait_class=rel_type.trait_class,
         trait_mask=int(rel_type.trait_mask or 0),
     )

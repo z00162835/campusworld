@@ -1,7 +1,7 @@
 """
-F02: Agent memory and run audit tables (ORM).
+Agent memory and run audit tables (ORM).
 
-DDL + indexes: db/schemas/database_schema.sql (f02_agent_memory).
+DDL + indexes: ``db/schemas/database_schema.sql`` (agent memory section).
 """
 
 from __future__ import annotations
@@ -63,7 +63,7 @@ class AgentLongTermMemory(Base):
 
 
 class AgentLongTermMemoryLink(Base):
-    """Directed edges between LTM rows (same agent). See F02_LTM_VECTORS_AND_MEMORY_LINKS.md §3."""
+    """Directed edges between LTM rows for the same agent."""
 
     __tablename__ = "agent_long_term_memory_links"
 

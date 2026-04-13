@@ -1,5 +1,5 @@
 """
-F11 data_access JSON schema (account Node.attributes.data_access).
+data_access JSON schema (account ``Node.attributes.data_access``).
 
 Semantics (implementation v1):
 - Missing or invalid `data_access` → deny all graph/ontology instance access.
@@ -43,7 +43,7 @@ class PermissionTemplate(BaseModel):
 
 
 class DataAccessV1(BaseModel):
-    """F11 v1 policy attached to account nodes."""
+    """Version 1 data access policy attached to account nodes."""
 
     model_config = ConfigDict(extra="ignore")
 

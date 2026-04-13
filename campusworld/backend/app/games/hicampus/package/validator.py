@@ -481,7 +481,7 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
     if not required_rooms.issubset(room_ids):
         raise DataPackageError(ERROR_WORLD_DATA_BASELINE_MISMATCH, "missing gate/bridge/plaza")
 
-    # L5a: optional description sidecars + row normalization + spatial P0 (F07)
+    # L5a: optional description sidecars + row normalization + spatial P0 completeness
     spatial_pre = {"buildings": buildings, "floors": floors, "rooms": rooms}
     merge_description_sidecars(data_root, spatial_pre)
     normalize_spatial_rows(spatial_pre)
