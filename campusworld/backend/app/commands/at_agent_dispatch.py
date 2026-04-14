@@ -1,4 +1,4 @@
-"""Dispatch `@<handle> <payload>` to npc_agent NLP tick (same behavior as agent_nlp)."""
+"""Dispatch `@<handle> <payload>` to npc_agent NLP tick (shared engine with `aico`)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import Optional
 
 from app.commands.base import CommandContext, CommandResult
 from app.commands.npc_agent_resolve import resolve_npc_agent_by_handle
-from app.commands.npc_agent_nlp import format_nlp_tick_result, run_npc_agent_nlp_tick
+from app.commands.npc_agent_nlp import assistant_nlp_command_result, run_npc_agent_nlp_tick
 from app.commands.registry import command_registry
 from app.commands.shell_words import split_command_line
 
@@ -32,7 +32,7 @@ def try_dispatch_at_line(command_line: str, context: CommandContext) -> Optional
             "usage: @<handle> <message>. Type 'help' for available commands."
         )
 
-    ref = command_registry.get_command("agent_nlp")
+    ref = command_registry.get_command("aico")
     if ref:
         decision = command_registry.authorize_command(ref, context)
         if not decision.allowed:
@@ -54,4 +54,5 @@ def try_dispatch_at_line(command_line: str, context: CommandContext) -> Optional
 
     res = run_npc_agent_nlp_tick(context.db_session, node, context, message)
     context.db_session.commit()
-    return CommandResult.success_result(format_nlp_tick_result(res))
+    sid = str((node.attributes or {}).get("service_id") or handle)
+    return assistant_nlp_command_result(handle, res, service_id=sid)

@@ -381,6 +381,8 @@ def run_graph_seed(
     """
     Execute idempotent seed inside an open SQLAlchemy session (caller commits).
 
+    Uses only the passed ``session`` (no nested ``db_session_context`` / extra pools).
+
     If strict_relationships is True (or profile.strict_relationships), any snapshot
     relationship whose rel_type_code is not in profile.allowed_relationship_type_codes
     raises GraphSeedError(GRAPH_SEED_RELATIONSHIP_UNSUPPORTED). Otherwise those rows are

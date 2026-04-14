@@ -12,7 +12,7 @@
 
 ## 1. Goal
 
-- 提供 **统一入口** **`agent`**，以 **子命令** 扩展（与 `world`、`notice` 等模式一致），避免继续堆叠无关联的顶层 `agent_*` 命令名（既有 `agent_capabilities` / `agent_tools` / `agent_run` 可逐步迁移为 `agent` 子命令，**非本 SPEC 强制**）。
+- 提供 **统一入口** **`agent`**，以 **子命令** 扩展（与 `world`、`notice` 等模式一致），避免继续堆叠无关联的顶层 `agent_*` 命令名（既有 `agent_capabilities` / `agent_tools` 可逐步迁入 `agent` 子命令，**非本 SPEC 强制**）。
 - **首版必做**：**`agent list`** — 列出当前调用方 **可见** 的 Agent（`type_code=npc_agent`）摘要，含 **状态** 字段。
 - **首版必做**：**`agent status <service_id>`** — 查询单个可见 Agent 的 **状态** 与关键展示字段（与 list 中单行语义一致）。
 - **调用方**：**终端用户**（SSH/HTTP 同源 `CommandContext`）与 **另一 Agent**（例如通过 `invoke_command_line` 或运行时委派）均可调用；**有效权限** 由 **F11 + `command_policies`** 决定。
@@ -97,7 +97,7 @@
 |----------|------|
 | `agent_capabilities <service_id>` | 偏 **静态能力**；**`agent list`** 偏 **目录 + 动态状态**。可并存。 |
 | `agent_tools` | 工具枚举；不变。 |
-| `agent_run` | 触发运行；**`working`** 状态应与其写入的 **运行记录** 一致。 |
+| `aico` / `@<handle>` 等 NLP 入口 | 由 Agent 运行时写入 **`agent_run_records`**；**`working`** 状态以该表为准（见 §5），**不**依赖已移除的顶层调试命令。 |
 
 ## 9. 验收标准（建议）
 
@@ -123,7 +123,7 @@
 | 缺口 | 说明 | 依赖 |
 |------|------|------|
 | **§4 可见性未按 F11 过滤** | 若未做细粒度 `data_access`，允许退化为「已认证可读全部活跃 `npc_agent`」（§4.2）；当前实现等价于该退化，但 **未** 在代码路径上预留/接入「按主体可读节点」过滤。 | **F11**（[`F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)）；图读 API 与 `CommandContext` 主体对齐后，在 `agent list` / `agent status` 前统一过滤。 |
-| **`working` 推导与 §5 文字口径** | §5 允许「`status=running`」**或**「`ended_at` 空且 `phase` 非终态」；实现若 **仅** 认 `status='running'` + `ended_at IS NULL`，须在 **写入侧** 保证运行中记录始终满足该组合，否则脏数据可能误显 `idle`。 | 与 **`agent_run` / Worker 写入**（F02）约定单一真源；若需兼容历史脏数据，再扩展查询条件（需与 DBA/运维对齐）。 |
+| **`working` 推导与 §5 文字口径** | §5 允许「`status=running`」**或**「`ended_at` 空且 `phase` 非终态」；实现若 **仅** 认 `status='running'` + `ended_at IS NULL`，须在 **写入侧** 保证运行中记录始终满足该组合，否则脏数据可能误显 `idle`。 | 与 **Agent Worker / 运行时写入**（F02）约定单一真源；若需兼容历史脏数据，再扩展查询条件（需与 DBA/运维对齐）。 |
 | **§7 `policy_bootstrap` 显式性** | `agent` 默认可与 `agent_capabilities` 同级（空要求即放行）；若代码侧 **`DEFAULT_COMMAND_POLICIES` 无显式条目**，易误判为漏配。 | 文档/种子策略（[`policy_bootstrap.py`](../../../../backend/app/commands/policy_bootstrap.py)）补一行说明或显式空 seed，**不**改变默认放行语义。 |
 
 ### 11.2 优化 backlog（非功能缺口）

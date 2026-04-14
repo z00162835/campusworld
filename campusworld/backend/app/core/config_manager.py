@@ -81,7 +81,7 @@ class ConfigManager:
     def __init__(self):
         """
         初始化配置管理器
-        
+
         Args:
             config_dir: 配置文件目录
             env: 环境名称 (dev, test, prod)
@@ -96,29 +96,41 @@ class ConfigManager:
         self.env = os.getenv("ENVIRONMENT", "development")
         self.logger = get_logger("campusworld.config_manager")
         self._config_cache = {}
+
+        # 关键：先赋值全局实例，防止循环调用导致递归
+        global _config_manager_instance
+        _config_manager_instance = self
+
         self._load_config()
-    
+
     def _load_config(self):
         """加载配置文件"""
         try:
             loader = ConfigLoader(self.config_dir, self.env)
-            
+
             # 加载基础配置
             base_config = loader.load_base_config()
             if not base_config:
                 raise RuntimeError(f"基础配置文件不存在: {self.config_dir}/settings.yaml")
-            
+
             # 加载环境配置
             env_config = loader.load_env_config()
-            
+
             # 合并配置
             self._config_cache = loader._merge_config(base_config, env_config)
-            
+
             # 应用环境变量覆盖
             self._apply_env_overrides()
-            
+
             self.logger.info(f"配置加载成功，环境: {self.env}")
-            
+
+            try:
+                from app.game_engine.agent_runtime.agent_llm_config import refresh_aico_system_llm_config
+
+                refresh_aico_system_llm_config()
+            except Exception as e:
+                self.logger.warning("refresh_aico_system_llm_config failed (non-fatal): %s", e)
+
         except Exception as e:
             self.logger.error(f"配置加载失败: {e}")
             raise RuntimeError(f"配置加载失败: {e}")

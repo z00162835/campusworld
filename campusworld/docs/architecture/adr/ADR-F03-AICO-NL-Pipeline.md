@@ -6,7 +6,7 @@ Accepted — 2026-04-12 (updated: node-sourced phase_llm, prompt_overrides, LTM 
 
 ## Context
 
-F03 requires the default assistant **AICO** to use **natural language** input, **PDCA** cognition aligned with `agent_run_records.phase`, optional **memory** injection, and **LLM** calls with configurable **system** and **per-phase** prompts. The earlier **rules-only** `PDCAFramework` sample remains for `agent_run` / sys_worker tickets.
+F03 requires the default assistant **AICO** to use **natural language** input, **PDCA** cognition aligned with `agent_run_records.phase`, optional **memory** injection, and **LLM** calls with configurable **system** and **per-phase** prompts. The **rules-only** `PDCAFramework` / **`SysSampleWorker`** path remains for non-LLM `npc_agent` tickets; there is **no** dedicated top-level `agent_run` command.
 
 ## Decision
 
@@ -18,9 +18,9 @@ F03 requires the default assistant **AICO** to use **natural language** input, *
 
 4. **`LlmPDCAFramework`** implements Plan → Do → Check → Act with per-phase **`call_spec`**; **`framework_id`** is **`PDCA_LLM`**.
 
-5. **`LlmPdcaAssistantWorker`** binds **`SqlAlchemyMemoryPort`**, **`RegistryToolExecutor`**, and **`LlmPDCAFramework`**. Shared entry: **`run_npc_agent_nlp_tick`** ([`npc_agent_nlp.py`](../../../backend/app/commands/npc_agent_nlp.py)) used by **`agent_nlp`**, **`aico`**, and **`@handle`** dispatch.
+5. **`LlmPdcaAssistantWorker`** binds **`SqlAlchemyMemoryPort`**, **`RegistryToolExecutor`**, and **`LlmPDCAFramework`**. Shared entry: **`run_npc_agent_nlp_tick`** ([`npc_agent_nlp.py`](../../../backend/app/commands/npc_agent_nlp.py)) used by **`aico`** and **`@handle`** dispatch.
 
-6. **F04 `@<handle>`**: **`try_dispatch_at_line`** ([`at_agent_dispatch.py`](../../../backend/app/commands/at_agent_dispatch.py)) runs before normal command resolution in **`SSHHandler`** and **`HTTPHandler`**. Requires the same authorization as **`agent_nlp`**.
+6. **F04 `@<handle>`**: **`try_dispatch_at_line`** ([`at_agent_dispatch.py`](../../../backend/app/commands/at_agent_dispatch.py)) runs before normal command resolution in **`SSHHandler`** and **`HTTPHandler`**. Requires the same authorization as **`aico`** (`authorize_command(aico)`).
 
 7. **Optional LTM**: When YAML **`extra.enable_ltm`** is true, **`run_npc_agent_nlp_tick`** calls **`build_ltm_memory_context_for_tick`** ([`ltm_semantic_retrieval.py`](../../../backend/app/services/ltm_semantic_retrieval.py)) to populate **`memory_context`** (recent LTM summaries; semantic KNN may extend when query embeddings are available).
 

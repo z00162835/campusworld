@@ -5,6 +5,9 @@ from typing import Any, Dict, Optional
 from app.core.config_manager import get_config
 from app.core.settings import AgentLlmServiceConfig
 
+# Materialized YAML slice for default AICO (service_id / model_config_ref both aico); refreshed on config load/reload.
+_aico_system_llm_base: Optional[AgentLlmServiceConfig] = None
+
 
 def apply_model_config_from_attributes(
     cfg: AgentLlmServiceConfig,
@@ -79,6 +82,75 @@ def apply_prompt_overrides_from_attributes(
     return apply_prompt_overrides(cfg, raw)
 
 
+def yaml_llm_base_from_by_service_id(
+    service_id: str,
+    model_config_ref: Optional[str] = None,
+) -> AgentLlmServiceConfig:
+    """
+    Parse ``agents.llm.by_service_id`` for one logical service (no node merge).
+
+    Same key resolution as the YAML half of ``resolve_agent_llm_config``.
+    """
+    cfg = AgentLlmServiceConfig()
+    cm = get_config()
+    by_sid = cm.get_nested("agents", "llm", "by_service_id", default=None)
+    if isinstance(by_sid, dict):
+        ref = model_config_ref or service_id
+        raw = by_sid.get(ref)
+        if raw is None and ref != service_id:
+            raw = by_sid.get(service_id)
+        if raw is not None and isinstance(raw, dict):
+            cfg = AgentLlmServiceConfig.model_validate(raw)
+    return cfg
+
+
+def refresh_aico_system_llm_config() -> None:
+    """Re-read AICO YAML base from current ConfigManager cache (call after load/reload)."""
+    global _aico_system_llm_base
+    _aico_system_llm_base = yaml_llm_base_from_by_service_id("aico", "aico")
+
+
+def invalidate_aico_system_llm_config() -> None:
+    """Clear cached AICO YAML base (tests / forced cold read)."""
+    global _aico_system_llm_base
+    _aico_system_llm_base = None
+
+
+def merge_aico_system_llm_with_node(
+    node_attributes: Optional[Dict[str, Any]],
+) -> AgentLlmServiceConfig:
+    """Merge materialized AICO YAML base with node whitelist (model_config, prompt_overrides)."""
+    base = _aico_system_llm_base
+    if base is None:
+        base = yaml_llm_base_from_by_service_id("aico", "aico")
+    cfg = base.model_copy(deep=True)
+    cfg = apply_model_config_from_attributes(cfg, node_attributes)
+    return apply_prompt_overrides_from_attributes(cfg, node_attributes)
+
+
+def uses_aico_materialized_yaml_base(service_id: str, model_config_ref: Optional[str]) -> bool:
+    """True when tick can use init-time AICO YAML materialization (default built-in assistant keys)."""
+    sid = (service_id or "").strip().lower()
+    ref = (str(model_config_ref).strip().lower() if model_config_ref else None) or sid
+    return sid == "aico" and ref == "aico"
+
+
+def resolve_agent_llm_config_for_npc_tick(
+    service_id: str,
+    *,
+    model_config_ref: Optional[str] = None,
+    node_attributes: Optional[Dict[str, Any]] = None,
+) -> AgentLlmServiceConfig:
+    """Hot path: AICO default uses materialized YAML + node merge; other agents use full resolve."""
+    if uses_aico_materialized_yaml_base(service_id, model_config_ref):
+        return merge_aico_system_llm_with_node(node_attributes)
+    return resolve_agent_llm_config(
+        service_id,
+        model_config_ref=model_config_ref,
+        node_attributes=node_attributes,
+    )
+
+
 def resolve_agent_llm_config(
     service_id: str,
     *,
@@ -93,15 +165,6 @@ def resolve_agent_llm_config(
     then nodes.attributes.model_config (whitelist: temperature, max_tokens, model);
     then nodes.attributes.prompt_overrides (system_prompt / phase_prompts only).
     """
-    cfg = AgentLlmServiceConfig()
-    cm = get_config()
-    by_sid = cm.get_nested("agents", "llm", "by_service_id", default=None)
-    if isinstance(by_sid, dict):
-        ref = model_config_ref or service_id
-        raw = by_sid.get(ref)
-        if raw is None and ref != service_id:
-            raw = by_sid.get(service_id)
-        if raw is not None and isinstance(raw, dict):
-            cfg = AgentLlmServiceConfig.model_validate(raw)
+    cfg = yaml_llm_base_from_by_service_id(service_id, model_config_ref)
     cfg = apply_model_config_from_attributes(cfg, node_attributes)
     return apply_prompt_overrides_from_attributes(cfg, node_attributes)

@@ -133,6 +133,12 @@ CommandResult.success_result("向北移动到食堂")
 - [ ] 命令别名系统工作正常（`l` 等同于 `look`）
 - [ ] 不存在的命令返回 `CommandResult.error_result("未知命令")`
 
+## Assistant NLP (`aico` / `@<handle>`)
+
+- **`aico <message>`** 与 **`@<handle> <message>`** 共用 `run_npc_agent_nlp_tick`；成功时 **`CommandResult.message` 仅为助手最终可读文本**（非 JSON 包装）。机器可读字段放在 **`CommandResult.data`**：`ok`、`phase`（如 `act` 或 `passthrough`）、`handle`、`service_id`。
+- **无可用 HTTP LLM**（未配置 `use_http_llm`、未设置对应 API key 环境变量等）时，**不**进入 PDCA / 不写 agent memory run；`phase` 为 **`passthrough`**，`message` 为 **回显用户输入**（trim 后）。
+- 详细行为与 AICO 默认见模型侧文档；按用户隔离的记忆与 LTM 异步晋升见后续特性文档，不在本命令契约内展开。
+
 ## Design Decisions
 
 1. **为何命令与协议分离**: BaseCommand 不依赖 SSH 或 HTTP，任何协议层都可以通过 CommandContext 调用命令

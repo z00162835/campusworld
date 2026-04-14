@@ -9,6 +9,7 @@ from app.game_engine.agent_runtime.memory_port import MemoryPort, SqlAlchemyMemo
 from app.models.graph import Node
 
 if TYPE_CHECKING:
+    from app.core.settings import AgentLlmServiceConfig
     from app.game_engine.agent_runtime.llm_client import LlmClient
     from app.game_engine.agent_runtime.tooling import ToolExecutor
 else:
@@ -100,8 +101,9 @@ class LlmPdcaAssistantWorker(AgentWorker):
         invoker_context: Optional[CommandContext] = None,
         *,
         llm_client: Optional[LlmClient] = None,
+        agent_llm_config: Optional["AgentLlmServiceConfig"] = None,
     ) -> "LlmPdcaAssistantWorker":
-        from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config
+        from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config_for_npc_tick
         from app.game_engine.agent_runtime.agent_node_phase_llm import parse_phase_llm_from_attributes
         from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
         from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config
@@ -114,7 +116,14 @@ class LlmPdcaAssistantWorker(AgentWorker):
         service_id = str(attrs.get("service_id") or "aico")
         model_ref = attrs.get("model_config_ref")
         model_ref_s = str(model_ref) if model_ref else None
-        cfg = resolve_agent_llm_config(service_id, model_config_ref=model_ref_s, node_attributes=attrs)
+        if agent_llm_config is not None:
+            cfg = agent_llm_config
+        else:
+            cfg = resolve_agent_llm_config_for_npc_tick(
+                service_id,
+                model_config_ref=model_ref_s,
+                node_attributes=attrs,
+            )
         llm_impl = llm_client or build_llm_client_from_service_config(cfg)
         fb = invoker_context or CommandContext(
             user_id=str(agent_node_id),

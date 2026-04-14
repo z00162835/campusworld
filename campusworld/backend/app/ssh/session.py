@@ -10,7 +10,7 @@ from typing import Dict, Optional, Any, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 
-from app.core.database import SessionLocal
+from app.core.database import db_session_context
 from app.models.graph import Node
 from app.models.user import User
 from app.core.log import get_logger, LoggerNames
@@ -135,7 +135,7 @@ class SSHSession:
     def _save_session_state(self):
         """保存会话状态到数据库"""
         try:
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 # 查找用户节点
                 user_node = session.query(Node).filter(
                     Node.id == self.user_id,
@@ -178,7 +178,7 @@ class SSHSession:
     def _load_user_object(self) -> Optional[Any]:
         """加载用户对象"""
         try:
-            with SessionLocal() as session:
+            with db_session_context() as session:
                 user_node = session.query(Node).filter(
                     Node.id == self.user_id,
                     Node.type_code == 'account',
@@ -331,15 +331,10 @@ class SessionManager:
     def save_session_logs(self):
         """保存会话日志到数据库"""
         try:
-            session = SessionLocal()
-            try:
-                # 这里可以实现会话日志的持久化存储
-                # 暂时只是记录日志
-                for session_obj in self.sessions.values():
-                    if session_obj.is_active:
-                        self.logger.info(f"Active session: {session_obj.get_session_info()}")
-            finally:
-                session.close()
+            # 这里可以实现会话日志的持久化存储；当前仅记录日志（无需占用 DB 连接）
+            for session_obj in self.sessions.values():
+                if session_obj.is_active:
+                    self.logger.info(f"Active session: {session_obj.get_session_info()}")
         except Exception as e:
             self.logger.error(f"Failed to save session logs: {e}")
 

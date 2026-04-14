@@ -11,7 +11,11 @@ from app.game_engine.agent_runtime.agent_llm_config import (
     apply_model_config_from_attributes,
     apply_prompt_overrides,
     apply_prompt_overrides_from_attributes,
+    invalidate_aico_system_llm_config,
+    merge_aico_system_llm_with_node,
+    refresh_aico_system_llm_config,
     resolve_agent_llm_config,
+    resolve_agent_llm_config_for_npc_tick,
 )
 
 
@@ -148,3 +152,42 @@ def test_resolve_agent_llm_config_prompt_overrides_without_yaml(monkeypatch):
     )
     assert cfg.system_prompt == "node_only"
     assert cfg.model == ""  # Pydantic default
+
+
+@pytest.mark.unit
+def test_merge_aico_uses_materialized_base(monkeypatch):
+    invalidate_aico_system_llm_config()
+    mock_cm = MagicMock()
+    mock_cm.get_nested.return_value = {
+        "aico": {"system_prompt": "cached_yaml", "model": "m1"},
+    }
+    monkeypatch.setattr(
+        "app.game_engine.agent_runtime.agent_llm_config.get_config",
+        lambda: mock_cm,
+    )
+    refresh_aico_system_llm_config()
+    mock_cm.get_nested.return_value = {}
+    out = merge_aico_system_llm_with_node(None)
+    assert out.system_prompt == "cached_yaml"
+    assert out.model == "m1"
+    invalidate_aico_system_llm_config()
+
+
+@pytest.mark.unit
+def test_resolve_agent_llm_config_for_npc_tick_aico_matches_resolve(monkeypatch):
+    mock_cm = MagicMock()
+    mock_cm.get_nested.return_value = {
+        "aico": {"system_prompt": "yaml", "model": "gpt-4o-mini"},
+    }
+    monkeypatch.setattr(
+        "app.game_engine.agent_runtime.agent_llm_config.get_config",
+        lambda: mock_cm,
+    )
+    invalidate_aico_system_llm_config()
+    refresh_aico_system_llm_config()
+    attrs = {"model_config": {"temperature": 0.3}}
+    a = resolve_agent_llm_config_for_npc_tick("aico", model_config_ref="aico", node_attributes=attrs)
+    b = resolve_agent_llm_config("aico", model_config_ref="aico", node_attributes=attrs)
+    assert a.model == b.model == "gpt-4o-mini"
+    assert a.temperature == b.temperature == 0.3
+    invalidate_aico_system_llm_config()

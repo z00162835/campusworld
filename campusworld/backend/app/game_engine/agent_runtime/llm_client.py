@@ -99,6 +99,17 @@ class OpenAiCompatibleHttpLlmClient:
         return str(content or "").strip()
 
 
+def http_llm_available(cfg) -> bool:
+    """True when config requests HTTP LLM and the referenced API key env var is non-empty."""
+    from app.core.settings import AgentLlmServiceConfig
+
+    if not isinstance(cfg, AgentLlmServiceConfig):
+        return False
+    env_name = (cfg.api_key_env or "").strip()
+    key = os.environ.get(env_name, "").strip() if env_name else ""
+    return bool(cfg.use_http_llm and env_name and key)
+
+
 def build_llm_client_from_service_config(cfg) -> LlmClient:
     """
     Resolve Stub vs HTTP from AgentLlmServiceConfig + environment.
@@ -107,9 +118,9 @@ def build_llm_client_from_service_config(cfg) -> LlmClient:
 
     if not isinstance(cfg, AgentLlmServiceConfig):
         return StubLlmClient()
-    env_name = (cfg.api_key_env or "").strip()
-    key = os.environ.get(env_name, "").strip() if env_name else ""
-    if cfg.use_http_llm and key and env_name:
+    if http_llm_available(cfg):
+        env_name = (cfg.api_key_env or "").strip()
+        key = os.environ.get(env_name, "").strip() if env_name else ""
         return OpenAiCompatibleHttpLlmClient(
             base_url=cfg.base_url or "https://api.openai.com/v1",
             api_key=key,

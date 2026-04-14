@@ -36,14 +36,11 @@ class TestDatabaseCompatibility:
         """测试会话创建"""
         from app.core.database import SessionLocal
 
-        # 测试创建会话
         session = SessionLocal()
-
-        # 测试会话方法
-        assert hasattr(session, "query"), "会话缺少 query 方法"
-
-        # 关闭会话
-        session.close()
+        try:
+            assert hasattr(session, "query"), "会话缺少 query 方法"
+        finally:
+            session.close()
 
     @pytest.mark.integration
     def test_engine_usage(self):
@@ -66,17 +63,12 @@ class TestDatabaseCompatibility:
         from app.core.database import get_db
         from sqlalchemy.orm import Session
 
-        # 测试 get_db 生成器
         db_gen = get_db()
-        db = next(db_gen)
-
-        assert isinstance(db, Session), f"get_db 返回错误的类型: {type(db)}"
-
-        # 关闭生成器
         try:
-            next(db_gen)
-        except StopIteration:
-            pass
+            db = next(db_gen)
+            assert isinstance(db, Session), f"get_db 返回错误的类型: {type(db)}"
+        finally:
+            db_gen.close()
 
     @pytest.mark.integration
     def test_sql_execution(self):

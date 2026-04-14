@@ -58,6 +58,14 @@ CampusWorld 的核心设计理念是"**世界语义驱动**"：
 - PostgreSQL 13+
 - Docker & Docker Compose
 
+### Python 执行环境（Conda `campusworld`）
+
+**后端与本地 pytest 默认假定使用 Conda 环境 `campusworld` 中的解释器与依赖。** 在 `base`、系统 Python 或未安装 `requirements` 的环境中直接运行 `pytest` / `python campusworld.py`，容易出现 **`ModuleNotFoundError`、pytest 未安装、依赖或 Python 次版本与仓库不一致** 等问题，易被误判为项目代码故障。
+
+- **推荐**：先 `conda activate campusworld`，再进入 `backend` 执行 `pip install`、`pytest`、`python campusworld.py`。
+- **无需持久激活时**：在 `backend` 目录下使用 `conda run -n campusworld pytest …` 或 `conda run -n campusworld python campusworld.py`（与下文「测试」一节一致）。
+- **CI**：流水线应使用与 `requirements` 声明一致的 Python 版本；若 CI 使用 Conda，环境名可与本地对齐为 `campusworld` 或等价锁定文件。
+
 ### 启动开发环境
 
 ```bash
@@ -65,7 +73,7 @@ CampusWorld 的核心设计理念是"**世界语义驱动**"：
 cd campusworld
 docker compose -f docker-compose.dev.yml up -d
 
-# 后端开发
+# 后端开发（建议在 conda activate campusworld 之后）
 cd backend
 pip install -r requirements/dev.txt
 
@@ -206,10 +214,12 @@ chore: 构建/工具链变更
 
 测试工程化基于 pytest (后端) 和 vitest (前端)，详见 `docs/testing/SPEC/SPEC.md`。
 
-**后端 pytest 环境**：若使用 Conda 且已创建项目环境 `campusworld`，请先执行 `conda activate campusworld` 再进入 `backend` 运行 `pytest`，避免误用 base 环境（缺少依赖或 Python 版本不一致）。不激活时也可单次执行：`conda run -n campusworld pytest ...`（在 `backend` 目录下）。
+**后端 pytest 必须使用与仓库一致的 Python 依赖环境。** 项目约定本地使用 **Conda 环境 `campusworld`**（见上文「Python 执行环境（Conda `campusworld`）」）：先 `conda activate campusworld`，再进入 `backend` 运行 `pytest`；否则极易因错用 `base`/系统 Python 而失败。不激活时务必使用 **`conda run -n campusworld pytest …`**（工作目录为 `backend`），勿在无 `pytest` 或未装 `requirements` 的解释器上直接执行 `pytest`。
+
+**锁与死锁**：需真实 PostgreSQL 的集成用例应避免多连接对多行以不一致顺序加锁、在持锁事务中长时间阻塞；审查清单见 `docs/testing/SPEC/SPEC.md` 中「集成测试、行锁与死锁风险」。
 
 ```bash
-# 后端测试（建议已 conda activate campusworld）
+# 后端测试（须在 conda campusworld 环境中，或改用 conda run -n campusworld）
 cd backend
 pytest                          # 运行所有测试
 pytest -m unit                  # 仅运行单元测试

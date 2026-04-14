@@ -34,6 +34,8 @@ def test_try_dispatch_success(mock_resolve, mock_tick):
         r = try_dispatch_at_line('@aico hello', ctx)
 
     assert r is not None and r.success
+    assert r.message == "hi"
+    assert r.data and r.data.get("ok") is True and r.data.get("phase") == "act"
     mock_tick.assert_called_once()
 
 

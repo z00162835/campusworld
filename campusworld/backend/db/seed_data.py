@@ -143,12 +143,28 @@ _AICO_DEFAULT_MODE_MODELS = {
     "plan": "gpt-4o-mini",
     "think": "gpt-4o",
 }
-_AICO_DEFAULT_PHASE_LLM = {
+# Previous seed default (plan+do LLM); replaced by thin PDCA — migrate idempotently when still present.
+_AICO_LEGACY_PHASE_LLM = {
     "plan": {"mode": "fast"},
-    "do": {"mode": "plan"},
+    "do": {"mode": "fast"},
     "check": {"mode": "skip"},
     "act": {"mode": "skip"},
 }
+_AICO_DEFAULT_PHASE_LLM = {
+    "plan": {"mode": "fast"},
+    "do": {"mode": "fast"},
+    "check": {"mode": "skip"},
+    "act": {"mode": "skip"},
+}
+
+
+def _aico_phase_llm_is_legacy(phase_llm: object) -> bool:
+    if not isinstance(phase_llm, dict):
+        return False
+    keys = {"plan", "do", "check", "act"}
+    if set(phase_llm.keys()) != keys:
+        return False
+    return all(phase_llm.get(k) == v for k, v in _AICO_LEGACY_PHASE_LLM.items())
 
 
 def ensure_root_node(session=None) -> bool:
@@ -185,6 +201,9 @@ def ensure_aico_npc_agent(session) -> bool:
             merged["mode_models"] = dict(_AICO_DEFAULT_MODE_MODELS)
             changed = True
         if "phase_llm" not in merged:
+            merged["phase_llm"] = {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()}
+            changed = True
+        elif _aico_phase_llm_is_legacy(merged.get("phase_llm")):
             merged["phase_llm"] = {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()}
             changed = True
         if changed:

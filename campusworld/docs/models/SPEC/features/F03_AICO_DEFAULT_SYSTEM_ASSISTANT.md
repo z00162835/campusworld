@@ -4,9 +4,9 @@
 
 **文档状态：Draft — 待人工审核**
 
-**交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent` 通用模型）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@` 协议）、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)（trait）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（数据访问主体）。
+**交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent` 通用模型）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@` 协议）、[`F07`](F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)（按用户记忆与 LTM 异步晋升，后续迭代）、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)（trait）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（数据访问主体）。
 
-**实现锚点（非 exhaustive）：** [`backend/app/models/things/agents.py`](../../../../backend/app/models/things/agents.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`agent_nlp`）、[`backend/app/game_engine/agent_runtime/`](../../../../backend/app/game_engine/agent_runtime/)（`LlmPdcaAssistantWorker`、`LlmPDCAFramework`、`agent_node_phase_llm`）、[`backend/app/constants/trait_mask.py`](../../../../backend/app/constants/trait_mask.py)、[`backend/app/core/settings.py`](../../../../backend/app/core/settings.py) / [`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)（**连接参数 + 默认 system_prompt / phase_prompts**）、[`backend/app/game_engine/agent_runtime/agent_llm_config.py`](../../../../backend/app/game_engine/agent_runtime/agent_llm_config.py)（`prompt_overrides` 与 **内联 `model_config` 非密钥合并**）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/db/seed_data.py`](../../../../backend/db/seed_data.py)（种子落地时）。运行时决策记录见 [`docs/architecture/adr/ADR-F03-AICO-NL-Pipeline.md`](../../../architecture/adr/ADR-F03-AICO-NL-Pipeline.md)。
+**实现锚点（非 exhaustive）：** [`backend/app/models/things/agents.py`](../../../../backend/app/models/things/agents.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`aico`、`agent`、`agent_capabilities`、`agent_tools`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/`](../../../../backend/app/game_engine/agent_runtime/)（`LlmPdcaAssistantWorker`、`LlmPDCAFramework`、`agent_node_phase_llm`）、[`backend/app/constants/trait_mask.py`](../../../../backend/app/constants/trait_mask.py)、[`backend/app/core/settings.py`](../../../../backend/app/core/settings.py) / [`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)（**连接参数 + 默认 system_prompt / phase_prompts**）、[`backend/app/game_engine/agent_runtime/agent_llm_config.py`](../../../../backend/app/game_engine/agent_runtime/agent_llm_config.py)（`prompt_overrides` 与 **内联 `model_config` 非密钥合并**）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/db/seed_data.py`](../../../../backend/db/seed_data.py)（种子落地时）。运行时决策记录见 [`docs/architecture/adr/ADR-F03-AICO-NL-Pipeline.md`](../../../architecture/adr/ADR-F03-AICO-NL-Pipeline.md)。
 
 ---
 
@@ -96,7 +96,7 @@
 **说明：**
 
 - **`help`**、**`look`**、**`time`**、**`version`** 等对应 [`system_commands.py`](../../../../backend/app/commands/system_commands.py) 中已注册的系统命令，语义上与普通用户会话中 **默认可用** 的基础集一致；**是否**出现在 AICO 的 **有效** 工具列表还受 **`get_available_commands`**（`command_policies` + 服务账号权限）过滤。
-- **`agent_capabilities`**、**`agent_tools`** 用于自省与能力查询；若产品希望 AICO 仅回答知识、不自调 `agent_run`，可不在白名单中加入 `agent_run`。
+- **`agent_capabilities`**、**`agent_tools`** 用于自省与能力查询；可按产品需要收紧 **`tool_allowlist`**（不暴露过多注册表命令）。
 - 后续可追加经策略允许的 **只读图/本体查询** 类命令名；须与 `command_policies` 及服务账号权限一致。
 
 **与 F02 `default_triggers`：** 若需在类型层表达完整触发器模板，可使用 `default_triggers: [{ "kind": "NLP", "config": { } }]`；实例层以 **`trigger_mode`** 为 **摘要字段**，调度与路由逻辑 **以 `trigger_mode` + F04 为准**，避免与 F02 枚举冲突（`NLP` ↔ `nlp` 大小写由实现统一）。
@@ -158,7 +158,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 5. **生成答复**：面向用户的 **最终自然语言** 作为运行结果返回（与 F04 回显路径对接）。
 6. **回馈**：将阶段追踪写入 **`agent_run_records.command_trace`**，必要时追加 **`agent_memory_entries`（raw）** 等（F02 §9）；审计类摘要可经 `append_raw`。
 
-**命令入口（调试/联调）：** `agent_nlp <service_id> <message...>`、`aico <message...>`，以及与 F04 一致的 **`@<handle> <message...>`**（见 [`at_agent_dispatch.py`](../../../../backend/app/commands/at_agent_dispatch.py)、[`npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)）要求目标节点 **`decision_mode=llm`**，运行时 **`LlmPdcaAssistantWorker`** / **`run_npc_agent_nlp_tick`**。
+**用户与联调入口：** **`aico <message...>`**，以及与 F04 一致的 **`@<handle> <message...>`**（见 [`at_agent_dispatch.py`](../../../../backend/app/commands/at_agent_dispatch.py)、[`npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)）要求目标节点 **`decision_mode=llm`**，运行时 **`LlmPdcaAssistantWorker`** / **`run_npc_agent_nlp_tick`**。
 
 ### 5.6 Prompt 与分阶段注入 — 合并优先级
 
@@ -186,9 +186,9 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 
 ## 7. 验收标准（建议）
 
-**自动化（CI / 本地）：** `cd backend && pytest tests/commands/test_agent_f02_commands.py tests/game_engine/test_agent_llm_config.py tests/game_engine/test_llm_pdca_framework.py`；`python scripts/validate_config.py`。
+**自动化（CI / 本地）：** `cd backend && pytest tests/commands/test_agent_f02_commands.py tests/commands/test_npc_agent_nlp.py tests/game_engine/test_agent_llm_config.py tests/game_engine/test_llm_pdca_framework.py`；`python scripts/validate_config.py`。
 
-**手工（SSH 会话，DB 已迁移且已执行种子）：** 奇点屋 `look` 可见 **AICO**；`aico hello` 或 `@aico hello` 返回 JSON 结果；`agent_nlp aico hello` 可调用。
+**手工（SSH 会话，DB 已迁移且已执行种子）：** 奇点屋 `look` 可见 **AICO**；`aico hello` 或 `@aico hello` 成功时 **终端正文为助手自然语言**（`CommandResult.message`）；**`ok` / `phase` / `handle` / `service_id`** 等机读字段在 **`CommandResult.data`**（协议层可一并返回）。未配置可用 HTTP LLM 时见命令 SPEC：**`phase=passthrough`**，正文为回显用户输入。
 
 - [ ] 存在 **`service_id`=`aico`** 且 **`type_code`=`npc_agent`** 的节点；**`trait_mask=370`**；**`location_id`** 指向奇点屋 room。
 - [ ] 奇点屋 `look` 可见 AICO（[`look_appearance`](../../../../backend/app/commands/game/look_appearance.py) 将 `npc_agent` 归入人物区）。
@@ -197,7 +197,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 - [ ] **LLM**：`settings.yaml` 中存在 **`agents.llm.by_service_id.aico`**；密钥经 **`api_key_env`**；节点 **无明文密钥**。
 - [ ] **`trigger_mode=nlp`**。
 - [ ] **F04**：`@aico` 解析到本节点（见 F04 SPEC）。
-- [ ] **运行时**：`LlmPDCAFramework` + **`agent_run_records`**；**`agent_nlp` / `aico` / `@aico`** 可返回答复。
+- [ ] **运行时**：`LlmPDCAFramework` + **`agent_run_records`**；**`aico` / `@aico`** 可返回答复。
 - [ ] **Prompt**：YAML **`system_prompt` / `phase_prompts`**；合并优先级见 §5.6（**tick > prompt_overrides > model_config > YAML**）。
 - [ ] **记忆（可选）**：`extra.enable_ltm: true` 时注入 **`memory_context`**（见 `build_ltm_memory_context_for_tick`）。
 

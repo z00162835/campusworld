@@ -129,9 +129,11 @@ class WorldRuntimeRepository:
             }
 
     def get_state_for_update(self, session: Session, world_id: str) -> Dict[str, Any]:
+        # Stable lock order if the query ever returns multiple rows (defensive).
         row = (
             session.query(WorldRuntimeState)
             .filter(WorldRuntimeState.world_id == world_id)
+            .order_by(WorldRuntimeState.world_id)
             .with_for_update(read=True)
             .first()
         )
@@ -154,6 +156,42 @@ class WorldRuntimeRepository:
             "updated_at": row.updated_at,
         }
 
+    @staticmethod
+    def _execute_upsert_state(
+        session: Session,
+        world_id: str,
+        status: str,
+        version: Optional[str],
+        last_error_code: Optional[str],
+        last_error_message: Optional[str],
+        payload: Dict[str, Any],
+        updated_by: str,
+    ) -> None:
+        # Core Table + physical column name "metadata" so ON CONFLICT excluded.* matches INSERT (ORM insert + state_metadata broke excluded.state_metadata).
+        tbl = WorldRuntimeState.__table__
+        ins = pg_insert(tbl).values(
+            world_id=world_id,
+            status=status,
+            version=version,
+            last_error_code=last_error_code,
+            last_error_message=last_error_message,
+            metadata=payload,
+            updated_by=updated_by,
+        )
+        stmt = ins.on_conflict_do_update(
+            index_elements=[tbl.c.world_id],
+            set_={
+                tbl.c.status: ins.excluded.status,
+                tbl.c.version: ins.excluded.version,
+                tbl.c.last_error_code: ins.excluded.last_error_code,
+                tbl.c.last_error_message: ins.excluded.last_error_message,
+                tbl.c["metadata"]: ins.excluded["metadata"],
+                tbl.c.updated_by: ins.excluded.updated_by,
+                tbl.c.updated_at: func.now(),
+            },
+        )
+        session.execute(stmt)
+
     def upsert_state(
         self,
         world_id: str,
@@ -166,40 +204,30 @@ class WorldRuntimeRepository:
         session: Optional[Session] = None,
     ) -> None:
         payload = metadata or {}
-        owns_session = session is None
         if session is None:
-            session_ctx = db_session_context()
-            session = session_ctx.__enter__()
-        try:
-            # Core Table + physical column name "metadata" so ON CONFLICT excluded.* matches INSERT (ORM insert + state_metadata broke excluded.state_metadata).
-            tbl = WorldRuntimeState.__table__
-            ins = pg_insert(tbl).values(
-                world_id=world_id,
-                status=status,
-                version=version,
-                last_error_code=last_error_code,
-                last_error_message=last_error_message,
-                metadata=payload,
-                updated_by=updated_by,
+            with db_session_context() as s:
+                self._execute_upsert_state(
+                    s,
+                    world_id,
+                    status,
+                    version,
+                    last_error_code,
+                    last_error_message,
+                    payload,
+                    updated_by,
+                )
+                s.commit()
+        else:
+            self._execute_upsert_state(
+                session,
+                world_id,
+                status,
+                version,
+                last_error_code,
+                last_error_message,
+                payload,
+                updated_by,
             )
-            stmt = ins.on_conflict_do_update(
-                index_elements=[tbl.c.world_id],
-                set_={
-                    tbl.c.status: ins.excluded.status,
-                    tbl.c.version: ins.excluded.version,
-                    tbl.c.last_error_code: ins.excluded.last_error_code,
-                    tbl.c.last_error_message: ins.excluded.last_error_message,
-                    tbl.c["metadata"]: ins.excluded["metadata"],
-                    tbl.c.updated_by: ins.excluded.updated_by,
-                    tbl.c.updated_at: func.now(),
-                },
-            )
-            session.execute(stmt)
-            if owns_session:
-                session.commit()
-        finally:
-            if owns_session:
-                session_ctx.__exit__(None, None, None)
 
     def create_job(
         self,
@@ -209,11 +237,7 @@ class WorldRuntimeRepository:
         request_fingerprint: Optional[str] = None,
         session: Optional[Session] = None,
     ) -> str:
-        owns_session = session is None
-        if session is None:
-            session_ctx = db_session_context()
-            session = session_ctx.__enter__()
-        try:
+        def _add_and_persist(s: Session, commit: bool) -> str:
             row = WorldInstallJob(
                 world_id=world_id,
                 action=action,
@@ -224,16 +248,18 @@ class WorldRuntimeRepository:
                 event_log=[],
                 summary={},
             )
-            session.add(row)
-            if owns_session:
-                session.commit()
+            s.add(row)
+            if commit:
+                s.commit()
             else:
-                session.flush()
-            session.refresh(row)
+                s.flush()
+            s.refresh(row)
             return str(row.job_id)
-        finally:
-            if owns_session:
-                session_ctx.__exit__(None, None, None)
+
+        if session is None:
+            with db_session_context() as s:
+                return _add_and_persist(s, commit=True)
+        return _add_and_persist(session, commit=False)
 
     def append_job_event(
         self, job_id: str, stage: str, payload: Dict[str, Any], session: Optional[Session] = None
@@ -241,23 +267,23 @@ class WorldRuntimeRepository:
         parsed_job_id = self._parse_job_id(job_id)
         if parsed_job_id is None:
             return
-        owns_session = session is None
-        if session is None:
-            session_ctx = db_session_context()
-            session = session_ctx.__enter__()
-        try:
-            row = session.query(WorldInstallJob).filter(WorldInstallJob.job_id == parsed_job_id).first()
+
+        def _append_on(s: Session) -> bool:
+            row = s.query(WorldInstallJob).filter(WorldInstallJob.job_id == parsed_job_id).first()
             if row is None:
-                return
+                return False
             current = list(row.event_log or [])
             current.append({"stage": stage, "payload": payload, "ts": datetime.utcnow().isoformat()})
             row.event_log = current
             row.updated_at = datetime.utcnow()
-            if owns_session:
-                session.commit()
-        finally:
-            if owns_session:
-                session_ctx.__exit__(None, None, None)
+            return True
+
+        if session is None:
+            with db_session_context() as s:
+                if _append_on(s):
+                    s.commit()
+        else:
+            _append_on(session)
 
     def finish_job(
         self,
@@ -270,12 +296,9 @@ class WorldRuntimeRepository:
         parsed_job_id = self._parse_job_id(job_id)
         if parsed_job_id is None:
             return
-        owns_session = session is None
-        if session is None:
-            session_ctx = db_session_context()
-            session = session_ctx.__enter__()
-        try:
-            row = session.query(WorldInstallJob).filter(WorldInstallJob.job_id == parsed_job_id).first()
+
+        def _finish(s: Session, commit: bool) -> None:
+            row = s.query(WorldInstallJob).filter(WorldInstallJob.job_id == parsed_job_id).first()
             if row is None:
                 return
             row.status = "success" if success else "failed"
@@ -283,11 +306,14 @@ class WorldRuntimeRepository:
             row.summary = summary or {}
             row.finished_at = datetime.utcnow()
             row.updated_at = datetime.utcnow()
-            if owns_session:
-                session.commit()
-        finally:
-            if owns_session:
-                session_ctx.__exit__(None, None, None)
+            if commit:
+                s.commit()
+
+        if session is None:
+            with db_session_context() as s:
+                _finish(s, commit=True)
+        else:
+            _finish(session, commit=False)
 
 
 class WorldInstallerService:

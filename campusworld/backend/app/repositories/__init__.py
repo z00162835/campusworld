@@ -9,8 +9,11 @@ Repository层 - 数据访问抽象
 3. 返回业务友好的数据结构
 """
 
+from contextlib import contextmanager
 from typing import Optional, List, Dict, Any, Union
 from uuid import UUID
+
+from sqlalchemy.orm import Session
 
 from app.core.database import db_session_context
 from app.models.graph import Node, Relationship, NodeType, RelationshipType
@@ -28,34 +31,46 @@ class NodeRepository:
         nodes = repo.get_by_type("user")
     """
 
-    def __init__(self, session=None):
+    def __init__(self, session: Optional[Session] = None):
         """
         初始化仓库
 
         Args:
-            session: 可选的Session实例。如果提供，将使用该Session；
-                   否则在每个方法内部创建Session。
+            session: 可选的 Session。传入时各方法使用该会话（写路径仅 ``flush``，由调用方 ``commit``）；
+                未传入时各方法内部使用 ``db_session_context()`` 并在写路径上 ``commit``。
         """
         self._session = session
 
+    @contextmanager
+    def _session_scope(self):
+        """Use injected Session when provided; otherwise a short ``db_session_context`` (commit/close owned by context)."""
+        if self._session is not None:
+            yield self._session
+        else:
+            with db_session_context() as session:
+                yield session
+
+    def _owns_session(self) -> bool:
+        return self._session is None
+
     def get_by_id(self, node_id: int) -> Optional[Node]:
         """根据ID获取节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return session.query(Node).filter(Node.id == node_id).first()
 
     def get_by_uuid(self, uid: Union[str, UUID]) -> Optional[Node]:
         """根据UUID获取节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.get_by_uuid(session, uid)
 
     def get_by_name(self, name: str) -> Optional[Node]:
         """根据名称获取节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.get_by_name(session, name)
 
     def get_by_type(self, type_code: str) -> List[Node]:
         """根据类型获取节点列表"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.get_by_type(session, type_code)
 
     def get_active_nodes(
@@ -66,7 +81,7 @@ class NodeRepository:
         required_all_mask: int = 0,
     ) -> List[Node]:
         """获取活跃节点；trait 过滤语义与 ``Node.get_active_nodes`` 一致（mask=0 不过滤）。"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.get_active_nodes(
                 session,
                 type_code,
@@ -77,12 +92,12 @@ class NodeRepository:
 
     def search_by_attribute(self, key: str, value: Any, type_code: str = None) -> List[Node]:
         """根据属性搜索节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.search_by_attribute(session, key, value, type_code)
 
     def search_by_tag(self, tag: str, type_code: str = None) -> List[Node]:
         """根据标签搜索节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.search_by_tag(session, tag, type_code)
 
     def get_paginated(
@@ -94,12 +109,12 @@ class NodeRepository:
         **filters
     ) -> Dict[str, Any]:
         """分页获取节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.get_paginated(session, page, page_size, type_code, is_active, **filters)
 
     def get_related_nodes(self, node_id: int, relationship_type: str = None) -> List[Node]:
         """获取相关节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             return Node.get_related_nodes(session, node_id, relationship_type)
 
     def create(self, type_code: str, name: str, **kwargs) -> Node:
@@ -114,7 +129,7 @@ class NodeRepository:
         Returns:
             创建的节点对象
         """
-        with db_session_context() as session:
+        with self._session_scope() as session:
             # 获取类型ID
             node_type = session.query(NodeType).filter(NodeType.type_code == type_code).first()
             if not node_type:
@@ -134,13 +149,16 @@ class NodeRepository:
                 home_id=kwargs.get('home_id'),
             )
             session.add(node)
-            session.commit()
+            if self._owns_session():
+                session.commit()
+            else:
+                session.flush()
             session.refresh(node)
             return node
 
     def update(self, node_id: int, **kwargs) -> Optional[Node]:
         """更新节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             node = session.query(Node).filter(Node.id == node_id).first()
             if not node:
                 return None
@@ -149,28 +167,37 @@ class NodeRepository:
                 if hasattr(node, key):
                     setattr(node, key, value)
 
-            session.commit()
+            if self._owns_session():
+                session.commit()
+            else:
+                session.flush()
             session.refresh(node)
             return node
 
     def delete(self, node_id: int) -> bool:
         """删除节点（软删除）"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             node = session.query(Node).filter(Node.id == node_id).first()
             if not node:
                 return False
             node.is_active = False
-            session.commit()
+            if self._owns_session():
+                session.commit()
+            else:
+                session.flush()
             return True
 
     def hard_delete(self, node_id: int) -> bool:
         """硬删除节点"""
-        with db_session_context() as session:
+        with self._session_scope() as session:
             node = session.query(Node).filter(Node.id == node_id).first()
             if not node:
                 return False
             session.delete(node)
-            session.commit()
+            if self._owns_session():
+                session.commit()
+            else:
+                session.flush()
             return True
 
 

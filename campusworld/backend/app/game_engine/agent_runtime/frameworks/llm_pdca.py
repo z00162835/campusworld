@@ -103,9 +103,12 @@ class LlmPDCAFramework(ThinkingFramework):
         trace.append(plan_entry)
         self._memory.update_run(run_id, PDCAPhase.plan.value, trace, "running")
 
-        do_user = (
-            f"User message:\n{user_msg}\n\nPlan:\n{plan_out}\n\nMemory:\n{mem or '(none)'}"
-        )
+        if (plan_out or "").strip():
+            do_user = (
+                f"User message:\n{user_msg}\n\nPlan:\n{plan_out}\n\nMemory:\n{mem or '(none)'}"
+            )
+        else:
+            do_user = f"User message:\n{user_msg}\n\nMemory:\n{mem or '(none)'}"
         do_sys = _phase_system(base_system, PDCAPhase.do.value, merged_phases)
         reply, do_entry = self._call_llm(PDCAPhase.do.value, do_sys, do_user, ctx)
         trace.append(do_entry)
