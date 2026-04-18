@@ -49,11 +49,11 @@ development:
   # 允许 db.init_database reset（仍需 --i-understand）；也可用环境变量 CAMPUSWORLD_ALLOW_DB_RESET=true
   allow_db_reset: false
 
-# 游戏引擎（开发）
+# 运行时引擎
 # 默认不在进程启动时自动 load 已 install 的世界（如 hicampus），避免 PG/图种子未就绪或 graph_seed 耗时时主进程长时间阻塞。
 # 需要开机即装世界时改为 true；或保持 false，在启动后执行 `world install` / `world reload`。
 game_engine:
-  load_installed_worlds_on_start: false
+  load_installed_worlds_on_start: true
 
 # 监控配置
 monitoring:

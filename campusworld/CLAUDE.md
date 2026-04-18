@@ -21,6 +21,8 @@ CampusWorld 基于三层架构设计：
 
 5个核心服务：**公共服务**（core/配置/安全）· **知识服务**（models/全图数据）· **能力服务**（game_engine/游戏逻辑）· **AI使能服务** · **Agent服务**
 
+**Agent 运行时四层架构（L1–L4）**（类型与数据、命令工具、思考模型、经验 Skill）的规范叙述见 [`docs/models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](docs/models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)。
+
 ### 世界内容包（HiCampus 与 `world install`）
 
 可安装世界以 `backend/app/games/<world_id>/` 为内容根目录，由 **GameLoader**（[`game_engine/loader.py`](backend/app/game_engine/loader.py)）发现与装载；`world install` / `uninstall` / `reload`（[`commands/game/world_command.py`](backend/app/commands/game/world_command.py)）维护运行时并与奇点屋入口可见性同步。包内 [`manifest.yaml`](backend/app/games/hicampus/manifest.yaml) 中的 **`graph_seed`** 为 `true` 时，快照经 [`game_engine/graph_seed/`](backend/app/game_engine/graph_seed/) 写入 **PostgreSQL**（需已完成相关库迁移），命令层 `look`、方向移动等依赖图中的 **room** 与 **`connects_to`**；无 PostgreSQL 的环境应将 `graph_seed` 设为 `false`，否则安装可能失败。用户登录后默认落在 **奇点屋**，再 `enter <world_id>` 进入世界。

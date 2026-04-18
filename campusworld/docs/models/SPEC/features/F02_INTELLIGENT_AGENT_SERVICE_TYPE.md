@@ -29,6 +29,17 @@
 
 ## 3. Agent 本体定义
 
+### 3.0 与 CampusWorld Agent 四层架构的对照（F09）
+
+全局 **L1–L4** 定义、双视角图示及与 F06/F07/F08 的边界见 [**F09 — CampusWorld Agent 四层架构**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（规范真源）。与本 SPEC 的 **粗略对应**：
+
+| F09 层 | 与 F02 的常见对应 |
+|--------|-------------------|
+| **L1** 类型与数据 | 图 `nodes` / `relationships`、NodeType、本体规则与策略客体 |
+| **L2** 命令工具 | **命令优先**、注册表、`RegistryToolExecutor` / `tool_allowlist`（见 §4–§6） |
+| **L3** Agent 思考模型 | **思维模型**（如 PDCA）、`ThinkingFramework` / Worker 运行时（§9 `agent_run_records.phase`） |
+| **L4** 经验 Skill | 语义世界可引用的 **经验/剧本**（命令或注入）；**不是** F07 **LTM** 的同义词（LTM 经 `memory_context` 注入 tick，见 F09 §5） |
+
 **Agent（本 SPEC 语义）** 指：由 **一种或多种思维模型**（如 **PDCA**：Plan–Do–Check–Act）驱动的程序；根据 **外部输入**（消息、文件、命令、自然语言描述）与/或 **内在目标/意图**（静态声明于配置）在授权边界内 **自主循环**（感知 → 决策 → 行动 → 记录）。
 
 | 概念 | 说明 |

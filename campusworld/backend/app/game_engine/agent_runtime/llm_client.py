@@ -1,6 +1,15 @@
+"""
+Core LLM types and wiring for agent runtime.
+
+- ``LlmCallSpec`` / ``LlmClient`` / ``StubLlmClient`` — shared contracts
+- ``http_llm_available`` / ``build_llm_client_from_service_config`` — config + env gate
+
+Vendor-specific HTTP clients live under ``llm_providers/``; routing is in ``llm_providers/factory.py``.
+Shared HTTP helpers: ``llm_providers/http_utils.py``.
+"""
+
 from __future__ import annotations
 
-import json
 import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Protocol, runtime_checkable
@@ -40,65 +49,6 @@ class StubLlmClient:
         return f"[stub_llm mode={mode}] {u}"
 
 
-class OpenAiCompatibleHttpLlmClient:
-    """
-    OpenAI-compatible Chat Completions (POST /v1/chat/completions).
-    """
-
-    def __init__(
-        self,
-        *,
-        base_url: str,
-        api_key: str,
-        default_model: str,
-        default_temperature: float = 0.2,
-        default_max_tokens: int = 4096,
-        timeout_sec: float = 120.0,
-    ):
-        self._base = (base_url or "https://api.openai.com/v1").rstrip("/")
-        self._api_key = api_key
-        self._default_model = default_model
-        self._default_temperature = default_temperature
-        self._default_max_tokens = default_max_tokens
-        self._timeout = timeout_sec
-
-    def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec] = None) -> str:
-        import httpx
-
-        spec = call_spec or LlmCallSpec()
-        model = (spec.model or self._default_model).strip() or self._default_model
-        temperature = (
-            spec.temperature if spec.temperature is not None else self._default_temperature
-        )
-        max_tokens = spec.max_tokens if spec.max_tokens is not None else self._default_max_tokens
-        timeout = spec.timeout_sec if spec.timeout_sec is not None else self._timeout
-        body: Dict[str, Any] = {
-            "model": model,
-            "messages": [
-                {"role": "system", "content": system or " "},
-                {"role": "user", "content": user or " "},
-            ],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-        body.update(spec.extra or {})
-        url = f"{self._base}/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-        with httpx.Client(timeout=timeout) as client:
-            r = client.post(url, headers=headers, json=body)
-            r.raise_for_status()
-            data = r.json()
-        choices = data.get("choices") or []
-        if not choices:
-            return ""
-        msg = (choices[0].get("message") or {})
-        content = msg.get("content")
-        return str(content or "").strip()
-
-
 def http_llm_available(cfg) -> bool:
     """True when config requests HTTP LLM and the referenced API key env var is non-empty."""
     from app.core.settings import AgentLlmServiceConfig
@@ -112,7 +62,9 @@ def http_llm_available(cfg) -> bool:
 
 def build_llm_client_from_service_config(cfg) -> LlmClient:
     """
-    Resolve Stub vs HTTP from AgentLlmServiceConfig + environment.
+    Resolve Stub vs HTTP from ``AgentLlmServiceConfig`` + environment.
+
+    HTTP implementation is selected in ``llm_providers.factory.build_http_llm_client``.
     """
     from app.core.settings import AgentLlmServiceConfig
 
@@ -121,11 +73,7 @@ def build_llm_client_from_service_config(cfg) -> LlmClient:
     if http_llm_available(cfg):
         env_name = (cfg.api_key_env or "").strip()
         key = os.environ.get(env_name, "").strip() if env_name else ""
-        return OpenAiCompatibleHttpLlmClient(
-            base_url=cfg.base_url or "https://api.openai.com/v1",
-            api_key=key,
-            default_model=cfg.model or "gpt-4o-mini",
-            default_temperature=cfg.temperature,
-            default_max_tokens=cfg.max_tokens,
-        )
+        from app.game_engine.agent_runtime.llm_providers.factory import build_http_llm_client
+
+        return build_http_llm_client(cfg, key)
     return StubLlmClient()

@@ -2,7 +2,7 @@
 
 > **文档状态：Deferred（后续迭代，不在当前 AICO 基础能力计划内实施）**  
 > **架构角色：** 将 **原生对话记忆（raw / run 审计）** 与 **长期记忆（LTM）** 从「仅按 `agent_node_id` 隔离」升级为 **按用户（或稳定账号主体）与 agent 二元组隔离**；并由 **异步处理路径** 将 raw 对话 **压缩 / 摘要 / 合并** 写入 LTM，供后续 tick 检索注入。  
-> **交叉引用：** [`F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent`、记忆表语义）、[`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](F02_LTM_VECTORS_AND_MEMORY_LINKS.md)（向量与 LTM 链接）、[`F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md`](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO）、[`F04_AT_AGENT_INTERACTION_PROTOCOL.md`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@`）、[`F05_AGENT_COMMAND_LIST_AND_STATUS.md`](F05_AGENT_COMMAND_LIST_AND_STATUS.md)（`agent` 命令）。  
+> **交叉引用：** [`F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent`、记忆表语义）、[`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](F02_LTM_VECTORS_AND_MEMORY_LINKS.md)（向量与 LTM 链接）、[`F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md`](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO）、[`F04_AT_AGENT_INTERACTION_PROTOCOL.md`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@`）、[`F05_AGENT_COMMAND_LIST_AND_STATUS.md`](F05_AGENT_COMMAND_LIST_AND_STATUS.md)（`agent` 命令）、[`F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（Agent 四层架构；**LTM 与 F09 L4 Skill 的边界** 见该文 §5）。  
 > **实现锚点（现状）：** [`backend/app/models/system/agent_memory_tables.py`](../../../../backend/app/models/system/agent_memory_tables.py)、[`backend/app/game_engine/agent_runtime/memory_port.py`](../../../../backend/app/game_engine/agent_runtime/memory_port.py)、[`backend/app/services/ltm_semantic_retrieval.py`](../../../../backend/app/services/ltm_semantic_retrieval.py)、[`backend/scripts/promote_raw_to_ltm.py`](../../../../backend/scripts/promote_raw_to_ltm.py)（占位未实现）。
 
 ---
@@ -26,6 +26,7 @@
 - 不规定具体 **embedding 模型** 或 **摘要提示词**（可与 F02 向量文档、运维配置协同）。  
 - 不替代 **图本体**（`nodes` / `relationships`）；LTM 仍为推理与检索辅助层。  
 - **不与**「AICO 基础能力」短期计划耦合：终端纯文本呈现、无 LLM 直通、瘦 PDCA、系统侧 YAML 初始化加载等见独立实施计划，**记忆多租户与本特性一并后续交付**。
+- **架构边界**：本 SPEC 的 **LTM / `memory_context` 注入** **不是** [**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md) 中的 **L4 经验 Skill**；二者可并存于同一 tick，划界见 F09 §5。
 
 ---
 

@@ -14,6 +14,7 @@
 
 ## Unified Terms (Cross-SPEC)
 
+- **Agent 四层架构（L1–L4）**：类型与数据、命令工具、思考模型、经验 Skill 的全局分层语言；规范真源见 [`features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)。
 - **System Entry Space**: `SingularityRoom`，系统级统一入口空间。
 - **World Default Spawn**: 某个世界内部默认出生点（例如 `campus_life/campus`）。
 - **Last Location Resume**: 用户重连后的位置恢复策略。
@@ -143,6 +144,12 @@
 
 - `F07` 按用户区隔的 Agent 记忆与 LTM 异步晋升（后续迭代，Deferred）  
   [`features/F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md`](features/F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)
+
+- `F08` AICO 工具调用与命令上下文（Command-as-Tool：注册表命令输出作为 LLM 上下文；**扩展** [**F03**](features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)）  
+  [`features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md`](features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)
+
+- `F09` CampusWorld Agent 四层架构（L1–L4 规范真源、与 F02–F08 及代码映射、F07/F06 边界）  
+  [`features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)
 
 ## Open Questions
 

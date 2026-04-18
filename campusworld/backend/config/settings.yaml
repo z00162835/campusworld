@@ -18,7 +18,7 @@ project:
 app:
   name: "CampusWorld"
   version: "0.1.0"
-  description: "A modern campus world application"
+  description: "Campus World OS"
   debug: false
 
 # API配置
@@ -167,10 +167,10 @@ agents:
   llm:
     by_service_id:
       aico:
-        provider: openai_compatible
-        base_url: ""
+        provider: MinMax
+        base_url: "https://api.minimaxi.com/anthropic"
         api_key_env: "AICO_OPENAI_API_KEY"
-        model: "gpt-4o-mini"
+        model: "MiniMax-M2.7-highspeed"
         temperature: 0.2
         max_tokens: 4096
         extra: {}
@@ -182,7 +182,7 @@ agents:
           do: "Produce a helpful answer or describe tool/command steps. Use memory context when provided."
           check: "Verify the answer is consistent with CampusWorld rules and the user question."
           act: "Finalize the user-facing reply."
-        use_http_llm: false
+        use_http_llm: true
 
 # 游戏引擎 / 世界包
 game_engine:

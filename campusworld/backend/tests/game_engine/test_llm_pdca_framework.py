@@ -7,11 +7,13 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
+from app.commands.base import CommandContext
 from app.core.settings import AgentLlmServiceConfig, PhaseLlmMode, PhaseLlmPhaseConfig
 from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext
 from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
 from app.game_engine.agent_runtime.llm_client import StubLlmClient
+from app.game_engine.agent_runtime.resolved_tool_surface import PreauthorizedToolExecutor, ResolvedToolSurface
 
 
 class _FakeMem:
@@ -149,3 +151,72 @@ def test_phase_llm_check_skip_skips_llm_call():
     finish = [r for r in mem.runs if r["op"] == "finish"][-1]
     chk = next(x for x in finish["trace"] if isinstance(x, dict) and x.get("step") == "check")
     assert chk.get("skipped") is True
+
+
+class _PlanJsonThenStubLlm:
+    """First call returns JSON tool plan; remaining calls return short stub text."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.users: List[str] = []
+
+    def complete(self, *, system: str, user: str, call_spec=None) -> str:
+        self.calls += 1
+        self.users.append(user)
+        if self.calls == 1:
+            return '{"commands": [{"name": "help", "args": ["help"]}]}'
+        return "[stub_tail]"
+
+
+@pytest.mark.unit
+def test_llm_pdca_injects_tool_observation_into_do_prompt():
+    mem = _FakeMem()
+    rec = _PlanJsonThenStubLlm()
+    cfg = AgentLlmServiceConfig(
+        system_prompt="sys",
+        phase_prompts={
+            "plan": "Plan step.",
+            "do": "Answer step.",
+            "check": "Check step.",
+            "act": "Act step.",
+        },
+    )
+    ctx_cmd = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="s",
+        permissions=[],
+        roles=[],
+    )
+    surface = ResolvedToolSurface(allowed_command_names=frozenset({"help"}), tool_command_context=ctx_cmd)
+    pre = PreauthorizedToolExecutor(surface)
+
+    class _HelpCmd:
+        name = "help"
+
+        def execute(self, c, args):
+            from app.commands.base import CommandResult
+
+            return CommandResult.success_result("HELP_TEXT_FOR_MODEL")
+
+    from unittest.mock import patch
+
+    with patch(
+        "app.game_engine.agent_runtime.resolved_tool_surface.command_registry.get_command",
+        return_value=_HelpCmd(),
+    ):
+        fw = LlmPDCAFramework(
+            memory=mem,
+            llm_config=cfg,
+            instance_phase_llm={},
+            instance_mode_models={},
+            llm=rec,
+            tools=pre,
+            tool_command_context=ctx_cmd,
+            preauthorized_tool_executor=pre,
+        )
+        out = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    assert out.ok
+    assert rec.calls >= 2
+    assert len(rec.users) >= 2
+    assert "tool_observation" in rec.users[1].lower() or "HELP_TEXT_FOR_MODEL" in rec.users[1]

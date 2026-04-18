@@ -4,7 +4,7 @@
 
 **文档状态：Draft — 待人工审核**
 
-**交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent` 通用模型）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@` 协议）、[`F07`](F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)（按用户记忆与 LTM 异步晋升，后续迭代）、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)（trait）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（数据访问主体）。
+**交叉引用：** [`F09`](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（CampusWorld Agent 四层架构 L1–L4）、[`F08`](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（Command-as-Tool、ToolGather）、[`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent` 通用模型）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@` 协议）、[`F07`](F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)（按用户记忆与 LTM 异步晋升，后续迭代）、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)（trait）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（数据访问主体）。
 
 **实现锚点（非 exhaustive）：** [`backend/app/models/things/agents.py`](../../../../backend/app/models/things/agents.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`aico`、`agent`、`agent_capabilities`、`agent_tools`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/`](../../../../backend/app/game_engine/agent_runtime/)（`LlmPdcaAssistantWorker`、`LlmPDCAFramework`、`agent_node_phase_llm`）、[`backend/app/constants/trait_mask.py`](../../../../backend/app/constants/trait_mask.py)、[`backend/app/core/settings.py`](../../../../backend/app/core/settings.py) / [`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)（**连接参数 + 默认 system_prompt / phase_prompts**）、[`backend/app/game_engine/agent_runtime/agent_llm_config.py`](../../../../backend/app/game_engine/agent_runtime/agent_llm_config.py)（`prompt_overrides` 与 **内联 `model_config` 非密钥合并**）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/db/seed_data.py`](../../../../backend/db/seed_data.py)（种子落地时）。运行时决策记录见 [`docs/architecture/adr/ADR-F03-AICO-NL-Pipeline.md`](../../../architecture/adr/ADR-F03-AICO-NL-Pipeline.md)。
 
@@ -13,6 +13,7 @@
 ## 1. Goal
 
 - 提供 **系统级默认助手** **AICO**（展示名），帮助用户理解 CampusWorld世界各种知识。
+- **架构位置**：AICO 是 **`npc_agent`** 的默认实例，跨 **L2**（命令工具）、**L3**（LLM + PDCA 等思考管线）、可选 **L4**（经验 Skill）与 **F07** 侧 `memory_context`；**全局四层定义** 见 [**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)，**工具输出进上下文** 见 [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)。
 - 以 **单一 `npc_agent` 图节点** 表达实例；**静态配置** 在 `nodes.attributes`（见 §5、附录 A）；记忆与运行过程在 F02 独立表。
 - **认知**：`decision_mode: llm`，思维框架 **PDCA**（与 `agent_run_records.phase` 对齐）；工具侧经 **命令注册表** + 授权（与 F02 §6 一致）。
 - **可执行命令（`tool_allowlist`）**：与 **默认普通用户** 在会话中可用的 **系统/基础命令集** 对齐（如 **`help`**、**`look`**、**`time`**、**`version`** 等，以注册表与 `command_policies` 为准），并可在白名单中包含 **`agent_capabilities`**、**`agent_tools`** 等 Agent 自省类命令；须与 **服务账号** 权限及策略一致。
@@ -159,6 +160,8 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 6. **回馈**：将阶段追踪写入 **`agent_run_records.command_trace`**，必要时追加 **`agent_memory_entries`（raw）** 等（F02 §9）；审计类摘要可经 `append_raw`。
 
 **用户与联调入口：** **`aico <message...>`**，以及与 F04 一致的 **`@<handle> <message...>`**（见 [`at_agent_dispatch.py`](../../../../backend/app/commands/at_agent_dispatch.py)、[`npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)）要求目标节点 **`decision_mode=llm`**，运行时 **`LlmPdcaAssistantWorker`** / **`run_npc_agent_nlp_tick`**。
+
+**工具上下文（Command-as-Tool）扩展：** 将注册表命令的可观测输出注入 LLM 上下文的契约见 [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)；**Agent 四层架构** 见 [**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)。
 
 ### 5.6 Prompt 与分阶段注入 — 合并优先级
 

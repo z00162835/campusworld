@@ -19,7 +19,7 @@ def test_maybe_ltm_disabled_without_enable_ltm():
 def test_maybe_ltm_calls_build_when_enabled():
     session = MagicMock()
     with patch(
-        "app.commands.npc_agent_nlp.build_ltm_memory_context_for_tick",
+        "app.services.ltm_semantic_retrieval.build_ltm_memory_context_for_tick",
         return_value="mem",
     ) as m:
         out = maybe_ltm_memory_context(session, 42, "hello", {"enable_ltm": True})
@@ -33,7 +33,7 @@ def test_maybe_ltm_calls_build_when_enabled():
 def test_maybe_ltm_disabled_when_placeholder_skip(monkeypatch):
     monkeypatch.setenv("AICO_SKIP_LTM_PLACEHOLDER", "1")
     session = MagicMock()
-    with patch("app.commands.npc_agent_nlp.build_ltm_memory_context_for_tick") as m:
+    with patch("app.services.ltm_semantic_retrieval.build_ltm_memory_context_for_tick") as m:
         out = maybe_ltm_memory_context(session, 1, "hi", {"enable_ltm": True})
     assert out is None
     m.assert_not_called()

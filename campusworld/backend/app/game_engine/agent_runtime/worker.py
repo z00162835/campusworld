@@ -107,7 +107,11 @@ class LlmPdcaAssistantWorker(AgentWorker):
         from app.game_engine.agent_runtime.agent_node_phase_llm import parse_phase_llm_from_attributes
         from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
         from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config
-        from app.game_engine.agent_runtime.tooling import RegistryToolExecutor
+        from app.game_engine.agent_runtime.resolved_tool_surface import (
+            PreauthorizedToolExecutor,
+            build_resolved_tool_surface,
+        )
+        from app.game_engine.agent_runtime.tool_gather import tool_gather_budgets_from_agent_extra
 
         agent = session.query(Node).filter(Node.id == agent_node_id).first()
         if agent is None:
@@ -135,7 +139,11 @@ class LlmPdcaAssistantWorker(AgentWorker):
         )
         tool_ctx = command_context_for_npc_agent(session, agent, fb)
         mem = SqlAlchemyMemoryPort(session, agent_node_id)
-        tools = RegistryToolExecutor()
+        raw_allow = attrs.get("tool_allowlist") or []
+        allowlist = [str(x) for x in raw_allow] if isinstance(raw_allow, list) else []
+        surface = build_resolved_tool_surface(node_tool_allowlist=allowlist, tool_command_context=tool_ctx)
+        pre_ex = PreauthorizedToolExecutor(surface)
+        budgets = tool_gather_budgets_from_agent_extra(cfg.extra)
         instance_phase_llm, instance_mode_models = parse_phase_llm_from_attributes(attrs)
         fw = LlmPDCAFramework(
             memory=mem,
@@ -143,11 +151,14 @@ class LlmPdcaAssistantWorker(AgentWorker):
             instance_phase_llm=instance_phase_llm,
             instance_mode_models=instance_mode_models,
             llm=llm_impl,
-            tools=tools,
+            tools=pre_ex,
+            tool_command_context=tool_ctx,
+            preauthorized_tool_executor=pre_ex,
+            tool_gather_budgets=budgets,
         )
         return cls(
             memory=mem,
             framework=fw,
-            tools=tools,
+            tools=pre_ex,
             tool_command_context=tool_ctx,
         )
