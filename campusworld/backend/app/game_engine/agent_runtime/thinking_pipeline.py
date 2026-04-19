@@ -35,6 +35,7 @@ class AgentTickHooks(Protocol):
         ctx: FrameworkRunContext,
         *,
         phase_llm_output: str,
+        skipped: bool = False,
     ) -> None:
         ...
 
@@ -49,5 +50,6 @@ class NoOpAgentTickHooks:
         ctx: FrameworkRunContext,
         *,
         phase_llm_output: str,
+        skipped: bool = False,
     ) -> None:
         return

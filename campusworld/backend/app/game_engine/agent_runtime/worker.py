@@ -4,6 +4,12 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from app.commands.agent_command_context import command_context_for_npc_agent
 from app.commands.base import CommandContext
+from app.core.config_manager import get_config
+from app.core.log import LoggerNames, get_logger
+from app.core.log.aico_observability import (
+    get_aico_max_phase_output_chars,
+    is_aico_observability_enabled,
+)
 from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, ThinkingFramework
 from app.game_engine.agent_runtime.memory_port import MemoryPort, SqlAlchemyMemoryPort
 from app.models.graph import Node
@@ -145,6 +151,15 @@ class LlmPdcaAssistantWorker(AgentWorker):
         pre_ex = PreauthorizedToolExecutor(surface)
         budgets = tool_gather_budgets_from_agent_extra(cfg.extra)
         instance_phase_llm, instance_mode_models = parse_phase_llm_from_attributes(attrs)
+        tick_hooks = None
+        cm = get_config()
+        if service_id.strip().lower() == "aico" and is_aico_observability_enabled(cm):
+            from app.game_engine.agent_runtime.aico_observability_hooks import AicoObservabilityTickHooks
+
+            tick_hooks = AicoObservabilityTickHooks(
+                get_logger(LoggerNames.AICO_AGENT),
+                max_phase_output_chars=get_aico_max_phase_output_chars(cm),
+            )
         fw = LlmPDCAFramework(
             memory=mem,
             llm_config=cfg,
@@ -155,6 +170,7 @@ class LlmPdcaAssistantWorker(AgentWorker):
             tool_command_context=tool_ctx,
             preauthorized_tool_executor=pre_ex,
             tool_gather_budgets=budgets,
+            tick_hooks=tick_hooks,
         )
         return cls(
             memory=mem,

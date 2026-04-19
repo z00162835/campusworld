@@ -131,6 +131,13 @@ class ConfigManager:
             except Exception as e:
                 self.logger.warning("refresh_aico_system_llm_config failed (non-fatal): %s", e)
 
+            try:
+                from app.core.log.aico_observability import configure_aico_observability_logging
+
+                configure_aico_observability_logging(self)
+            except Exception as e:
+                self.logger.warning("configure_aico_observability_logging failed (non-fatal): %s", e)
+
         except Exception as e:
             self.logger.error(f"配置加载失败: {e}")
             raise RuntimeError(f"配置加载失败: {e}")

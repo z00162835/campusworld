@@ -46,6 +46,7 @@ class LoggerNames:
     COMMAND = "command"
     PROTOCOL = "protocol"
     SESSION = "session"
+    AICO_AGENT = "app.agent.aico"
 
 def get_logging_manager() -> object:
     """

@@ -71,12 +71,25 @@ def run_npc_agent_nlp_tick(
         llm_client=llm,
         agent_llm_config=cfg,
     )
-    return w.tick(
-        {"message": message},
-        correlation_id=context.session_id,
-        memory_context=mem_ctx,
-        phase_llm_overrides=phase_llm_overrides,
+    from app.core.config_manager import get_config
+    from app.core.log.aico_observability import (
+        clear_aico_full_chain_tick,
+        is_aico_dev_chain_verbose,
+        set_aico_full_chain_tick,
     )
+
+    cm = get_config()
+    allow_full = service_id.strip().lower() == "aico" and is_aico_dev_chain_verbose(cm)
+    set_aico_full_chain_tick(allow_full)
+    try:
+        return w.tick(
+            {"message": message},
+            correlation_id=context.session_id,
+            memory_context=mem_ctx,
+            phase_llm_overrides=phase_llm_overrides,
+        )
+    finally:
+        clear_aico_full_chain_tick()
 
 
 def assistant_nlp_command_result(

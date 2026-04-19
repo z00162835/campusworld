@@ -6,7 +6,7 @@
 
 **交叉引用：** [`F09`](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（CampusWorld Agent 四层架构 L1–L4）、[`F08`](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（Command-as-Tool、ToolGather）、[`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent` 通用模型）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@` 协议）、[`F07`](F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)（按用户记忆与 LTM 异步晋升，后续迭代）、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)（trait）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（数据访问主体）。
 
-**实现锚点（非 exhaustive）：** [`backend/app/models/things/agents.py`](../../../../backend/app/models/things/agents.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`aico`、`agent`、`agent_capabilities`、`agent_tools`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/`](../../../../backend/app/game_engine/agent_runtime/)（`LlmPdcaAssistantWorker`、`LlmPDCAFramework`、`agent_node_phase_llm`）、[`backend/app/constants/trait_mask.py`](../../../../backend/app/constants/trait_mask.py)、[`backend/app/core/settings.py`](../../../../backend/app/core/settings.py) / [`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)（**连接参数 + 默认 system_prompt / phase_prompts**）、[`backend/app/game_engine/agent_runtime/agent_llm_config.py`](../../../../backend/app/game_engine/agent_runtime/agent_llm_config.py)（`prompt_overrides` 与 **内联 `model_config` 非密钥合并**）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/db/seed_data.py`](../../../../backend/db/seed_data.py)（种子落地时）。运行时决策记录见 [`docs/architecture/adr/ADR-F03-AICO-NL-Pipeline.md`](../../../architecture/adr/ADR-F03-AICO-NL-Pipeline.md)。
+**实现锚点（非 exhaustive）：** [`backend/app/models/things/agents.py`](../../../../backend/app/models/things/agents.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`aico`、`agent`、`agent_capabilities`、`agent_tools`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/`](../../../../backend/app/game_engine/agent_runtime/)（`LlmPdcaAssistantWorker`、`LlmPDCAFramework`、`agent_node_phase_llm`）、[`backend/app/constants/trait_mask.py`](../../../../backend/app/constants/trait_mask.py)、[`backend/app/core/settings.py`](../../../../backend/app/core/settings.py) / [`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)（**连接参数 + 默认 system_prompt / phase_prompts**）、[`backend/app/game_engine/agent_runtime/agent_llm_config.py`](../../../../backend/app/game_engine/agent_runtime/agent_llm_config.py)（`prompt_overrides` 与 **内联 `model_config` 非密钥合并**）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/db/seed_data.py`](../../../../backend/db/seed_data.py)（种子落地时）。**AICO 优化可观测（专用日志，§5.7）：** [`backend/app/core/log/aico_observability.py`](../../../../backend/app/core/log/aico_observability.py)、[`backend/app/game_engine/agent_runtime/aico_observability_hooks.py`](../../../../backend/app/game_engine/agent_runtime/aico_observability_hooks.py)、配置加载见 [`backend/app/core/config_manager.py`](../../../../backend/app/core/config_manager.py)。运行时决策记录见 [`docs/architecture/adr/ADR-F03-AICO-NL-Pipeline.md`](../../../architecture/adr/ADR-F03-AICO-NL-Pipeline.md)。
 
 ---
 
@@ -175,6 +175,40 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 | **`FrameworkRunContext.memory_context`** | 检索到的记忆文本 | 仅承载内容，**不**替代系统 Prompt |
 
 **PDCA 阶段 LLM 路由**：**`nodes.attributes.phase_llm` / `mode_models`** 为基线；**`FrameworkRunContext.phase_llm_overrides`** 单次 tick 覆盖（见 `merge_phase_config`）。
+
+### 5.7 AICO 优化可观测性（专用日志）
+
+**目标：** 为 **`service_id=aico`** 的 NLP tick（`aico` / `@aico` 与 §5.5 一致）提供可选的 **优化与联调专用** 文件日志，与主应用日志（`project.logs_dir` / `logging.file_name`）**分离**；默认 **关闭**（`enabled: false`）。
+
+**非目标：** 不替代 `monitoring` 指标；不等同于分布式 tracing；不规定外部日志分析产品。
+
+#### 5.7.1 配置契约（系统 YAML）
+
+在 **`agents.llm.by_service_id.aico`** 下与 LLM 字段并列增加 **`observability`** 对象（**不参与** `AgentLlmServiceConfig` 材料化，实现从 YAML 条目中剥离后再解析 LLM，见 `agent_llm_config`）：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `enabled` | boolean | 是否写入专用日志；默认 `false`。 |
+| `log_path` | string | 相对 **backend 根目录** 的文件路径；默认 `app/logs/agent/aico.log`（物理路径 `backend/app/logs/agent/aico.log`）。 |
+| `level` | string | 专用 logger 级别：`INFO` = 阶段摘要（hooks）；`DEBUG` = **全链路**（每轮 LLM 的 system/user、`LlmCallSpec`、ToolGather 文本、HTTP 请求/响应 JSON 摘要，与 **`max_phase_output_chars`** 共用长度预算）。 |
+| `max_file_size` / `backup_count` | string / int | 与主 `logging` 语义一致，用于该文件的轮转。 |
+| `max_phase_output_chars` | int | 阶段输出预览、DEBUG 下 prompt/工具/HTTP JSON 等**长文本**的统一字符上限；`0` 表示不截断（慎用，易含敏感内容）。 |
+
+环境变量覆盖可与现有 `CAMPUSWORLD_*` → 点分键规则对齐（例如 `CAMPUSWORLD_AGENTS_LLM_BY_SERVICE_ID_AICO_OBSERVABILITY_ENABLED`）。
+
+#### 5.7.2 记录范围与隐私
+
+- **挂载：** 配置加载 / 重载时注册专用 logger（`propagate=false`），仅写入上述文件。
+- **内容：** 基于 **`AgentTickHooks`**，与 §5.5 **PDCA 阶段**（`plan` / `do` / `check` / `act` 及管线中的 `post`）对齐；记录 **阶段名、correlation、agent 节点 id、各阶段 LLM 输出摘要（可截断）**。实现中 **Act** 步对应 `ThinkingPhaseId.action`（日志字段 `phase=action`），与 YAML **`phase_prompts.act`**、**`PDCAPhase.act`** 语义一致，仅枚举名与字面 **`act`** 不同。
+- **跳过 LLM：** 当某阶段 **`phase_llm` 为 `skip`** 时，日志应能区分 **「本阶段未调用 LLM」** 与 **「调用但返回空串」**（例如字段 **`skipped=true/false`**）。
+- **用户输入：** 在 **`level: INFO`** 时默认 **不**落盘全文，仅记录 **长度**；**`level: DEBUG`** 且当前 tick 为 **`service_id=aico`** 时，会在 **`aico_llm_call`** 中写入经 **`max_phase_output_chars`** 截断后的 **user 段拼接文本**（含 User message / Plan / Memory 等），仅用于开发联调；其他 `npc_agent` 不因全局 YAML 而写入上述 DEBUG 行。
+
+#### 5.7.3 实现锚点
+
+- [`backend/app/core/log/aico_observability.py`](../../../../backend/app/core/log/aico_observability.py)：`configure_aico_observability_logging`（幂等挂载/卸载文件 handler）。
+- [`backend/app/game_engine/agent_runtime/aico_observability_hooks.py`](../../../../backend/app/game_engine/agent_runtime/aico_observability_hooks.py)：`AgentTickHooks` 实现。
+- [`backend/app/game_engine/agent_runtime/worker.py`](../../../../backend/app/game_engine/agent_runtime/worker.py)：`LlmPdcaAssistantWorker` 在 **`service_id=aico`** 且 **`observability.enabled`** 时注入 hooks。
+- [`backend/app/core/config_manager.py`](../../../../backend/app/core/config_manager.py)：配置加载成功后调用专用日志配置函数。
 
 ---
 

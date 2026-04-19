@@ -4,6 +4,14 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from app.commands.base import CommandContext
+from app.core.config_manager import get_config
+from app.core.log.aico_observability import (
+    clear_aico_observability_context,
+    log_aico_llm_call,
+    log_aico_tool_observations_text,
+    set_aico_observability_context,
+    should_emit_aico_full_chain_logs,
+)
 from app.core.settings import AgentLlmServiceConfig, PhaseLlmMode, PhaseLlmPhaseConfig
 from app.game_engine.agent_runtime.frameworks.base import (
     FrameworkRunContext,
@@ -97,6 +105,16 @@ class LlmPDCAFramework(ThinkingFramework):
             mode_models=self._instance_mode_models,
             default_model=(self._cfg.model or "").strip(),
         )
+        cm = get_config()
+        if should_emit_aico_full_chain_logs(cm):
+            log_aico_llm_call(
+                cm,
+                phase=phase,
+                system=system,
+                user=user,
+                spec=spec,
+                skipped=spec.mode == PhaseLlmMode.skip,
+            )
         if spec.mode == PhaseLlmMode.skip:
             return "", {"step": phase, "skipped": True, "mode": spec.mode.value}
         out = self._llm.complete(system=system, user=user, call_spec=spec)
@@ -123,6 +141,10 @@ class LlmPDCAFramework(ThinkingFramework):
             phase_label=pdca_phase,
         )
         trace.extend(entries)
+        if text:
+            cm = get_config()
+            if should_emit_aico_full_chain_logs(cm):
+                log_aico_tool_observations_text(cm, phase=pdca_phase, observation_text=text)
         return text
 
     def run(self, ctx: FrameworkRunContext) -> FrameworkRunResult:
@@ -131,7 +153,22 @@ class LlmPDCAFramework(ThinkingFramework):
         correlation = ctx.correlation_id or ctx.payload.get("correlation_id")
         user_msg = str(ctx.payload.get("message") or ctx.payload.get("text") or "").strip()
         gather_counters = ToolGatherCounters()
+        corr_s = correlation if isinstance(correlation, str) else None
+        set_aico_observability_context(run_id=str(run_id), correlation_id=corr_s)
+        try:
+            return self._run_inner(ctx, run_id, trace, user_msg, gather_counters, correlation)
+        finally:
+            clear_aico_observability_context()
 
+    def _run_inner(
+        self,
+        ctx: FrameworkRunContext,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        user_msg: str,
+        gather_counters: ToolGatherCounters,
+        correlation: Any,
+    ) -> FrameworkRunResult:
         self._memory.start_run(
             run_id=run_id,
             correlation_id=correlation if isinstance(correlation, str) else None,
@@ -150,7 +187,12 @@ class LlmPDCAFramework(ThinkingFramework):
         plan_out, plan_entry = self._call_llm(PDCAPhase.plan.value, plan_sys, plan_user, ctx)
         trace.append(plan_entry)
         self._memory.update_run(run_id, PDCAPhase.plan.value, trace, "running")
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.plan, ctx, phase_llm_output=plan_out or "")
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.plan,
+            ctx,
+            phase_llm_output=plan_out or "",
+            skipped=bool(plan_entry.get("skipped")),
+        )
 
         plan_tools = self._gather_tools_after_llm(
             PDCAPhase.plan.value, plan_out or "", trace, gather_counters
@@ -175,7 +217,12 @@ class LlmPDCAFramework(ThinkingFramework):
         reply, do_entry = self._call_llm(PDCAPhase.do.value, do_sys, do_user, ctx)
         trace.append(do_entry)
         self._memory.update_run(run_id, PDCAPhase.do.value, trace, "running")
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.do, ctx, phase_llm_output=reply or "")
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.do,
+            ctx,
+            phase_llm_output=reply or "",
+            skipped=bool(do_entry.get("skipped")),
+        )
 
         do_tools = self._gather_tools_after_llm(PDCAPhase.do.value, reply or "", trace, gather_counters)
         if do_tools:
@@ -196,7 +243,12 @@ class LlmPDCAFramework(ThinkingFramework):
         check_entry["passed"] = ok
         trace.append(check_entry)
         self._memory.update_run(run_id, PDCAPhase.check.value, trace, "running")
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.check, ctx, phase_llm_output=check_out or "")
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.check,
+            ctx,
+            phase_llm_output=check_out or "",
+            skipped=bool(check_entry.get("skipped")),
+        )
 
         check_tools = self._gather_tools_after_llm(
             PDCAPhase.check.value, check_out or "", trace, gather_counters
@@ -218,7 +270,12 @@ class LlmPDCAFramework(ThinkingFramework):
         act_entry["step"] = PDCAPhase.act.value
         act_entry["final_reply"] = final_text
         trace.append(act_entry)
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.action, ctx, phase_llm_output=act_out or "")
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.action,
+            ctx,
+            phase_llm_output=act_out or "",
+            skipped=bool(act_entry.get("skipped")),
+        )
 
         self._memory.finish_run(
             run_id,
@@ -238,7 +295,12 @@ class LlmPDCAFramework(ThinkingFramework):
         )
 
         self._tick_hooks.on_before_phase(ThinkingPhaseId.post, ctx)
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.post, ctx, phase_llm_output=final_text)
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.post,
+            ctx,
+            phase_llm_output=final_text,
+            skipped=False,
+        )
 
         return FrameworkRunResult(
             ok=ok,

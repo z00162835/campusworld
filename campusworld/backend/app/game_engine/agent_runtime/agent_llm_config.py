@@ -100,7 +100,9 @@ def yaml_llm_base_from_by_service_id(
         if raw is None and ref != service_id:
             raw = by_sid.get(service_id)
         if raw is not None and isinstance(raw, dict):
-            cfg = AgentLlmServiceConfig.model_validate(raw)
+            raw_for_llm = dict(raw)
+            raw_for_llm.pop("observability", None)
+            cfg = AgentLlmServiceConfig.model_validate(raw_for_llm)
     return cfg
 
 
