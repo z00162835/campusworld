@@ -297,35 +297,40 @@ class FindCommand(SystemCommand):
         super().__init__(
             "find",
             (
-                "Find graph nodes via ILIKE on name/description, `#<id>` for "
-                "direct lookup, `*<account>` for account. Returns "
-                "`data.results` [{id, type_code, name, location_id, "
-                "description}] + `data.total`/`data.next_offset`. "
-                "Not semantic search."
+                "Find graph nodes. Flags AND-compose: -n name, -des desc, "
+                "-t type, -loc id, -l N, -a (capped). Shortcuts: #<id>, "
+                "*<account>. Returns data.results [{id,type_code,name,"
+                "location_id,description}] + total/next_offset. Not semantic."
             ),
             aliases=["@find", "locate"],
         )
 
     def get_usage(self) -> str:
         return (
-            "find <query | #<id> | *<account>> "
-            "[--type <type_code>] [--exact] [--startswith] "
-            "[--in <room_id>] [--limit <N>]"
+            "find [<query> | #<id> | *<account>] "
+            "[-n <name>] [-des <desc>] [-t <type>] "
+            "[-loc <room_id>] [-l <N>] [-a] [--exact] [--startswith]"
         )
 
     def _get_specific_help(self) -> str:
         return (
-            "\nSearches Node.name and Node.description (case-insensitive)."
-            "\nShortcuts: `#<id>` for direct id lookup, `*<account>` for account-name lookup."
+            "\nSearches Node.name and Node.description (case-insensitive, fuzzy ILIKE)."
+            "\nFlags AND-compose: -n/-des/-t/-loc stack; -a returns the full list"
+            "\n(capped at commands.find.hard_max_limit for safety)."
+            "\nShortcuts: `#<id>` for direct id lookup, `*<account>` for account lookup."
+            "\nShort aliases: -n=--name, -des=--describe, -t=--type,"
+            "\n               -loc=--in, -l=--limit, -a=--all."
             "\nCommon type_codes: account, character, room, world, world_entrance,"
             "\n                   building, item, system_command_ability, npc_agent"
             "\n\nExamples:"
-            "\n  find hicampus --type world_entrance"
-            "\n  find 广场 --limit 5"
-            "\n  find --type room --in 1"
+            "\n  find hicampus -t world_entrance"
+            "\n  find -n Atrium -t room -loc 35"
+            "\n  find -n \"Name\" -t \"Room\" -des \"this is a room\" -loc 35"
+            "\n  find -t room -a"
             "\n  find #42"
             "\n  find *admin"
             "\n  find atrium --exact"
+            "\nFull SPEC: docs/commands/SPEC/features/F01_FIND_COMMAND.md"
         )
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
