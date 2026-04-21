@@ -248,6 +248,33 @@ class AgentsConfig(BaseModel):
     llm: AgentsLlmConfig = Field(default_factory=AgentsLlmConfig)
 
 
+class FindCommandConfig(BaseModel):
+    """commands.find — tunables for the SYSTEM ``find`` command.
+
+    See docs/commands/SPEC/features/F01_FIND_COMMAND.md for semantics.
+    """
+
+    hard_max_limit: int = Field(
+        default=5000, ge=1, description="Cap for --all SQL LIMIT"
+    )
+    min_trgm_chars: int = Field(
+        default=3,
+        ge=1,
+        description="Below this length, ILIKE is flagged with a WARN (pg_trgm 3-gram)",
+    )
+    explain_on_all_over: int = Field(
+        default=100_000,
+        ge=1,
+        description="Emit EXPLAIN (BUFFERS) log when --all matches above this total",
+    )
+
+
+class CommandsConfig(BaseModel):
+    """commands.* — per-command tunables."""
+
+    find: FindCommandConfig = Field(default_factory=FindCommandConfig)
+
+
 class Settings(BaseModel):
     """应用设置"""
     app: AppConfig = Field(default_factory=AppConfig)
@@ -266,6 +293,7 @@ class Settings(BaseModel):
     business: BusinessConfig = Field(default_factory=BusinessConfig)
     development: DevelopmentConfig = Field(default_factory=DevelopmentConfig)
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
+    commands: CommandsConfig = Field(default_factory=CommandsConfig)
 
     @field_validator("security")
     @classmethod
