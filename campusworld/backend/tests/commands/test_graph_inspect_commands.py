@@ -60,8 +60,10 @@ class _FakeQuery:
     def __init__(self, rows: Sequence[Any], limiter: int = 10_000):
         self._rows = list(rows)
         self._limit = limiter
+        self.filter_calls: List[tuple] = []
 
-    def filter(self, *_args, **_kwargs) -> "_FakeQuery":
+    def filter(self, *args, **_kwargs) -> "_FakeQuery":
+        self.filter_calls.append(args)
         return self
 
     def order_by(self, *_args, **_kwargs) -> "_FakeQuery":
@@ -98,12 +100,15 @@ class _FakeSession:
         self._nodes = list(nodes)
         self._rels = list(rels)
         self._node_lookup = node_lookup
+        self.last_node_query: Optional[_FakeQuery] = None
 
     def query(self, model):
         name = getattr(model, "__name__", str(model))
         if name == "Node":
             rows = self._node_lookup(self._nodes) if self._node_lookup else self._nodes
-            return _FakeQuery(rows)
+            q = _FakeQuery(rows)
+            self.last_node_query = q
+            return q
         if name == "Relationship":
             return _FakeQuery(self._rels)
         return _FakeQuery([])
@@ -512,3 +517,136 @@ def test_describe_renders_node_with_attrs_and_edges():
     assert "world_id: hicampus" in res.message
     assert "-[connects_to role=north]-> [43] room: Plaza" in res.message
     assert res.data["id"] == 42
+
+
+# ------------------- v3 behaviour: query builder & renderer -------------------
+# See F01 §4 (AND composition), §5 (--all safety ceiling), §6 (data contract),
+# §8 (short-query WARN). These tests do not simulate real SQL; they verify
+# that every new flag reaches the SQL pipeline (via filter-call counting) and
+# that output shape matches the SPEC.
+
+
+@pytest.mark.unit
+def test_find_query_descriptor_carries_v3_fields():
+    session = _FakeSession(nodes=[_FakeNode(1, "room", "Atrium", description="x")])
+    res = FindCommand().execute(
+        _ctx(session), ["-n", "Atr", "-t", "room", "-des", "x", "-loc", "35"]
+    )
+    assert res.success, res.message
+    q = res.data["query"]
+    assert q["name"] == "Atr"
+    assert q["describe"] == "x"
+    assert q["type_code"] == "room"
+    assert q["in_location"] == 35
+    assert q["all"] is False
+    assert q["limit"] == 12
+
+
+@pytest.mark.unit
+def test_find_name_flag_adds_predicate_to_sql_pipeline():
+    session = _FakeSession(nodes=[_FakeNode(1, "room", "Atrium", description="x")])
+    FindCommand().execute(_ctx(session), ["-n", "Atrium"])
+    fq = session.last_node_query
+    assert fq is not None
+    # is_active + name => >= 2 filter invocations. v2 positional would have
+    # produced only (is_active, name/description OR) => also 2; so the
+    # real lock is downstream (descriptor, see above). Keep this as a
+    # smoke check that the pipeline is still wired.
+    assert len(fq.filter_calls) >= 2
+
+
+@pytest.mark.unit
+def test_find_name_and_describe_produce_two_separate_filter_calls():
+    session = _FakeSession(nodes=[_FakeNode(1, "room", "Atrium", description="hall")])
+    FindCommand().execute(_ctx(session), ["-n", "Atrium", "-des", "hall"])
+    fq = session.last_node_query
+    assert fq is not None
+    # AND composition: is_active + name + description = 3 filter calls.
+    # Under v2 positional this would be 2 (is_active + OR clause).
+    assert len(fq.filter_calls) >= 3
+
+
+@pytest.mark.unit
+def test_find_all_bypasses_limit(monkeypatch):
+    """--all must ignore --limit and cap at the settings hard_max_limit."""
+    import app.commands.graph_inspect_commands as mod
+    from app.core.settings import FindCommandConfig
+
+    def _fake_cfg():
+        return FindCommandConfig(
+            hard_max_limit=3, min_trgm_chars=1, explain_on_all_over=1_000_000
+        )
+
+    monkeypatch.setattr(mod, "_find_cfg", _fake_cfg)
+
+    session = _FakeSession(
+        nodes=[_FakeNode(i, "room", f"r{i}", description="hall") for i in range(1, 7)]
+    )
+    res = FindCommand().execute(_ctx(session), ["-t", "room", "-a"])
+    assert res.success, res.message
+    assert len(res.data["results"]) == 3
+    assert res.data["total"] == 6
+    assert res.data["next_offset"] == 3
+    assert "truncated" in res.message.lower()
+
+
+@pytest.mark.unit
+def test_find_all_under_hard_cap_no_truncation(monkeypatch):
+    import app.commands.graph_inspect_commands as mod
+    from app.core.settings import FindCommandConfig
+
+    monkeypatch.setattr(
+        mod,
+        "_find_cfg",
+        lambda: FindCommandConfig(hard_max_limit=100, min_trgm_chars=1),
+    )
+
+    session = _FakeSession(
+        nodes=[_FakeNode(i, "room", f"r{i}", description="x") for i in range(1, 4)]
+    )
+    res = FindCommand().execute(_ctx(session), ["-t", "room", "-a"])
+    assert res.success, res.message
+    assert res.data["total"] == 3
+    assert res.data["next_offset"] is None
+    assert "truncated" not in res.message.lower()
+
+
+@pytest.mark.unit
+def test_find_short_name_value_emits_trgm_warning(caplog):
+    """Short ILIKE values degrade pg_trgm; the runtime must WARN."""
+    session = _FakeSession(nodes=[_FakeNode(1, "room", "AB", description="x")])
+    import logging
+
+    with caplog.at_level(logging.WARNING, logger="app.commands.find"):
+        res = FindCommand().execute(_ctx(session), ["-n", "AB"])
+    assert res.success
+    joined = " ".join(r.getMessage().lower() for r in caplog.records)
+    assert "trgm" in joined or "short" in joined
+
+
+@pytest.mark.unit
+def test_find_long_name_value_does_not_emit_trgm_warning(caplog):
+    session = _FakeSession(nodes=[_FakeNode(1, "room", "Atrium", description="x")])
+    import logging
+
+    with caplog.at_level(logging.WARNING, logger="app.commands.find"):
+        FindCommand().execute(_ctx(session), ["-n", "Atrium"])
+    joined = " ".join(r.getMessage().lower() for r in caplog.records)
+    assert "trgm" not in joined
+
+
+@pytest.mark.unit
+def test_find_data_query_limit_echoes_user_input_even_when_all(monkeypatch):
+    """F01 §2: --all silently ignores --limit for SQL but data.query.limit keeps user input for audit."""
+    import app.commands.graph_inspect_commands as mod
+    from app.core.settings import FindCommandConfig
+
+    monkeypatch.setattr(
+        mod,
+        "_find_cfg",
+        lambda: FindCommandConfig(hard_max_limit=100, min_trgm_chars=1),
+    )
+    session = _FakeSession(nodes=[_FakeNode(1, "room", "r", description="x")])
+    res = FindCommand().execute(_ctx(session), ["-t", "room", "-a", "-l", "7"])
+    assert res.data["query"]["limit"] == 7
+    assert res.data["query"]["all"] is True
