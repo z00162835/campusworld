@@ -23,7 +23,8 @@ for ``describe``).
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from app.commands.base import CommandContext, CommandResult, SystemCommand
 
@@ -62,6 +63,9 @@ class _ParsedFindArgs:
         "startswith",
         "in_location",
         "limit",
+        "name",
+        "describe",
+        "all",
         "error",
     )
 
@@ -74,69 +78,173 @@ class _ParsedFindArgs:
         self.startswith: bool = False
         self.in_location: Optional[int] = None
         self.limit: int = _DEFAULT_LIMIT
+        self.name: Optional[str] = None
+        self.describe: Optional[str] = None
+        self.all: bool = False
         self.error: Optional[str] = None
 
 
+# --------------------- flag-spec dispatch table (v3) ----------------------
+#
+# The parser is table-driven: each canonical long flag is described once in
+# ``_FLAG_SPEC`` as a ``_FlagSpec`` row, and short aliases in ``_FLAG_ALIASES``
+# resolve to the canonical long form. Adding a future flag is a one-row edit
+# here; ``_parse_find_args`` itself never grows new branches.
+
+
+def _coerce_type(v: str) -> Optional[str]:
+    return v.strip() or None
+
+
+def _coerce_limit(v: str) -> int:
+    return max(1, min(_MAX_LIMIT, int(v)))
+
+
+def _coerce_loc(v: str) -> int:
+    return int(v)
+
+
+@dataclass(frozen=True)
+class _FlagSpec:
+    """Declarative description of one CLI flag.
+
+    ``kind`` is one of:
+      - ``"value"``  consumes the next argv token; stored via ``dest`` after
+                     ``coerce``; ``ValueError`` maps to a parser error using
+                     ``bad_value_msg`` (falls back to ``need_value_msg``).
+      - ``"bool"``   sets ``dest`` to ``True``; no value consumed.
+      - ``"error"``  short-circuits parsing with ``error_msg`` (used for
+                     migration traps such as the removed ``--location``).
+    """
+
+    kind: str
+    dest: Optional[str] = None
+    coerce: Optional[Callable[[str], Any]] = None
+    need_value_msg: str = ""
+    bad_value_msg: str = ""
+    error_msg: str = ""
+
+
+_FLAG_SPEC: Dict[str, _FlagSpec] = {
+    "--type": _FlagSpec(
+        "value",
+        dest="type_code",
+        coerce=_coerce_type,
+        need_value_msg="--type requires a value (e.g. room, account, world_entrance)",
+    ),
+    "--limit": _FlagSpec(
+        "value",
+        dest="limit",
+        coerce=_coerce_limit,
+        need_value_msg="--limit requires a number",
+        bad_value_msg="--limit must be an integer",
+    ),
+    "--in": _FlagSpec(
+        "value",
+        dest="in_location",
+        coerce=_coerce_loc,
+        need_value_msg="--in requires a room id",
+        bad_value_msg="--in must be an integer room id",
+    ),
+    "--name": _FlagSpec(
+        "value",
+        dest="name",
+        coerce=str,
+        need_value_msg="--name requires a value",
+    ),
+    "--describe": _FlagSpec(
+        "value",
+        dest="describe",
+        coerce=str,
+        need_value_msg="--describe requires a value",
+    ),
+    "--exact": _FlagSpec("bool", dest="exact"),
+    "--startswith": _FlagSpec("bool", dest="startswith"),
+    "--all": _FlagSpec("bool", dest="all"),
+    # v2 -> v3 migration trap.
+    "--location": _FlagSpec(
+        "error",
+        error_msg="--location has been renamed in v3; use --in <room_id> or -loc <room_id>",
+    ),
+}
+
+_FLAG_ALIASES: Dict[str, str] = {
+    "-t": "--type",
+    "-l": "--limit",
+    "-loc": "--in",
+    "-n": "--name",
+    "-des": "--describe",
+    "-a": "--all",
+}
+
+
+def _resolve_flag(token: str) -> Optional[Tuple[str, _FlagSpec]]:
+    """Return ``(canonical, spec)`` for a flag token, or ``None`` if unknown."""
+    canonical = _FLAG_ALIASES.get(token, token)
+    spec = _FLAG_SPEC.get(canonical)
+    return (canonical, spec) if spec is not None else None
+
+
 def _parse_find_args(args: List[str]) -> _ParsedFindArgs:
-    """Parse ``find`` arguments.
+    """Parse ``find`` arguments (v3; see docs/commands/SPEC/features/F01_FIND_COMMAND.md).
 
     Accepts Evennia-style positional shortcuts (``#id``, ``*account``) plus
-    our long-form switches. The first non-flag token is treated as the
+    the v3 flag surface. The first non-flag token is treated as the
     positional query; additional positional tokens are joined with spaces so
-    callers may write ``find hi campus`` without quoting.
+    callers may write ``find hi campus`` without quoting. Flags are
+    dispatched through ``_FLAG_SPEC`` / ``_FLAG_ALIASES``, so adding a new
+    flag is a one-row change at the table.
     """
     out = _ParsedFindArgs()
-    i = 0
     positional: List[str] = []
+    i = 0
     while i < len(args):
-        a = args[i]
-        if a in ("--type", "-t"):
-            if i + 1 >= len(args):
-                out.error = "--type requires a value (e.g. room, account, world_entrance)"
+        token = args[i]
+        resolved = _resolve_flag(token)
+        if resolved is not None:
+            canonical, spec = resolved
+            if spec.kind == "error":
+                out.error = spec.error_msg
                 return out
-            out.type_code = args[i + 1].strip() or None
-            i += 2
-            continue
-        if a in ("--limit", "-n"):
+            if spec.kind == "bool":
+                setattr(out, spec.dest, True)
+                i += 1
+                continue
+            # value flag
             if i + 1 >= len(args):
-                out.error = "--limit requires a number"
+                out.error = spec.need_value_msg
                 return out
+            raw = args[i + 1]
             try:
-                out.limit = max(1, min(_MAX_LIMIT, int(args[i + 1])))
+                setattr(out, spec.dest, spec.coerce(raw))
             except ValueError:
-                out.error = f"--limit must be an integer, got {args[i + 1]!r}"
+                prefix = spec.bad_value_msg or spec.need_value_msg
+                out.error = f"{prefix}, got {raw!r}"
                 return out
             i += 2
             continue
-        if a in ("--in", "--location"):
-            if i + 1 >= len(args):
-                out.error = "--in requires a room id"
-                return out
-            try:
-                out.in_location = int(args[i + 1])
-            except ValueError:
-                out.error = f"--in must be an integer room id, got {args[i + 1]!r}"
-                return out
-            i += 2
-            continue
-        if a == "--exact":
-            out.exact = True
-            i += 1
-            continue
-        if a == "--startswith":
-            out.startswith = True
-            i += 1
-            continue
-        if a.startswith("--"):
-            out.error = f"unknown flag: {a}"
+        # Unknown token — anything starting with '-' (but not a negative
+        # number) is treated as a typo rather than positional.
+        if token.startswith("--") or (
+            token.startswith("-") and len(token) > 1 and not token[1].isdigit()
+        ):
+            out.error = f"unknown flag: {token}"
             return out
-        positional.append(a)
+        positional.append(token)
         i += 1
 
+    # --- cross-flag validation ---
     if out.exact and out.startswith:
         out.error = "--exact and --startswith are mutually exclusive"
         return out
+    if positional and (out.name is not None or out.describe is not None):
+        out.error = (
+            "positional query and --name/--describe are mutually exclusive; "
+            "pick one form"
+        )
+        return out
 
+    # --- positional interpretation ---
     if positional:
         first = positional[0]
         if first.startswith("#") and len(first) > 1 and all(
@@ -158,11 +266,20 @@ def _parse_find_args(args: List[str]) -> _ParsedFindArgs:
         else:
             out.query = " ".join(positional).strip() or None
 
-    if out.query is None and out.node_id is None and out.account_name is None:
-        if out.type_code is None and out.in_location is None:
-            out.error = (
-                "find requires a query, #<id>, *<account>, --type, or --in"
-            )
+    has_any_predicate = any(
+        v is not None
+        for v in (
+            out.query,
+            out.node_id,
+            out.account_name,
+            out.name,
+            out.describe,
+            out.type_code,
+            out.in_location,
+        )
+    )
+    if not has_any_predicate:
+        out.error = "find requires a query, #<id>, *<account>, -n, -des, --type, or --in"
     return out
 
 
