@@ -347,11 +347,13 @@ class FindCommand(SystemCommand):
                 )
             return _render_find_results([row], total=1, parsed=parsed)
 
-        rows, total = _run_find_query(session, parsed=parsed)
+        rows, total, safety_ceiling = _run_find_query(session, parsed=parsed)
         if not rows:
             hint = _describe_no_match(parsed)
             return CommandResult.success_result(hint, data=_empty_find_payload(parsed))
-        return _render_find_results(rows, total=total, parsed=parsed)
+        return _render_find_results(
+            rows, total=total, parsed=parsed, safety_ceiling=safety_ceiling
+        )
 
 
 class DescribeCommand(SystemCommand):
@@ -444,7 +446,11 @@ class DescribeCommand(SystemCommand):
 
 
 def _find_query_descriptor(parsed: _ParsedFindArgs) -> dict:
-    """Serialize the parsed query into a stable ``data.query`` payload."""
+    """Serialize the parsed query into a stable ``data.query`` payload.
+
+    Fields are contractually exposed to the LLM manifest; additions are
+    safe, but renames break downstream tool consumers.
+    """
 
     return {
         "text": parsed.query,
@@ -455,6 +461,9 @@ def _find_query_descriptor(parsed: _ParsedFindArgs) -> dict:
         "exact": parsed.exact,
         "startswith": parsed.startswith,
         "limit": parsed.limit,
+        "name": parsed.name,
+        "describe": parsed.describe,
+        "all": parsed.all,
     }
 
 
@@ -473,6 +482,10 @@ def _describe_no_match(parsed: _ParsedFindArgs) -> str:
         parts.append(f"query={parsed.query!r}")
     if parsed.account_name:
         parts.append(f"account={parsed.account_name!r}")
+    if parsed.name:
+        parts.append(f"name={parsed.name!r}")
+    if parsed.describe:
+        parts.append(f"describe={parsed.describe!r}")
     if parsed.type_code:
         parts.append(f"type={parsed.type_code!r}")
     if parsed.in_location is not None:
@@ -487,8 +500,19 @@ def _describe_no_match(parsed: _ParsedFindArgs) -> str:
 
 
 def _render_find_results(
-    rows: List[Any], *, total: int, parsed: _ParsedFindArgs
+    rows: List[Any],
+    *,
+    total: int,
+    parsed: _ParsedFindArgs,
+    safety_ceiling: Optional[int] = None,
 ) -> CommandResult:
+    """Render find hits to text + structured ``data`` payload.
+
+    ``safety_ceiling`` is set when ``--all`` truncated at the hard cap
+    (see F01 §5). It drives the warning label and ``next_offset`` so that
+    truncation-by-``--limit`` and truncation-by-``--all`` stay
+    distinguishable for tool consumers.
+    """
     lines: List[str] = []
     descriptor: List[str] = []
     if parsed.query:
@@ -497,14 +521,25 @@ def _render_find_results(
         descriptor.append(f"account={parsed.account_name!r}")
     if parsed.node_id is not None:
         descriptor.append(f"id={parsed.node_id}")
+    if parsed.name:
+        descriptor.append(f"name={parsed.name!r}")
+    if parsed.describe:
+        descriptor.append(f"describe={parsed.describe!r}")
     if parsed.type_code:
         descriptor.append(f"type={parsed.type_code!r}")
     if parsed.in_location is not None:
         descriptor.append(f"in_location={parsed.in_location}")
 
+    truncated = total > len(rows)
+    if safety_ceiling is not None and total > safety_ceiling:
+        truncated_note = f" (of {total} matching, truncated at safety ceiling)"
+    elif truncated:
+        truncated_note = f" (of {total} matching, truncated)"
+    else:
+        truncated_note = ""
     header = (
         f"Found {len(rows)} node(s)"
-        + (f" (of {total} matching, truncated)" if total > len(rows) else "")
+        + truncated_note
         + (" for " + " ".join(descriptor) if descriptor else "")
         + ":"
     )
@@ -528,7 +563,14 @@ def _render_find_results(
         )
     lines.append("")
     lines.append("Hint: run `describe <id>` for full details.")
-    next_offset = len(result_data) if total > len(result_data) else None
+
+    if safety_ceiling is not None and total > safety_ceiling:
+        next_offset: Optional[int] = safety_ceiling
+    elif truncated:
+        next_offset = len(result_data)
+    else:
+        next_offset = None
+
     return CommandResult.success_result(
         "\n".join(lines),
         data={
@@ -550,16 +592,46 @@ def _lookup_by_id(session, node_id: int):
     )
 
 
-def _run_find_query(session, *, parsed: _ParsedFindArgs) -> Tuple[List[Any], int]:
-    """Return ``(rows, total_matching)`` with ``len(rows) <= parsed.limit``.
+_FIND_LOGGER_NAME = "app.commands.find"
 
-    Matches ``Node.name`` / ``Node.description`` with the name-pattern
-    strictness derived from ``--exact`` / ``--startswith``. Inactive nodes
-    and nodes outside ``--in`` (if given) are excluded.
+
+def _warn_if_short_trgm(value: Optional[str], *, label: str, min_len: int) -> None:
+    """WARN when an ILIKE value is shorter than the trgm 3-gram threshold.
+
+    A short value forces pg_trgm to fall back to a seq-scan; see F01 §8.
+    We never block the query — the warning is advisory only.
+    """
+    if not value:
+        return
+    stripped = value.strip()
+    if len(stripped) < min_len:
+        import logging
+
+        logging.getLogger(_FIND_LOGGER_NAME).warning(
+            "find: short trgm query on %s (%r, len=%d < %d); pg_trgm may fall back to seq-scan",
+            label,
+            stripped,
+            len(stripped),
+            min_len,
+        )
+
+
+def _run_find_query(
+    session, *, parsed: _ParsedFindArgs
+) -> Tuple[List[Any], int, Optional[int]]:
+    """Return ``(rows, total_matching, safety_ceiling_or_None)``.
+
+    All predicates are **AND-composed** (F01 §4). ``--all`` ignores
+    ``parsed.limit`` and caps the SQL ``LIMIT`` at
+    ``commands.find.hard_max_limit`` (F01 §5). A ``LIMIT+1`` probe keeps
+    the hot path cheap; a real ``COUNT(*)`` is only paid for when
+    truncation actually occurs.
     """
     from sqlalchemy import or_
 
     from app.models.graph import Node
+
+    cfg = _find_cfg()
 
     q = session.query(Node).filter(Node.is_active == True)  # noqa: E712
 
@@ -568,8 +640,13 @@ def _run_find_query(session, *, parsed: _ParsedFindArgs) -> Tuple[List[Any], int
     if parsed.in_location is not None:
         q = q.filter(Node.location_id == parsed.in_location)
 
+    # Legacy positional path (query / *account): keep the name-OR-description
+    # behaviour for back-compat; --exact / --startswith still modulate.
     search_term = parsed.query or parsed.account_name
     if search_term:
+        _warn_if_short_trgm(
+            search_term, label="query", min_len=cfg.min_trgm_chars
+        )
         if parsed.exact:
             q = q.filter(Node.name.ilike(search_term))
         elif parsed.startswith:
@@ -578,9 +655,55 @@ def _run_find_query(session, *, parsed: _ParsedFindArgs) -> Tuple[List[Any], int
             like = f"%{search_term}%"
             q = q.filter(or_(Node.name.ilike(like), Node.description.ilike(like)))
 
-    total = q.count()
-    rows = q.order_by(Node.type_code.asc(), Node.name.asc()).limit(parsed.limit).all()
-    return rows, total
+    # v3: --name / --describe are independent AND predicates. Always fuzzy
+    # ILIKE; --exact / --startswith still shape `--name` for consistency
+    # with the positional path.
+    if parsed.name:
+        _warn_if_short_trgm(parsed.name, label="--name", min_len=cfg.min_trgm_chars)
+        if parsed.exact:
+            q = q.filter(Node.name.ilike(parsed.name))
+        elif parsed.startswith:
+            q = q.filter(Node.name.ilike(f"{parsed.name}%"))
+        else:
+            q = q.filter(Node.name.ilike(f"%{parsed.name}%"))
+
+    if parsed.describe:
+        _warn_if_short_trgm(
+            parsed.describe, label="--describe", min_len=cfg.min_trgm_chars
+        )
+        q = q.filter(Node.description.ilike(f"%{parsed.describe}%"))
+
+    # --- limit strategy ---
+    if parsed.all:
+        sql_limit = cfg.hard_max_limit
+    else:
+        sql_limit = parsed.limit
+
+    ordered = q.order_by(Node.type_code.asc(), Node.name.asc())
+    # LIMIT+1 probe: one extra row tells us cheaply whether truncation
+    # occurred; only then do we pay for a real COUNT(*).
+    probed = ordered.limit(sql_limit + 1).all()
+    if len(probed) <= sql_limit:
+        rows = probed
+        total = len(probed)
+    else:
+        rows = probed[:sql_limit]
+        total = q.count()
+        # Optional EXPLAIN (BUFFERS) touch-point for oversized --all sweeps.
+        if parsed.all and total >= cfg.explain_on_all_over:
+            try:
+                import logging
+
+                logging.getLogger(_FIND_LOGGER_NAME).warning(
+                    "find: --all matched %d rows (>= %d); consider narrowing by --type/--in",
+                    total,
+                    cfg.explain_on_all_over,
+                )
+            except Exception:
+                pass
+
+    safety_ceiling = cfg.hard_max_limit if parsed.all else None
+    return rows, total, safety_ceiling
 
 
 def _resolve_node_by_id_or_name(session, raw: str):
