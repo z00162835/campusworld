@@ -1,11 +1,26 @@
-"""MiniMax Anthropic-compatible Messages API (POST .../anthropic/v1/messages)."""
+"""MiniMax Anthropic-compatible Messages API (POST .../anthropic/v1/messages).
+
+Provides both the plain ``complete`` path and the native ``tool_use`` path
+(`supports_tools() == True` / :meth:`complete_with_tools`). Wire-format
+conversions stay inside this module so the framework only sees the neutral
+:mod:`app.game_engine.agent_runtime.tool_calling` primitives.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from app.game_engine.agent_runtime.llm_client import LlmCallSpec
 from app.game_engine.agent_runtime.llm_providers.http_utils import httpx_post_json
+from app.game_engine.agent_runtime.tool_calling import (
+    AssistantToolUseTurn,
+    CompleteWithToolsResult,
+    ConversationTurn,
+    TextTurn,
+    ToolCall,
+    ToolResultsTurn,
+    ToolSchema,
+)
 
 
 def minimax_anthropic_messages_url(base_url: str) -> str:
@@ -91,3 +106,140 @@ class MinimaxAnthropicMessagesHttpLlmClient:
             if isinstance(block, dict) and block.get("type") == "text":
                 parts.append(str(block.get("text") or ""))
         return "\n".join(p.strip() for p in parts if p.strip()).strip()
+
+    # ---------------- native tool_use ----------------
+
+    def supports_tools(self) -> bool:
+        return True
+
+    def complete_with_tools(
+        self,
+        *,
+        system: str,
+        turns: Sequence[ConversationTurn],
+        tools: Sequence[ToolSchema],
+        call_spec: Optional[LlmCallSpec] = None,
+    ) -> CompleteWithToolsResult:
+        """Anthropic-style ``tools`` + ``tool_use`` / ``tool_result`` round-trip."""
+        spec = call_spec or LlmCallSpec()
+        model = (spec.model or self._default_model).strip() or self._default_model
+        max_tokens = spec.max_tokens if spec.max_tokens is not None else self._default_max_tokens
+        timeout = spec.timeout_sec if spec.timeout_sec is not None else self._timeout
+        temp = spec.temperature if spec.temperature is not None else self._default_temperature
+        temp = clamp_anthropic_temperature(float(temp))
+
+        url = minimax_anthropic_messages_url(self._base_url)
+        messages = _turns_to_anthropic_messages(turns)
+        body: Dict[str, Any] = {
+            "model": model,
+            "max_tokens": int(max_tokens),
+            "system": system or " ",
+            "messages": messages,
+            "stream": False,
+            "temperature": temp,
+            "tools": [_tool_schema_to_anthropic(t) for t in tools],
+        }
+        body.update(spec.extra or {})
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "x-api-key": self._api_key,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+        }
+        data = httpx_post_json(url, headers=headers, body=body, timeout=timeout)
+        err = data.get("error")
+        if isinstance(err, dict) and err.get("message"):
+            raise RuntimeError(str(err.get("message")))
+        return _parse_anthropic_response(data)
+
+
+# --------- module-local helpers; no external imports rely on these names ---------
+
+
+def _tool_schema_to_anthropic(schema: ToolSchema) -> Dict[str, Any]:
+    return {
+        "name": schema.name,
+        "description": schema.description,
+        "input_schema": dict(schema.input_schema),
+    }
+
+
+def _turns_to_anthropic_messages(turns: Sequence[ConversationTurn]) -> List[Dict[str, Any]]:
+    """Map neutral turns to Anthropic ``messages`` array.
+
+    * ``TextTurn`` → ``{role, content: [{type: text, text}]}``.
+    * ``AssistantToolUseTurn`` → ``{role: assistant, content: [text?, tool_use…]}``.
+    * ``ToolResultsTurn`` → ``{role: user, content: [{type: tool_result, ...}]}``.
+
+    The neutral ``AssistantToolUseTurn`` is produced by the runtime after each
+    native tool round; this adapter maps it to wire-format ``tool_use`` blocks
+    so ``tool_result`` ids resolve (Anthropic / MiniMax Anthropic-compatible).
+    """
+    messages: List[Dict[str, Any]] = []
+    for t in turns:
+        if isinstance(t, TextTurn):
+            role = t.role if t.role in ("user", "assistant") else "user"
+            messages.append(
+                {
+                    "role": role,
+                    "content": [{"type": "text", "text": t.text or " "}],
+                }
+            )
+        elif isinstance(t, AssistantToolUseTurn):
+            blocks: List[Dict[str, Any]] = []
+            if (t.text or "").strip():
+                blocks.append({"type": "text", "text": (t.text or "").strip()})
+            for c in t.tool_calls:
+                blocks.append(
+                    {
+                        "type": "tool_use",
+                        "id": (c.id or "").strip(),
+                        "name": c.name,
+                        "input": {"args": list(c.args)},
+                    }
+                )
+            if blocks:
+                messages.append({"role": "assistant", "content": blocks})
+        elif isinstance(t, ToolResultsTurn):
+            content_blocks: List[Dict[str, Any]] = []
+            for r in t.results:
+                content_blocks.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": r.id,
+                        "content": r.text or "",
+                        "is_error": not r.ok,
+                    }
+                )
+            if content_blocks:
+                messages.append({"role": "user", "content": content_blocks})
+    return messages
+
+
+def _parse_anthropic_response(data: Dict[str, Any]) -> CompleteWithToolsResult:
+    text_parts: List[str] = []
+    calls: List[ToolCall] = []
+    for block in data.get("content") or []:
+        if not isinstance(block, dict):
+            continue
+        btype = block.get("type")
+        if btype == "text":
+            text_parts.append(str(block.get("text") or ""))
+        elif btype == "tool_use":
+            name = str(block.get("name") or "").strip()
+            raw_input = block.get("input") or {}
+            args: List[str] = []
+            if isinstance(raw_input, dict):
+                maybe_args = raw_input.get("args")
+                if isinstance(maybe_args, list):
+                    args = [str(a) for a in maybe_args]
+                else:
+                    # Fallback: flatten other primitive fields in declaration order.
+                    args = [str(v) for v in raw_input.values() if isinstance(v, (str, int, float))]
+            calls.append(ToolCall(id=str(block.get("id") or ""), name=name, args=args))
+    finish = str(data.get("stop_reason") or ("tool_use" if calls else "stop"))
+    return CompleteWithToolsResult(
+        text="\n".join(p.strip() for p in text_parts if p.strip()).strip(),
+        tool_calls=calls,
+        finish_reason=finish,
+    )

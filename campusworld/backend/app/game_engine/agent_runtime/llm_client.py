@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checkable
 
 from app.core.settings import PhaseLlmMode
 
@@ -31,15 +31,65 @@ class LlmCallSpec:
 
 @runtime_checkable
 class LlmClient(Protocol):
-    """LLM surface for agent frameworks; supports per-phase call_spec."""
+    """LLM surface for agent frameworks; supports per-phase call_spec.
+
+    All provider clients must implement :meth:`complete` (plain text). The
+    optional methods :meth:`supports_tools` / :meth:`complete_with_tools`
+    let the framework choose between native function-calling and the JSON
+    fallback without knowing the vendor. Defaults (provided by
+    :func:`_default_supports_tools`) keep every existing client safe.
+    """
 
     def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec] = None) -> str:
         """Return assistant text for one user turn (non-streaming)."""
         ...
 
 
+def supports_tools(client: "LlmClient") -> bool:
+    """Ask a client whether it implements native tool-use.
+
+    Default answer is ``False`` — the method is optional, so clients that
+    predate the contract continue to work unchanged.
+    """
+    fn = getattr(client, "supports_tools", None)
+    if callable(fn):
+        try:
+            return bool(fn())
+        except Exception:
+            return False
+    return False
+
+
+def complete_with_tools(
+    client: "LlmClient",
+    *,
+    system: str,
+    turns: Sequence[Any],
+    tools: Sequence[Any],
+    call_spec: Optional[LlmCallSpec] = None,
+):
+    """Invoke native tool-use on a client or raise ``NotImplementedError``.
+
+    ``turns`` is a sequence of :class:`ConversationTurn` instances from
+    :mod:`app.game_engine.agent_runtime.tool_calling` (``TextTurn``,
+    ``AssistantToolUseTurn``, ``ToolResultsTurn``); ``tools`` a sequence
+    of :class:`ToolSchema`. The return type is
+    :class:`CompleteWithToolsResult`.
+    """
+    fn = getattr(client, "complete_with_tools", None)
+    if not callable(fn):
+        raise NotImplementedError(
+            f"{type(client).__name__} does not implement complete_with_tools"
+        )
+    return fn(system=system, turns=list(turns), tools=list(tools), call_spec=call_spec)
+
+
 class StubLlmClient:
-    """Deterministic stub when no provider is configured (tests and dev)."""
+    """Deterministic stub when no provider is configured (tests and dev).
+
+    Declares ``supports_tools() == False`` so the framework routes through
+    the JSON fallback path; this keeps the JSON parser exercised in tests.
+    """
 
     def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec] = None) -> str:
         u = (user or "").strip()
@@ -47,6 +97,9 @@ class StubLlmClient:
         if len(u) > 400:
             u = u[:400] + "…"
         return f"[stub_llm mode={mode}] {u}"
+
+    def supports_tools(self) -> bool:
+        return False
 
 
 def http_llm_available(cfg) -> bool:
