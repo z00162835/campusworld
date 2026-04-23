@@ -115,8 +115,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = async (): Promise<{ success: boolean; error?: string }> => {
+    // Wrap API call in timeout to prevent hanging
+    const logoutPromise = authApi.logout()
+    const timeoutPromise = new Promise<void>((resolve) => {
+      setTimeout(() => resolve(), 3000)
+    })
+
     try {
-      await authApi.logout()
+      await Promise.race([logoutPromise, timeoutPromise])
     } catch (error: any) {
       // Log but don't block logout - client state should be cleared regardless
       console.warn('Logout API failed:', error?.message)

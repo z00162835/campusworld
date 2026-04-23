@@ -4,14 +4,17 @@
       <template #header>
         <div class="card-header">
           <span>个人资料</span>
+          <el-button text @click="handleClose">
+            <el-icon><Close /></el-icon>
+          </el-button>
         </div>
       </template>
       <el-descriptions :column="1" border>
         <el-descriptions-item label="用户名">
-          {{ userInfo.username || '未设置' }}
+          {{ authStore.user?.username || '未设置' }}
         </el-descriptions-item>
         <el-descriptions-item label="邮箱">
-          {{ userInfo.email || '未设置' }}
+          {{ authStore.user?.email || '未设置' }}
         </el-descriptions-item>
       </el-descriptions>
       <el-button type="danger" @click="handleLogout" style="margin-top: var(--spacing-xl)">
@@ -22,49 +25,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import { Close } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
-const userInfo = ref({
-  username: '',
-  email: ''
-})
+const authStore = useAuthStore()
 
 onMounted(async () => {
-  try {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      // 屏蔽登录要求，显示默认信息
-      userInfo.value = {
-        username: '访客',
-        email: 'guest@example.com'
-      }
-      return
-    }
-    
-    const response = await axios.get('/api/v1/accounts/me', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    
-    userInfo.value = response.data
-  } catch (error) {
-    // 屏蔽登录要求，显示默认信息
-    userInfo.value = {
-      username: '访客',
-      email: 'guest@example.com'
-    }
+  if (!authStore.user) {
+    await authStore.fetchUser()
   }
 })
 
-const handleLogout = () => {
-  localStorage.removeItem('access_token')
-  ElMessage.success('已退出登录')
-  router.push('/')
+const handleClose = () => {
+  router.push('/works')
+}
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    ElMessage.success('已退出登录')
+  } catch {
+    // Still navigate even if logout fails
+  } finally {
+    await nextTick()
+    router.push('/login')
+  }
 }
 </script>
 
@@ -74,9 +63,16 @@ const handleLogout = () => {
 }
 
 .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
 }
-</style>
 
+.card-header .el-button {
+  margin-left: auto;
+  padding: var(--spacing-sm);
+}
+</style>

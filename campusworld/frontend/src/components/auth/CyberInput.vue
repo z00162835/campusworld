@@ -8,9 +8,22 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   error?: string
   disabled?: boolean
+  autocomplete?: string
 }>(), {
   type: 'text',
-  placeholder: ''
+  placeholder: '',
+  autocomplete: 'off'
+})
+
+// Compute proper autocomplete based on input type
+const computedAutocomplete = computed(() => {
+  if (props.autocomplete !== 'off') return props.autocomplete
+  // For password fields, use current-password to avoid Chrome warnings
+  if (props.type === 'password') return 'current-password'
+  // For email fields, use email
+  if (props.type === 'email') return 'email'
+  // For text fields (username), use username
+  return 'username'
 })
 
 const emit = defineEmits<{
@@ -52,7 +65,7 @@ const handleBlur = () => {
         :value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
-        autocomplete="off"
+        :autocomplete="computedAutocomplete"
         @input="handleInput"
         @focus="handleFocus"
         @blur="handleBlur"
