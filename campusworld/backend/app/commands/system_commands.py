@@ -14,7 +14,11 @@ class HelpCommand(SystemCommand):
     """帮助命令"""
     
     def __init__(self):
-        super().__init__("help", "Show available commands", ["h", "?"])
+        super().__init__(
+            "help",
+            "List available commands for the current caller, or show detailed help for one command.",
+            ["h", "?"],
+        )
     
     def execute(self, context, args: List[str]) -> CommandResult:
         if args:

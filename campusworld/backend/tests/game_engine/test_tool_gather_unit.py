@@ -85,7 +85,16 @@ def test_preauthorized_executor_blocks_unknown_and_allows_member():
 
     from unittest.mock import patch
 
-    with patch("app.game_engine.agent_runtime.resolved_tool_surface.command_registry.get_command", return_value=_Cmd()):
+    # Return the fake command only for "help" (matches its primary name);
+    # any other lookup returns None so PreauthorizedToolExecutor will see
+    # the unregistered command as unknown and reject via the surface check.
+    def _lookup(name):
+        return _Cmd() if name == "help" else None
+
+    with patch(
+        "app.game_engine.agent_runtime.resolved_tool_surface.command_registry.get_command",
+        side_effect=_lookup,
+    ):
         ok = ex.execute_command(ctx, "help", [])
         bad = ex.execute_command(ctx, "aico", [])
     assert ok.success

@@ -39,6 +39,7 @@ def run_npc_agent_nlp_tick(
 ):
     """Run one LlmPdcaAssistantWorker tick; caller commits session."""
     from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config_for_npc_tick
+    from app.game_engine.agent_runtime.aico_world_context import build_world_snapshot_from_session
     from app.game_engine.agent_runtime.frameworks.base import FrameworkRunResult
     from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config, http_llm_available
     from app.game_engine.agent_runtime.worker import LlmPdcaAssistantWorker
@@ -71,6 +72,27 @@ def run_npc_agent_nlp_tick(
         llm_client=llm,
         agent_llm_config=cfg,
     )
+
+    # Build a per-tick world snapshot. Kept best-effort — any failure here
+    # must not abort the tick; the Plan phase simply sees no snapshot.
+    world_snapshot_text = ""
+    try:
+        caller_username = getattr(context, "username", None)
+        caller_roles = getattr(context, "roles", ()) or ()
+        caller_node_id = _resolve_caller_node_id(session, context)
+        caller_location_node_id = _resolve_caller_location_id(session, caller_node_id)
+        world_snapshot_text = build_world_snapshot_from_session(
+            session,
+            caller_username=caller_username,
+            caller_roles=list(caller_roles),
+            caller_location_node_id=caller_location_node_id,
+            agent_node_attrs=attrs,
+            tool_surface_count=len(getattr(w, "tool_schemas", []) or []),
+            recent_commands=(),
+        )
+    except Exception:
+        world_snapshot_text = ""
+
     from app.core.config_manager import get_config
     from app.core.log.aico_observability import (
         clear_aico_full_chain_tick,
@@ -82,14 +104,66 @@ def run_npc_agent_nlp_tick(
     allow_full = service_id.strip().lower() == "aico" and is_aico_dev_chain_verbose(cm)
     set_aico_full_chain_tick(allow_full)
     try:
+        payload: Dict[str, Any] = {"message": message}
+        if world_snapshot_text:
+            payload["world_snapshot"] = world_snapshot_text
         return w.tick(
-            {"message": message},
+            payload,
             correlation_id=context.session_id,
             memory_context=mem_ctx,
             phase_llm_overrides=phase_llm_overrides,
         )
     finally:
         clear_aico_full_chain_tick()
+
+
+def _resolve_caller_node_id(session, context: CommandContext) -> Optional[int]:
+    """Best-effort: find the caller's ``account`` node id from the context.
+
+    We prefer the context's ``user_id`` when it is numeric; otherwise we fall
+    back to a username lookup. Any failure yields ``None`` so the snapshot
+    simply elides caller-scoped fields.
+    """
+    try:
+        uid = getattr(context, "user_id", None)
+        if uid is not None:
+            try:
+                return int(uid)
+            except (TypeError, ValueError):
+                pass
+        name = getattr(context, "username", None)
+        if not name or session is None:
+            return None
+        from app.models.graph import Node as _Node
+
+        row = (
+            session.query(_Node)
+            .filter(
+                _Node.type_code == "account",
+                _Node.name == str(name),
+                _Node.is_active == True,  # noqa: E712
+            )
+            .first()
+        )
+        return int(row.id) if row is not None else None
+    except Exception:
+        return None
+
+
+def _resolve_caller_location_id(session, caller_node_id: Optional[int]) -> Optional[int]:
+    """Return ``location_id`` for the caller's account node, or ``None``."""
+    if not caller_node_id or session is None:
+        return None
+    try:
+        from app.models.graph import Node as _Node
+
+        row = session.query(_Node).filter(_Node.id == caller_node_id).first()
+        if row is None:
+            return None
+        loc = getattr(row, "location_id", None)
+        return int(loc) if loc else None
+    except Exception:
+        return None
 
 
 def assistant_nlp_command_result(

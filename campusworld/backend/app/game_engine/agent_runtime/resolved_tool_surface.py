@@ -22,6 +22,30 @@ class ResolvedToolSurface:
     tool_command_context: CommandContext
 
 
+def _normalize_allowlist(entries: Sequence[str]) -> List[str]:
+    """Map any allowlist alias to its registered primary command name.
+
+    The node-level ``tool_allowlist`` may reference aliases (e.g.
+    ``locate`` for ``find`` or ``ex`` for ``describe``). We normalize to
+    primary names so downstream filtering against ``list_tool_ids``
+    (which only returns primaries) works regardless of which spelling
+    ops wrote into the node attributes.
+    """
+    out: List[str] = []
+    seen: set = set()
+    for raw in entries or []:
+        name = str(raw).strip().lower()
+        if not name:
+            continue
+        cmd = command_registry.get_command(name)
+        primary = cmd.name if cmd is not None else name
+        if primary in seen:
+            continue
+        seen.add(primary)
+        out.append(primary)
+    return out
+
+
 def build_resolved_tool_surface(
     *,
     node_tool_allowlist: Sequence[str],
@@ -31,11 +55,15 @@ def build_resolved_tool_surface(
     """
     Compute once per worker/tick scope: eligible names from registry policy, then node allowlist,
     then remove blocked names (e.g. recursive assistant command).
+
+    Allowlist aliases are normalized to primary command names so ops
+    can spell tools by any registered alias (e.g. ``ex`` → ``describe``)
+    without breaking surface filtering.
     """
     blocked = blocked_names if blocked_names is not None else DEFAULT_BLOCKED_IN_AGENT_TOOL_CONTEXT
     ex = RegistryToolExecutor()
     policy_names = ex.list_tool_ids(tool_command_context, allowlist=None)
-    allow = [str(x) for x in node_tool_allowlist] if node_tool_allowlist else []
+    allow = _normalize_allowlist(node_tool_allowlist or [])
     filtered = ToolRouter(allowlist=allow).filter(policy_names)
     allowed: FrozenSet[str] = frozenset(n for n in filtered if n not in blocked)
     return ResolvedToolSurface(allowed_command_names=allowed, tool_command_context=tool_command_context)
@@ -70,12 +98,16 @@ class PreauthorizedToolExecutor:
         args: List[str],
     ) -> CommandResult:
         name = (command_name or "").strip().lower()
-        if name not in self.surface.allowed_command_names:
+        # Resolve alias → primary so that e.g. `locate` or `ex` still
+        # routes to `find` / `describe` when only the primary appears on
+        # the resolved surface.
+        cmd = command_registry.get_command(name)
+        primary = cmd.name if cmd is not None else name
+        if primary not in self.surface.allowed_command_names:
             return CommandResult.error_result(
                 f"command not allowed for agent tools: {command_name}",
                 error="not_on_resolved_surface",
             )
-        cmd = command_registry.get_command(name)
         if cmd is None:
             return CommandResult.error_result(f"unknown command: {command_name}")
         meta = dict(context.metadata or {})

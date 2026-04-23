@@ -135,7 +135,16 @@ class AgentToolsCommand(SystemCommand):
     """List tools (command names) optionally filtered by allowlist."""
 
     def __init__(self):
-        super().__init__("agent_tools", "List agent tools / registered commands", ["agent.tools"])
+        super().__init__(
+            "agent_tools",
+            (
+                "List every command registered in the agent tool registry "
+                "with its category. This is the global registry, NOT the "
+                "current agent's callable surface — use `agent_capabilities "
+                "<service_id>` for what a specific agent may invoke."
+            ),
+            ["agent.tools"],
+        )
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         from app.game_engine.agent_runtime.tooling import RegistryToolExecutor, ToolRouter
@@ -199,7 +208,14 @@ class AgentCommand(SystemCommand):
     def __init__(self):
         super().__init__(
             "agent",
-            "List agents and query status",
+            (
+                "Inspect and drive agents. Subcommands: `agent list` "
+                "(all registered agents), `agent status <id>` (one "
+                "agent's runtime status), `agent nlp <handle> <text>` "
+                "(drive an assistant's NLP pipeline with a prompt). "
+                "Prefer `agent_capabilities <service_id>` when you only "
+                "need the capability summary."
+            ),
             [],
         )
 

@@ -72,12 +72,20 @@ def ensure_command_policies_seed(session) -> bool:
     from app.commands.policy_bootstrap import policy_seed_for
     from app.commands.policy_store import CommandPolicyRepository
     from app.commands.agent_commands import get_agent_commands
+    from app.commands.graph_inspect_commands import GRAPH_INSPECT_COMMANDS
     from app.commands.system_commands import SYSTEM_COMMANDS
+    from app.commands.system_primer_command import PRIMER_COMMANDS
     from app.commands.game import GAME_COMMANDS
     from app.commands.builder import get_build_cmdset
 
     repo = CommandPolicyRepository(session)
-    commands = list(SYSTEM_COMMANDS) + list(GAME_COMMANDS) + list(get_agent_commands())
+    commands = (
+        list(SYSTEM_COMMANDS)
+        + list(PRIMER_COMMANDS)
+        + list(GRAPH_INSPECT_COMMANDS)
+        + list(GAME_COMMANDS)
+        + list(get_agent_commands())
+    )
     build_cmdset = get_build_cmdset()
     if build_cmdset:
         commands.extend(list(build_cmdset.get_commands().values()))
@@ -150,10 +158,13 @@ _AICO_LEGACY_PHASE_LLM = {
     "check": {"mode": "skip"},
     "act": {"mode": "skip"},
 }
+# Check runs as a lightweight guardrail that can emit a ``RETRY:`` signal to
+# re-plan when the Do reply is not backed by tool observations. See
+# ``LlmPDCAFramework._parse_check_retry_signal``.
 _AICO_DEFAULT_PHASE_LLM = {
     "plan": {"mode": "fast"},
     "do": {"mode": "fast"},
-    "check": {"mode": "skip"},
+    "check": {"mode": "fast"},
     "act": {"mode": "skip"},
 }
 
@@ -249,7 +260,24 @@ def ensure_aico_npc_agent(session) -> bool:
             "trigger_mode": "nlp",
             "decision_mode": "llm",
             "cognition_profile_ref": "pdca_v1",
-            "tool_allowlist": ["help", "look", "time", "version", "agent", "agent_capabilities", "agent_tools"],
+            # Discovery suite (primer / whoami / look / find / describe) is the
+            # backbone of "tool first" answering. ``find`` follows Evennia's
+            # ``@find`` convention; ``describe`` is our ``examine`` equivalent.
+            # Allowlist aliases resolve to primaries at surface-build time so
+            # ops may also spell tools as ``locate`` / ``ex`` / etc.
+            "tool_allowlist": [
+                "help",
+                "look",
+                "time",
+                "version",
+                "whoami",
+                "primer",
+                "find",
+                "describe",
+                "agent",
+                "agent_capabilities",
+                "agent_tools",
+            ],
             "model_config_ref": "aico",
             "service_account_id": None,
             "version": "1",

@@ -66,3 +66,7 @@ class MinimaxNativeTextHttpLlmClient:
             return ""
         msg = (choices[0].get("message") or {})
         return str(msg.get("content") or "").strip()
+
+    def supports_tools(self) -> bool:
+        """MiniMax native function-calling is a separate follow-up PR."""
+        return False

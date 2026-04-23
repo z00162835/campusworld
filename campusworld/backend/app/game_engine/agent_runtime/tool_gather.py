@@ -25,12 +25,18 @@ class ToolInvocationPlan:
 
 @dataclass
 class ToolGatherBudgets:
-    """Caps for one tick; phase-level limits may further slice via caller."""
+    """Caps for one tick; phase-level limits may further slice via caller.
+
+    ``max_tool_rounds_per_phase`` defaults to ``3`` so that the Plan and
+    Do phases can run a short ReAct loop (``tool → observation → tool``)
+    without extra configuration. Override via
+    ``agents.llm.by_service_id.<svc>.extra.tool_gather_max_rounds_per_phase``.
+    """
 
     max_commands_per_tick: int = 16
     max_chars_observations_per_tick: int = 12000
     max_commands_per_phase: int = 8
-    max_tool_rounds_per_phase: int = 1
+    max_tool_rounds_per_phase: int = 3
 
 
 @dataclass
@@ -46,7 +52,7 @@ def tool_gather_budgets_from_agent_extra(extra: Optional[Dict[str, Any]]) -> Too
         max_commands_per_tick=int(ex.get("tool_gather_max_commands_tick", 16)),
         max_chars_observations_per_tick=int(ex.get("tool_gather_max_chars_tick", 12000)),
         max_commands_per_phase=int(ex.get("tool_gather_max_commands_phase", 8)),
-        max_tool_rounds_per_phase=int(ex.get("tool_gather_max_rounds_per_phase", 1)),
+        max_tool_rounds_per_phase=int(ex.get("tool_gather_max_rounds_per_phase", 3)),
     )
 
 

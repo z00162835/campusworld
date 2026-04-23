@@ -4,7 +4,9 @@
 """
 
 from .registry import command_registry
+from .graph_inspect_commands import GRAPH_INSPECT_COMMANDS
 from .system_commands import SYSTEM_COMMANDS
+from .system_primer_command import PRIMER_COMMANDS
 from .game import GAME_COMMANDS
 from .builder import get_build_cmdset
 import threading
@@ -97,6 +99,16 @@ def initialize_commands(force_reinit: bool = False) -> bool:
                 system_success += 1
             else:
                 logger.error(f"系统命令 '{command.name}' 注册失败")
+        for command in PRIMER_COMMANDS:
+            if command_registry.register_command(command):
+                system_success += 1
+            else:
+                logger.error(f"系统命令 '{command.name}' 注册失败")
+        for command in GRAPH_INSPECT_COMMANDS:
+            if command_registry.register_command(command):
+                system_success += 1
+            else:
+                logger.error(f"系统命令 '{command.name}' 注册失败")
         for command in AGENT_COMMANDS:
             if command_registry.register_command(command):
                 system_success += 1
@@ -133,7 +145,12 @@ def initialize_commands(force_reinit: bool = False) -> bool:
         _ = command_registry.get_commands_summary()
         logger.info("command init: scheduling command ability graph sync (non-blocking)")
         _schedule_command_ability_sync()
-        expected_sys = len(SYSTEM_COMMANDS) + len(AGENT_COMMANDS)
+        expected_sys = (
+            len(SYSTEM_COMMANDS)
+            + len(PRIMER_COMMANDS)
+            + len(GRAPH_INSPECT_COMMANDS)
+            + len(AGENT_COMMANDS)
+        )
         success = system_success == expected_sys and game_success == len(GAME_COMMANDS)
         return success
 

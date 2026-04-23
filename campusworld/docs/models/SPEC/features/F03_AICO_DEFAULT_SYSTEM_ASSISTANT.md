@@ -16,7 +16,7 @@
 - **架构位置**：AICO 是 **`npc_agent`** 的默认实例，跨 **L2**（命令工具）、**L3**（LLM + PDCA 等思考管线）、可选 **L4**（经验 Skill）与 **F07** 侧 `memory_context`；**全局四层定义** 见 [**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)，**工具输出进上下文** 见 [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)。
 - 以 **单一 `npc_agent` 图节点** 表达实例；**静态配置** 在 `nodes.attributes`（见 §5、附录 A）；记忆与运行过程在 F02 独立表。
 - **认知**：`decision_mode: llm`，思维框架 **PDCA**（与 `agent_run_records.phase` 对齐）；工具侧经 **命令注册表** + 授权（与 F02 §6 一致）。
-- **可执行命令（`tool_allowlist`）**：与 **默认普通用户** 在会话中可用的 **系统/基础命令集** 对齐（如 **`help`**、**`look`**、**`time`**、**`version`** 等，以注册表与 `command_policies` 为准），并可在白名单中包含 **`agent_capabilities`**、**`agent_tools`** 等 Agent 自省类命令；须与 **服务账号** 权限及策略一致。
+- **可执行命令（`tool_allowlist`）**：v2 Discovery Suite（`help`、`look`、`time`、`version`、`whoami`、`primer`、`find`、`describe`、`agent`、`agent_capabilities`、`agent_tools`），其中 `primer` / `find` / `describe` 为 **v2 新增**、为 LLM 提供 **按需拉取** 的世界本体与图内检索能力。命名与 Evennia 对齐：`find`（别名 `@find`、`locate`）对应 Evennia `@find`；`describe`（别名 `examine`、`ex`）对应 Evennia `examine`。allowlist 中的别名在 `build_resolved_tool_surface` 阶段自动规范化为 primary 名。详见 §5.2 默认值表与 [`F08`](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §12「工具优先 harness」刷新说明。清单须与 **注册表 + `command_policies` + 服务账号权限** 共同生效。
 - **LLM 参数**：**主配置源** 为 CampusWorld **系统级 YAML**（[`settings.yaml`](../../../../backend/config/settings.yaml) 及环境覆盖 `settings.*.yaml`），按 **`service_id`**（如 `aico`）为 **不同系统 Agent** 配置 **provider、model、API key、temperature** 等；**禁止**在图节点 `attributes` 中长期存放明文密钥（见 §5.3）。
 - **拓扑**：AICO **实际位置**为 **奇点屋根房间**（`location_id`）；用户可在 **任意位置** 通过 **F04 `@` 协议** 与 AICO 交互（不要求同房间）。
 - **触发模式**：实例 **`nodes.attributes`** 须声明 **主触发模式**；AICO 为 **NLP 触发**（自然语言输入，含 **`@aico <payload>`** 与会话内 NL），与 [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md) 中 `default_triggers[].kind` 的 **`NLP`** 语义一致（见 §5.2.2 **`trigger_mode`**）。
@@ -88,17 +88,26 @@
 | `service_account_id` | integer \| null | 否 | `null` | 指向 `type_code=account` 的节点 id；**未绑定时** 工具执行回退为 invoker 上下文（见 [`agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)）。 |
 | `version` | string | 否 | `"1"` | |
 
-**`tool_allowlist` v1 建议默认值（与「默认 user 可用命令集」对齐，可随命令注册表与策略演进）：**
+**`tool_allowlist` v2 默认值（Discovery Suite — 工具优先 harness）：**
 
 ```json
-["help", "look", "time", "version", "agent_capabilities", "agent_tools"]
+[
+  "help", "look", "time", "version", "whoami",
+  "primer", "find", "describe",
+  "agent", "agent_capabilities", "agent_tools"
+]
 ```
 
 **说明：**
 
-- **`help`**、**`look`**、**`time`**、**`version`** 等对应 [`system_commands.py`](../../../../backend/app/commands/system_commands.py) 中已注册的系统命令，语义上与普通用户会话中 **默认可用** 的基础集一致；**是否**出现在 AICO 的 **有效** 工具列表还受 **`get_available_commands`**（`command_policies` + 服务账号权限）过滤。
+- **`help`**、**`look`**、**`time`**、**`version`**、**`whoami`** 等对应 [`system_commands.py`](../../../../backend/app/commands/system_commands.py) 中已注册的系统命令，语义上与普通用户会话中 **默认可用** 的基础集一致；**是否**出现在 AICO 的 **有效** 工具列表还受 **`get_available_commands`**（`command_policies` + 服务账号权限）过滤。
+- **`primer`** — 详见 [`system_primer_command.py`](../../../../backend/app/commands/system_primer_command.py)；以命令形态暴露 AICO 系统本体 [`AICO_SYSTEM_PRIMER.md`](../../AICO_SYSTEM_PRIMER.md) 的各语义段（identity / ontology / world / invariants / examples 等）。与 Tier-1 静态 system prompt 协作：`system_prompt` 只放「身份 + 不变量」的精简版，完整设计说明由 agent 主动 `primer <section>` 按需拉取（与 F08 §12.3 对齐）。
+- **`find`** — 图节点检索（Evennia `@find` 风格，列表工具）。契约见 [`F01_FIND_COMMAND`](../../../commands/SPEC/features/F01_FIND_COMMAND.md)。别名：`@find`、`locate`。v3 新增 `-n` / `-des` / `-loc` / `-l` / `-a` 与 AND 组合查询。
+- **`describe <id | #<id> | name>`** — 同上模块；输出单节点详情 + 出边采样。别名：`examine`、`ex`（Evennia 对齐）。
 - **`agent_capabilities`**、**`agent_tools`** 用于自省与能力查询；可按产品需要收紧 **`tool_allowlist`**（不暴露过多注册表命令）。
 - 后续可追加经策略允许的 **只读图/本体查询** 类命令名；须与 `command_policies` 及服务账号权限一致。
+
+> **迁移提示**：将现有数据库从 v1 迁移到 v2 时，在 AICO 节点 `attributes.tool_allowlist` 中写入 v2 清单（`help`、`look`、`time`、`version`、`whoami`、`primer`、`find`、`describe`、`agent`、`agent_capabilities`、`agent_tools`）。旧值 `graph_find` 已不再注册，需要替换为 `find`（或 Evennia 风格的 `locate`）。新部署由 `ensure_aico_npc_agent` 直接写入 v2 清单。
 
 **与 F02 `default_triggers`：** 若需在类型层表达完整触发器模板，可使用 `default_triggers: [{ "kind": "NLP", "config": { } }]`；实例层以 **`trigger_mode`** 为 **摘要字段**，调度与路由逻辑 **以 `trigger_mode` + F04 为准**，避免与 F02 枚举冲突（`NLP` ↔ `nlp` 大小写由实现统一）。
 
@@ -189,7 +198,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `enabled` | boolean | 是否写入专用日志；默认 `false`。 |
-| `log_path` | string | 相对 **backend 根目录** 的文件路径；默认 `app/logs/agent/aico.log`（物理路径 `backend/app/logs/agent/aico.log`）。 |
+| `log_path` | string | 相对 **backend 根目录** 的文件路径；默认 `logs/agent/aico.log`（物理路径 `backend/logs/agent/aico.log`，与主应用日志同处 `backend/logs/`，便于运维查找）。 |
 | `level` | string | 专用 logger 级别：`INFO` = 阶段摘要（hooks）；`DEBUG` = **全链路**（每轮 LLM 的 system/user、`LlmCallSpec`、ToolGather 文本、HTTP 请求/响应 JSON 摘要，与 **`max_phase_output_chars`** 共用长度预算）。 |
 | `max_file_size` / `backup_count` | string / int | 与主 `logging` 语义一致，用于该文件的轮转。 |
 | `max_phase_output_chars` | int | 阶段输出预览、DEBUG 下 prompt/工具/HTTP JSON 等**长文本**的统一字符上限；`0` 表示不截断（慎用，易含敏感内容）。 |
@@ -230,7 +239,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 - [ ] 存在 **`service_id`=`aico`** 且 **`type_code`=`npc_agent`** 的节点；**`trait_mask=370`**；**`location_id`** 指向奇点屋 room。
 - [ ] 奇点屋 `look` 可见 AICO（[`look_appearance`](../../../../backend/app/commands/game/look_appearance.py) 将 `npc_agent` 归入人物区）。
 - [ ] `attributes` 符合附录 A（或经人工豁免的等价约束）。
-- [ ] **`tool_allowlist`** 至少包含 **`help`**、**`look`**、**`time`**、**`version`** 等（经 `command_policies` 后仍可对 AICO 生效）。
+- [ ] **`tool_allowlist`** 至少包含 **`help`**、**`look`**、**`whoami`**、**`primer`**、**`find`**、**`describe`** 等（Discovery Suite，经 `command_policies` 后仍可对 AICO 生效）。
 - [ ] **LLM**：`settings.yaml` 中存在 **`agents.llm.by_service_id.aico`**；密钥经 **`api_key_env`**；节点 **无明文密钥**。
 - [ ] **`trigger_mode=nlp`**。
 - [ ] **F04**：`@aico` 解析到本节点（见 F04 SPEC）。
@@ -310,7 +319,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
     "trigger_mode": "nlp",
     "decision_mode": "llm",
     "cognition_profile_ref": "pdca_v1",
-    "tool_allowlist": ["help", "look", "time", "version", "agent_capabilities", "agent_tools"],
+    "tool_allowlist": ["help", "look", "time", "version", "whoami", "primer", "find", "describe", "agent", "agent_capabilities", "agent_tools"],
     "model_config_ref": "aico",
     "mode_models": {
       "fast": "gpt-4o-mini",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from app.commands.agent_command_context import command_context_for_npc_agent
 from app.commands.base import CommandContext
@@ -17,9 +17,11 @@ from app.models.graph import Node
 if TYPE_CHECKING:
     from app.core.settings import AgentLlmServiceConfig
     from app.game_engine.agent_runtime.llm_client import LlmClient
+    from app.game_engine.agent_runtime.tool_calling import ToolSchema
     from app.game_engine.agent_runtime.tooling import ToolExecutor
 else:
     ToolExecutor = Any
+    ToolSchema = Any
 
 
 class AgentWorker:
@@ -32,11 +34,15 @@ class AgentWorker:
         framework: ThinkingFramework,
         tools: Optional[ToolExecutor] = None,
         tool_command_context: Optional[CommandContext] = None,
+        tool_manifest_text: str = "",
+        tool_schemas: Optional[List[ToolSchema]] = None,
     ):
         self.memory = memory
         self.framework = framework
         self.tools = tools
         self.tool_command_context = tool_command_context
+        self.tool_manifest_text = tool_manifest_text or ""
+        self.tool_schemas = list(tool_schemas or [])
 
     def tick(
         self,
@@ -48,10 +54,16 @@ class AgentWorker:
         memory_context: Optional[str] = None,
         phase_llm_overrides: Optional[Dict[str, Any]] = None,
     ):
+        # Tier-ed context: enrich payload with the precomputed tool manifest
+        # so the framework's Plan phase can surface "Tools available" without
+        # the caller having to repeat it on every tick.
+        enriched = dict(payload or {})
+        if self.tool_manifest_text and not enriched.get("tool_manifest_text"):
+            enriched["tool_manifest_text"] = self.tool_manifest_text
         ctx = FrameworkRunContext(
             agent_node_id=getattr(self.memory, "_agent_node_id", 0),
             correlation_id=correlation_id,
-            payload=payload,
+            payload=enriched,
             system_prompt=system_prompt,
             phase_prompts=dict(phase_prompts or {}),
             memory_context=memory_context,
@@ -109,8 +121,10 @@ class LlmPdcaAssistantWorker(AgentWorker):
         llm_client: Optional[LlmClient] = None,
         agent_llm_config: Optional["AgentLlmServiceConfig"] = None,
     ) -> "LlmPdcaAssistantWorker":
+        from app.commands.registry import command_registry as _command_registry
         from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config_for_npc_tick
         from app.game_engine.agent_runtime.agent_node_phase_llm import parse_phase_llm_from_attributes
+        from app.game_engine.agent_runtime.aico_world_context import build_llm_tool_manifest
         from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
         from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config
         from app.game_engine.agent_runtime.resolved_tool_surface import (
@@ -151,6 +165,16 @@ class LlmPdcaAssistantWorker(AgentWorker):
         pre_ex = PreauthorizedToolExecutor(surface)
         budgets = tool_gather_budgets_from_agent_extra(cfg.extra)
         instance_phase_llm, instance_mode_models = parse_phase_llm_from_attributes(attrs)
+        # Build tool manifest once at worker-create time. The allowed surface
+        # is stable across ticks for a given agent node; rebuild happens when
+        # the worker is recreated (e.g. after ``tool_allowlist`` changes).
+        try:
+            manifest_text, tool_schemas = build_llm_tool_manifest(
+                surface, _command_registry, session=session
+            )
+        except Exception:
+            # Defensive: never fail worker creation because of manifest issues.
+            manifest_text, tool_schemas = "", []
         tick_hooks = None
         cm = get_config()
         if service_id.strip().lower() == "aico" and is_aico_observability_enabled(cm):
@@ -171,10 +195,13 @@ class LlmPdcaAssistantWorker(AgentWorker):
             preauthorized_tool_executor=pre_ex,
             tool_gather_budgets=budgets,
             tick_hooks=tick_hooks,
+            tool_schemas=tool_schemas,
         )
         return cls(
             memory=mem,
             framework=fw,
             tools=pre_ex,
             tool_command_context=tool_ctx,
+            tool_manifest_text=manifest_text,
+            tool_schemas=tool_schemas,
         )

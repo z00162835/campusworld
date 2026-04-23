@@ -31,7 +31,7 @@ _aico_full_chain_tick_cv: contextvars.ContextVar[bool] = contextvars.ContextVar(
 # Alias for tests and call sites that prefer a module-level string.
 AICO_OBSERVABILITY_LOGGER_NAME = LoggerNames.AICO_AGENT
 
-_DEFAULT_LOG_REL = "app/logs/agent/aico.log"
+_DEFAULT_LOG_REL = "logs/agent/aico.log"
 
 
 def get_aico_observability_config(config_manager: Any) -> Dict[str, Any]:

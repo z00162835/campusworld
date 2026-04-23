@@ -102,6 +102,8 @@ CommandResult.success_result("向北移动到食堂")
 | `who` | `whoelse` | SYSTEM | 查看在线用户 |
 | `help` | `?/h` | SYSTEM | 帮助信息 |
 | `time` | `date` | SYSTEM | 系统时间 |
+| `find` | `@find/locate` | SYSTEM | 图节点检索（name/description/id/account/combined）；详见 [F01_FIND_COMMAND](features/F01_FIND_COMMAND.md) |
+| `describe` | `examine/ex` | SYSTEM | 单节点详情（属性预览 + 出边采样），Evennia `examine` 对齐 |
 
 ### 世界交互命令
 | 命令 | 别名 | 类型 | 说明 |
@@ -123,6 +125,10 @@ CommandResult.success_result("向北移动到食堂")
 ### 知识库命令（规划）
 
 内置知识世界 **campuslibrary**（OS 级全局知识库）通过顶层命令 **`cl`** 维护与检索；子命令 **`search`**（检索）、**`ingest`**（录入）、**`del`**（软删除，`is_active=false`）。奇点屋可见该世界入口但 **不可 `enter` 穿越**，须用 `cl`。契约见 [`docs/models/SPEC/features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md`](../../models/SPEC/features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)。
+
+### 图检索命令
+
+CampusWorld 的只读图检索由 `find`（列表）与 `describe`（单节点深度）两命令承担；两者的 **唯一权威契约** 在 [`docs/commands/SPEC/features/F01_FIND_COMMAND.md`](features/F01_FIND_COMMAND.md)，本文件不再重复描述参数与返回契约。
 
 ## Acceptance Criteria
 

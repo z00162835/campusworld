@@ -6,7 +6,7 @@
 
 **交叉引用：** [**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（CampusWorld Agent 四层架构：L1–L4、映射与边界）、[**F03**](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO 实例、`tool_allowlist`、PDCA + LLM 基线）、[**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent`、运行记录）、[**F04**](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@<handle>`）、[**F05**](F05_AGENT_COMMAND_LIST_AND_STATUS.md)（Agent 列表/状态）、[**F06**](F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)（CampusLibrary 知识检索，与本特性互补）。
 
-**实现锚点：** `[backend/app/commands/npc_agent_nlp.py](../../../../backend/app/commands/npc_agent_nlp.py)`（`run_npc_agent_nlp_tick`）、`[backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py](../../../../backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py)`（`LlmPDCAFramework`）、`[backend/app/game_engine/agent_runtime/worker.py](../../../../backend/app/game_engine/agent_runtime/worker.py)`（`LlmPdcaAssistantWorker`）、`[backend/app/game_engine/agent_runtime/resolved_tool_surface.py](../../../../backend/app/game_engine/agent_runtime/resolved_tool_surface.py)`（`build_resolved_tool_surface`、`PreauthorizedToolExecutor`）、`[backend/app/game_engine/agent_runtime/tool_gather.py](../../../../backend/app/game_engine/agent_runtime/tool_gather.py)`（`gather_tool_observations`、`parse_tool_invocation_plan_from_text`）、`[backend/app/game_engine/agent_runtime/tooling.py](../../../../backend/app/game_engine/agent_runtime/tooling.py)`（`RegistryToolExecutor`、`ToolRouter`）、`[backend/app/commands/agent_command_context.py](../../../../backend/app/commands/agent_command_context.py)`（`command_context_for_npc_agent`）、`[backend/app/commands/invoke.py](../../../../backend/app/commands/invoke.py)`（进程内命令网关语义）。**本 SPEC 为需求与契约；实现决策见 [ADR-F08-Tool-Gather](../../../../architecture/adr/ADR-F08-Tool-Gather.md)。**
+**实现锚点：** `[backend/app/commands/npc_agent_nlp.py](../../../../backend/app/commands/npc_agent_nlp.py)`（`run_npc_agent_nlp_tick`）、`[backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py](../../../../backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py)`（`LlmPDCAFramework`、`_phase_react_loop`、`_call_llm_dual_track`）、`[backend/app/game_engine/agent_runtime/worker.py](../../../../backend/app/game_engine/agent_runtime/worker.py)`（`LlmPdcaAssistantWorker`）、`[backend/app/game_engine/agent_runtime/resolved_tool_surface.py](../../../../backend/app/game_engine/agent_runtime/resolved_tool_surface.py)`（`build_resolved_tool_surface`、`PreauthorizedToolExecutor`）、`[backend/app/game_engine/agent_runtime/tool_gather.py](../../../../backend/app/game_engine/agent_runtime/tool_gather.py)`（`gather_tool_observations`、`parse_tool_invocation_plan_from_text`、`ToolGatherBudgets`）、`[backend/app/game_engine/agent_runtime/tool_calling.py](../../../../backend/app/game_engine/agent_runtime/tool_calling.py)`（`ToolSchema`、`ToolCall`、`ToolResult`、`ConversationTurn`、`CompleteWithToolsResult`，**provider-agnostic tool_use 协议**）、`[backend/app/game_engine/agent_runtime/aico_world_context.py](../../../../backend/app/game_engine/agent_runtime/aico_world_context.py)`（`build_ontology_primer`、`build_world_snapshot`、`build_llm_tool_manifest`）、`[backend/app/game_engine/agent_runtime/llm_client.py](../../../../backend/app/game_engine/agent_runtime/llm_client.py)`（`LlmClient.supports_tools`、`complete_with_tools`）、`[backend/app/game_engine/agent_runtime/tooling.py](../../../../backend/app/game_engine/agent_runtime/tooling.py)`（`RegistryToolExecutor`、`ToolRouter`）、`[backend/app/commands/agent_command_context.py](../../../../backend/app/commands/agent_command_context.py)`（`command_context_for_npc_agent`）、`[backend/app/commands/system_primer_command.py](../../../../backend/app/commands/system_primer_command.py)`（`primer` 系统命令）、`[backend/app/commands/graph_inspect_commands.py](../../../../backend/app/commands/graph_inspect_commands.py)`（`find` / `describe` 系统命令）、`[backend/app/commands/invoke.py](../../../../backend/app/commands/invoke.py)`（进程内命令网关语义）。**本 SPEC 为需求与契约；实现决策见 [ADR-F08-Tool-Gather](../../../../architecture/adr/ADR-F08-Tool-Gather.md)。**
 
 ---
 
@@ -193,3 +193,98 @@ message:
 ```
 
 截断策略与编码由实现定义，须符合 §8 上限。
+
+---
+
+## 12. v2 刷新 — 工具优先 harness（2026-04）
+
+原 §5–§9 保留为 **v1 基线**。本节描述 **v2 刷新**，其动机是：观测日志表明 Plan 阶段的 LLM 很少主动调用命令、对世界本体认识不足；借鉴业界（Anthropic effective context engineering、OpenAI tools、长时 agent 的 ReAct 循环）后，做以下系统性调整。**v2 与 v1 在协议/数据面向后兼容**，行为变化均为「增强」。
+
+### 12.1 Provider-agnostic Tool Calling 抽象
+
+工具调用从「实现即 JSON-in-text」升级为「协议中立的 neutral primitives」：
+
+- 公共数据类型定义在 [`tool_calling.py`](../../../../backend/app/game_engine/agent_runtime/tool_calling.py)：`ToolSchema`、`ToolCall`、`ToolResult`、`ConversationTurn`（`TextTurn | ToolResultsTurn`）、`CompleteWithToolsResult`。
+- `LlmClient` 协议（[`llm_client.py`](../../../../backend/app/game_engine/agent_runtime/llm_client.py)）新增两个可选方法：
+  - `supports_tools() -> bool` —— 客户端是否理解上述 primitives（默认 `False`）。
+  - `complete_with_tools(*, system, turns, tools, call_spec) -> CompleteWithToolsResult` —— 原生 `tool_use` / `tools` 通道。
+- **任何 provider** 都可以在适配层把 neutral primitives 映射到厂商线路（见 `minimax_anthropic.py` 对 Anthropic `tool_use` 的映射）。**framework 不感知厂商**。
+
+**Dual-track 调度**（`LlmPDCAFramework._call_llm_dual_track`）：
+
+1. 若 `supports_tools()` 返回 `True` 且当前有 schemas，走 `complete_with_tools`，返回 `(text, tool_calls)`。
+2. 否则走既有 `complete(system, user)` 文本通道；`_tool_calls_from_text` 解析 `{"commands": [...]}` JSON 作为 fallback。
+3. 两条通道的后续执行与观测注入完全一致，**不**引入双份代码路径。
+
+### 12.2 多轮 ReAct（per-phase）
+
+- `ToolGatherBudgets.max_tool_rounds_per_phase` 默认从 `1` 升为 `3`（`tool_gather.py::tool_gather_budgets_from_agent_extra`）。
+- `LlmPDCAFramework._phase_react_loop` 在 **同一 PDCA 阶段** 内执行「LLM → 工具 → 观测 → LLM ...」直到：
+  a) LLM 不再要求工具；
+  b) 达到 `max_tool_rounds_per_phase`；
+  c) 触达 `max_commands_per_tick` 或 `max_chars_observations_per_tick`。
+- 每一轮的观测以 `ToolResultsTurn` 追加到会话 turns 列表；fallback 通道把它们序列化为 `Tool observations:` 文本块。
+- 该改动使 AICO 可以在单个 Plan 中「先 `look`、再 `find`、再下结论」而不是一次只能调一个工具。
+
+### 12.3 Tier-ized Context（分层上下文拼装）
+
+按 Anthropic "place the most actionable facts nearest the user instruction" 的建议分层：
+
+| Tier | 内容 | 位置 | 生命期 |
+|---|---|---|---|
+| **1（静态）** | 身份、不变量、工具契约 | **system_prompt**（`settings.yaml` + `identity_and_invariants_snippet()` 可选前置） | 整个 tick 稳定 |
+| **2（每 tick）** | `World snapshot`（身份/当前房间/已安装世界）+ `Tools available`（manifest 文本/schemas） | **Plan 阶段首个 user turn** | 仅 Plan；Do/Check/Act 不重复 |
+| **3（按需）** | 完整 primer、房间详情、命令参数说明等 | **工具调用返回值**（`primer <section>`、`describe <id>`、`find ...`，契约见 [F01](../../../commands/SPEC/features/F01_FIND_COMMAND.md)） | 只在被调用时产生 |
+
+**拼装入口**：
+- 静态：`settings.yaml` 的 `agents.llm.by_service_id.aico.system_prompt` + `phase_prompts`（v2 已全面重写）。
+- Tier-2：`LlmPdcaAssistantWorker.create` 在 worker 生命期内计算 `build_llm_tool_manifest(surface, command_registry, session=...)`；每 tick `run_npc_agent_nlp_tick` 计算 `build_world_snapshot_from_session(...)`，二者通过 `payload.world_snapshot` / `payload.tool_manifest_text` 传入，由 `_assemble_plan_user` 组装。
+- Tier-3：由 LLM 自行决定是否调用 `primer` / `find` / `describe` / `look` 等 **新增工具**，其输出自然成为下一轮 ReAct 的观测。
+
+### 12.4 Check 阶段守门与 `RETRY` 信号
+
+Check 阶段不再只做「通过/不通过」标签，而引入可选 **重试信号**：
+
+- Check 输出中若出现 `RETRY: need_tools=<a,b,c>`（单行，tool 名用逗号分隔，匹配 `_CHECK_RETRY_RE`），framework 解析为 `["a", "b", "c"]`。
+- 若 `tool_gather_counters` 仍在预算内，framework 追加一条「Guardrail note: 要求调用 <tools>」的提示再跑一次 Plan → Do（每 tick 最多一次，避免无限递归）。
+- 该信号与失败标签共存：Check 仍可同时给出「error」语义；二者在 `command_trace` 中以 `check_retry_triggered` 条目显式记录。
+
+### 12.5 默认工具面扩展 — Discovery Suite
+
+`ensure_aico_npc_agent`（[`seed_data.py`](../../../../backend/db/seed_data.py)）默认 `tool_allowlist` 扩为：
+
+```
+help, look, time, version, whoami,
+primer, find, describe,
+agent, agent_capabilities, agent_tools
+```
+
+- `primer` — 从 `docs/models/SPEC/AICO_SYSTEM_PRIMER.md` 分节检索系统本体；Tier-3 主力。
+- `find` — Evennia `@find` 风格的图检索（列表工具）。v3 支持 `-n` / `-des` / `-t` / `-loc` / `-l` / `-a` 与 AND 组合查询。**完整契约与性能策略见** [`F01_FIND_COMMAND`](../../../commands/SPEC/features/F01_FIND_COMMAND.md)。别名：`@find`、`locate`。
+- `describe <id | #<id> | name>` — 单节点详情（属性预览 + 出边采样），对应 Evennia `examine`。别名：`examine`、`ex`。
+
+三者均 **只读**、**不递归 AICO**、与既有 `authorize_command` 路径一致。审计与权限不变。
+
+### 12.6 Primer 作为 SSOT
+
+- Primer 文件：[`docs/models/SPEC/AICO_SYSTEM_PRIMER.md`](../../AICO_SYSTEM_PRIMER.md)。
+- 九个语义段（Identity / Structure / Ontology / World / Actions / Interaction / Memory / Invariants / Examples），每段可独立注入或经 `primer <section>` 命令按需拉取。
+- 验证脚本：[`backend/scripts/validate_system_primer.py`](../../../../backend/scripts/validate_system_primer.py) —— 检查段完整性、占位符、命令/节点类型引用的存在性。
+- 编辑该文件后：建议同步运行 `pytest tests/commands/test_primer_command.py`，并在开发 loop 中依赖 `primer_reload_if_stale` 动态重载。
+
+### 12.7 Golden 行为测试
+
+[`tests/game_engine/test_aico_harness_golden.py`](../../../../backend/tests/game_engine/test_aico_harness_golden.py) 覆盖：
+
+1. Tier-ized ordering — Plan user turn 中 World snapshot / Tools / Memory / User message 顺序。
+2. JSON fallback — 无 `supports_tools` 的客户端走文本通道 + JSON 解析。
+3. Native tool_use — 实现 `complete_with_tools` 的客户端收到 schemas，ToolResultsTurn 在下一轮注入。
+4. Multi-round ReAct — 连续工具调用在预算内循环、预算外终止。
+5. Check RETRY — Check 返回 `RETRY: need_tools=...` 时 Plan/Do 再跑一次且恰一次；Check 不含 RETRY 时不重跑。
+
+### 12.8 与 v1 的兼容性
+
+- 旧 provider 无需改动：`LlmClient.supports_tools()` 默认 `False`，framework 走 v1 JSON 通道。
+- 旧 `tool_allowlist`（仅 `help/look/whoami`）继续可用；`build_llm_tool_manifest` 对缺失命令节点仅是忽略。
+- 旧 `phase_llm` 配置保持语义；`act` 仍默认 `skip`。
+- 观测日志 schema 不变，仅增加 `round`、`channel`（`text|tool_use`）、`tool_call_count`、`check_retry_triggered` 等可选字段。

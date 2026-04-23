@@ -58,3 +58,11 @@ class OpenAiCompatibleHttpLlmClient:
         msg = (choices[0].get("message") or {})
         content = msg.get("content")
         return str(content or "").strip()
+
+    def supports_tools(self) -> bool:
+        """Native ``tools`` wiring is tracked as a follow-up.
+
+        Returning ``False`` lets the framework fall back to the JSON
+        ``commands`` parser rather than silently calling ``NotImplementedError``.
+        """
+        return False
