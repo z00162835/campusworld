@@ -148,7 +148,6 @@ class LlmPdcaAssistantWorker(AgentWorker):
                 model_config_ref=model_ref_s,
                 node_attributes=attrs,
             )
-        llm_impl = llm_client or build_llm_client_from_service_config(cfg)
         fb = invoker_context or CommandContext(
             user_id=str(agent_node_id),
             username="agent_worker",
@@ -157,6 +156,41 @@ class LlmPdcaAssistantWorker(AgentWorker):
             roles=[],
             db_session=session,
         )
+        extra = dict(cfg.extra or {})
+        tier1_raw = extra.get("prepend_primer_tier1", True)
+        if isinstance(tier1_raw, str):
+            tier1_on = tier1_raw.strip().lower() in {"1", "true", "yes", "on"}
+        else:
+            tier1_on = bool(tier1_raw)
+        caller_location_name: Optional[str] = None
+        if tier1_on:
+            try:
+                from app.game_engine.agent_runtime.command_caller_graph import (
+                    resolve_caller_location_id,
+                    resolve_caller_node_id,
+                    resolve_room_display_name,
+                )
+
+                cid = resolve_caller_node_id(session, fb)
+                lid = resolve_caller_location_id(session, cid)
+                caller_location_name = resolve_room_display_name(session, lid)
+            except Exception:
+                caller_location_name = None
+            from app.game_engine.agent_runtime.system_primer_context import (
+                merge_system_prompt_with_primer_tier1,
+            )
+
+            cfg = cfg.model_copy(
+                update={
+                    "system_prompt": merge_system_prompt_with_primer_tier1(
+                        cfg.system_prompt or "",
+                        for_agent=service_id,
+                        caller_location_name=caller_location_name,
+                        enabled=True,
+                    )
+                }
+            )
+        llm_impl = llm_client or build_llm_client_from_service_config(cfg)
         tool_ctx = command_context_for_npc_agent(session, agent, fb)
         mem = SqlAlchemyMemoryPort(session, agent_node_id)
         raw_allow = attrs.get("tool_allowlist") or []

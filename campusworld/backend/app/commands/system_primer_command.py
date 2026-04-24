@@ -1,16 +1,14 @@
-"""``primer`` — surface the AICO system primer as a first-class command.
+"""``primer`` — surface the CampusWorld system primer as a first-class command.
 
-Aligns with the project's "everything is a node / commands are the
-interaction" philosophy: whatever the agent receives as its Tier-1 static
-system knowledge, a human can inspect with the same handle. The underlying
-text is the maintainer-reviewed markdown at
-``docs/models/SPEC/AICO_SYSTEM_PRIMER.md``.
+The underlying text is the maintainer-reviewed markdown at
+``docs/models/SPEC/CAMPUSWORLD_SYSTEM_PRIMER.md``. It is shared by all agents,
+not a single service.
 
 Usage:
 
-    primer                 # full document (minus maintainer banner)
-    primer <section>       # one slot: identity/structure/ontology/world/
+    primer <section>       # preferred: one of identity/structure/ontology/world/
                            #           actions/interaction/memory/invariants/examples
+    primer                 # full document (minus maintainer banner); large
     primer --toc           # list available sections
     primer --raw           # markdown with placeholders intact (admin.doc.read)
     primer --for <id>      # render for a different service_id (admin.agent.read)
@@ -24,33 +22,36 @@ from app.commands.base import CommandContext, CommandResult, SystemCommand
 
 
 class PrimerCommand(SystemCommand):
-    """Expose the AICO system primer to users and agents."""
+    """Expose the CampusWorld system primer to users and agents."""
 
     def __init__(self):
         super().__init__(
             "primer",
-            "Show the CampusWorld system primer (world design, ontology, invariants).",
+            "CampusWorld system primer — prefer `primer <section>` (e.g. primer ontology) "
+            "to save tokens; bare `primer` returns the full nine-section document.",
             aliases=["manual"],
         )
 
     def get_usage(self) -> str:
-        return "primer [<section> | --toc | --raw | --for <service_id>]"
+        return "primer [<section> | --toc | --raw | --for <service_id>]  (prefer <section> over full doc)"
 
     def _get_specific_help(self) -> str:
-        from app.game_engine.agent_runtime.aico_world_context import primer_toc
+        from app.game_engine.agent_runtime.system_primer_context import primer_toc
 
         lines = ["", "Sections:"]
         for key, title in primer_toc():
             lines.append(f"  {key:12} — {title}")
         lines.append("")
+        lines.append("Prefer a single section to reduce output size.")
         lines.append("Examples:")
-        lines.append("  primer")
         lines.append("  primer ontology")
+        lines.append("  primer invariants")
+        lines.append("  primer")
         lines.append("  primer --toc")
         return "\n".join(lines)
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
-        from app.game_engine.agent_runtime.aico_world_context import (
+        from app.game_engine.agent_runtime.system_primer_context import (
             build_ontology_primer,
             primer_toc,
         )
@@ -79,6 +80,8 @@ class PrimerCommand(SystemCommand):
                 section=parsed.section,
                 for_agent=parsed.for_agent,
                 raw=parsed.raw,
+                session=getattr(context, "db_session", None),
+                primer_command_context=context,
             )
         except ValueError as e:
             return CommandResult.error_result(str(e))
@@ -125,5 +128,4 @@ def _parse_args(args: List[str]) -> _ParsedArgs:
     return out
 
 
-# Module-level list mirrors SYSTEM_COMMANDS pattern — imported by init_commands.
 PRIMER_COMMANDS: List[PrimerCommand] = [PrimerCommand()]

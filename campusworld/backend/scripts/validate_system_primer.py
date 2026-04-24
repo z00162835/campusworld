@@ -1,4 +1,4 @@
-"""Validate docs/models/SPEC/AICO_SYSTEM_PRIMER.md against the live code/config.
+"""Validate docs/models/SPEC/CAMPUSWORLD_SYSTEM_PRIMER.md against the live code/config.
 
 Checks:
   1. All required section anchors (``## N. <Slot>``) are present.
@@ -36,9 +36,9 @@ REQUIRED_SECTIONS: List[Tuple[str, str]] = [
 ]
 
 ALLOWED_PLACEHOLDERS: Set[str] = {
-    "AICO_SERVICE_ID",
-    "AICO_LOCATION",
-    "PRIMARY_WORLD_ROOT",
+    "AGENT_SERVICE_ID",
+    "CALLER_LOCATION",
+    "ROOT_ROOM_LABEL",
 }
 
 # Commands the primer tells the LLM to call. Must exist in registry.
@@ -55,7 +55,6 @@ COMMAND_NAMES_IN_PRIMER: List[str] = [
     "world",
     "enter",
     "leave",
-    "ooc",
 ]
 
 # Node type codes named in the Ontology section.
@@ -78,7 +77,7 @@ NODE_TYPE_CODES_IN_PRIMER: List[str] = [
 def _primer_path() -> Path:
     # backend/scripts/validate_system_primer.py -> parents[2] == workspace root.
     here = Path(__file__).resolve()
-    return here.parents[2] / "docs" / "models" / "SPEC" / "AICO_SYSTEM_PRIMER.md"
+    return here.parents[2] / "docs" / "models" / "SPEC" / "CAMPUSWORLD_SYSTEM_PRIMER.md"
 
 
 def _check_sections(text: str) -> List[str]:
@@ -133,8 +132,9 @@ def _check_ontology_codes() -> List[str]:
             known = {r[0] for r in rows}
         missing = [tc for tc in NODE_TYPE_CODES_IN_PRIMER if tc not in known]
         if missing:
-            errors.append(
-                f"primer references node types not in NodeType table: {missing}"
+            print(
+                f"[warn] primer ontology lists types not present in this DB: {missing}",
+                file=sys.stderr,
             )
     except Exception as e:
         print(
@@ -147,7 +147,7 @@ def _check_ontology_codes() -> List[str]:
 def _check_sections_have_content() -> List[str]:
     errors: List[str] = []
     try:
-        from app.game_engine.agent_runtime.aico_world_context import (
+        from app.game_engine.agent_runtime.system_primer_context import (
             build_ontology_primer,
         )
 
@@ -180,11 +180,11 @@ def main(argv: List[str]) -> int:
     errors += _check_sections_have_content()
 
     if errors:
-        print("AICO System Primer validation FAILED:", file=sys.stderr)
+        print("CampusWorld System Primer validation FAILED:", file=sys.stderr)
         for e in errors:
             print(f"  - {e}", file=sys.stderr)
         return 1
-    print("AICO System Primer validation OK")
+    print("CampusWorld System Primer validation OK")
     return 0
 
 

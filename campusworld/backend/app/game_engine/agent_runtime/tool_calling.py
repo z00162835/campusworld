@@ -1,6 +1,6 @@
 """Provider-agnostic tool-calling primitives for the agent runtime.
 
-The framework and `aico_world_context` work exclusively with the dataclasses
+The framework and agent-runtime context helpers work exclusively with the dataclasses
 in this module. Provider adapters (MiniMax Anthropic, OpenAI-compatible,
 MiniMax native) are responsible for mapping these to vendor wire formats
 and back.

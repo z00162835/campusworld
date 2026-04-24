@@ -6,7 +6,7 @@
 > - [`docs/commands/SPEC/SPEC.md`](../SPEC.md)（命令清单）
 > - [`docs/models/SPEC/features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md`](../../../models/SPEC/features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO `tool_allowlist`）
 > - [`docs/models/SPEC/features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md`](../../../models/SPEC/features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（Tier-3 工具）
-> - [`docs/models/SPEC/AICO_SYSTEM_PRIMER.md`](../../../models/SPEC/AICO_SYSTEM_PRIMER.md)（Discovery Suite）
+> - [`docs/models/SPEC/CAMPUSWORLD_SYSTEM_PRIMER.md`](../../../models/SPEC/CAMPUSWORLD_SYSTEM_PRIMER.md)（Discovery Suite）
 > - [`docs/models/SPEC/AICO_TOOL_DESCRIPTION_AUDIT.md`](../../../models/SPEC/AICO_TOOL_DESCRIPTION_AUDIT.md)（Tool description audit）
 
 ## Status
@@ -339,5 +339,5 @@ AND 组合查询（§7 示例 4）会触发 **PostgreSQL BitmapAnd**：先用 tr
 - [`docs/commands/SPEC/SPEC.md`](../SPEC.md)
 - [`docs/models/SPEC/features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md`](../../../models/SPEC/features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)
 - [`docs/models/SPEC/features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md`](../../../models/SPEC/features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)
-- [`docs/models/SPEC/AICO_SYSTEM_PRIMER.md`](../../../models/SPEC/AICO_SYSTEM_PRIMER.md)
+- [`docs/models/SPEC/CAMPUSWORLD_SYSTEM_PRIMER.md`](../../../models/SPEC/CAMPUSWORLD_SYSTEM_PRIMER.md)
 - [`docs/models/SPEC/AICO_TOOL_DESCRIPTION_AUDIT.md`](../../../models/SPEC/AICO_TOOL_DESCRIPTION_AUDIT.md)
