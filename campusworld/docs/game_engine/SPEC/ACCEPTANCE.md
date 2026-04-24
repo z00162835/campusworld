@@ -11,7 +11,7 @@
 
 - [ ] `loader.auto_load_games()` 加载 campus_life 内容包
 - [ ] `loader.get_game("campus_life")` 返回 Game 实例
-- [ ] 不存在的游戏包返回 None
+- [ ] 不存在的包返回 None
 
 ## 引擎管理验收
 

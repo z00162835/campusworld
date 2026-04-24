@@ -21,7 +21,7 @@ class CampusLifeGameListCommand(GameCommand):
         games = [
             {
                 "name": "campus_life",
-                "description": "校园生活模拟场景",
+                "description": "园区生活模拟场景",
                 "version": "1.0.0",
                 "status": "available",
                 "author": "CampusWorld Team"

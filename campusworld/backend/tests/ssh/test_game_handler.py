@@ -1,7 +1,7 @@
 """
 SSH模块测试 - GameHandler
 
-测试游戏逻辑处理器的功能
+测试逻辑处理器的功能
 """
 
 import pytest

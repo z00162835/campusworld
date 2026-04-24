@@ -1,12 +1,12 @@
 # Game Engine SPEC
 
-> **Architecture Role**: 游戏引擎是**能力服务层**的核心，管理园区空间状态和业务能力。它将**世界语义**（Room/Character/Building 等图节点）封装为可操作的内容包，驱动园区的运行逻辑。与命令系统（commands/）和图数据模型（models/）紧密协作。
+> **Architecture Role**: 引擎是**能力服务层**的核心，管理园区空间状态和业务能力。它将**世界语义**（Room/Character/Building 等图节点）封装为可操作的内容包，驱动园区的运行逻辑。与命令系统（commands/）和图数据模型（models/）紧密协作。
 
 ## Module Overview
 
-游戏引擎（`backend/app/game_engine/`）参考 Evennia 框架设计，提供场景与引擎解耦的基础设施。
+引擎（`backend/app/game_engine/`）参考 Evennia 框架设计，提供场景与引擎解耦的基础设施。
 
-> **注**：CampusWorld 是智慧园区 OS，"游戏引擎"是驱动园区空间运行的核心服务，"游戏内容包"是具体的园区体验实现（如 campus_life）。
+> **注**：CampusWorld 是智慧园区 OS，"引擎"是驱动园区空间运行的核心服务，"内容包"是具体的园区体验实现（如 campus_life）。
 
 ```
 game_engine/
@@ -23,8 +23,8 @@ game_engine/
 | 类 | 文件 | 说明 |
 |---|---|---|
 | `GameEngine` | base.py | 引擎基类：start/stop/reload/get_info |
-| `BaseGame` | base.py | 游戏内容包基类：name/version/description |
-| `CampusWorldGameEngine` | base.py | 校园世界引擎实现 |
+| `BaseGame` | base.py | 内容包基类：name/version/description |
+| `CampusWorldGameEngine` | base.py | 园区世界引擎实现 |
 | `GameEngineManager` | manager.py | 全局引擎管理器单例 |
 | `GameLoader` | loader.py | 内容加载器：auto_load_games/reload_game |
 | `GameInterface` | interface.py | 园区接口：用户状态/空间状态/事件 |
@@ -55,7 +55,7 @@ class GameEngineManager:
 
 ### 内容包结构
 
-每个游戏内容包（如 `games/campus_life/`）实现 `BaseGame` 接口：
+每个内容包（如 `games/campus_life/`）实现 `BaseGame` 接口：
 
 ```python
 class BaseGame:

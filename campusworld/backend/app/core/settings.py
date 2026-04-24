@@ -166,7 +166,7 @@ class UserBusinessConfig(BaseModel):
 
 
 class CampusBusinessConfig(BaseModel):
-    """校园业务配置"""
+    """园区业务配置"""
     max_members: int = Field(default=1000, description="最大成员数")
     max_activities: int = Field(default=100, description="最大活动数")
 

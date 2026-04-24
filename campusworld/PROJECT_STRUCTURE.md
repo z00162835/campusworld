@@ -62,7 +62,7 @@ backend/
 │   │   ├── console.py           # 控制台交互
 │   │   ├── input_handler.py    # 输入处理
 │   │   ├── protocol_handler.py # 协议处理
-│   │   ├── game_handler.py     # 游戏命令处理器
+│   │   ├── game_handler.py     # 命令处理器
 │   │   └── rate_limiter.py      # 速率限制
 │   ├── commands/                # 命令系统
 │   │   ├── base.py              # BaseCommand 基类
@@ -75,17 +75,17 @@ backend/
 │   │   ├── builder/            # 建造类命令
 │   │   │   ├── create_command.py
 │   │   │   └── model_discovery.py
-│   │   ├── game/               # 游戏命令
+│   │   ├── game/               # 命令
 │   │   │   └── look_command.py
 │   │   ├── admin/              # 管理命令
 │   │   └── utils/              # 命令工具
-│   ├── game_engine/             # 游戏引擎
+│   ├── game_engine/             # 引擎
 │   │   ├── base.py              # 引擎基类
 │   │   ├── manager.py           # 引擎管理器
 │   │   ├── loader.py            # 内容加载器（自动加载）
-│   │   └── interface.py         # 游戏接口
-│   ├── games/                   # 游戏内容包
-│   │   └── campus_life/        # 校园生活游戏
+│   │   └── interface.py         # 接口
+│   ├── games/                   # 内容包
+│   │   └── campus_life/        # 园区生活
 │   │       ├── game.py
 │   │       ├── commands.py
 │   │       ├── game_commands.py
@@ -211,7 +211,7 @@ docs/
 - 支持命令集（CmdSet）组合
 
 ### 4. 协议抽象
-- HTTP（FastAPI）和 SSH（Paramiko）共享同一游戏引擎
+- HTTP（FastAPI）和 SSH（Paramiko）共享同一引擎
 - 协议处理器独立于核心逻辑
 
 ## 扩展建议

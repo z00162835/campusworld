@@ -71,7 +71,7 @@ move 命令帮助
 描述: 移动到指定位置
 
 可用位置:
-  campus    - 校园广场
+  campus    - 园区广场
   library   - 图书馆
   canteen   - 食堂
   dormitory - 宿舍

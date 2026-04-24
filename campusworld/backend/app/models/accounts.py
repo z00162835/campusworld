@@ -19,7 +19,7 @@ class AdminAccount(DefaultAccount):
     """
     管理员账号类
     
-    拥有系统管理权限，可以管理用户、校园、世界等
+    拥有系统管理权限，可以管理用户、园区、世界等
     角色：admin
     权限：所有管理权限
     """
@@ -30,7 +30,7 @@ class AdminAccount(DefaultAccount):
             'roles': ['admin'],
             'permissions': [
                 'user.*',      # 用户管理所有权限
-                'campus.*',    # 校园管理所有权限
+                'campus.*',    # 园区管理所有权限
                 'world.*',     # 世界管理所有权限
                 'system.*',    # 系统管理所有权限
                 'admin.*',     # 管理员所有权限
@@ -52,8 +52,8 @@ class AdminAccount(DefaultAccount):
         return True
     
     def can_manage_campus(self, campus) -> bool:
-        """检查是否可以管理指定校园"""
-        return True  # 管理员可以管理所有校园
+        """检查是否可以管理指定园区"""
+        return True  # 管理员可以管理所有园区
     
     def can_manage_world(self, world) -> bool:
         """检查是否可以管理指定世界"""
@@ -90,9 +90,9 @@ class DeveloperAccount(DefaultAccount):
             'roles': ['dev'],
             'permissions': [
                 'user.view',           # 查看用户
-                'campus.view',         # 查看校园
-                'campus.edit',         # 编辑校园
-                'campus.manage',       # 管理校园
+                'campus.view',         # 查看园区
+                'campus.edit',         # 编辑园区
+                'campus.manage',       # 管理园区
                 'world.view',          # 查看世界
                 'world.edit',          # 编辑世界
                 'world.manage',        # 管理世界
@@ -150,7 +150,7 @@ class UserAccount(DefaultAccount):
     """
     普通用户账号类
     
-    拥有基本的用户权限，可以访问校园和世界
+    拥有基本的用户权限，可以访问园区和世界
     角色：user
     权限：基本用户权限
     """
@@ -164,7 +164,7 @@ class UserAccount(DefaultAccount):
                 'user.logout',         # 登出
                 'user.view_profile',   # 查看个人资料
                 'user.edit_profile',   # 编辑个人资料
-                'campus.view',         # 查看校园
+                'campus.view',         # 查看园区
                 'world.view',          # 查看世界
             ],
             'access_level': 'normal',
@@ -177,7 +177,7 @@ class UserAccount(DefaultAccount):
         super().__init__(username=username, email=email, **user_attrs)
     
     def can_view_campus(self, campus) -> bool:
-        """检查是否可以查看指定校园"""
+        """检查是否可以查看指定园区"""
         return self.has_permission('campus.view')
     
     def can_view_world(self, world) -> bool:
@@ -205,14 +205,14 @@ class UserAccount(DefaultAccount):
 
 class CampusUserAccount(UserAccount):
     """
-    校园用户账号类
+    园区用户账号类
     
-    继承自普通用户，专门用于校园场景
-    可以加入校园、参与校园活动等
+    继承自普通用户，专门用于园区场景
+    可以加入园区、参与园区活动等
     """
     
     def __init__(self, username: str, email: str, **kwargs):
-        # 设置校园用户默认属性
+        # 设置园区用户默认属性
         campus_attrs = {
             'roles': ['user', 'campus_user'],
             'permissions': [
@@ -220,25 +220,25 @@ class CampusUserAccount(UserAccount):
                 'user.logout',         # 登出
                 'user.view_profile',   # 查看个人资料
                 'user.edit_profile',   # 编辑个人资料
-                'campus.view',         # 查看校园
-                'campus.join',         # 加入校园
-                'campus.leave',        # 离开校园
-                'campus.participate',  # 参与校园活动
+                'campus.view',         # 查看园区
+                'campus.join',         # 加入园区
+                'campus.leave',        # 离开园区
+                'campus.participate',  # 参与园区活动
                 'world.view',          # 查看世界
                 'ontology.read',
                 'graph.read',
             ],
-            'campus_memberships': [],  # 校园成员关系
-            'campus_activities': [],   # 校园活动参与记录
+            'campus_memberships': [],  # 园区成员关系
+            'campus_activities': [],   # 园区活动参与记录
             **kwargs
         }
         
         super().__init__(username=username, email=email, **campus_attrs)
     
     def join_campus(self, campus, role: str = "member") -> bool:
-        """加入校园"""
+        """加入园区"""
         try:
-            # 创建校园成员关系
+            # 创建园区成员关系
             relationship = self.create_relationship(
                 target=campus,
                 rel_type="campus_member",
@@ -262,13 +262,13 @@ class CampusUserAccount(UserAccount):
             return False
             
         except Exception as e:
-            print(f"加入校园失败: {e}")
+            print(f"加入园区失败: {e}")
             return False
     
     def leave_campus(self, campus) -> bool:
-        """离开校园"""
+        """离开园区"""
         try:
-            # 移除校园成员关系
+            # 移除园区成员关系
             success = self.remove_relationship(campus, "campus_member")
             
             if success:
@@ -283,21 +283,21 @@ class CampusUserAccount(UserAccount):
             return False
             
         except Exception as e:
-            print(f"离开校园失败: {e}")
+            print(f"离开园区失败: {e}")
             return False
     
     def get_campus_memberships(self) -> List[Dict[str, Any]]:
-        """获取校园成员关系列表"""
+        """获取园区成员关系列表"""
         return self._node_attributes.get('campus_memberships', [])
     
     def is_campus_member(self, campus) -> bool:
-        """检查是否是校园成员"""
+        """检查是否是园区成员"""
         memberships = self.get_campus_memberships()
         campus_id = campus.id if hasattr(campus, 'id') else None
         return any(m.get('campus_id') == campus_id for m in memberships)
     
     def get_campus_role(self, campus) -> Optional[str]:
-        """获取在指定校园中的角色"""
+        """获取在指定园区中的角色"""
         memberships = self.get_campus_memberships()
         campus_id = campus.id if hasattr(campus, 'id') else None
         for membership in memberships:

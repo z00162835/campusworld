@@ -238,7 +238,7 @@ commands:
     min_trgm_chars: 3
     explain_on_all_over: 100000
 
-# 游戏引擎 / 世界包
+# 引擎 / 世界包
 game_engine:
   # true：启动时从 world_runtime_states 读取已 install 的世界并 load_game（保留安装状态，重启后自动进内存）
   load_installed_worlds_on_start: true

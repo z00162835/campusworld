@@ -23,7 +23,7 @@ CampusWorld 是新一代智慧园区 OS 项目的技术文档中心。
 - [数据模型](../backend/app/models/CLAUDE.md)
 - [命令系统](../backend/app/commands/CLAUDE.md)
 - [SSH 服务器](../backend/app/ssh/CLAUDE.md)
-- [游戏引擎](../backend/app/game_engine/CLAUDE.md)
+- [引擎](../backend/app/game_engine/CLAUDE.md)
 - [协议处理](../backend/app/protocols/CLAUDE.md)
 - [配置构建](../backend/config/CLAUDE.md)
 - [数据库模块](../backend/db/CLAUDE.md)

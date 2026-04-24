@@ -200,7 +200,7 @@ class CampusWorld:
             if not self.load_config():
                 return False
 
-            # 2. 初始化并启动游戏引擎（统一处理）
+            # 2. 初始化并启动引擎（统一处理）
             if not self.game_engine_manager.initialize_engine():
                 self.logger.error("Engine initialization failed")
                 return False

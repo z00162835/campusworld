@@ -12,7 +12,7 @@
 - 一个中心广场（Central Plaza）
 - 六栋建筑（F1~F6）
 
-> 注：CampusWorld 是智慧园区 OS，不是传统游戏；本 SPEC 使用 MUD 术语仅用于表达世界语义和交互模型。
+> 注：CampusWorld 是智慧园区 OS，不是传统；本 SPEC 使用 MUD 术语仅用于表达世界语义和交互模型。
 
 ## Current Baseline Constraints
 
@@ -713,7 +713,7 @@ python -m app.games.hicampus.package.topology_connect_generate --write
 # 2) 合并/补齐实体定位关系（located_in），建议在新房间产生后执行一次
 python -m app.games.hicampus.package.entity_relationship_generate --write
 
-# 3) 进游戏引擎后重载世界（管理员命令）
+# 3) 进引擎后重载世界（管理员命令）
 # world reload hicampus
 
 # 4) 严格校验（管理员命令）

@@ -2,7 +2,7 @@
 
 > **Architecture Role**: 命令系统是**知识与能力层**的核心组成部分，是 Agent/用户与**世界语义**交互的主要接口。用户通过命令操作图数据模型中的实体（查看 Room、创建 Building、移动 Character），命令系统将自然语言指令映射为图数据结构上的操作。SSH 终端和 HTTP API 都通过命令系统与知识本体交互。
 
-游戏命令框架，支持动态命令注册和执行。
+命令框架，支持动态命令注册和执行。
 
 ## 模块结构
 
@@ -21,7 +21,7 @@ commands/
 │   ├── create_command.py
 │   └── model_discovery.py
 │
-├── game/                # 游戏命令
+├── game/                # 命令
 │   ├── __init__.py
 │   └── look_command.py
 │
@@ -56,7 +56,7 @@ class MyCommand(BaseCommand):
 ### 命令子类
 
 - `SystemCommand`: 系统命令基类
-- `GameCommand`: 游戏命令基类
+- `GameCommand`: 命令基类
 - `AdminCommand`: 管理员命令基类
 
 ### CommandContext
@@ -68,21 +68,21 @@ class MyCommand(BaseCommand):
 - `session_id`: 会话ID
 - `permissions`: 权限列表
 - `session`: SSH会话
-- `game_state`: 游戏状态
+- `game_state`: 状态
 - `caller`: 调用者对象
 - `metadata`: 元数据
 
 提供方法:
 - `get_caller()`: 获取调用者对象
 - `has_permission(permission)`: 检查权限
-- `get_game_state(key, default)`: 获取游戏状态
+- `get_game_state(key, default)`: 获取状态
 
 ### CommandType
 
 命令类型枚举:
 
 - `SYSTEM`: 系统命令
-- `GAME`: 游戏命令
+- `GAME`: 命令
 - `ADMIN`: 管理命令
 
 ## 命令注册
@@ -104,7 +104,7 @@ all_commands = command_registry.list_all_commands()
 
 ## 现有命令
 
-### 游戏命令
+### 命令
 
 | 命令 | 描述 |
 |------|------|

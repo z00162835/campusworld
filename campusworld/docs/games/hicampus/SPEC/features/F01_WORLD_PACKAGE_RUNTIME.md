@@ -107,7 +107,7 @@
 
 ## Manifest 可选字段（F03）
 
-- `graph_seed: true` 或 `features.graph_seed.enabled: true`：在 `load`/`reload` 中于实例化并注册游戏前执行 `run_graph_seed`（需 PostgreSQL，见 `F03_GRAPH_SEED_PIPELINE.md`）。
+- `graph_seed: true` 或 `features.graph_seed.enabled: true`：在 `load`/`reload` 中于实例化并注册前执行 `run_graph_seed`（需 PostgreSQL，见 `F03_GRAPH_SEED_PIPELINE.md`）。
 - `features.graph_seed.strict_relationships: true`：关系类型必须与 `WorldGraphProfile` 白名单一致，否则加载失败。
 
 ## Dependencies

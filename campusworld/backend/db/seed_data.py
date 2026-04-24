@@ -350,7 +350,7 @@ def ensure_default_accounts(session) -> bool:
         username="campus",
         email="campus@campusworld.com",
         hashed_password=get_password_hash("campus123"),
-        description="校园用户账号，用于测试校园功能",
+        description="园区用户账号，用于测试园区功能",
         created_by="admin",
         disable_auto_sync=True,
     )
@@ -385,7 +385,7 @@ def ensure_default_accounts(session) -> bool:
             type_id=account_type.id,
             type_code="account",
             name="campus",
-            description="校园用户账号，用于测试校园功能",
+            description="园区用户账号，用于测试园区功能",
             is_active=True,
             is_public=True,
             access_level="normal",

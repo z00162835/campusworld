@@ -642,7 +642,7 @@ INSERT INTO node_types (
 ) VALUES
 ('user', NULL, '用户', 'app.models.user.User', 0, 'User', 'app.models.user', '系统用户',
  '{}', '{}', '{}', '[]', '{}', 'PERSON', 0),
-('campus', NULL, '园区', 'app.models.campus.Campus', 0, 'Campus', 'app.models.campus', '校园实体',
+('campus', NULL, '园区', 'app.models.campus.Campus', 0, 'Campus', 'app.models.campus', '园区实体',
  '{}', '{}', '{}', '[]', '{}', 'SPACE', 0),
 ('world', NULL, '世界', 'app.models.world.World', 0, 'World', 'app.models.world', '场景世界',
  '{}', '{}', '{}', '[]', '{}', 'SPACE', 0),
@@ -655,7 +655,7 @@ INSERT INTO relationship_types (
     constraints, schema_definition, inferred_rules, tags, ui_config,
     is_directed, is_symmetric, is_transitive, trait_class, trait_mask
 ) VALUES
-('member', '成员关系', 'app.models.relationships.MemberRelationship', 0, '用户与校园/世界的成员关系',
+('member', '成员关系', 'app.models.relationships.MemberRelationship', 0, '用户与园区/世界的成员关系',
  '{}', '{}', '{}', '[]', '{}', TRUE, FALSE, FALSE, 'PROCESS', 0),
 ('friend', '朋友关系', 'app.models.relationships.FriendRelationship', 0, '用户间的朋友关系',
  '{}', '{}', '{}', '[]', '{}', FALSE, TRUE, FALSE, 'EVENT', 0),

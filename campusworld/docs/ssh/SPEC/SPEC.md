@@ -12,7 +12,7 @@ SSH 服务器（`backend/app/ssh/`）基于 Paramiko 实现，采用 Evennia 的
 - `docs/ssh/SPEC/` 根目录仅保留模块级文件：`SPEC.md`、`TODO.md`、`ACCEPTANCE.md`。
 - 公告栏特性规范唯一来源：`docs/ssh/SPEC/features/F00_BULLETIN_BOARD.md`。
 
-> **注**：CampusWorld 是智慧园区 OS，SSH 终端是用户与园区空间交互的标准接口之一，借鉴 MUD 设计原理而非开发游戏。
+> **注**：CampusWorld 是智慧园区 OS，SSH 终端是用户与园区空间交互的标准接口之一，借鉴 MUD 设计原理而非开发。
 
 ```
 连接 → Protocol Layer → Game Layer → Security Layer → 命令执行
@@ -71,7 +71,7 @@ SSH 服务器（`backend/app/ssh/`）基于 Paramiko 实现，采用 Evennia 的
 | `CampusWorldSSHServerInterface` | server.py | Paramiko ServerInterface 实现 |
 | `SSHProtocolHandler` | protocol_handler.py | SSH 协议处理 |
 | `ProtocolFactory` | protocol_handler.py | 协议处理器工厂 |
-| `GameHandler` | game_handler.py | 游戏层：authenticate_user/spawn_user |
+| `GameHandler` | game_handler.py | 层：authenticate_user/spawn_user |
 | `SSHSession` | session.py | 单个 SSH 会话 |
 | `SessionManager` | session.py | 全局会话管理 |
 | `SessionMonitor` | session.py | 心跳检测 |

@@ -49,7 +49,7 @@
 
 | 键 | 说明 |
 |----|------|
-| `graph_seed: true` | 在 `load_game` / `reload_game` 成功路径、于注册游戏实例**之前**执行种子（需 PostgreSQL） |
+| `graph_seed: true` | 在 `load_game` / `reload_game` 成功路径、于注册实例**之前**执行种子（需 PostgreSQL） |
 | `features.graph_seed.enabled: true` | 与上一行等价（二选一） |
 | `features.graph_seed.strict_relationships: true` | 未在 profile 白名单中的关系 → `GRAPH_SEED_RELATIONSHIP_UNSUPPORTED` |
 

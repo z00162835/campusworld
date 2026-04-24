@@ -1,8 +1,8 @@
-# 修复游戏重复初始化问题 Implementation Plan
+# 修复重复初始化问题 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 消除 `app.games.campus_life` 模块因模块级单例导致的重复初始化日志，参考 Evennia 延迟初始化架构，所有游戏实例由 loader 统一创建和管理。
+**Goal:** 消除 `app.games.campus_life` 模块因模块级单例导致的重复初始化日志，参考 Evennia 延迟初始化架构，所有实例由 loader 统一创建和管理。
 
 **Architecture:** 移除 `__init__.py` 中的模块级单例 `campus_life_game`，将 `get_game_instance()` 改造为工厂函数（每次返回新实例），修复 `initialize_game()` 和 `start_game()` 的错误调用链。Loader 在 `load_game()` 中通过工厂函数创建实例后，统一调用 `initialize_game()` 和 `start()` 管理生命周期。
 
@@ -176,7 +176,7 @@ initialize_game(). This removes the misleading log that appeared on import."
 
 ---
 
-## Task 3: 添加游戏引擎初始化流程测试
+## Task 3: 添加引擎初始化流程测试
 
 **文件:**
 - 创建: `campusworld/backend/tests/game_engine/test_campus_life_initialization.py`
@@ -187,9 +187,9 @@ initialize_game(). This removes the misleading log that appeared on import."
 
 ```python
 """
-游戏引擎初始化流程测试
+引擎初始化流程测试
 
-验证 campus_life 游戏模块：
+验证 campus_life 模块：
 1. import 时不触发初始化日志
 2. 正确通过 initialize_game() 和 start() 生命周期方法
 3. 不会产生重复的初始化/启动日志
@@ -202,7 +202,7 @@ from unittest.mock import patch, MagicMock
 
 
 class TestCampusLifeInitializationFlow:
-    """测试校园生活游戏初始化流程"""
+    """测试园区生活初始化流程"""
 
     def test_import_does_not_trigger_init_log(self):
         """验证 import 时不触发初始化日志"""

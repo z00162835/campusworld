@@ -140,8 +140,8 @@ class LookCommand(GameCommand):
 #### 房间数据结构
 ```python
 room = {
-    'name': '校园广场',
-    'description': '校园的中心区域...',
+    'name': '园区广场',
+    'description': '园区的中心区域...',
     'exits': ['library', 'canteen', 'dormitory'],
     'items': ['fountain', 'tree', 'bench'],
     'room_type': 'outdoor',
@@ -207,10 +207,10 @@ context = CommandContext(
 ```bash
 # 查看当前环境
 > look
-校园广场
+园区广场
 ====
 
-校园的中心区域，有喷泉和绿树，是学生们聚集的地方。
+园区的中心区域，有喷泉和绿树，是学生们聚集的地方。
 
 出口: library, canteen, dormitory
 物品: fountain, tree, bench

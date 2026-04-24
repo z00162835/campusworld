@@ -9,7 +9,7 @@
 |--------------|------|------------------|----------|
 | **Typeclass 必须可 import** | 未加载模块中的 typeclass 不会被发现 | `node_types.typeclass` / `app.models.things.*` 显式 import | 已由 typeclass 工作计划覆盖；种子失败时需稳定错误码 |
 | **create_object / 批量建对象** | 创建路径明确、失败可记录 | `run_graph_seed` 批量 upsert 节点与边 | 未挂入 `load_game`；错误码枚举不完整 |
-| **Server 启动 vs 世界内容** | 系统先起，再装/载游戏数据 | F01 加载 ≠ F03 落库 | 端到端断裂 |
+| **Server 启动 vs 世界内容** | 系统先起，再装/载数据 | F01 加载 ≠ F03 落库 | 端到端断裂 |
 | **Command 路径不吞异常** | 返回可诊断结果 | `WorldErrorCode` + `OperationResult.details` | `GRAPH_SEED_*` 未入枚举 |
 | **Exit 有向、双向通行两条** | 拓扑显式 | `connects_to` 反向补齐 | 已实现；F02 扩展关系与 F03 白名单不一致 |
 | **Prototypes / 批量脚本** | 可重复、幂等执行 | F02 snapshot → F03 pipeline | 需 manifest 开关与可观测性 |
@@ -93,7 +93,7 @@ flowchart LR
 
 **回滚**：manifest 默认 false；或回退 loader 分支。
 
-**Evennia 对齐**：类似「装完游戏数据再开服」或「延迟到首次需要时」——本计划采用 **manifest 显式开关**，避免隐式魔法；后续可演进为 Evennia 式 `@tick_handler` 延迟 provisioning（非本阶段必选）。
+**Evennia 对齐**：类似「装完数据再开服」或「延迟到首次需要时」——本计划采用 **manifest 显式开关**，避免隐式魔法；后续可演进为 Evennia 式 `@tick_handler` 延迟 provisioning（非本阶段必选）。
 
 ---
 

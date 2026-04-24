@@ -14,7 +14,7 @@
 - **不引入**可编程过滤引擎、任意表达式树、OPA/Cedar/ReBAC 全量建模（可列 Phase 2）。
 - **不替代** PostgreSQL RLS；本策略在 **应用层**（Repository / 查询构造）与 F10 对齐。
 - **不**在本 SPEC 中重写 `/accounts` HTTP 契约；账号 CRUD 仍以现有 API SPEC 为准。
-- **不**定义「世界包安装」流水线（仍见游戏侧 F03 等）。
+- **不**定义「世界包安装」流水线（仍见侧 F03 等）。
 
 ## 背景与问题陈述
 
@@ -146,7 +146,7 @@ flowchart TD
 |-------------|-----|---------|---------------------|------|
 | `admin` | `AdminAccount` | `['admin']` | `admin` | 默认 `permissions`：`user.*`,`campus.*`,`world.*`,`system.*`,`admin.*` |
 | `dev` | `DeveloperAccount` | `['dev']` | `developer` | 含 `world.view` 等**非** F10 `graph.*` 字符串 |
-| `campus` | `CampusUserAccount` | `['user','campus_user']` | `normal` | 校园扩展 permissions |
+| `campus` | `CampusUserAccount` | `['user','campus_user']` | `normal` | 园区扩展 permissions |
 
 **当前状态**：新建默认账号时 **`ensure_default_accounts`** 写入 **`data_access`**（见 [`seed_data.py`](../../../../backend/db/seed_data.py) 与 [`data_access_defaults`](../../../../backend/app/constants/data_access_defaults.py)）。已存在库由 **迁移** 幂等补全缺省 `data_access`（**禁止**覆盖运营已手工修改的策略，见附录 C）。
 

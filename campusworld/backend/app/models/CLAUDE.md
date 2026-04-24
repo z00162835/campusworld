@@ -1,6 +1,6 @@
 # Data Models - 数据模型
 
-> **Architecture Role**: 本模块是 CampusWorld **知识本体**的核心实现，通过**全图数据结构**构筑世界语义。所有实体（User、Character、Room、World 等）以图节点形式存在，关系以语义边表达，构成知识本体的骨架。属于"知识与能力层"的底层数据支撑，上承命令系统（commands）和游戏引擎（game_engine），下接数据库持久化层（db）。
+> **Architecture Role**: 本模块是 CampusWorld **知识本体**的核心实现，通过**全图数据结构**构筑世界语义。所有实体（User、Character、Room、World 等）以图节点形式存在，关系以语义边表达，构成知识本体的骨架。属于"知识与能力层"的底层数据支撑，上承命令系统（commands）和引擎（game_engine），下接数据库持久化层（db）。
 
 CampusWorld 采用**纯图数据设计**，所有模型基于图数据结构，存储在统一的 Node 表中，通过 type 和 typeclass 区分不同的对象类型。
 
@@ -40,11 +40,11 @@ class User(DefaultAccount):
     last_login: datetime
 ```
 
-### Campus - 校园
+### Campus - 园区
 
 ```python
 class Campus(DefaultObject):
-    """校园模型"""
+    """园区模型"""
     owner_id: UUID
     max_members: int
     is_public: bool

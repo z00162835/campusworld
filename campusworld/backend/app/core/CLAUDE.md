@@ -136,7 +136,7 @@ ssh:
 | `sample_character` | 示例角色 fixture | MagicMock |
 | `sample_world` | 示例世界 fixture | MagicMock |
 | `mock_command_context` | 模拟命令执行上下文 | CommandContext |
-| `mock_game_handler` | 模拟游戏处理器 | MagicMock |
+| `mock_game_handler` | 模拟处理器 | MagicMock |
 | `mock_entry_router` | 模拟入口路由器 | EntryRouter |
 
 ### 使用示例

@@ -144,7 +144,7 @@ def create_default_accounts():
             username='campus',
             email='campus@campusworld.com',
             hashed_password=get_password_hash('campus123'),
-            description='校园用户账号，用于测试校园功能',
+            description='园区用户账号，用于测试园区功能',
             created_by='admin'
         )
         
@@ -160,7 +160,7 @@ def create_default_accounts():
             type_id=account_type.id,
             type_code='account',
             name='campus',
-            description='校园用户账号，用于测试校园功能',
+            description='园区用户账号，用于测试园区功能',
             is_active=True,
             is_public=True,
             access_level='normal',
@@ -194,7 +194,7 @@ def create_default_accounts():
         print("     - 密码: dev123")
         print("     - 权限: 开发和调试权限")
         print("")
-        print("  👤 campus - 校园用户账号")
+        print("  👤 campus - 园区用户账号")
         print("     - 用户名: campus")
         print("     - 密码: campus123")
         print("     - 权限: 基本用户权限")

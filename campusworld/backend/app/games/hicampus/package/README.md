@@ -16,7 +16,7 @@
    python -m app.games.hicampus.package.topology_connect_generate --write
    ```  
    - 保留 id 集合见 `topology_connect_generate.py` 中的 `PRESERVE_CONNECT_IDS`。  
-   - 自动生成的连边带 `attributes.topology_auto: true`（便于排查；勿依赖其在游戏内行为）。
+   - 自动生成的连边带 `attributes.topology_auto: true`（便于排查；勿依赖其在内行为）。
 
 3. **`entity_item_generate`**（可选，改了 `item_templates` / `item_placement_rules` / 房间集后）  
    ```bash
@@ -30,7 +30,7 @@
    ```
 
 5. **载入图库**  
-   游戏内（管理员）：`world reload hicampus`；首次为 `world install hicampus`。需 `manifest.yaml` 中 `graph_seed: true` 且 PostgreSQL 可用。
+   内（管理员）：`world reload hicampus`；首次为 `world install hicampus`。需 `manifest.yaml` 中 `graph_seed: true` 且 PostgreSQL 可用。
 
 **顺序要点**：拓扑与物品可反复调整；若刚跑过 `topology_connect_generate`，建议再跑 `entity_relationship_generate`，保证新房间上的物品有 `located_in`。
 

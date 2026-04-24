@@ -1,6 +1,6 @@
 # CampusWorld
 
-新一代智慧园区 OS，基于原生 AI 架构，借鉴 MUD 游戏世界设计原理构筑世界语义，基于模型驱动理念，采用全图数据结构实现物理世界设备、系统、人的语义孪生并实现与物理世界与系统的交互。
+新一代智慧园区 OS，基于原生 AI 架构，借鉴 MUD 世界设计原理构筑世界语义，基于模型驱动理念，采用全图数据结构实现物理世界设备、系统、人的语义孪生并实现与物理世界与系统的交互。
 
 ## 技术栈
 
@@ -21,13 +21,13 @@ docker compose -f docker-compose.dev.yml up -d
 
 # 后端
 cd backend && pip install -r requirements/dev.txt
-python campusworld.py          # 系统入口：游戏引擎 + HTTP + SSH
+python campusworld.py          # 系统入口：引擎 + HTTP + SSH
 
 # 前端
 cd frontend && npm install && npm run dev
 ```
 
-访问：`http://localhost:5173`（前端）· `http://localhost:8000/docs`（API 文档）· `ssh localhost -p 2222`（游戏终端）
+访问：`http://localhost:5173`（前端）· `http://localhost:8000/docs`（API 文档）· `ssh localhost -p 2222`（终端）
 
 ## 项目结构
 

@@ -194,7 +194,7 @@ def sample_world():
     world.id = 1
     world.uuid = uuid.uuid4()
     world.name = "campus_life"
-    world.description = "校园生活世界"
+    world.description = "园区生活世界"
     world.type_code = "world"
     world.attributes = {
         "is_public": True,
@@ -232,7 +232,7 @@ def mock_command_context():
 
 @pytest.fixture
 def mock_game_handler():
-    """模拟游戏处理器"""
+    """模拟处理器"""
     handler = MagicMock()
     handler.authenticate_user.return_value = (True, "user123")
     handler.spawn_user.return_value = {"location": "singularity", "success": True}

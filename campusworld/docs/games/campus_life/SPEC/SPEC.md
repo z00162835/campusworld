@@ -1,12 +1,12 @@
 # games/campus_life SPEC
 
-> **Architecture Role**: 本模块是**能力服务层**的核心组成部分，通过 MUD 设计原理将世界语义具象化为可操作的园区体验。它是 CampusWorld 智慧园区的具体空间实现，与游戏引擎（game_engine/）解耦，可独立扩展。
+> **Architecture Role**: 本模块是**能力服务层**的核心组成部分，通过 MUD 设计原理将世界语义具象化为可操作的园区体验。它是 CampusWorld 智慧园区的具体空间实现，与引擎（game_engine/）解耦，可独立扩展。
 
 ## Module Overview
 
-`games/campus_life/` 是园区体验内容包，以高校校园为例，实现了一个样例园区的具体空间、对象、脚本和命令。
+`games/campus_life/` 是园区体验内容包，以高校园区为例，实现了一个样例园区的具体空间、对象、脚本和命令。
 
-> **注**：CampusWorld 是智慧园区 OS，不是游戏。系统借鉴 MUD 的设计原理构筑世界语义。"玩家行为"对应"用户行为"，"场景"对应"园区空间"，"玩家"对应"用户"。
+> **注**：CampusWorld 是智慧园区 OS，不是。系统借鉴 MUD 的设计原理构筑世界语义。"玩家行为"对应"用户行为"，"场景"对应"园区空间"，"玩家"对应"用户"。
 
 ## Entry Boundary (System vs World)
 
@@ -70,8 +70,8 @@ class Game(BaseGame):
 
 ```python
 {
-    "name": "校园广场",
-    "description": "校园的中心区域，有喷泉和绿树",
+    "name": "园区广场",
+    "description": "园区的中心区域，有喷泉和绿树",
     "exits": ["library", "canteen", "dormitory"],
     "items": ["fountain", "tree", "bench"]
 }
@@ -82,7 +82,7 @@ class Game(BaseGame):
 | ID | 名称 | 描述 | 出口 |
 |---|---|---|---|
 | `library` | 图书馆 | 安静的学习环境，有大量的书籍和自习室 | campus, study_room |
-| `campus` | 校园广场 | 校园的中心区域，有喷泉和绿树 | library, canteen, dormitory |
+| `campus` | 园区广场 | 园区的中心区域，有喷泉和绿树 | library, canteen, dormitory |
 | `canteen` | 食堂 | 提供各种美食的食堂，是人员聚集的地方 | campus, kitchen |
 | `dormitory` | 宿舍 | 人员的休息场所，有床铺和书桌 | campus, bathroom |
 

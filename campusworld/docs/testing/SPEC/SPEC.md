@@ -112,7 +112,7 @@ conda run -n campusworld pytest
 | `sample_character` | 示例角色 fixture |
 | `sample_world` | 示例世界 fixture |
 | `mock_command_context` | 模拟命令执行上下文 |
-| `mock_game_handler` | 模拟游戏处理器 |
+| `mock_game_handler` | 模拟处理器 |
 | `mock_entry_router` | 模拟入口路由器 |
 
 ### 前端 vitest 配置
@@ -155,7 +155,7 @@ export default defineConfig({
 @pytest.mark.ssh           # SSH 模块测试
 @pytest.mark.models        # 数据模型测试
 @pytest.mark.commands      # 命令系统测试
-@pytest.mark.game          # 游戏引擎测试
+@pytest.mark.game          # 引擎测试
 @pytest.mark.api           # API 端点测试
 @pytest.mark.e2e           # 端到端测试 (future)
 ```

@@ -30,5 +30,5 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# 系统入口：游戏引擎 + HTTP/WebSocket + SSH（与本地开发一致）
+# 系统入口：引擎 + HTTP/WebSocket + SSH（与本地开发一致）
 CMD ["python", "campusworld.py"]

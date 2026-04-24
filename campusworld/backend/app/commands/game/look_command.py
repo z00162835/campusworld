@@ -93,8 +93,8 @@ class LookCommand(GameCommand):
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         """执行look命令
 
-        注意：look命令不依赖游戏场景运行状态，用户在奇点屋登录后即可查看周围环境。
-        世界数据（图数据中的房间、实体）独立于游戏场景存在。
+        注意：look命令不依赖场景运行状态，用户在奇点屋登录后即可查看周围环境。
+        世界数据（图数据中的房间、实体）独立于场景存在。
         """
         try:
             if not args:

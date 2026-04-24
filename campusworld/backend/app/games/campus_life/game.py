@@ -25,7 +25,7 @@ class Game(BaseGame):
             version="1.0.0"
         )
         
-        self.description = "一个基于文本的校园生活模拟场景"
+        self.description = "一个基于文本的园区生活模拟场景"
         self.author = "CampusWorld Team"
         
         # 场景组件
@@ -91,8 +91,8 @@ class Game(BaseGame):
                     "items": ["books", "desk", "chair"]
                 },
                 "campus": {
-                    "name": "校园广场",
-                    "description": "校园的中心区域，有喷泉和绿树",
+                    "name": "园区广场",
+                    "description": "园区的中心区域，有喷泉和绿树",
                     "exits": ["library", "canteen", "dormitory"],
                     "items": ["fountain", "tree", "bench"]
                 },
@@ -349,7 +349,7 @@ class Game(BaseGame):
   stats    - 查看角色状态
   help     - 显示帮助信息
 
-当前位置: 校园广场
+当前位置: 园区广场
 可用出口: 图书馆、食堂、宿舍
 
 输入 'help <命令名>' 获取具体命令的帮助信息。

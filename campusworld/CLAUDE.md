@@ -1,6 +1,6 @@
 # CampusWorld
 
-下一代智慧园区OS系统，采用企业级工程化架构设计，借鉴 MUD 游戏世界设计原理构筑世界语义。
+下一代智慧园区OS系统，采用企业级工程化架构设计，借鉴 MUD 世界设计原理构筑世界语义。
 
 ## Architectural Vision - 架构愿景
 
@@ -12,14 +12,14 @@ CampusWorld 基于三层架构设计：
 │         用户/Agent 通过命令系统与 World Semantic 交互                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                 知识与能力层 (知识服务 / 能力服务)                      │
-│    命令系统（commands/）   图数据模型（models/）   游戏引擎（game_engine/）│
+│    命令系统（commands/）   图数据模型（models/）   引擎（game_engine/）│
 ├─────────────────────────────────────────────────────────────────────┤
 │                    系统适配层 (公共服务 / 设备接入)                     │
 │         核心模块（core/）   SSH/协议（protocols/）   配置（config/）   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-5个核心服务：**公共服务**（core/配置/安全）· **知识服务**（models/全图数据）· **能力服务**（game_engine/游戏逻辑）· **AI使能服务** · **Agent服务**
+5个核心服务：**公共服务**（core/配置/安全）· **知识服务**（models/全图数据）· **能力服务**（game_engine/逻辑）· **AI使能服务** · **Agent服务**
 
 **Agent 运行时四层架构（L1–L4）**（类型与数据、命令工具、思考模型、经验 Skill）的规范叙述见 [`docs/models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](docs/models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)。
 
@@ -39,7 +39,7 @@ CampusWorld 的核心设计理念是"**世界语义驱动**"：
 
 - **万物皆为节点**：User、Character、Room、Building、World 都以 GraphNode 形式存在，通过 type 区分
 - **关系即语义**：Exit 连接 Room、Character 位于 Room、User 拥有 Character — 所有关系显式表达为语义边
-- **命令即交互**：用户/Agent 通过命令（commands/）操作图数据模型中的实体，类似 MUD 游戏体验
+- **命令即交互**：用户/Agent 通过命令（commands/）操作图数据模型中的实体，类似 MUD 体验
 - **知识本体**：全图数据结构构筑知识本体，支持动态模型发现和扩展
 - **可安装世界包**：例如 `app/games/hicampus/`，由 `GameLoader` 发现，`world install <world_id>` 加载；用户始终在系统 **奇点屋** 落地，再经入口进入世界（参见下文「安装 HiCampus 世界」）。
 
@@ -79,7 +79,7 @@ docker compose -f docker-compose.dev.yml up -d
 cd backend
 pip install -r requirements/dev.txt
 
-# 后端系统入口（游戏引擎 + HTTP/WebSocket + SSH）
+# 后端系统入口（引擎 + HTTP/WebSocket + SSH）
 python campusworld.py
 
 # 前端开发
@@ -92,7 +92,7 @@ npm run dev
 
 HiCampus 为内置示例世界包（`app/games/hicampus/`）。完整空间、`look` 与方向移动依赖图数据中的房间与 `connects_to` 边，因此一般需要 **PostgreSQL** 且在 [`app/games/hicampus/manifest.yaml`](backend/app/games/hicampus/manifest.yaml) 中启用 **`graph_seed: true`**（安装/重载世界时把包快照幂等写入图库；无数据库的测试环境可改为 `false`，此时仅注册运行时，世界内浏览/移动不可用）。
 
-1. 启动后端（含游戏引擎），确保 DB 已迁移。
+1. 启动后端（含引擎），确保 DB 已迁移。
 2. 在 SSH 会话或具备 **`admin.world.manage`** 的上下文中执行：`world install hicampus`。
 3. 用户登录后位于奇点屋：`look` 应可见入口 **hicampus**；`enter hicampus` 进入门户厅（`hicampus_gate`）。
 4. **示例深链路**（种子成功后）：`n`（连桥）→ `n`（广场）→ `n`（F1 首层交通核）→ `w`（首层卫生间，可见物品）→ `e` 返回交通核 → `u`（二层交通核）→ `n`（会议室，可见物品）。
@@ -109,9 +109,9 @@ campusworld/
 │   │   ├── ssh/                # SSH服务器和会话管理
 │   │   ├── commands/           # 命令系统
 │   │   ├── models/             # 数据模型(纯图数据设计)
-│   │   ├── game_engine/        # 游戏引擎
+│   │   ├── game_engine/        # 引擎
 │   │   ├── protocols/           # 协议处理
-│   │   ├── games/              # 游戏内容
+│   │   ├── games/              # 内容
 │   │   └── api/                # REST API
 │   ├── config/                 # 配置文件
 │   ├── db/                     # 数据库脚本
@@ -153,7 +153,7 @@ campusworld/
 - **base.py**: 命令基类和上下文
 - **registry.py**: 命令注册表
 - **builder/**: 建造类命令
-- **game/**: 游戏命令(look等)
+- **game/**: 命令(look等)
 - **system_commands.py**: 系统命令
 
 ### 数据模型 (backend/app/models/)
@@ -165,12 +165,12 @@ campusworld/
 - **building.py**: 建筑模型
 - **graph.py**: 图结构(世界连接)
 
-### 游戏引擎 (backend/app/game_engine/)
+### 引擎 (backend/app/game_engine/)
 
 - **base.py**: 引擎基类
 - **manager.py**: 引擎管理器
 - **loader.py**: 内容加载器
-- **interface.py**: 游戏接口
+- **interface.py**: 接口
 
 ### 前端 (frontend/)
 
@@ -253,7 +253,7 @@ backend/tests/
 │   └── test_entry_router.py
 ├── commands/                # 命令系统测试
 │   └── test_enter_world.py
-├── game_engine/             # 游戏引擎测试
+├── game_engine/             # 引擎测试
 │   └── test_campus_life.py
 └── services/                # 服务层测试
     ├── test_bulletin_board_service.py
@@ -270,7 +270,7 @@ backend/tests/
 | Models | `@pytest.mark.models` | 数据模型测试 |
 | Commands | `@pytest.mark.commands` | 命令系统测试 |
 | Services | `@pytest.mark.services` | 服务层测试 |
-| Game | `@pytest.mark.game` | 游戏引擎测试 |
+| Game | `@pytest.mark.game` | 引擎测试 |
 
 ### Fixtures
 
@@ -283,7 +283,7 @@ backend/tests/
 - `mock_ssh_client` - 模拟 Paramiko SSH 客户端
 - `sample_room` / `sample_character` / `sample_world` - 示例数据 fixtures
 - `mock_command_context` - 模拟命令执行上下文
-- `mock_game_handler` - 模拟游戏处理器
+- `mock_game_handler` - 模拟处理器
 - `mock_entry_router` - 模拟入口路由器
 
 ## 配置文件

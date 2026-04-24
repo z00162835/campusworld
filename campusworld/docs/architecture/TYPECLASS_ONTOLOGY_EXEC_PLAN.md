@@ -25,7 +25,7 @@
 |--------------|------------------|------|
 | Level 1：DB 模型（ObjectDB 等） | `nodes` + `node_types` / `relationship_types` | 一行 `node_types` ≈ 一种可实例化类型的「注册表项」。 |
 | Level 2：`DefaultObject` / `DefaultRoom` … | `DefaultObject`、`Room`、`World` 等 | 引擎/模型层默认行为与 hook 基线。 |
-| Level 3：游戏目录薄子类（`Object`、`Room`、`Character`） | `app.models.things.*` 或世界包 `types.*`（须可被 import） | **设备/灯/车等应落在此层**，而非继续指向裸 `DefaultObject`。 |
+| Level 3：目录薄子类（`Object`、`Room`、`Character`） | `app.models.things.*` 或世界包 `types.*`（须可被 import） | **设备/灯/车等应落在此层**，而非继续指向裸 `DefaultObject`。 |
 | `typeclass_path` 字符串 | `node_types.typeclass` + `module_path` + `classname` | 与 Evennia「点分路径、可 `create_object(path)`」同构；新增模块须在应用启动或包加载时被 import，否则运行时解析不到（Evennia 文档：**未 import 的模块不会被 typeclass/list 发现**）。 |
 | `ObjectParent` 共性 Mixin | 可选：`WorldThing(DefaultObject)` → `Light`、`Vehicle` | 减少重复 hook，保持单一继承树清晰。 |
 

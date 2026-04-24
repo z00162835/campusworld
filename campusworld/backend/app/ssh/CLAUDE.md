@@ -2,7 +2,7 @@
 
 > **Architecture Role**: SSH 模块是**系统适配层**的接入协议之一，提供类 MUD 的终端交互能力，是 Agent/用户进入**世界语义**的主要入口。用户通过 SSH 终端输入命令（commands/），命令系统操作图数据模型（models/），实现与世界语义的双向交互。参考 Evennia 的 Portal-Server 双层架构设计。
 
-基于 Paramiko 实现的 SSH 服务器，提供类 MUD 游戏的多人交互终端。
+基于 Paramiko 实现的 SSH 服务器，提供类 MUD 的多人交互终端。
 
 ## 架构设计（双层架构）
 
@@ -22,7 +22,7 @@
 │  - 用户认证验证                                            │
 │  - 用户 spawn/位置管理                                      │
 │  - 会话状态管理                                            │
-│  - 游戏事件处理                                            │
+│  - 事件处理                                            │
 ├─────────────────────────────────────────────────────────────┤
 │  Security Layer (rate_limiter.py)                          │
 │  - 连接速率限制                                            │
@@ -41,7 +41,7 @@
 ssh/
 ├── server.py            # SSH服务器（生命周期管理）
 ├── protocol_handler.py  # Protocol Layer - SSH协议处理
-├── game_handler.py     # Game Layer - 游戏逻辑处理
+├── game_handler.py     # Game Layer - 逻辑处理
 ├── session.py          # 会话管理
 ├── console.py          # 终端控制台
 ├── input_handler.py    # 输入处理
@@ -70,7 +70,7 @@ ssh/
 - 协议处理器工厂
 - 主机密钥加载（4096位RSA）
 
-### game_handler.py - 游戏层
+### game_handler.py - 层
 
 **GameHandler**
 - `authenticate_user()`: 用户认证
@@ -174,7 +174,7 @@ ssh username@localhost -p 2222
 - 认证超时控制
 - 会话隔离
 - 输入验证
-- 游戏逻辑与协议层分离，便于安全审计
+- 逻辑与协议层分离，便于安全审计
 - **连接速率限制**：防止暴力破解和DDoS攻击
 - **登录失败追踪**：自动锁定可疑IP
 - **白名单支持**：管理员可排除特定IP

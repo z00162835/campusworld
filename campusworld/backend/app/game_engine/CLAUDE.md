@@ -1,6 +1,6 @@
-# Game Engine - 游戏引擎
+# Game Engine - 引擎
 
-> **Architecture Role**: 游戏引擎是**能力服务层**的核心，管理世界状态和业务能力。它将**世界语义**（Room/Character/Building 等图节点）封装为可操作的游戏内容包（games/campus_life），驱动世界的运行逻辑。与 commands/（命令系统）和 models/（全图数据模型）紧密协作：命令系统触发引擎操作，引擎操作修改图数据模型中的实体。
+> **Architecture Role**: 引擎是**能力服务层**的核心，管理世界状态和业务能力。它将**世界语义**（Room/Character/Building 等图节点）封装为可操作的内容包（games/campus_life），驱动世界的运行逻辑。与 commands/（命令系统）和 models/（全图数据模型）紧密协作：命令系统触发引擎操作，引擎操作修改图数据模型中的实体。
 
 CampusWorld 内容引擎，参考 Evennia 框架设计，提供场景与引擎解耦的基础设施。
 
@@ -11,7 +11,7 @@ game_engine/
 ├── base.py           # 引擎基类
 ├── manager.py        # 引擎管理器
 ├── loader.py         # 内容加载器
-├── interface.py      # 游戏接口定义
+├── interface.py      # 接口定义
 └── __init__.py
 ```
 
@@ -32,7 +32,7 @@ class GameEngine:
     def get_info(self) -> dict
 
 class BaseGame:
-    """游戏基类"""
+    """基类"""
     name: str
     description: str
 ```
@@ -43,7 +43,7 @@ class BaseGame:
 
 ```python
 class GameEngineManager:
-    """游戏引擎管理器"""
+    """引擎管理器"""
 
     def start_engine(self) -> bool
     def stop_engine(self) -> bool
@@ -82,7 +82,7 @@ class GameLoader:
 
 ### GameInterface
 
-游戏接口，提供:
+接口，提供:
 
 - 玩家状态管理
 - 世界状态查询
@@ -105,16 +105,16 @@ engine = CampusWorldGameEngine()
 engine.start()
 ```
 
-## 游戏内容
+## 内容
 
-游戏内容定义在 `backend/app/games/`:
+内容定义在 `backend/app/games/`:
 
 ```
 games/
-├── campus_life/      # 校园生活游戏
-│   ├── game.py      # 游戏定义
-│   ├── commands.py  # 游戏命令
-│   ├── objects.py   # 游戏对象
+├── campus_life/      # 园区生活
+│   ├── game.py      # 定义
+│   ├── commands.py  # 命令
+│   ├── objects.py   # 对象
 │   └── scripts.py   # 脚本
 └── __init__.py
 ```
@@ -136,7 +136,7 @@ from app.game_engine import (
 ## 生命周期
 
 1. **初始化**: 创建引擎实例
-2. **启动**: 加载游戏内容
+2. **启动**: 加载内容
 3. **运行**: 处理命令和事件
 4. **停止**: 保存状态，清理资源
 

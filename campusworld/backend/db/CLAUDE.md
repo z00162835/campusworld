@@ -25,9 +25,9 @@ db/
 | 模型 | 描述 |
 |------|------|
 | User | 用户账户 |
-| Character | 游戏角色 |
+| Character | 角色 |
 | Room | 房间/位置 |
-| World | 游戏世界 |
+| World | 世界 |
 | Building | 建筑 |
 | Exit | 出口/通道 |
 | GraphNode | 图节点 |

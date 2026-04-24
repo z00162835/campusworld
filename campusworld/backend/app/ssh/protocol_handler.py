@@ -1,7 +1,7 @@
 """
 协议处理器 - Protocol Layer
 
-负责处理SSH协议相关的操作，与游戏逻辑解耦。
+负责处理SSH协议相关的操作，与逻辑解耦。
 参考Evenia的Portal层设计。
 """
 
@@ -51,7 +51,7 @@ class SSHProtocolHandler(ServerInterface):
         """
         验证用户名和密码
 
-        委托给GameHandler处理游戏逻辑
+        委托给GameHandler处理逻辑
         """
         # 记录认证尝试
         self.security_logger.info(f"SSH认证尝试", extra={

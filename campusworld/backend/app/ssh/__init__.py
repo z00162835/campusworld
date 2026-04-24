@@ -3,7 +3,7 @@ CampusWorld SSH模块
 
 提供SSH终端服务，采用双层架构设计:
 - Protocol Layer: protocol_handler.py, server.py - 处理SSH协议
-- Game Layer: game_handler.py - 处理游戏逻辑
+- Game Layer: game_handler.py - 处理逻辑
 - Security: rate_limiter.py - 连接速率限制
 """
 

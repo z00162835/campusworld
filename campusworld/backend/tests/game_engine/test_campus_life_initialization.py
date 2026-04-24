@@ -1,7 +1,7 @@
 """
-游戏引擎初始化流程测试
+引擎初始化流程测试
 
-验证 campus_life 游戏模块：
+验证 campus_life 模块：
 1. import 时不触发初始化日志
 2. 正确通过 initialize_game() 和 start() 生命周期方法
 3. 不会产生重复的初始化/启动日志
@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock
 
 
 class TestCampusLifeInitializationFlow:
-    """测试校园生活游戏初始化流程"""
+    """测试园区生活初始化流程"""
 
     def test_import_does_not_trigger_init_log(self):
         """验证 import 时不触发初始化日志"""

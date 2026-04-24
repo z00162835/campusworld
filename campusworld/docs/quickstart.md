@@ -65,7 +65,7 @@ python -m db.init_database
 ### 4. 启动后端
 
 ```bash
-# 系统入口：主程序（游戏引擎 + HTTP/WebSocket + SSH）
+# 系统入口：主程序（引擎 + HTTP/WebSocket + SSH）
 python campusworld.py
 ```
 
@@ -83,7 +83,7 @@ npm run dev
 |------|------|------|
 | 前端 Web | http://localhost:5173 | Vue3 开发服务器 |
 | API 文档 | http://localhost:8000/docs | Swagger UI |
-| SSH 游戏终端 | ssh localhost -p 2222 | 游戏命令交互 |
+| SSH 终端 | ssh localhost -p 2222 | 命令交互 |
 | 数据库管理 | http://localhost:8080 | Adminer（可选） |
 
 ## 登录凭据
@@ -139,4 +139,4 @@ python campusworld.py --log-level DEBUG
 
 - [配置系统](./configuration.md) — 了解 YAML 配置结构
 - [后端开发](../backend/CLAUDE.md) — 后端模块详细说明
-- [look 命令使用](../backend/docs/look_command_usage.md) — 游戏终端基础操作
+- [look 命令使用](../backend/docs/look_command_usage.md) — 终端基础操作

@@ -1,7 +1,7 @@
 """
-游戏逻辑处理器 - Game Layer
+逻辑处理器 - Game Layer
 
-负责处理游戏相关的业务逻辑，与协议层解耦。
+负责处理相关的业务逻辑，与协议层解耦。
 参考Evenia的Server层设计。
 """
 
@@ -33,13 +33,13 @@ def teleport_account_to_root(session, user_node: Node, root_node: Node) -> None:
 
 class GameHandler:
     """
-    游戏逻辑处理器
+    逻辑处理器
 
     负责：
     - 用户认证
     - 用户spawn/位置管理
     - 会话状态管理
-    - 游戏事件处理
+    - 事件处理
     """
 
     def __init__(self):
@@ -376,7 +376,7 @@ class GameHandler:
         """在当前数据库会话内执行世界进入和状态写回。"""
         engine = game_engine_manager.get_engine()
         if not engine:
-            return False, "游戏引擎未启动"
+            return False, "引擎未启动"
 
         game = engine.get_game(world_name)
         if not game:
@@ -483,5 +483,5 @@ class GameHandler:
             return False
 
 
-# 全局游戏处理器实例
+# 全局处理器实例
 game_handler = GameHandler()

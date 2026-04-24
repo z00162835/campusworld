@@ -321,7 +321,7 @@ def require_user_management(func: Callable) -> Callable:
 
 
 def require_campus_management(func: Callable) -> Callable:
-    """要求校园管理权限"""
+    """要求园区管理权限"""
     return require_permission('campus.manage')(func)
 
 

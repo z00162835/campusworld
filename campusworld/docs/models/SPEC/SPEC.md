@@ -1,12 +1,12 @@
 # Data Models SPEC
 
-> **Architecture Role**: 本模块是 CampusWorld **知识本体**的核心实现，通过**全图数据结构**构筑世界语义。所有实体（User/Character/Room/World 等）以图节点形式存在，关系以语义边表达，构成知识本体的骨架。属于"知识与能力层"的底层数据支撑，上承命令系统（commands）和游戏引擎（game_engine），下接数据库持久化层（db）。
+> **Architecture Role**: 本模块是 CampusWorld **知识本体**的核心实现，通过**全图数据结构**构筑世界语义。所有实体（User/Character/Room/World 等）以图节点形式存在，关系以语义边表达，构成知识本体的骨架。属于"知识与能力层"的底层数据支撑，上承命令系统（commands）和引擎（game_engine），下接数据库持久化层（db）。
 
 ## Module Overview
 
 数据模型（`backend/app/models/`）采用**纯图数据设计**，所有模型基于图数据结构。
 
-> **注**：CampusWorld 是智慧园区 OS，不是游戏。系统的"图数据模型"是知识本体设计，不是游戏引擎的数据结构。
+> **注**：CampusWorld 是智慧园区 OS，不是。系统的"图数据模型"是知识本体设计，不是引擎的数据结构。
 
 ```
 实体（Node） + 关系（Edge） = 知识本体
@@ -150,6 +150,9 @@
 
 - `F09` CampusWorld Agent 四层架构（L1–L4 规范真源、与 F02–F08 及代码映射、F07/F06 边界）  
   [`features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)
+
+- `F10` AICO 性能与延迟（tick SLO、可观测性、代码重复与工具单点收敛、分阶段路线图；**扩展** [**F03**](features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md) / [**F08**](features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)）  
+  [`features/F10_AICO_PERFORMANCE_AND_LATENCY.md`](features/F10_AICO_PERFORMANCE_AND_LATENCY.md)
 
 ## Open Questions
 

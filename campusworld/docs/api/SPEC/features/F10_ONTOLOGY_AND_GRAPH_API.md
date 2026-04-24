@@ -18,7 +18,7 @@
 | 维度 | 说明 |
 |------|------|
 | **有界上下文** | 仅 **ontology**（`NodeType` / `RelationshipType`）与 **graph**（`Node` / `Relationship`）的持久化读写与列表过滤。 |
-| **编排外置** | 世界入口、奇点屋、游戏逻辑、Agent 策略由其他模块负责；本服务 **不** 编排 `world` 命令或批处理任务。 |
+| **编排外置** | 世界入口、奇点屋、逻辑、Agent 策略由其他模块负责；本服务 **不** 编排 `world` 命令或批处理任务。 |
 | **版本** | 挂载在现有 **`/api/v1`** 前缀下（与 [`backend/app/api/http_app.py`](../../../../backend/app/api/http_app.py) 一致）。 |
 | **兼容策略** | v1 发布后，对公开字段 **_additive** 演进（新增可选字段、新 query 参数）；**破坏性变更** 需 v2 或协商弃用期（SPEC 实现阶段补充日历）。 |
 
@@ -177,7 +177,7 @@
 
 ### curl
 
-**OAuth2 密码模式登录**（与 `POST /api/v1/auth/login` 的 `OAuth2PasswordRequestForm` 一致；`username` 为校园账号名）：
+**OAuth2 密码模式登录**（与 `POST /api/v1/auth/login` 的 `OAuth2PasswordRequestForm` 一致；`username` 为园区账号名）：
 
 ```bash
 BASE="http://127.0.0.1:8000"

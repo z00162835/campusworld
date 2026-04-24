@@ -4,7 +4,7 @@ SSH服务器实现
 
 架构说明:
 - Protocol Layer (本文件 + protocol_handler.py): 处理SSH协议
-- Game Layer (game_handler.py): 处理游戏逻辑
+- Game Layer (game_handler.py): 处理逻辑
 
 参考Evenia的Portal-Server双层架构设计
 """
@@ -36,7 +36,7 @@ class CampusWorldSSHServerInterface(SSHProtocolHandler):
     CampusWorld SSH服务器接口
 
     继承自SSHProtocolHandler，处理SSH协议相关操作
-    游戏逻辑已委托给GameHandler
+    逻辑已委托给GameHandler
     """
 
     def __init__(self):

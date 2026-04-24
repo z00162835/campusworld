@@ -1,8 +1,8 @@
 # Backend - CampusWorld 后端服务
 
-> **Architecture Role**: 后端覆盖**系统适配层**（core/配置/安全/SSH协议）和**知识与能力层**（commands/命令系统 · models/全图数据模型 · game_engine/游戏引擎），为 Agent 服务层提供世界语义交互的能力底座。
+> **Architecture Role**: 后端覆盖**系统适配层**（core/配置/安全/SSH协议）和**知识与能力层**（commands/命令系统 · models/全图数据模型 · game_engine/引擎），为 Agent 服务层提供世界语义交互的能力底座。
 
-FastAPI + PostgreSQL + SSH 的后端服务，提供游戏逻辑、SSH终端和REST API。
+FastAPI + PostgreSQL + SSH 的后端服务，提供逻辑、SSH终端和REST API。
 
 ## 模块结构
 
@@ -27,7 +27,7 @@ backend/
 │   │   ├── base.py             # 命令基类
 │   │   ├── registry.py         # 命令注册表
 │   │   ├── builder/             # 建造命令
-│   │   ├── game/                # 游戏命令
+│   │   ├── game/                # 命令
 │   │   └── admin/               # 管理命令
 │   │
 │   ├── models/             # 数据模型
@@ -39,7 +39,7 @@ backend/
 │   │   ├── exit.py             # 出口
 │   │   └── graph.py             # 图结构
 │   │
-│   ├── game_engine/        # 游戏引擎
+│   ├── game_engine/        # 引擎
 │   │   ├── manager.py          # 引擎管理
 │   │   ├── loader.py           # 内容加载
 │   │   └── interface.py       # 接口定义
@@ -48,8 +48,8 @@ backend/
 │   │   ├── http_handler.py     # HTTP处理
 │   │   └── ssh_handler.py      # SSH处理
 │   │
-│   ├── games/              # 游戏内容
-│   │   └── campus_life/       # 校园生活游戏
+│   ├── games/              # 内容
+│   │   └── campus_life/       # 园区生活
 │   │
 │   └── api/                # REST API
 │       └── v1/
@@ -89,9 +89,9 @@ backend/
 - 图结构管理世界连接
 - 模型工厂 `model_factory`
 
-### 4. 游戏引擎
+### 4. 引擎
 - 内容自动加载
-- 游戏状态管理
+- 状态管理
 - 命令系统集成
 - `GameEngineManager` 统一管理
 
@@ -129,7 +129,7 @@ app.start_ssh()  # 仅启动SSH
 # 安装依赖
 pip install -r requirements/dev.txt
 
-# 启动系统（游戏引擎 + HTTP/WebSocket + SSH；推荐唯一入口）
+# 启动系统（引擎 + HTTP/WebSocket + SSH；推荐唯一入口）
 python campusworld.py
 
 # 启动SSH服务器
@@ -163,7 +163,7 @@ pytest --cov=app --cov-report=xml  # 带覆盖率
 | `@pytest.mark.models` | 数据模型测试 |
 | `@pytest.mark.commands` | 命令系统测试 |
 | `@pytest.mark.services` | 服务层测试 |
-| `@pytest.mark.game` | 游戏引擎测试 |
+| `@pytest.mark.game` | 引擎测试 |
 
 ## 配置
 

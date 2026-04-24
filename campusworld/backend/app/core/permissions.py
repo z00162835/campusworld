@@ -51,7 +51,7 @@ class Permission(Enum):
     VIEW_USERS = "view_users"
     MANAGE_USERS = "manage_users"
     
-    # 校园管理权限
+    # 园区管理权限
     VIEW_CAMPUS = "view_campus"
     CREATE_CAMPUS = "create_campus"
     EDIT_CAMPUS = "edit_campus"
@@ -179,7 +179,7 @@ class PermissionManager:
             Permission.VIEW_USERS: PermissionLevel.MODERATOR,
             Permission.MANAGE_USERS: PermissionLevel.ADMIN,
             
-            # 校园管理权限
+            # 园区管理权限
             Permission.VIEW_CAMPUS: PermissionLevel.USER,
             Permission.CREATE_CAMPUS: PermissionLevel.ADMIN,
             Permission.EDIT_CAMPUS: PermissionLevel.MODERATOR,

@@ -276,7 +276,7 @@ class User(DefaultAccount):
     # ==================== 关系管理 ====================
     
     def get_campus_memberships(self):
-        """获取校园成员身份"""
+        """获取园区成员身份"""
         # 通过图关系获取
         relationships = self.get_relationships("campus_member")
         return relationships
@@ -288,7 +288,7 @@ class User(DefaultAccount):
         return [rel for rel in relationships if rel.get_attribute("is_active", True)]
     
     def has_campus_access(self, campus_id: int) -> bool:
-        """检查是否有指定校园的访问权限"""
+        """检查是否有指定园区的访问权限"""
         memberships = self.get_campus_memberships()
         for membership in memberships:
             if membership.target_id == campus_id:
@@ -296,7 +296,7 @@ class User(DefaultAccount):
         return False
     
     def get_campus_role(self, campus_id: int) -> str:
-        """获取在指定校园中的角色"""
+        """获取在指定园区中的角色"""
         memberships = self.get_campus_memberships()
         for membership in memberships:
             if membership.target_id == campus_id:
@@ -304,12 +304,12 @@ class User(DefaultAccount):
         return "guest"
     
     def can_manage_campus(self, campus_id: int) -> bool:
-        """检查是否可以管理指定校园"""
+        """检查是否可以管理指定园区"""
         role = self.get_campus_role(campus_id)
         return role in ["admin", "manager", "owner"]
     
     def join_campus(self, campus, role: str = "member") -> bool:
-        """加入校园"""
+        """加入园区"""
         try:
             relationship = self.create_relationship(
                 target=campus,
@@ -319,15 +319,15 @@ class User(DefaultAccount):
             )
             return relationship is not None
         except Exception as e:
-            self.logger .error(f"加入校园失败: {e}")
+            self.logger .error(f"加入园区失败: {e}")
             return False
     
     def leave_campus(self, campus) -> bool:
-        """离开校园"""
+        """离开园区"""
         try:
             return self.remove_relationship(campus, "campus_member")
         except Exception as e:
-            self.logger.error(f"离开校园失败: {e}")
+            self.logger.error(f"离开园区失败: {e}")
             return False
     
     def get_node_attribute(self, key: str, default: Any = None) -> Any:
