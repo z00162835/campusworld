@@ -59,3 +59,15 @@ game_engine:
 monitoring:
   enable_metrics: false
   enable_tracing: false
+
+# AICO / npc_agent LLM：开发环境可选降延迟（与基础 settings.yaml 深度合并）。
+# 详见 docs/models/SPEC/features/F10_AICO_PERFORMANCE_AND_LATENCY.md 第 13 节。
+# 注意：per-phase 超时与 skip 在运行时来自 npc_agent 节点 attributes.phase_llm，不在此模型上。
+# 生产勿盲目照搬；按模型与网络调参并保留回滚。
+agents:
+  llm:
+    by_service_id:
+      aico:
+        max_tokens: 2048
+        extra:
+          tool_gather_max_rounds_per_phase: 2

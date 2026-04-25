@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import re
+import time
 import uuid
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from app.commands.base import CommandContext
+from app.commands.registry import command_registry
 from app.core.config_manager import get_config
 from app.core.log.aico_observability import (
     clear_aico_observability_context,
@@ -21,6 +24,7 @@ from app.game_engine.agent_runtime.frameworks.base import (
 )
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
 from app.game_engine.agent_runtime.llm_client import (
+    LlmCallSpec,
     LlmClient,
     StubLlmClient,
     complete_with_tools,
@@ -53,6 +57,7 @@ from app.game_engine.agent_runtime.tool_gather import (
     parse_tool_invocation_plan_from_text,
     tool_gather_budgets_from_agent_extra,
 )
+from app.game_engine.agent_runtime.tool_runtime_view import resolve_tool_runtime_view
 from app.game_engine.agent_runtime.tooling import ToolExecutor
 
 
@@ -64,6 +69,87 @@ _CHECK_RETRY_RE = re.compile(
     r"RETRY\s*:\s*need_tools\s*=\s*([A-Za-z0-9_.\-]+(?:\s*,\s*[A-Za-z0-9_.\-]+)*)",
     flags=re.IGNORECASE,
 )
+
+# When Plan/Do/Act complete without error but produce no user-visible text.
+_DEFAULT_NPC_AGENT_EMPTY_REPLY = "抱歉，我没有能力处理此问题。你可以换一个问题。"
+
+
+def _resolve_npc_agent_empty_reply_message(cfg: AgentLlmServiceConfig) -> str:
+    """``agents.llm.*.extra.npc_agent_empty_reply_message`` overrides; else default."""
+    extra = getattr(cfg, "extra", None) or {}
+    if not isinstance(extra, dict):
+        return _DEFAULT_NPC_AGENT_EMPTY_REPLY
+    raw = extra.get("npc_agent_empty_reply_message")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return _DEFAULT_NPC_AGENT_EMPTY_REPLY
+
+_LLM_PDCA_LOG = logging.getLogger(__name__)
+
+
+def _filter_tool_calls_to_schemas(
+    calls: List[ToolCall],
+    tool_schemas: Sequence[ToolSchema],
+) -> Tuple[List[ToolCall], List[str]]:
+    """Drop tool invocations not present on the resolved schema surface.
+
+    Prevents JSON fallback (or any stray names) from entering ``AssistantToolUseTurn``
+    and then failing wire validation (tool_use name not in request ``tools``).
+    Normalizes names through the command registry (alias → primary).
+    """
+    if not calls:
+        return [], []
+    allowed = {str(s.name) for s in tool_schemas if getattr(s, "name", None)}
+    if not allowed:
+        return [], [c.name for c in calls if c.name]
+    kept: List[ToolCall] = []
+    dropped: List[str] = []
+    for c in calls:
+        raw = (c.name or "").strip()
+        cmd = command_registry.get_command(raw) if raw else None
+        primary = (cmd.name if cmd is not None else raw).strip()
+        if not primary:
+            continue
+        if primary in allowed:
+            if primary != c.name:
+                kept.append(
+                    ToolCall(
+                        id=c.id,
+                        name=primary,
+                        args=list(c.args),
+                    )
+                )
+            else:
+                kept.append(c)
+        else:
+            dropped.append(raw or primary)
+    return kept, dropped
+
+
+def _trace_phase_timing(
+    trace: List[Dict[str, Any]],
+    *,
+    scope: str,
+    phase: str,
+    elapsed_ms: float,
+    round_idx: Optional[int] = None,
+    channel: Optional[str] = None,
+    tool_call_count: Optional[int] = None,
+) -> None:
+    """Append a small structured row for tick latency analysis (F10 observability)."""
+    row: Dict[str, Any] = {
+        "step": "phase_timing",
+        "scope": scope,
+        "phase": phase,
+        "elapsed_ms": round(float(elapsed_ms), 3),
+    }
+    if round_idx is not None:
+        row["round"] = int(round_idx)
+    if channel:
+        row["channel"] = channel
+    if tool_call_count is not None:
+        row["tool_call_count"] = int(tool_call_count)
+    trace.append(row)
 
 
 def _merge_phase_prompts(
@@ -159,6 +245,14 @@ class LlmPDCAFramework(ThinkingFramework):
     def framework_id(self) -> str:
         return "PDCA_LLM"
 
+    def _spec_for_phase(self, phase: str, ctx: FrameworkRunContext) -> LlmCallSpec:
+        pcfg = merge_phase_config(phase, self._instance_phase_llm, ctx.phase_llm_overrides)
+        return to_llm_call_spec(
+            pcfg,
+            mode_models=self._instance_mode_models,
+            default_model=(self._cfg.model or "").strip(),
+        )
+
     # -------------------- low-level LLM invocation (text) --------------------
 
     def _call_llm(
@@ -169,12 +263,7 @@ class LlmPDCAFramework(ThinkingFramework):
         ctx: FrameworkRunContext,
     ) -> Tuple[str, Dict[str, Any]]:
         """Single plain-text LLM call (back-compat shape for existing tests)."""
-        pcfg = merge_phase_config(phase, self._instance_phase_llm, ctx.phase_llm_overrides)
-        spec = to_llm_call_spec(
-            pcfg,
-            mode_models=self._instance_mode_models,
-            default_model=(self._cfg.model or "").strip(),
-        )
+        spec = self._spec_for_phase(phase, ctx)
         cm = get_config()
         if should_emit_aico_full_chain_logs(cm):
             log_aico_llm_call(
@@ -202,16 +291,26 @@ class LlmPDCAFramework(ThinkingFramework):
         New code paths go through :meth:`_phase_react_loop` which handles
         both native tool_use calls and JSON fallback uniformly.
         """
-        if not self._pre_tool or not self._tool_command_context:
+        view = resolve_tool_runtime_view(
+            pre_tool=self._pre_tool,
+            tool_command_context=self._tool_command_context,
+            budgets=self._tool_budgets,
+            counters=counters,
+        )
+        if not view.can_execute:
+            trace.append(
+                {"step": "tool_gather_skip", "phase": pdca_phase, "reason": view.reason}
+            )
             return ""
         plan = parse_tool_invocation_plan_from_text(llm_output or "")
         if not plan.commands:
             return ""
+        assert view.executor is not None and view.tool_context is not None
         text, entries = gather_tool_observations(
-            self._pre_tool,
-            self._tool_command_context,
+            view.executor,
+            view.tool_context,
             plan,
-            budgets=self._tool_budgets,
+            budgets=view.budgets,
             counters=counters,
             phase_label=pdca_phase,
         )
@@ -236,12 +335,7 @@ class LlmPDCAFramework(ThinkingFramework):
         Returns ``(text, tool_calls, trace_entry)``. ``tool_calls`` is empty
         when the model chose to answer with prose or when parsing failed.
         """
-        pcfg = merge_phase_config(phase, self._instance_phase_llm, ctx.phase_llm_overrides)
-        spec = to_llm_call_spec(
-            pcfg,
-            mode_models=self._instance_mode_models,
-            default_model=(self._cfg.model or "").strip(),
-        )
+        spec = self._spec_for_phase(phase, ctx)
         cm = get_config()
         user_text_for_log = _render_turns_as_text(turns)
         if should_emit_aico_full_chain_logs(cm):
@@ -284,12 +378,23 @@ class LlmPDCAFramework(ThinkingFramework):
             text = self._llm.complete(system=system, user=user_text_for_log, call_spec=spec)
             calls = _tool_calls_from_text(text)
 
+        dropped: List[str] = []
+        if self._tool_schemas and calls:
+            calls, dropped = _filter_tool_calls_to_schemas(calls, self._tool_schemas)
+            if dropped:
+                _LLM_PDCA_LOG.warning(
+                    "tool_call_filtered phase=%s dropped=%s",
+                    phase,
+                    dropped,
+                )
+
         return text, calls, {
             "step": phase,
             "llm_output": text,
             "mode": spec.mode.value,
             "channel": channel,
             "tool_call_count": len(calls),
+            "dropped_tool_names": dropped,
         }
 
     # -------------------- ReAct per-phase loop --------------------
@@ -317,80 +422,133 @@ class LlmPDCAFramework(ThinkingFramework):
         all_results: List[ToolResult] = []
         last_text = ""
         last_entry: Dict[str, Any] = {"step": pdca_phase, "skipped": False}
-
-        for round_idx in range(max_rounds):
-            text, calls, entry = self._call_llm_dual_track(pdca_phase, system, turns, ctx)
-            entry = dict(entry)
-            entry["round"] = round_idx + 1
-            trace.append(entry)
-            last_text = text
-            last_entry = entry
-
-            if entry.get("skipped"):
-                break
-
-            # No tools or executor missing — we're done with this phase.
-            if not calls or not self._pre_tool or not self._tool_command_context:
-                break
-
-            plan = tool_calls_to_invocation_plan(calls)
-            obs_text, gather_entries = gather_tool_observations(
-                self._pre_tool,
-                self._tool_command_context,
-                plan,
-                budgets=self._tool_budgets,
-                counters=counters,
-                phase_label=pdca_phase,
-            )
-            trace.extend(gather_entries)
-            if obs_text:
-                cm = get_config()
-                if should_emit_aico_full_chain_logs(cm):
-                    log_aico_tool_observations_text(
-                        cm, phase=pdca_phase, observation_text=obs_text
+        t_phase = time.perf_counter()
+        try:
+            for round_idx in range(max_rounds):
+                t_llm = time.perf_counter()
+                text, calls, entry = self._call_llm_dual_track(pdca_phase, system, turns, ctx)
+                entry = dict(entry)
+                entry["round"] = round_idx + 1
+                trace.append(entry)
+                dropped_n = list(entry.get("dropped_tool_names") or [])
+                if dropped_n:
+                    trace.append(
+                        {
+                            "step": "tool_call_filtered",
+                            "phase": pdca_phase,
+                            "dropped": dropped_n,
+                            "round": round_idx + 1,
+                        }
                     )
+                _trace_phase_timing(
+                    trace,
+                    scope="llm",
+                    phase=pdca_phase,
+                    elapsed_ms=(time.perf_counter() - t_llm) * 1000.0,
+                    round_idx=round_idx + 1,
+                    channel=str(entry.get("channel") or "") or None,
+                    tool_call_count=int(entry.get("tool_call_count") or 0) or None,
+                )
+                last_text = text
+                last_entry = entry
 
-            # Build ToolResults for the next round, mirroring executed calls.
-            round_results: List[ToolResult] = []
-            # Rebuild from per-call by replaying the executor would duplicate work,
-            # so we reuse the gather_tool_observations trace entries — it preserves
-            # the execution order and success flag.
-            exec_entries = [
-                e for e in gather_entries if e.get("step") == "tool_exec"
-            ]
-            for i, e in enumerate(exec_entries):
-                if i >= len(calls):
+                if entry.get("skipped"):
                     break
-                c = calls[i]
-                round_results.append(
-                    ToolResult(
-                        id=c.id or f"call_{round_idx}_{i}",
-                        name=c.name,
-                        ok=bool(e.get("success", False)),
-                        text=_extract_observation_text_for_call(obs_text, i + 1),
+
+                if not calls:
+                    break
+
+                view = resolve_tool_runtime_view(
+                    pre_tool=self._pre_tool,
+                    tool_command_context=self._tool_command_context,
+                    budgets=self._tool_budgets,
+                    counters=counters,
+                )
+                if not view.can_execute:
+                    trace.append(
+                        {
+                            "step": "tool_gather_skip",
+                            "phase": pdca_phase,
+                            "reason": view.reason,
+                            "round": round_idx + 1,
+                        }
+                    )
+                    break
+
+                plan = tool_calls_to_invocation_plan(calls)
+                assert view.executor is not None and view.tool_context is not None
+                t_gather = time.perf_counter()
+                obs_text, gather_entries = gather_tool_observations(
+                    view.executor,
+                    view.tool_context,
+                    plan,
+                    budgets=view.budgets,
+                    counters=counters,
+                    phase_label=pdca_phase,
+                )
+                trace.extend(gather_entries)
+                _trace_phase_timing(
+                    trace,
+                    scope="tool_gather",
+                    phase=pdca_phase,
+                    elapsed_ms=(time.perf_counter() - t_gather) * 1000.0,
+                    round_idx=round_idx + 1,
+                )
+                if obs_text:
+                    cm = get_config()
+                    if should_emit_aico_full_chain_logs(cm):
+                        log_aico_tool_observations_text(
+                            cm, phase=pdca_phase, observation_text=obs_text
+                        )
+
+                # Build ToolResults for the next round, mirroring executed calls.
+                round_results: List[ToolResult] = []
+                # Rebuild from per-call by replaying the executor would duplicate work,
+                # so we reuse the gather_tool_observations trace entries — it preserves
+                # the execution order and success flag.
+                exec_entries = [
+                    e for e in gather_entries if e.get("step") == "tool_exec"
+                ]
+                for i, e in enumerate(exec_entries):
+                    if i >= len(calls):
+                        break
+                    c = calls[i]
+                    round_results.append(
+                        ToolResult(
+                            id=c.id or f"call_{round_idx}_{i}",
+                            name=c.name,
+                            ok=bool(e.get("success", False)),
+                            text=_extract_observation_text_for_call(obs_text, i + 1),
+                        )
+                    )
+                all_results.extend(round_results)
+
+                # Record assistant tool choices in a provider-neutral turn so HTTP
+                # adapters can emit valid assistant tool_use / tool_result pairs
+                # (Anthropic-style APIs reject tool_result without matching tool_use).
+                turns.append(
+                    AssistantToolUseTurn(
+                        text=text or "",
+                        tool_calls=[ToolCall(id=c.id, name=c.name, args=list(c.args)) for c in calls],
                     )
                 )
-            all_results.extend(round_results)
+                turns.append(ToolResultsTurn(results=round_results))
+                obs_chunks.append(obs_text)
 
-            # Record assistant tool choices in a provider-neutral turn so HTTP
-            # adapters can emit valid assistant tool_use / tool_result pairs
-            # (Anthropic-style APIs reject tool_result without matching tool_use).
-            turns.append(
-                AssistantToolUseTurn(
-                    text=text or "",
-                    tool_calls=[ToolCall(id=c.id, name=c.name, args=list(c.args)) for c in calls],
-                )
+                # Budget exhaustion in mid-loop: stop before next LLM call.
+                if (
+                    counters.commands_run >= self._tool_budgets.max_commands_per_tick
+                    or counters.observation_chars
+                    >= self._tool_budgets.max_chars_observations_per_tick
+                ):
+                    break
+        finally:
+            _trace_phase_timing(
+                trace,
+                scope="phase_total",
+                phase=pdca_phase,
+                elapsed_ms=(time.perf_counter() - t_phase) * 1000.0,
             )
-            turns.append(ToolResultsTurn(results=round_results))
-            obs_chunks.append(obs_text)
-
-            # Budget exhaustion in mid-loop: stop before next LLM call.
-            if (
-                counters.commands_run >= self._tool_budgets.max_commands_per_tick
-                or counters.observation_chars
-                >= self._tool_budgets.max_chars_observations_per_tick
-            ):
-                break
 
         return last_text, "\n\n".join(o for o in obs_chunks if o), all_results, last_entry
 
@@ -494,8 +652,15 @@ class LlmPDCAFramework(ThinkingFramework):
         )
         check_sys = _phase_system(base_system, PDCAPhase.check.value, merged_phases)
         self._tick_hooks.on_before_phase(ThinkingPhaseId.check, ctx)
+        t_check = time.perf_counter()
         check_out, check_entry = self._call_llm(
             PDCAPhase.check.value, check_sys, check_user, ctx
+        )
+        _trace_phase_timing(
+            trace,
+            scope="llm",
+            phase=PDCAPhase.check.value,
+            elapsed_ms=(time.perf_counter() - t_check) * 1000.0,
         )
         retry_tools = (
             None if check_entry.get("skipped") else _parse_check_retry_signal(check_out or "")
@@ -566,7 +731,14 @@ class LlmPDCAFramework(ThinkingFramework):
             f"Polish for final user-facing text."
         )
         act_sys = _phase_system(base_system, PDCAPhase.act.value, merged_phases)
+        t_act = time.perf_counter()
         act_out, act_entry = self._call_llm(PDCAPhase.act.value, act_sys, act_user, ctx)
+        _trace_phase_timing(
+            trace,
+            scope="llm",
+            phase=PDCAPhase.act.value,
+            elapsed_ms=(time.perf_counter() - t_act) * 1000.0,
+        )
         if not act_entry.get("skipped") and (act_out or "").strip():
             final_text = act_out.strip()
         act_entry["step"] = PDCAPhase.act.value
@@ -579,12 +751,22 @@ class LlmPDCAFramework(ThinkingFramework):
             skipped=bool(act_entry.get("skipped")),
         )
 
+        if user_msg and not (final_text or "").strip():
+            final_text = _resolve_npc_agent_empty_reply_message(self._cfg)
+            act_entry["final_reply"] = final_text
+            trace.append(
+                {
+                    "step": "empty_reply_fallback",
+                    "user_message_len": len(user_msg),
+                }
+            )
+
         self._memory.finish_run(
             run_id,
             PDCAPhase.act.value,
             trace,
             "success" if ok else "failed",
-            graph_ops_summary={"reply_excerpt": final_text[:500]},
+            graph_ops_summary={"reply_excerpt": (final_text or "")[:500]},
         )
 
         self._memory.append_raw(

@@ -174,6 +174,10 @@ agents:
         temperature: 0.2
         max_tokens: 4096
         # prepend_primer_tier1: false — omit auto-prepended primer §1+§8 before system_prompt
+        # Optional: user-visible line when the pipeline finishes without error but the final
+        # reply is blank. Omit the key to use the built-in default in code.
+        # extra:
+        #   npc_agent_empty_reply_message: "抱歉，我没有能力处理此问题。你可以换一个问题。"
         extra: {}
         system_prompt: |
           You are AICO, the default system assistant of CampusWorld — a graph-native
@@ -192,21 +196,17 @@ agents:
             will be shown to the user verbatim if no more rounds run.
           - You may call multiple tools per round and run multiple rounds within a
             phase; observations are appended to your next turn as tool results.
-          - Call `primer` (or `primer <section>`; sections: identity, structure,
-            ontology, world, actions, interaction, memory, invariants, examples)
-            to pull more design context on demand. Call `whoami`, `look`, or
-            `find <query>` (Evennia-style; also `find #<id>`, `find *<account>`,
-            with optional `--type`, `--exact`, `--startswith`, `--in <room_id>`)
-            to ground answers in graph state. Use `describe <id|name>` for a
-            single-node deep dive.
+          - Use only command names that appear in the "Tools available" list in
+            the same user turn. Do not assume a tool exists if it is not listed
+            there for this request.
           - Prefer tool observations over speculation, always.
         phase_prompts:
           plan: >-
             Decide which tools to call to answer the user. List assumptions that
-            must be verified. If you lack identity, location, ontology, or tool
-            knowledge, call primer / whoami / look / find first. Emit a
-            tool_use / JSON commands block; free-form prose alone is discouraged
-            here.
+            must be verified. If you lack identity, location, or grounded state,
+            use tool calls that appear in the "Tools available" list for this turn
+            to verify them. Emit a tool_use / JSON commands block; free-form prose
+            alone is discouraged here.
           do: >-
             Using the plan and tool observations, draft the user-facing reply.
             You may still call tools this phase if new information is needed.
@@ -226,7 +226,7 @@ agents:
         observability:
           enabled: true
           log_path: "logs/agent/aico.log"
-          level: "INFO"
+          level: "DEBUG"
           max_file_size: "10MB"
           backup_count: 5
           max_phase_output_chars: 4000

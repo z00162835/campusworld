@@ -60,9 +60,9 @@ class SSHHandler(ProtocolHandler):
 
                 return self._format_command_result(result)
             
-        except Exception as e:
-            self.logger.error(f"命令执行错误: {e}")
-            return self._format_error(str(e))
+        except Exception:
+            self.logger.exception("命令执行错误")
+            return self._format_unexpected_error()
     
     def get_prompt(self, username: str, game_state: Optional[Dict[str, Any]] = None) -> str:
         """获取SSH提示符"""
@@ -92,5 +92,9 @@ class SSHHandler(ProtocolHandler):
             return f"Error: {result.message}\n"
     
     def _format_error(self, error: str) -> str:
-        """格式化错误消息"""
+        """格式化错误消息（已弃用对终端直出内部异常串；保留供显式需要时调用）。"""
         return f"System Error: {error}\n"
+
+    def _format_unexpected_error(self) -> str:
+        """未分类异常：不向用户暴露实现细节。"""
+        return "System Error: An unexpected error occurred.\n"

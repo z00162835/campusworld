@@ -76,12 +76,14 @@ class HTTPHandler(ProtocolHandler):
                     "error": result.error,
                 })
 
-        except Exception as e:
-            self.logger.error(f"命令执行错误: {e}")
-            return json.dumps({
-                "success": False,
-                "error": f"System Error: {str(e)}"
-            })
+        except Exception:
+            self.logger.exception("命令执行错误")
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": "System Error: An unexpected error occurred.",
+                }
+            )
 
     def get_prompt(self, username: str, game_state: Optional[Dict[str, Any]] = None) -> str:
         """获取HTTP提示符"""

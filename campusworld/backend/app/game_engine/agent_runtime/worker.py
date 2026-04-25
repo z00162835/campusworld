@@ -16,6 +16,7 @@ from app.models.graph import Node
 
 if TYPE_CHECKING:
     from app.core.settings import AgentLlmServiceConfig
+    from app.game_engine.agent_runtime.agent_tick_context import NpcAgentTickInputs
     from app.game_engine.agent_runtime.llm_client import LlmClient
     from app.game_engine.agent_runtime.tool_calling import ToolSchema
     from app.game_engine.agent_runtime.tooling import ToolExecutor
@@ -120,6 +121,7 @@ class LlmPdcaAssistantWorker(AgentWorker):
         *,
         llm_client: Optional[LlmClient] = None,
         agent_llm_config: Optional["AgentLlmServiceConfig"] = None,
+        tick_inputs: Optional["NpcAgentTickInputs"] = None,
     ) -> "LlmPdcaAssistantWorker":
         from app.commands.registry import command_registry as _command_registry
         from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config_for_npc_tick
@@ -133,21 +135,35 @@ class LlmPdcaAssistantWorker(AgentWorker):
         )
         from app.game_engine.agent_runtime.tool_gather import tool_gather_budgets_from_agent_extra
 
-        agent = session.query(Node).filter(Node.id == agent_node_id).first()
-        if agent is None:
-            raise ValueError(f"agent node {agent_node_id} not found")
-        attrs = agent.attributes or {}
-        service_id = str(attrs.get("service_id") or "aico")
-        model_ref = attrs.get("model_config_ref")
-        model_ref_s = str(model_ref) if model_ref else None
-        if agent_llm_config is not None:
-            cfg = agent_llm_config
+        if tick_inputs is not None:
+            agent = tick_inputs.agent
+            if int(agent.id) != int(agent_node_id):
+                raise ValueError(
+                    f"tick_inputs.agent.id {agent.id} does not match agent_node_id {agent_node_id}"
+                )
+            attrs = dict(tick_inputs.attrs)
+            service_id = tick_inputs.service_id
+            model_ref_s = tick_inputs.model_ref_s
+            if agent_llm_config is not None:
+                cfg = agent_llm_config
+            else:
+                cfg = tick_inputs.cfg
         else:
-            cfg = resolve_agent_llm_config_for_npc_tick(
-                service_id,
-                model_config_ref=model_ref_s,
-                node_attributes=attrs,
-            )
+            agent = session.query(Node).filter(Node.id == agent_node_id).first()
+            if agent is None:
+                raise ValueError(f"agent node {agent_node_id} not found")
+            attrs = agent.attributes or {}
+            service_id = str(attrs.get("service_id") or "aico")
+            model_ref = attrs.get("model_config_ref")
+            model_ref_s = str(model_ref) if model_ref else None
+            if agent_llm_config is not None:
+                cfg = agent_llm_config
+            else:
+                cfg = resolve_agent_llm_config_for_npc_tick(
+                    service_id,
+                    model_config_ref=model_ref_s,
+                    node_attributes=attrs,
+                )
         fb = invoker_context or CommandContext(
             user_id=str(agent_node_id),
             username="agent_worker",
@@ -156,26 +172,27 @@ class LlmPdcaAssistantWorker(AgentWorker):
             roles=[],
             db_session=session,
         )
+        from app.game_engine.agent_runtime.agent_llm_extra import parse_bool_extra
+
         extra = dict(cfg.extra or {})
-        tier1_raw = extra.get("prepend_primer_tier1", True)
-        if isinstance(tier1_raw, str):
-            tier1_on = tier1_raw.strip().lower() in {"1", "true", "yes", "on"}
-        else:
-            tier1_on = bool(tier1_raw)
+        tier1_on = parse_bool_extra(extra, "prepend_primer_tier1", default=True)
         caller_location_name: Optional[str] = None
         if tier1_on:
-            try:
-                from app.game_engine.agent_runtime.command_caller_graph import (
-                    resolve_caller_location_id,
-                    resolve_caller_node_id,
-                    resolve_room_display_name,
-                )
+            if tick_inputs is not None:
+                caller_location_name = tick_inputs.caller.caller_location_display_name
+            else:
+                try:
+                    from app.game_engine.agent_runtime.command_caller_graph import (
+                        resolve_caller_location_id,
+                        resolve_caller_node_id,
+                        resolve_room_display_name,
+                    )
 
-                cid = resolve_caller_node_id(session, fb)
-                lid = resolve_caller_location_id(session, cid)
-                caller_location_name = resolve_room_display_name(session, lid)
-            except Exception:
-                caller_location_name = None
+                    cid = resolve_caller_node_id(session, fb)
+                    lid = resolve_caller_location_id(session, cid)
+                    caller_location_name = resolve_room_display_name(session, lid)
+                except Exception:
+                    caller_location_name = None
             from app.game_engine.agent_runtime.system_primer_context import (
                 merge_system_prompt_with_primer_tier1,
             )

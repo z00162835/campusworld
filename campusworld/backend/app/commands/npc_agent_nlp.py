@@ -6,7 +6,13 @@ import os
 from typing import Any, Dict, Optional
 
 from app.commands.base import CommandContext, CommandResult
+from app.core.log import get_logger
 from app.models.graph import Node
+
+_NPC_AGENT_NLP_LOG = get_logger("app.commands.npc_agent_nlp")
+
+# User-facing text only; do not name commands or point users to help/CLI recovery.
+NPC_AGENT_LLM_FAILURE_USER_MSG = "我这边暂时无法处理，请再描述一下你的目标。"
 
 
 def maybe_ltm_memory_context(session, agent_node_id: int, user_message: str, cfg_extra: Dict[str, Any]) -> Optional[str]:
@@ -39,11 +45,11 @@ def run_npc_agent_nlp_tick(
 ):
     """Run one LlmPdcaAssistantWorker tick; caller commits session."""
     from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config_for_npc_tick
-    from app.game_engine.agent_runtime.aico_world_context import build_world_snapshot_from_session
-    from app.game_engine.agent_runtime.command_caller_graph import (
-        resolve_caller_location_id,
-        resolve_caller_node_id,
+    from app.game_engine.agent_runtime.agent_tick_context import (
+        NpcAgentTickInputs,
+        build_caller_graph_snapshot,
     )
+    from app.game_engine.agent_runtime.aico_world_context import build_world_snapshot_from_session
     from app.game_engine.agent_runtime.frameworks.base import FrameworkRunResult
     from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config, http_llm_available
     from app.game_engine.agent_runtime.worker import LlmPdcaAssistantWorker
@@ -69,12 +75,22 @@ def run_npc_agent_nlp_tick(
         mem_ctx = maybe_ltm_memory_context(session, node.id, message, dict(cfg.extra or {}))
 
     llm = build_llm_client_from_service_config(cfg)
+    caller_snap = build_caller_graph_snapshot(session, context)
+    tick_inputs = NpcAgentTickInputs(
+        agent=node,
+        attrs=dict(attrs),
+        service_id=service_id,
+        model_ref_s=model_ref_s,
+        cfg=cfg,
+        caller=caller_snap,
+    )
     w = LlmPdcaAssistantWorker.create(
         session,
         node.id,
         invoker_context=context,
         llm_client=llm,
         agent_llm_config=cfg,
+        tick_inputs=tick_inputs,
     )
 
     # Build a per-tick world snapshot. Kept best-effort — any failure here
@@ -83,8 +99,7 @@ def run_npc_agent_nlp_tick(
     try:
         caller_username = getattr(context, "username", None)
         caller_roles = getattr(context, "roles", ()) or ()
-        caller_node_id = resolve_caller_node_id(session, context)
-        caller_location_node_id = resolve_caller_location_id(session, caller_node_id)
+        caller_location_node_id = caller_snap.caller_location_node_id
         world_snapshot_text = build_world_snapshot_from_session(
             session,
             caller_username=caller_username,
@@ -111,12 +126,24 @@ def run_npc_agent_nlp_tick(
         payload: Dict[str, Any] = {"message": message}
         if world_snapshot_text:
             payload["world_snapshot"] = world_snapshot_text
-        return w.tick(
-            payload,
-            correlation_id=context.session_id,
-            memory_context=mem_ctx,
-            phase_llm_overrides=phase_llm_overrides,
-        )
+        try:
+            return w.tick(
+                payload,
+                correlation_id=context.session_id,
+                memory_context=mem_ctx,
+                phase_llm_overrides=phase_llm_overrides,
+            )
+        except Exception:
+            _NPC_AGENT_NLP_LOG.exception(
+                "npc_agent_nlp tick failed: service_id=%s session=%s",
+                service_id,
+                context.session_id,
+            )
+            return FrameworkRunResult(
+                ok=False,
+                message=NPC_AGENT_LLM_FAILURE_USER_MSG,
+                final_phase="error",
+            )
     finally:
         clear_aico_full_chain_tick()
 
