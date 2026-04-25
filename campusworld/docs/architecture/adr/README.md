@@ -8,6 +8,7 @@
 | [ADR-F03-AICO-NL-Pipeline](ADR-F03-AICO-NL-Pipeline.md) | AICO NLP + LLM + PDCA, prompts, memory context |
 | [ADR-F04-AT-Dispatch](ADR-F04-AT-Dispatch.md) | `@` prefix dispatch vs CmdSet, auth aligned with `aico` |
 | [ADR-F08-Tool-Gather](ADR-F08-Tool-Gather.md) | Frozen tool surface, ToolGather, PDCA phase injection |
+| [ADR-F10-AICO-Tool-Gather-Single-Gate](ADR-F10-AICO-Tool-Gather-Single-Gate.md) | ToolRuntimeView: single gate before gather; trace `tool_gather_skip` |
 | ADR-F09-Agent-Four-Layers（占位） | 见 [`docs/models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](../../models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md) §9；定稿后补本文档 |
 | [REVIEW-AICO](REVIEW-AICO.md) | PR checklist for agent NLP / `@` / YAML changes |
 

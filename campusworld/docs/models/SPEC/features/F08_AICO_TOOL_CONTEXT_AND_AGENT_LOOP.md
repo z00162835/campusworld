@@ -156,6 +156,7 @@ flowchart LR
 ## 9. 可观测性
 
 - **`agent_run_records.command_trace`**：每条记录建议包含：`command_name`、`args` 摘要、`success`、`message_len`、可选 **内容哈希**（非存全文）。
+- 当本 tick 工具预算已耗尽或缺少执行器/上下文时，框架可写入 **`step: tool_gather_skip`**（含 **`reason`**、**`phase`**，ReAct 路径下可含 **`round`**），见 `docs/architecture/adr/ADR-F10-AICO-Tool-Gather-Single-Gate.md`。
 - 日志与排障：工具失败原因应可区分 **授权拒绝**、**未知命令**、**业务 Error** 与 **系统异常**（与 SSH **System Error** 分层）。
 
 ---
