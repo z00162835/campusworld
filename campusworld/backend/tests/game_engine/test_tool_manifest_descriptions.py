@@ -37,7 +37,9 @@ def _surface_for(names):
 @pytest.mark.unit
 def test_manifest_contains_updated_help_description():
     surface = _surface_for({"help"})
-    text, schemas = build_llm_tool_manifest(surface, command_registry, session=None)
+    text, schemas = build_llm_tool_manifest(
+        surface, command_registry, session=None, locale="en-US"
+    )
     assert len(schemas) == 1 and schemas[0].name == "help"
     assert "List available commands" in schemas[0].description
     assert "List available commands" in text
@@ -46,7 +48,9 @@ def test_manifest_contains_updated_help_description():
 @pytest.mark.unit
 def test_manifest_contains_updated_find_description():
     surface = _surface_for({"find"})
-    text, schemas = build_llm_tool_manifest(surface, command_registry, session=None)
+    text, schemas = build_llm_tool_manifest(
+        surface, command_registry, session=None, locale="en-US"
+    )
     assert len(schemas) == 1 and schemas[0].name == "find"
     desc = schemas[0].description
     # Shape of the returned payload must be visible in the manifest.
@@ -66,7 +70,9 @@ def test_manifest_contains_updated_find_description():
 @pytest.mark.unit
 def test_manifest_contains_updated_agent_description():
     surface = _surface_for({"agent"})
-    _, schemas = build_llm_tool_manifest(surface, command_registry, session=None)
+    _, schemas = build_llm_tool_manifest(
+        surface, command_registry, session=None, locale="en-US"
+    )
     assert len(schemas) == 1 and schemas[0].name == "agent"
     desc = schemas[0].description
     # Subcommands must be enumerated so an LLM asked to "list agents"
@@ -78,7 +84,9 @@ def test_manifest_contains_updated_agent_description():
 @pytest.mark.unit
 def test_manifest_contains_updated_agent_tools_description():
     surface = _surface_for({"agent_tools"})
-    _, schemas = build_llm_tool_manifest(surface, command_registry, session=None)
+    _, schemas = build_llm_tool_manifest(
+        surface, command_registry, session=None, locale="en-US"
+    )
     assert len(schemas) == 1 and schemas[0].name == "agent_tools"
     desc = schemas[0].description
     # Must make the "registered, not necessarily callable" distinction.

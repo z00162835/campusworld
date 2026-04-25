@@ -6,6 +6,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from app.commands.base import CommandContext, CommandResult
+from app.commands.i18n.locale_text import initial_metadata_for_session
 from app.core.log import get_logger, LoggerNames
 logger = get_logger(LoggerNames.PROTOCOL)
 
@@ -40,6 +41,7 @@ class ProtocolHandler(ABC):
         game_state: Optional[Dict[str, Any]] = None,
         db_session: Optional[Any] = None,
         roles: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> CommandContext:
         """创建命令上下文"""
         caller = None
@@ -48,6 +50,12 @@ class ProtocolHandler(ABC):
         resolved_roles = list(roles or [])
         if not resolved_roles and session and hasattr(session, "roles"):
             resolved_roles = list(getattr(session, "roles", []) or [])
+        md = initial_metadata_for_session(
+            db_session=db_session,
+            user_id=user_id,
+            username=username,
+            extra=metadata,
+        )
         return CommandContext(
             user_id=user_id,
             username=username,
@@ -58,5 +66,6 @@ class ProtocolHandler(ABC):
             game_state=game_state,
             db_session=db_session,
             roles=resolved_roles,
+            metadata=md,
         )
     

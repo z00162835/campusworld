@@ -98,20 +98,51 @@ class BaseCommand(ABC):
         """获取使用说明"""
         return f"{self.name} [options]"
     
-    def get_detailed_help(self) -> str:
-        """获取详细帮助信息"""
-        help_text = f"""
-{self.name} 命令帮助
-{'=' * (len(self.name) + 8)}
+    def get_localized_description(self, locale: str) -> str:
+        """One-line description: centralized YAML in ``i18n/locales/`` first, then legacy table, then ``description``."""
+        from app.commands.i18n.command_resource import get_localized_string_from_resource
+        from app.commands.i18n.locale_text import FALLBACK_CHAIN, pick_i18n, normalize_locale
 
-描述: {self.description}
-类型: {self.command_type.value}
-用法: {self.get_usage()}
+        loc = normalize_locale(locale)
+        from_resource = get_localized_string_from_resource(self.name, "description", loc)
+        if from_resource:
+            return from_resource
+        i18n = getattr(self, "description_i18n", None)
+        if isinstance(i18n, dict) and i18n:
+            return pick_i18n(i18n, loc, fallbacks=FALLBACK_CHAIN, legacy_default=self.description).value
+        return self.description
+
+    def get_localized_usage(self, locale: str) -> str:
+        from app.commands.i18n.locale_text import FALLBACK_CHAIN, pick_i18n, normalize_locale
+
+        loc = normalize_locale(locale)
+        i18n = getattr(self, "usage_i18n", None)
+        if isinstance(i18n, dict) and i18n:
+            return pick_i18n(i18n, loc, fallbacks=FALLBACK_CHAIN, legacy_default=self.get_usage()).value
+        return self.get_usage()
+
+    def get_detailed_help(self) -> str:
+        """Default detailed help (``zh-CN`` shell); prefer :meth:`get_detailed_help_for_locale` when a locale is known."""
+        from app.commands.i18n.locale_text import DEFAULT_LOCALE
+
+        return self.get_detailed_help_for_locale(DEFAULT_LOCALE)
+
+    def get_detailed_help_for_locale(self, locale: str) -> str:
+        from app.commands.i18n.locale_text import help_shell_for_locale, normalize_locale
+
+        loc = normalize_locale(locale)
+        shell = help_shell_for_locale(loc)
+        title = shell["title_detail"].format(name=self.name)
+        sep = "=" * max(8, len(title))
+        help_text = f"""
+{title}
+{sep}
+{shell["line_description"].format(text=self.get_localized_description(loc))}
+{shell["line_type"].format(text=self.command_type.value)}
+{shell["line_usage"].format(text=self.get_localized_usage(loc))}
 """
-        
         if self.aliases:
-            help_text += f"别名: {', '.join(self.aliases)}\n"
-        
+            help_text += shell["line_aliases"].format(items=", ".join(self.aliases)) + "\n"
         help_text += self._get_specific_help()
         return help_text.strip()
     

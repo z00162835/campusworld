@@ -178,11 +178,10 @@ def command_result_to_tool_result(
 def tool_schemas_from_surface(surface, command_registry) -> List[ToolSchema]:
     """Build ``ToolSchema`` list from a ``ResolvedToolSurface``.
 
-    Precedence for the description text:
-      1. ``attributes.llm_hint`` on the command's registered graph node if
-         present (surface will not see that — callers may pre-resolve);
-      2. ``BaseCommand.description``;
-      3. fallback ``get_help()`` one-liner.
+    Initial seed: ``BaseCommand.description`` or ``get_help()`` one-liner.
+    For AICO, :func:`app.game_engine.agent_runtime.aico_world_context.build_llm_tool_manifest`
+    overwrites each description using ``tool_manifest_locale()`` (``app.default_locale``)
+    plus graph ``llm_hint*`` before the worker exposes tools to the LLM.
     """
     schemas: List[ToolSchema] = []
     for name in sorted(surface.allowed_command_names):

@@ -1,0 +1,69 @@
+# 命令一行简介（zh-CN）。在此统一定稿；避免在 Python 中硬编码多语言长句。
+# 用途：help 列表、按语言搜索、与 app.default_locale 对齐的 graph/AICO 文案等。
+commands:
+  help:
+    description: "列出当前可用命令，或显示某条命令的详细帮助。"
+  stats:
+    description: "显示系统资源与运行统计"
+  version:
+    description: "显示版本与运行环境信息"
+  quit:
+    description: "退出会话/连接"
+  time:
+    description: "显示当前时间"
+  whoami:
+    description: "显示当前用户信息"
+  look:
+    description: "查看当前环境或指定物品/对象"
+  go:
+    description: "向指定方向移动"
+  enter:
+    description: "进入指定世界或沿 enter 出口离开"
+  leave:
+    description: "离开当前世界，回到奇点屋"
+  notice:
+    description: "管理系统公告（发布/编辑/归档/列表）"
+  world:
+    description: "世界包管理（列表/安装/卸载/重载/校验等）"
+  create:
+    description: "按模型创建对象：create 类名 = {参数}"
+  create_info:
+    description: "查看可创建模型的元数据与字段"
+  find:
+    description: "按条件查找节点（非语义检索）"
+  describe:
+    description: "查看单个节点详情（类型、属性、关系摘要）"
+  primer:
+    description: "系统primer信息（建议用章节节省输出）"
+  agent_capabilities:
+    description: "按service_id查询 Agent 能力摘要"
+  agent_tools:
+    description: "列出Agent工具注册表中的命令"
+  aico:
+    description: "与AICO对话"
+  agent:
+    description: "查询Agent信息：list / status / nlp"
+  north:
+    description: "向北移动"
+  south:
+    description: "向南移动"
+  east:
+    description: "向东移动"
+  west:
+    description: "向西移动"
+  northeast:
+    description: "向东北移动"
+  northwest:
+    description: "向西北移动"
+  southeast:
+    description: "向东南移动"
+  southwest:
+    description: "向西南移动"
+  up:
+    description: "向上移动"
+  down:
+    description: "向下移动"
+  in:
+    description: "向内移动"
+  out:
+    description: "向外/离开方向移动"

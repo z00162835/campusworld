@@ -8,7 +8,8 @@ Public builders here:
 
 * :func:`build_world_snapshot` — per-tick dynamic facts for the Plan user turn.
 * :func:`build_world_snapshot_from_session` — convenience wrapper with shallow DB reads.
-* :func:`build_llm_tool_manifest` — dual-form tool manifest for native and JSON channels.
+* :func:`build_llm_tool_manifest` — dual-form tool manifest for native and JSON channels
+  (text locale: ``app.default_locale`` from config by default, not per-user ``help`` language).
 """
 
 from __future__ import annotations
@@ -133,10 +134,11 @@ def build_world_snapshot_from_session(
     )
 
 
-def _llm_hint_from_command_node(session, name: str) -> Optional[str]:
+def _llm_hint_from_command_node(session, name: str, *, locale: str) -> Optional[str]:
     if session is None:
         return None
     try:
+        from app.commands.i18n.locale_text import FALLBACK_CHAIN, pick_i18n
         from app.models.graph import Node
 
         row = (
@@ -150,7 +152,14 @@ def _llm_hint_from_command_node(session, name: str) -> Optional[str]:
         )
         if row is None:
             return None
-        hint = (row.attributes or {}).get("llm_hint")
+        attrs = row.attributes or {}
+        raw_i18n = attrs.get("llm_hint_i18n")
+        if isinstance(raw_i18n, dict) and raw_i18n:
+            m = {str(k): str(v) for k, v in raw_i18n.items() if v is not None}
+            picked = pick_i18n(m, locale, fallbacks=FALLBACK_CHAIN, legacy_default=None).value
+            if picked:
+                return picked
+        hint = attrs.get("llm_hint")
         if isinstance(hint, str) and hint.strip():
             return hint.strip()
     except Exception:
@@ -163,26 +172,41 @@ def build_llm_tool_manifest(
     command_registry,
     *,
     session=None,
+    locale: Optional[str] = None,
     max_description_chars: int = 240,
     include_json_example: bool = True,
 ) -> Tuple[str, List[ToolSchema]]:
+    from app.commands.i18n.locale_text import tool_manifest_locale
+
+    # ``locale`` defaults to :func:`app.commands.i18n.locale_text.tool_manifest_locale`
+    # (``app.default_locale`` in config), not the invoker's help locale.
+    loc = tool_manifest_locale(locale)
     schemas = tool_schemas_from_surface(surface, command_registry)
 
     patched: List[ToolSchema] = []
     text_rows: List[str] = []
     for schema in schemas:
-        hint = _llm_hint_from_command_node(session, schema.name)
-        desc = (hint or schema.description or "").strip()
+        hint = _llm_hint_from_command_node(session, schema.name, locale=loc)
+        cmd = command_registry.get_command(schema.name)
+        reg_desc = ""
+        if cmd is not None:
+            try:
+                reg_desc = (cmd.get_localized_description(loc) or "").strip()
+            except Exception:
+                reg_desc = (getattr(cmd, "description", None) or "").strip()
+        desc = (hint or reg_desc or schema.description or "").strip()
         if len(desc) > max_description_chars:
             desc = desc[: max_description_chars - 3] + "..."
         patched.append(ToolSchema(name=schema.name, description=desc, input_schema=dict(schema.input_schema)))
-        cmd = command_registry.get_command(schema.name)
         usage = ""
         if cmd is not None:
             try:
-                usage = (cmd.get_usage() or "").strip()
+                usage = (cmd.get_localized_usage(loc) or "").strip()
             except Exception:
-                usage = ""
+                try:
+                    usage = (cmd.get_usage() or "").strip()
+                except Exception:
+                    usage = ""
         row = f"- {schema.name}: {desc}"
         if usage:
             row += f"  (usage: {usage})"

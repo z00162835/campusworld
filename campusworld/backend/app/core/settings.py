@@ -16,6 +16,10 @@ class AppConfig(BaseModel):
     description: str = Field(default="A modern campus world application", description="应用描述")
     debug: bool = Field(default=False, description="调试模式")
     environment: str = Field(default="development", description="运行环境")
+    default_locale: str = Field(
+        default="zh-CN",
+        description="系统默认语言（BCP-47 子集），用于 AICO tool manifest 等不随每用户 help 语言切换的文案",
+    )
 
 
 class APIConfig(BaseModel):

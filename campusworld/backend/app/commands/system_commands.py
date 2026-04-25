@@ -21,29 +21,24 @@ class HelpCommand(SystemCommand):
         )
     
     def execute(self, context, args: List[str]) -> CommandResult:
+        from app.commands.i18n.locale_text import help_shell_for_locale, resolve_locale
+
+        loc = resolve_locale(context)
+        shell = help_shell_for_locale(loc)
         if args:
-            # 显示特定命令的帮助
             command_name = args[0]
             from .registry import command_registry
             command = command_registry.get_command(command_name)
             if command:
-                help_text = f"""
-Command: {command.name}
-Description: {command.description}
-Usage: {command.get_usage()}
-"""
-                return CommandResult.success_result(help_text)
-            else:
-                return CommandResult.error_result(f"Command not found: {command_name}")
-        else:
-            # 显示所有可用命令
-            from .registry import command_registry
-            commands = command_registry.get_available_commands(context)
-            help_text = "Available commands:\n"
-            for cmd in commands:
-                help_text += f"  {cmd.name:<15} - {cmd.description}\n"
-            help_text += "\nType 'help <command>' for detailed help"
-            return CommandResult.success_result(help_text)
+                return CommandResult.success_result(command.get_detailed_help_for_locale(loc))
+            return CommandResult.error_result(shell["err_not_found"].format(name=command_name))
+        from .registry import command_registry
+        commands = command_registry.get_available_commands(context)
+        help_text = f"{shell['title_list']}:\n"
+        for cmd in commands:
+            help_text += f"  {cmd.name:<15} - {cmd.get_localized_description(loc)}\n"
+        help_text += f"\n{shell['footer']}"
+        return CommandResult.success_result(help_text)
 
 
 class StatsCommand(SystemCommand):

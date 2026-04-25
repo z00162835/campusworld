@@ -1,0 +1,78 @@
+# Command one-line descriptions (en-US). Edit here; do not embed i18n in command classes.
+# Used by: help list, search (locale C), AICO manifest (via app.default_locale) when set to en-US.
+commands:
+  help:
+    description: "List available commands for the current caller, or show detailed help for one command."
+  stats:
+    description: "Show system statistics"
+  version:
+    description: "Show version information"
+  quit:
+    description: "Exit the system"
+  time:
+    description: "Show current time"
+  whoami:
+    description: "Show current user"
+  look:
+    description: "Look at the current room or inspect a thing"
+  go:
+    description: "Move in a direction (n/s/e/w/…)"
+  enter:
+    description: "Enter a world or follow an enter exit"
+  leave:
+    description: "Leave the current world and return to the Singularity Room"
+  notice:
+    description: "Manage system bulletins (publish, edit, archive, list)"
+  world:
+    description: "World package management (list, install, uninstall, reload, status, …)"
+  create:
+    description: "Create an object: create ClassName = {args}"
+  create_info:
+    description: "Show model details for the builder"
+  find:
+    description: >-
+      Find nodes. Flags AND-compose: -n name, -des desc, -t type, -loc id, -l N, -a (capped).
+      Shortcuts: #<id>, *<account>. Returns data.results [{id,type_code,name,location_id,description}] + total/next_offset. Not semantic.
+  describe:
+    description: "Show a single node's details (type, name, description, attrs, edges)."
+  primer:
+    description: >-
+      System primer — prefer `primer <section>` (e.g. primer ontology) to save tokens;
+      bare `primer` returns the full nine-section document.
+  agent_capabilities:
+    description: "List agent capabilities for a service_id"
+  agent_tools:
+    description: >-
+      List every command registered in the agent tool registry with its category. This is the global registry, NOT the
+      current agent's callable surface — use `agent_capabilities <service_id>` for what a specific agent may invoke.
+  aico:
+    description: "Talk to AICO"
+  agent:
+    description: >-
+      Inspect and drive agents. Subcommands: `agent list` (all registered agents), `agent status <id>` (one agent's
+      runtime status), `agent nlp <handle> <text>` (drive an assistant's NLP pipeline with a prompt). Prefer
+      `agent_capabilities <service_id>` when you only need the capability summary.
+  north:
+    description: "Move north"
+  south:
+    description: "Move south"
+  east:
+    description: "Move east"
+  west:
+    description: "Move west"
+  northeast:
+    description: "Move northeast"
+  northwest:
+    description: "Move northwest"
+  southeast:
+    description: "Move southeast"
+  southwest:
+    description: "Move southwest"
+  up:
+    description: "Move up"
+  down:
+    description: "Move down"
+  in:
+    description: "Move in"
+  out:
+    description: "Move out"

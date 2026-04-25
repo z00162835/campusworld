@@ -1,0 +1,107 @@
+"""
+Command UI strings: load per-locale YAML under ``locales/`` (single source of truth).
+
+File layout::
+
+    locales/
+      zh-CN.yaml
+      en-US.yaml
+
+Schema (per file)::
+
+    commands:
+      <command_name>:
+        description: "one line for help list and derived surfaces"
+        # optional later: usage, detail
+"""
+
+from __future__ import annotations
+
+import os
+from functools import lru_cache
+from typing import Any, Dict, Optional, Tuple
+
+try:
+    import yaml
+except Exception:  # pragma: no cover
+    yaml = None  # type: ignore
+
+from app.commands.i18n.locale_text import FALLBACK_CHAIN, pick_i18n
+
+# Files expected: ``<tag>.yaml`` in this package's ``locales`` directory
+_LOCALE_FILES: Tuple[str, ...] = ("zh-CN", "en-US")
+
+_PKG_DIR = os.path.dirname(os.path.abspath(__file__))
+_LOCALES_DIR = os.path.join(_PKG_DIR, "locales")
+
+def clear_command_resource_cache() -> None:
+    """Call after editing locale files in tests or hot-reload experiments."""
+    get_bundle_by_tag.cache_clear()
+
+
+@lru_cache(maxsize=16)
+def get_bundle_by_tag(tag: str) -> Dict[str, Any]:
+    """Load and parse one locale file; empty dict if missing or error."""
+    if yaml is None:
+        return {}
+    if not tag or not str(tag).strip():
+        return {}
+    fn = f"{str(tag).strip()}.yaml"
+    path = os.path.join(_LOCALES_DIR, fn)
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = yaml.safe_load(f) or {}
+        return raw if isinstance(raw, dict) else {}
+    except Exception:
+        return {}
+
+
+def get_command_i18n_map(
+    command_name: str, field: str = "description"
+) -> Dict[str, str]:
+    """Collect ``field`` for ``command_name`` across all known locale files."""
+    out: Dict[str, str] = {}
+    for tag in _LOCALE_FILES:
+        b = get_bundle_by_tag(tag)
+        cmds = b.get("commands")
+        if not isinstance(cmds, dict):
+            continue
+        ent = cmds.get(command_name)
+        if not isinstance(ent, dict):
+            continue
+        v = ent.get(field)
+        if v is None or not str(v).strip():
+            continue
+        out[tag] = str(v).strip()
+    return out
+
+
+def get_localized_string_from_resource(
+    command_name: str,
+    field: str,
+    requested_locale: str,
+) -> str:
+    m = get_command_i18n_map(command_name, field=field)
+    if not m:
+        return ""
+    p = pick_i18n(
+        m,
+        requested_locale,
+        fallbacks=FALLBACK_CHAIN,
+        legacy_default=None,
+    )
+    return (p.value or "").strip()
+
+
+def merge_description_i18n_for_ability(
+    command_name: str, legacy: Optional[Dict[str, str]]
+) -> Dict[str, str]:
+    """For graph ``llm_hint_i18n``: resource wins; merge with legacy in-code table if any."""
+    m = dict(get_command_i18n_map(command_name, "description"))
+    if isinstance(legacy, dict) and legacy:
+        for k, v in legacy.items():
+            if k and str(v).strip() and k not in m:
+                m[k] = str(v).strip()
+    return m

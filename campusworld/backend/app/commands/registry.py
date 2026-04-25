@@ -142,25 +142,45 @@ class CommandRegistry:
             return None
         return command.execute(context, args)
     
+    @staticmethod
+    def _search_blob_for_locale(command: BaseCommand, locale: str) -> str:
+        """Match plan D5-C: name + aliases + the one-line description for ``locale`` only (not other languages)."""
+        parts: List[str] = [command.name.lower()]
+        for a in command.aliases or []:
+            parts.append(str(a).lower())
+        try:
+            loc_desc = (command.get_localized_description(locale) or "").lower()
+        except Exception:
+            loc_desc = (command.description or "").lower()
+        parts.append(loc_desc)
+        return " ".join(parts)
+
     def search_commands(self, keyword: str, context: Optional[CommandContext] = None) -> List[BaseCommand]:
-        """搜索命令"""
+        """搜索命令（有 ``context`` 时仅匹配该上下文字符串下的展示描述，与 help 语言一致）。"""
+        from app.commands.i18n.locale_text import DEFAULT_LOCALE, resolve_locale
+
         results = []
         keyword = keyword.lower()
-        
+        loc = resolve_locale(context) if context is not None else DEFAULT_LOCALE
+
         commands_to_search = self.get_available_commands(context) if context else self.get_all_commands()
-        
+
         for command in commands_to_search:
-            if (keyword in command.name.lower() or 
-                keyword in command.description.lower() or
-                any(keyword in alias.lower() for alias in command.aliases)):
+            if keyword in self._search_blob_for_locale(command, loc):
                 results.append(command)
-        
+
         return results
     
-    def get_command_help(self, command_name: str) -> Optional[str]:
-        """获取命令帮助"""
+    def get_command_help(
+        self, command_name: str, context: Optional[CommandContext] = None
+    ) -> Optional[str]:
+        """获取命令帮助; 传入 ``context`` 时按该上下文的语言输出。"""
         command = self.get_command(command_name)
         if command:
+            if context is not None:
+                from app.commands.i18n.locale_text import resolve_locale
+
+                return command.get_detailed_help_for_locale(resolve_locale(context))
             return command.get_detailed_help()
         return None
     

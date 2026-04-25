@@ -219,6 +219,7 @@ class LlmPdcaAssistantWorker(AgentWorker):
         # Build tool manifest once at worker-create time. The allowed surface
         # is stable across ticks for a given agent node; rebuild happens when
         # the worker is recreated (e.g. after ``tool_allowlist`` changes).
+        # Tool manifest uses ``app.default_locale`` (see ``tool_manifest_locale``), not the invoker's help locale.
         try:
             manifest_text, tool_schemas = build_llm_tool_manifest(
                 surface, _command_registry, session=session
