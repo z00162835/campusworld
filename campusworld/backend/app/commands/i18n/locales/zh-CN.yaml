@@ -97,6 +97,23 @@ commands:
     description: "与AICO对话"
   agent:
     description: "查询Agent信息(list / status / nlp)"
+    list:
+      empty: |-
+        agent list：当前无可见的活跃 npc_agent 节点。
+        预期：图节点 type_code=npc_agent 且 is_active=true
+      header:
+        service_id: "service_id"
+        name: "名称"
+        status: "状态"
+        id: "节点ID"
+      footer: "（共 {n} 个）"
+      hint: "单实例：agent status <service_id>"
+    status_value:
+      unavailable: "不可用"
+      idle: "空闲"
+      working: "工作中"
+    error:
+      no_session: "需要数据库会话"
   north:
     description: "向北移动"
   south:

@@ -105,6 +105,23 @@ commands:
   agent:
     description: >-
       Query Agent information: list / status / nlp
+    list:
+      empty: |-
+        agent list: no active npc_agent nodes found.
+        Expected: nodes with type_code=npc_agent, is_active=true
+      header:
+        service_id: "service_id"
+        name: "name"
+        status: "status"
+        id: "agent_node_id"
+      footer: "(total={n})"
+      hint: "Example: agent status <service_id>"
+    status_value:
+      unavailable: "unavailable"
+      idle: "idle"
+      working: "working"
+    error:
+      no_session: "database session required"
   north:
     description: "Move north"
   south:

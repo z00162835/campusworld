@@ -10,6 +10,7 @@ import pytest
 from app.commands.agent_commands import (
     AgentCommand,
     AGENT_STATUS_ACCESS_ERROR,
+    _format_agent_list_message,
     derive_agent_status,
 )
 from app.commands.base import CommandContext
@@ -25,10 +26,29 @@ def test_agent_command_requires_db_session():
         session_id="s",
         permissions=[],
         db_session=None,
+        metadata={"locale": "en-US"},
     )
     r = cmd.execute(ctx, [])
     assert not r.success
     assert "database session required" in r.message
+
+
+def test_agent_list_table_message_shape():
+    """Tabular message: header, row, footer; i18n keys for en-US."""
+    rows = [
+        {
+            "service_id": "aico",
+            "name": "AICO",
+            "status": "idle",
+            "agent_node_id": 42,
+        }
+    ]
+    msg = _format_agent_list_message(rows, "en-US")
+    assert "service_id" in msg
+    assert "agent_node_id" in msg
+    assert "aico" in msg
+    assert "(total=1)" in msg
+    assert "idle" in msg or "AICO" in msg
 
 
 def test_agent_command_usage_no_subcommand():
@@ -107,7 +127,8 @@ def test_agent_list_and_status_consistency():
         ac = AgentCommand()
         r_list = ac.execute(ctx, ["list"])
         assert r_list.success
-        data = json.loads(r_list.message)
+        assert r_list.data is not None
+        data = r_list.data
         assert "agents" in data
         mine = next((a for a in data["agents"] if a.get("service_id") == svc), None)
         assert mine is not None
@@ -177,7 +198,8 @@ def test_agent_list_includes_disabled_as_unavailable():
         ac = AgentCommand()
         r_list = ac.execute(ctx, ["list"])
         assert r_list.success
-        data = json.loads(r_list.message)
+        assert r_list.data is not None
+        data = r_list.data
         row = next((a for a in data["agents"] if a.get("service_id") == svc), None)
         assert row is not None
         assert row["status"] == "unavailable"
@@ -246,7 +268,7 @@ def test_derive_working_when_run_record_running():
         session.commit()
         assert derive_agent_status(agent, session) == "idle"
 
-        session.delete(run)
+        # `agent_run_records` FK cascades on node delete; only delete the agent.
         session.delete(agent)
         session.commit()
     finally:

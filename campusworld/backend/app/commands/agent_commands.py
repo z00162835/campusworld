@@ -104,6 +104,55 @@ def _agent_row_dict(node: Node, session: Session) -> Dict[str, Any]:
     }
 
 
+def _agent_list_text(locale: str, key_path: str, default: str) -> str:
+    from app.commands.i18n.command_resource import get_command_i18n_text
+
+    return get_command_i18n_text("agent", key_path, locale, default)
+
+
+def _format_agent_list_message(rows: List[Dict[str, Any]], locale: str) -> str:
+    """Tabular `agent list` output for SSH (result.message), aligned with `world list` / `agent_tools` layout."""
+    if not rows:
+        return _agent_list_text(
+            locale,
+            "list.empty",
+            "agent list: no active npc_agent nodes found.\n"
+            "Expected: nodes with type_code=npc_agent, is_active=true",
+        )
+
+    def status_label(machine: str) -> str:
+        m = (machine or "").strip().lower()
+        if not m:
+            return machine or "-"
+        return _agent_list_text(
+            locale,
+            f"status_value.{m}",
+            machine,
+        )
+
+    h_sid = _agent_list_text(locale, "list.header.service_id", "service_id")
+    h_name = _agent_list_text(locale, "list.header.name", "name")
+    h_status = _agent_list_text(locale, "list.header.status", "status")
+    h_id = _agent_list_text(locale, "list.header.id", "agent_node_id")
+    sid_w, name_w, status_w, id_w = 16, 26, 14, 12
+    lines: List[str] = [
+        f"{h_sid:<{sid_w}} {h_name:<{name_w}} {h_status:<{status_w}} {h_id}",
+        "-" * (sid_w + name_w + status_w + id_w + 3),
+    ]
+    for r in rows:
+        sid = str(r.get("service_id", ""))[:sid_w]
+        name = str(r.get("name") or "-")[:name_w]
+        st = str(status_label(str(r.get("status", ""))))[:status_w]
+        aid = str(r.get("agent_node_id", ""))[:id_w]
+        lines.append(f"{sid:<{sid_w}} {name:<{name_w}} {st:<{status_w}} {aid}")
+    lines.append("")
+    lines.append(_agent_list_text(locale, "list.footer", "(total={n})").format(n=len(rows)))
+    hint = _agent_list_text(locale, "list.hint", "").strip()
+    if hint:
+        lines.append(hint)
+    return "\n".join(lines)
+
+
 class AgentCapabilitiesCommand(SystemCommand):
     """List static capabilities for an agent instance."""
 
@@ -629,8 +678,17 @@ class AgentCommand(SystemCommand):
         return "agent <list|status> ..."
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
+        from app.commands.i18n.locale_text import resolve_locale
+
+        locale = resolve_locale(context)
         if not context.db_session:
-            return CommandResult.error_result("database session required")
+            return CommandResult.error_result(
+                _agent_list_text(
+                    locale,
+                    "error.no_session",
+                    "database session required",
+                )
+            )
         if not args:
             return CommandResult.error_result(self.get_usage(), is_usage=True)
         sub = str(args[0]).lower().strip()
@@ -640,8 +698,10 @@ class AgentCommand(SystemCommand):
             for node in _query_active_npc_agent_nodes(session):
                 rows.append(_agent_row_dict(node, session))
             rows.sort(key=lambda r: (r.get("service_id") or "", r.get("name") or ""))
+            message = _format_agent_list_message(rows, locale)
             return CommandResult.success_result(
-                json.dumps({"agents": rows}, ensure_ascii=False)
+                message,
+                data={"agents": rows, "total": len(rows)},
             )
         if sub == "status":
             if len(args) < 2:

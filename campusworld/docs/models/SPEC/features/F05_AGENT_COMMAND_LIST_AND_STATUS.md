@@ -62,13 +62,15 @@
 
 ### 6.1 `agent list`
 
-- 文本或 JSON（与现有 `agent_capabilities` 风格对齐：**JSON 字符串于 `CommandResult.message`** 亦可）。
-- 每项至少：**`service_id`**、**`name`**、**`status`**（三态之一）、**`agent_node_id`**（可选，便于排障）。
+- **人类可读**（`CommandResult.message`）：**表格**，布局与 `world list`、**`agent_tools`（无参）** 一致——**表头行、分隔线、每 agent 一行、空行、总数页脚**（及可选**一行提示**）。列至少包含 **service_id**、**name**、**状态**（**展示文案**，随 `CommandContext` 可解析区域设置走 `commands.agent.status_value.*`；机器三态仍为 `unavailable` | `idle` | `working`）、**agent_node_id**（或等价列名，见 locale `list.header`）。
+- **程序负载**（`CommandResult.data`）：`{ "agents": [ { ... } ], "total": N }`。每项**至少**含 **`service_id`**、**`name`**、**`status`**（三态，与 §5 英文明文一致）、**`agent_node_id`**。JSON 客户端、自动化测试应**优先读 `data`**，勿依赖对 `message` 做 `json.loads`。
+- **国际化**：表头、空列表、页脚、状态列展示串见 **`backend/app/commands/i18n/locales/*`** 下 `commands.agent.list.*` 与 `commands.agent.status_value.*`。
 
-示例（逻辑结构）：
+`data` 逻辑结构示例：
 
 ```json
 {
+  "total": 1,
   "agents": [
     {
       "service_id": "aico",
