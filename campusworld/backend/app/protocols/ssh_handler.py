@@ -84,14 +84,40 @@ class SSHHandler(ProtocolHandler):
         """格式化权限拒绝消息"""
         return f"Permission denied for command '{command_name}'.\n"
     
+    def _usage_like_result(self, result: CommandResult) -> bool:
+        """True when the result is a usage / bad-invocation hint, not a runtime failure."""
+        if result.success:
+            return False
+        if getattr(result, "is_usage", False):
+            return True
+        err = (getattr(result, "error", None) or "").strip().lower()
+        if err in ("usage", "usage_error"):
+            return True
+        msg = (result.message or "").lstrip()
+        mlow = msg.lower()
+        if mlow.startswith("usage:") or mlow.startswith("usage :"):
+            return True
+        if msg.startswith("用法:") or msg.startswith("用法："):
+            return True
+        return False
+
+    def _format_usage_message(self, result: CommandResult) -> str:
+        """Single-line or multi-line usage text; no leading "Error:"."""
+        msg = (result.message or "").strip()
+        mlow = msg.lower()
+        if mlow.startswith("usage:") or mlow.startswith("usage :"):
+            return msg + "\n"
+        if msg.startswith("用法:") or msg.startswith("用法："):
+            return msg + "\n"
+        return f"usage: {msg}\n"
+
     def _format_command_result(self, result: CommandResult) -> str:
         """格式化命令结果"""
         if result.success:
-            message = result.message + "\n"
-            return message
-            
-        else:
-            return f"Error: {result.message}\n"
+            return result.message + "\n"
+        if self._usage_like_result(result):
+            return self._format_usage_message(result)
+        return f"Error: {result.message}\n"
     
     def _format_error(self, error: str) -> str:
         """格式化错误消息（已弃用对终端直出内部异常串；保留供显式需要时调用）。"""

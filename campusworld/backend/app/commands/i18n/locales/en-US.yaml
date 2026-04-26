@@ -32,6 +32,15 @@ commands:
       no_sessions: "No users online."
     warning:
       location_unavailable: "Location information unavailable."
+  type:
+    description: "List system-registered node types"
+    title: "Node Types"
+    footer:
+      preview: "Showing {shown} of {total}. Pass -a to see all."
+      all: "{total} active types."
+    error:
+      no_session: "Node type list unavailable (no DB session)."
+      empty: "No active node types."
   look:
     description: "Look at the current room or inspect a thing"
   go:
@@ -62,15 +71,40 @@ commands:
     description: "List agent capabilities for a service_id"
   agent_tools:
     description: >-
-      List every command registered in the agent tool registry with its category. This is the global registry, NOT the
-      current agent's callable surface — use `agent_capabilities <service_id>` for what a specific agent may invoke.
+      List visible agents tools.
+    title: "Agent Tools"
+    header:
+      service_id: "service_id"
+      name: "name"
+      status: "status"
+      n_tools: "n"
+      tools: "tools"
+    footer:
+      total: "(total={n})"
+    empty: "No agents registered."
+    tools_empty: "(none)"
+    usage:
+      add: "agent_tools add <service_id> <tool> [<tool>...]"
+      del: "agent_tools del <service_id> <tool> [<tool>...]"
+    summary:
+      add_success: "add {sid} {tools} succeeded (allowlist updated)."
+      add_mixed: "add {sid} {added} succeeded. Already in allowlist: {unchanged}."
+      add_noop: "No change: {tools} already in the allowlist for {sid}."
+      del_success: "del {sid} {tools} succeeded (allowlist updated)."
+      del_mixed: "del {sid} {removed} succeeded. Not in allowlist: {unchanged}."
+      del_noop: "No change: {tools} not in the allowlist for {sid}."
+    error:
+      no_session: "database session required"
+      forbidden: "Permission denied for agent_tools {action}"
+      unknown_tool: "unknown tool: {name}"
+      misordered_add_del: >-
+        Subcommand {second} must come first after agent_tools. Use: {expected}
+        (This line was parsed as: query agent '{first}' only; '{second}' and the rest were ignored.)
   aico:
     description: "Talk to AICO"
   agent:
     description: >-
-      Inspect and drive agents. Subcommands: `agent list` (all registered agents), `agent status <id>` (one agent's
-      runtime status), `agent nlp <handle> <text>` (drive an assistant's NLP pipeline with a prompt). Prefer
-      `agent_capabilities <service_id>` when you only need the capability summary.
+      Query Agent information: list / status / nlp
   north:
     description: "Move north"
   south:

@@ -1,8 +1,8 @@
 {
-  "git_commit": "0e8d0a0eadbeeaa52cace7bbc79230c391b76f76",
-  "generated_at_utc": "2026-04-26T08:23:25.140215+00:00",
+  "git_commit": "741970693b0db38036f3766978c9f8f32824d72d",
+  "generated_at_utc": "2026-04-26T14:02:37.513101+00:00",
   "initialize_commands_ok": true,
-  "command_count": 34,
+  "command_count": 35,
   "commands": [
     {
       "name": "agent",
@@ -341,6 +341,14 @@
         "date"
       ],
       "class": "app.commands.system_commands.TimeCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "type",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.system_commands.TypeCommand",
       "file": "backend/app/commands/system_commands.py"
     },
     {

@@ -115,6 +115,7 @@ CommandResult（成功/失败，自然语言在实现中构造）
 | `quit` | SYSTEM | `exit`, `q` | [CMD_quit](features/CMD_quit.md) |
 | `stats` | SYSTEM | `stat`, `system` | [CMD_stats](features/CMD_stats.md) |
 | `time` | SYSTEM | `date` | [CMD_time](features/CMD_time.md) |
+| `type` | SYSTEM | — | [CMD_type](features/CMD_type.md) |
 | `version` | SYSTEM | `ver` | [CMD_version](features/CMD_version.md) |
 | `who` | SYSTEM | — | [CMD_who](features/CMD_who.md) |
 | `whoami` | SYSTEM | — | [CMD_whoami](features/CMD_whoami.md) |

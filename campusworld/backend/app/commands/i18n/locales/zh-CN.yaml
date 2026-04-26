@@ -32,6 +32,15 @@ commands:
       no_sessions: "当前无在线用户。"
     warning:
       location_unavailable: "位置信息暂不可用。"
+  type:
+    description: "列出系统注册的节点类型"
+    title: "节点类型"
+    footer:
+      preview: "共 {total} 个，已显示前 {shown} 个；使用 -a 查看全部。"
+      all: "共 {total} 个 active 类型。"
+    error:
+      no_session: "节点类型列表不可用（缺少数据库会话）。"
+      empty: "暂无 active 节点类型。"
   look:
     description: "查看当前环境或指定物品/对象"
   go:
@@ -57,11 +66,37 @@ commands:
   agent_capabilities:
     description: "按service_id查询 Agent 能力摘要"
   agent_tools:
-    description: "列出Agent工具注册表中的命令"
+    description: 列出Agent可使用工具列表。
+    title: "Agent 工具"
+    header:
+      service_id: "service_id"
+      name: "名称"
+      status: "状态"
+      n_tools: "数"
+      tools: "工具"
+    footer:
+      total: "（共 {n} 个）"
+    empty: "暂无已注册 Agent。"
+    tools_empty: "（无）"
+    usage:
+      add: "agent_tools add <service_id> <tool> [<tool>...]"
+      del: "agent_tools del <service_id> <tool> [<tool>...]"
+    summary:
+      add_success: "add {sid} {tools} 成功（已更新白名单）。"
+      add_mixed: "add {sid} {added} 成功；{unchanged} 本已在白名单中，未改。"
+      add_noop: "无变更：{tools} 已在 {sid} 白名单中。"
+      del_success: "del {sid} {tools} 成功（已更新白名单）。"
+      del_mixed: "del {sid} {removed} 成功；{unchanged} 本不在白名单中，未改。"
+      del_noop: "无变更：{tools} 本不在 {sid} 白名单中。"
+    error:
+      no_session: "缺少数据库会话"
+      forbidden: "无权限执行 agent_tools {action}"
+      unknown_tool: "未知工具：{name}"
+      misordered_add_del: 子命令 {second} 须紧跟在 agent_tools 之后。请使用：{expected}
   aico:
     description: "与AICO对话"
   agent:
-    description: "查询Agent信息：list / status / nlp"
+    description: "查询Agent信息(list / status / nlp)"
   north:
     description: "向北移动"
   south:

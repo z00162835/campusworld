@@ -58,7 +58,7 @@ class PrimerCommand(SystemCommand):
 
         parsed = _parse_args(args)
         if parsed.error:
-            return CommandResult.error_result(parsed.error)
+            return CommandResult.error_result(parsed.error, is_usage=True)
 
         if parsed.toc:
             lines = ["Primer sections:"]

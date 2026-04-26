@@ -392,7 +392,7 @@ class FindCommand(SystemCommand):
 
         parsed = _parse_find_args(args)
         if parsed.error:
-            return CommandResult.error_result(parsed.error)
+            return CommandResult.error_result(parsed.error, is_usage=True)
 
         # Direct id lookup — Evennia `find #42` parity.
         if parsed.node_id is not None:
@@ -452,9 +452,9 @@ class DescribeCommand(SystemCommand):
 
         parsed = _parse_describe_args(args)
         if parsed.error:
-            return CommandResult.error_result(parsed.error)
+            return CommandResult.error_result(parsed.error, is_usage=True)
         if parsed.identifier is None:
-            return CommandResult.error_result(self.get_usage())
+            return CommandResult.error_result(self.get_usage(), is_usage=True)
 
         raw = parsed.identifier.strip()
         original = raw

@@ -58,16 +58,48 @@ class CommandResult:
     error: Optional[str] = None
     command_type: Optional[CommandType] = None
     should_exit: bool = False
-    
+    #: When True, interactive shells (e.g. SSH) should show a usage line without an "Error:" prefix.
+    is_usage: bool = False
+
     @classmethod
     def success_result(cls, message: str, data: Optional[Dict[str, Any]] = None, 
                       command_type: Optional[CommandType] = None) -> 'CommandResult':
         return cls(success=True, message=message, data=data, command_type=command_type)
+
+    @classmethod
+    def usage_result(
+        cls,
+        message: str,
+        data: Optional[Dict[str, Any]] = None,
+        command_type: Optional[CommandType] = None,
+    ) -> 'CommandResult':
+        return cls(
+            success=False,
+            message=message,
+            data=data,
+            error="usage",
+            command_type=command_type,
+            is_usage=True,
+        )
     
     @classmethod
-    def error_result(cls, message: str, error: Optional[str] = None, 
-                    command_type: Optional[CommandType] = None) -> 'CommandResult':
-        return cls(success=False, message=message, error=error, command_type=command_type)
+    def error_result(
+        cls,
+        message: str,
+        error: Optional[str] = None,
+        command_type: Optional[CommandType] = None,
+        *,
+        is_usage: bool = False,
+    ) -> 'CommandResult':
+        if is_usage and (error is None or error == ""):
+            error = "usage"
+        return cls(
+            success=False,
+            message=message,
+            error=error,
+            command_type=command_type,
+            is_usage=is_usage,
+        )
 
 
 class BaseCommand(ABC):

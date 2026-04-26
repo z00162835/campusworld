@@ -6,6 +6,7 @@
 import time
 import platform
 import psutil
+from dataclasses import dataclass
 from datetime import datetime
 from collections import Counter
 from typing import List, Dict, Any, Optional
@@ -269,6 +270,155 @@ class WhoCommand(SystemCommand):
             )
         return CommandResult.success_result("\n".join(lines))
 
+@dataclass(frozen=True)
+class _ParsedTypeArgs:
+    """Result of ``type`` argument parsing.
+
+    Mirrors the ``-a/--all`` toggle pattern used by ``describe`` so the two
+    commands behave identically for the user-facing flag (see
+    ``graph_inspect_commands._parse_describe_args``).
+    """
+
+    show_all: bool
+    error: Optional[str]
+
+
+def _parse_type_args(args: List[str]) -> _ParsedTypeArgs:
+    """Parse ``type`` arguments; see docs/command/SPEC/features/CMD_type.md.
+
+    Accepts only ``-a`` / ``--all``; rejects any positional or other flag so
+    typos surface immediately rather than silently dropping input.
+    """
+    show_all = False
+    for token in args:
+        if token in ("-a", "--all"):
+            show_all = True
+            continue
+        if token.startswith("-"):
+            return _ParsedTypeArgs(show_all=False, error=f"unknown flag: {token}")
+        return _ParsedTypeArgs(
+            show_all=False,
+            error="type does not accept positional arguments; use -a/--all to show all",
+        )
+    return _ParsedTypeArgs(show_all=show_all, error=None)
+
+
+class TypeCommand(SystemCommand):
+    """List active node types from the ``node_types`` table.
+
+    Default surface shows the first 8 rows sorted by ``type_code`` (ASCII
+    a--z, case-insensitive); the ``-a/--all`` flag removes the cap. Each row
+    renders as ``[<type_code>]  <type_name>  -  <description>``. The
+    ``CommandResult.data`` ``description`` field is the value from the
+    database. The text line uses ``-`` when the field is null or only whitespace.
+    """
+
+    DEFAULT_LIMIT: int = 8
+
+    def __init__(self):
+        super().__init__("type", "List system-registered node types", [])
+
+    def get_usage(self) -> str:
+        return "type [-a | --all]"
+
+    @staticmethod
+    def _t(locale: str, key_path: str, default: str) -> str:
+        from app.commands.i18n.command_resource import get_command_i18n_text
+
+        return get_command_i18n_text("type", key_path, locale, default)
+
+    @staticmethod
+    def _sort_key(row: Any) -> tuple:
+        code = (getattr(row, "type_code", None) or "").strip()
+        return (code.lower(), code)
+
+    def execute(self, context, args: List[str]) -> CommandResult:
+        from app.commands.i18n.locale_text import resolve_locale
+
+        loc = resolve_locale(context)
+        parsed = _parse_type_args(args)
+        if parsed.error:
+            return CommandResult.error_result(parsed.error, is_usage=True)
+
+        session = getattr(context, "db_session", None)
+        if session is None:
+            return CommandResult.error_result(
+                self._t(
+                    loc,
+                    "error.no_session",
+                    "Node type list unavailable (no DB session).",
+                ),
+                error="db_session not available in context",
+            )
+
+        from app.models.graph import NodeType
+
+        try:
+            rows = list(NodeType.get_active_types(session))
+        except Exception as e:
+            return CommandResult.error_result(
+                self._t(
+                    loc,
+                    "error.no_session",
+                    "Node type list unavailable (no DB session).",
+                ),
+                error=f"node_types query failed: {e}",
+            )
+
+        rows.sort(key=self._sort_key)
+        total = len(rows)
+
+        if total == 0:
+            return CommandResult.success_result(
+                self._t(loc, "error.empty", "No active node types."),
+                data={"show_all": parsed.show_all, "total": 0, "items": []},
+            )
+
+        shown = rows if parsed.show_all else rows[: self.DEFAULT_LIMIT]
+        title = self._t(loc, "title", "Node Types")
+
+        lines: List[str] = [title, "=" * 24]
+        items: List[Dict[str, Any]] = []
+        for r in shown:
+            code = (getattr(r, "type_code", None) or "").strip() or "-"
+            name = (getattr(r, "type_name", None) or "").strip()
+            raw_desc = getattr(r, "description", None)
+            disp = (str(raw_desc).strip() if raw_desc is not None else "")
+            desc = disp if disp else "-"
+            head = f"[{code}]"
+            if name:
+                lines.append(f"{head}  {name}  -  {desc}")
+            else:
+                lines.append(f"{head}  -  {desc}")
+            items.append(
+                {
+                    "type_code": getattr(r, "type_code", None),
+                    "type_name": getattr(r, "type_name", None),
+                    "description": raw_desc,
+                }
+            )
+
+        lines.append("")
+        if parsed.show_all:
+            footer = self._t(loc, "footer.all", "{total} active types.").format(
+                total=total
+            )
+        else:
+            footer = self._t(
+                loc,
+                "footer.preview",
+                "Showing {shown} of {total}. Pass -a to see all.",
+            ).format(shown=len(shown), total=total)
+        lines.append(footer)
+
+        data = {
+            "show_all": parsed.show_all,
+            "total": total,
+            "items": items,
+        }
+        return CommandResult.success_result("\n".join(lines), data=data)
+
+
 # 系统命令列表
 SYSTEM_COMMANDS = [
     HelpCommand(),
@@ -276,6 +426,7 @@ SYSTEM_COMMANDS = [
     VersionCommand(),
     QuitCommand(),
     TimeCommand(),
+    TypeCommand(),
     WhoCommand(),
     WhoamiCommand(),
 ]

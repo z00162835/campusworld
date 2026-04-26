@@ -95,7 +95,7 @@ class WorldCommand(AdminCommand):
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result(self.get_usage())
+            return CommandResult.error_result(self.get_usage(), is_usage=True)
         action = str(args[0]).lower().strip()
         if action == "bridge":
             return self._bridge(context, args[1:])
