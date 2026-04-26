@@ -235,7 +235,7 @@ message:
 |---|---|---|---|
 | **1（静态）** | 身份、不变量、工具契约 | **system_prompt**（`settings.yaml` + `identity_and_invariants_snippet()` 可选前置） | 整个 tick 稳定 |
 | **2（每 tick）** | `World snapshot`（身份/当前房间/已安装世界）+ `Tools available`（manifest 文本/schemas） | **Plan 阶段首个 user turn** | 仅 Plan；Do/Check/Act 不重复 |
-| **3（按需）** | 完整 primer、房间详情、命令参数说明等 | **工具调用返回值**（`primer <section>`、`describe <id>`、`find ...`，契约见 [F01](../../../commands/SPEC/features/F01_FIND_COMMAND.md)） | 只在被调用时产生 |
+| **3（按需）** | 完整 primer、房间详情、命令参数说明等 | **工具调用返回值**（`primer <section>`、`describe <id>`、`find ...`，契约见 [F01](../../../command/SPEC/features/F01_FIND_COMMAND.md)） | 只在被调用时产生 |
 
 **拼装入口**：
 - 静态：`settings.yaml` 的 `agents.llm.by_service_id.aico.system_prompt` + `phase_prompts`（v2 已全面重写）。
@@ -261,7 +261,7 @@ agent, agent_capabilities, agent_tools
 ```
 
 - `primer` — 从 `docs/models/SPEC/CAMPUSWORLD_SYSTEM_PRIMER.md` 分节检索 CampusWorld 系统本体（存在 DB 会话时 ontology/world 段可附加图事实附录）；Tier-3 主力。
-- `find` — Evennia `@find` 风格的图检索（列表工具）。v3 支持 `-n` / `-des` / `-t` / `-loc` / `-l` / `-a` 与 AND 组合查询。**完整契约与性能策略见** [`F01_FIND_COMMAND`](../../../commands/SPEC/features/F01_FIND_COMMAND.md)。别名：`@find`、`locate`。
+- `find` — Evennia `@find` 风格的图检索（列表工具）。v3 支持 `-n` / `-des` / `-t` / `-loc` / `-l` / `-a` 与 AND 组合查询。**完整契约与性能策略见** [`F01_FIND_COMMAND`](../../../command/SPEC/features/F01_FIND_COMMAND.md)。别名：`@find`、`locate`。
 - `describe <id | #<id> | name>` — 单节点详情（属性预览 + 出边采样），对应 Evennia `examine`。别名：`examine`、`ex`。
 
 三者均 **只读**、**不递归 AICO**、与既有 `authorize_command` 路径一致。审计与权限不变。

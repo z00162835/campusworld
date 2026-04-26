@@ -35,7 +35,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 onMounted(async () => {
-  if (!authStore.user) {
+  // Only fetch user if we have a token but no cached user
+  if (!authStore.user && authStore.token) {
     await authStore.fetchUser()
   }
 })

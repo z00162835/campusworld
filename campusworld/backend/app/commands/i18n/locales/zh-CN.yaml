@@ -5,14 +5,33 @@ commands:
     description: "列出当前可用命令，或显示某条命令的详细帮助。"
   stats:
     description: "显示系统资源与运行统计"
+    title: "系统统计"
+    error: "获取系统统计失败：{error}"
   version:
     description: "显示版本与运行环境信息"
   quit:
     description: "退出会话/连接"
+    goodbye: "再见！"
   time:
     description: "显示当前时间"
+    format: "当前时间：{time}"
   whoami:
     description: "显示当前用户信息"
+    current_user: "当前用户：{username}"
+  who:
+    description: "显示在线用户与活跃会话"
+    title: "CampusWorld 在线用户"
+    header:
+      player: "用户"
+      location: "位置"
+      idle: "空闲"
+      duration: "时长"
+    footer: "{n} 位用户在线（{m} 个活跃会话）。"
+    error:
+      unavailable: "在线用户列表不可用。"
+      no_sessions: "当前无在线用户。"
+    warning:
+      location_unavailable: "位置信息暂不可用。"
   look:
     description: "查看当前环境或指定物品/对象"
   go:

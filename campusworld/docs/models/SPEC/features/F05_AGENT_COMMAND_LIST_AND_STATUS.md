@@ -4,7 +4,7 @@
 
 **文档状态：Draft**
 
-**交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent`、记忆/运行表）、[`F03`](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@`）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（读图范围）、[`docs/commands/SPEC/SPEC.md`](../../../commands/SPEC/SPEC.md)。
+**交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent`、记忆/运行表）、[`F03`](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@`）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（读图范围）、[`docs/command/SPEC/SPEC.md`](../../../command/SPEC/SPEC.md)。
 
 **实现锚点（建议）：** [`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)、[`backend/app/commands/registry.py`](../../../../backend/app/commands/registry.py)、[`backend/app/commands/policy_store.py`](../../../../backend/app/commands/policy_store.py)、[`backend/app/models/system/agent_memory_tables.py`](../../../../backend/app/models/system/agent_memory_tables.py)（`AgentRunRecord`）、[`backend/app/models/graph.py`](../../../../backend/app/models/graph.py)（`Node`）。
 

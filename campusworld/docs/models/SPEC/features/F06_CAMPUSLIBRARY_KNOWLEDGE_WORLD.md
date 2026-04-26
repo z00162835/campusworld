@@ -4,7 +4,7 @@
 
 **文档状态：Draft**
 
-**交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（Agent/LTM）、[`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](F02_LTM_VECTORS_AND_MEMORY_LINKS.md)（pgvector 实践）、[`F03`](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO、`tool_allowlist`）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)、[`F05`](F05_AGENT_COMMAND_LIST_AND_STATUS.md)、[`F10`](../../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（读策略）、[`docs/commands/SPEC/SPEC.md`](../../../commands/SPEC/SPEC.md)。
+**交叉引用：** [`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（Agent/LTM）、[`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](F02_LTM_VECTORS_AND_MEMORY_LINKS.md)（pgvector 实践）、[`F03`](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)（AICO、`tool_allowlist`）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)、[`F05`](F05_AGENT_COMMAND_LIST_AND_STATUS.md)、[`F10`](../../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（读策略）、[`docs/command/SPEC/SPEC.md`](../../../command/SPEC/SPEC.md)。
 
 **实现锚点（建议）：** `backend/app/games/campuslibrary/`（世界包，待建）、[`backend/app/commands/`](../../../../backend/app/commands/)（`cl` 命令族，待建）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/app/models/graph.py`](../../../../backend/app/models/graph.py)、[`backend/app/game_engine/world_entry_service.py`](../../../../backend/app/game_engine/world_entry_service.py)、[`backend/app/commands/game/enter_world_command.py`](../../../../backend/app/commands/game/enter_world_command.py)。
 

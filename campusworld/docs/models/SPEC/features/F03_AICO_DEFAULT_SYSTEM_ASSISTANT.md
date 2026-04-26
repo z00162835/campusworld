@@ -102,7 +102,7 @@
 
 - **`help`**、**`look`**、**`time`**、**`version`**、**`whoami`** 等对应 [`system_commands.py`](../../../../backend/app/commands/system_commands.py) 中已注册的系统命令，语义上与普通用户会话中 **默认可用** 的基础集一致；**是否**出现在 AICO 的 **有效** 工具列表还受 **`get_available_commands`**（`command_policies` + 服务账号权限）过滤。
 - **`primer`** — 详见 [`system_primer_command.py`](../../../../backend/app/commands/system_primer_command.py)；以命令形态暴露 CampusWorld 系统本体 [`CAMPUSWORLD_SYSTEM_PRIMER.md`](../../CAMPUSWORLD_SYSTEM_PRIMER.md) 的各语义段（identity / ontology / world / invariants / examples 等），由 [`system_primer_context.py`](../../../../backend/app/game_engine/agent_runtime/system_primer_context.py) 渲染。与 Tier-1 静态 system prompt 协作：`system_prompt` 只放「身份 + 不变量」的精简版，完整设计说明由 agent 主动 `primer <section>` 按需拉取（与 F08 §12.3 对齐）。
-- **`find`** — 图节点检索（Evennia `@find` 风格，列表工具）。契约见 [`F01_FIND_COMMAND`](../../../commands/SPEC/features/F01_FIND_COMMAND.md)。别名：`@find`、`locate`。v3 新增 `-n` / `-des` / `-loc` / `-l` / `-a` 与 AND 组合查询。
+- **`find`** — 图节点检索（Evennia `@find` 风格，列表工具）。契约见 [`F01_FIND_COMMAND`](../../../command/SPEC/features/F01_FIND_COMMAND.md)。别名：`@find`、`locate`。v3 新增 `-n` / `-des` / `-loc` / `-l` / `-a` 与 AND 组合查询。
 - **`describe <id | #<id> | name>`** — 同上模块；输出单节点详情 + 出边采样。别名：`examine`、`ex`（Evennia 对齐）。
 - **`agent_capabilities`**、**`agent_tools`** 用于自省与能力查询；可按产品需要收紧 **`tool_allowlist`**（不暴露过多注册表命令）。
 - 后续可追加经策略允许的 **只读图/本体查询** 类命令名；须与 `command_policies` 及服务账号权限一致。

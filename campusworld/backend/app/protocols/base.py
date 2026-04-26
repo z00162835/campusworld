@@ -21,7 +21,8 @@ class ProtocolHandler(ABC):
     def handle_interactive_command(self, user_id: str, username: str, session_id: str,
                                  permissions: List[str], command_line: str,
                                  session: Optional[Any] = None,
-                                 game_state: Optional[Dict[str, Any]] = None) -> str:
+                                 game_state: Optional[Dict[str, Any]] = None,
+                                 metadata: Optional[Dict[str, Any]] = None) -> str:
         """处理交互式命令"""
         pass
     

@@ -23,7 +23,8 @@ class SSHHandler(ProtocolHandler):
     def handle_interactive_command(self, user_id: str, username: str, session_id: str, 
                                  permissions: List[str], command_line: str,
                                  session: Optional[Any] = None,
-                                 game_state: Optional[Dict[str, Any]] = None) -> str:
+                                 game_state: Optional[Dict[str, Any]] = None,
+                                 metadata: Optional[Dict[str, Any]] = None) -> str:
         """处理SSH交互式命令"""
         try:
             if not command_line.strip():
@@ -38,6 +39,7 @@ class SSHHandler(ProtocolHandler):
                     session,
                     game_state,
                     db_session=db_session,
+                    metadata=metadata,
                 )
                 at_res = try_dispatch_at_line(command_line, context)
                 if at_res is not None:

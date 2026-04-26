@@ -1,6 +1,6 @@
 # F02 — Intelligent Agent Service（`npc_agent` 扩展）SPEC
 
-> **For agentic workers:** 实现本 SPEC 时请与 [`docs/commands/SPEC/SPEC.md`](../../../commands/SPEC/SPEC.md)、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)、[`F10`](../../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 交叉评审；DDL 变更需走 `schema_migrations.py`。
+> **For agentic workers:** 实现本 SPEC 时请与 [`docs/command/SPEC/SPEC.md`](../../../command/SPEC/SPEC.md)、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)、[`F10`](../../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 交叉评审；DDL 变更需走 `schema_migrations.py`。
 
 **文档状态：RC — 2026-04-09**（与实现里程碑对齐；定稿时改为 Accepted）
 
@@ -284,7 +284,7 @@ flowchart LR
 
 - **列举能力**：约定命令如 `agent capabilities <service_id>` 或 `execute` 载荷 `{ "verb": "agent.capabilities", "service_id": "..." }`（**实现时**二选一并登记 OpenAPI/命令帮助）。
 - **列举工具**：`agent tools ...`，返回 **工具 id**、**来源**（命令内置 / LLM tool / 外部插件）。
-- **执行**：一律经 **`CommandRegistry`**，与 [`commands/SPEC`](../../../commands/SPEC/SPEC.md) 一致。
+- **执行**：一律经 **`CommandRegistry`**，与 [`command/SPEC`](../../../command/SPEC/SPEC.md) 一致。
 
 ---
 
@@ -409,7 +409,7 @@ flowchart LR
 
 - **扩展设计（Phase 2）：** 语义向量检索与长期记忆条目间关联 — [`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](F02_LTM_VECTORS_AND_MEMORY_LINKS.md)
 - [`docs/models/SPEC/SPEC.md`](../SPEC.md)
-- [`docs/commands/SPEC/SPEC.md`](../../../commands/SPEC/SPEC.md)
+- [`docs/command/SPEC/SPEC.md`](../../../command/SPEC/SPEC.md)
 - [`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)
 - [`F10`](../../../api/SPEC/features/F10_ONTOLOGY_AND_GRAPH_API.md)
 - [`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)

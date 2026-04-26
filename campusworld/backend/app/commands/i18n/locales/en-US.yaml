@@ -5,14 +5,33 @@ commands:
     description: "List available commands for the current caller, or show detailed help for one command."
   stats:
     description: "Show system statistics"
+    title: "System Statistics"
+    error: "Failed to get system stats: {error}"
   version:
     description: "Show version information"
   quit:
     description: "Exit the system"
+    goodbye: "Goodbye!"
   time:
     description: "Show current time"
+    format: "Current time: {time}"
   whoami:
     description: "Show current user"
+    current_user: "Current user: {username}"
+  who:
+    description: "List online users and sessions"
+    title: "CampusWorld Online Users"
+    header:
+      player: "Player"
+      location: "Location"
+      idle: "Idle"
+      duration: "Duration"
+    footer: "{n} users online ({m} active sessions)."
+    error:
+      unavailable: "Online user list unavailable."
+      no_sessions: "No users online."
+    warning:
+      location_unavailable: "Location information unavailable."
   look:
     description: "Look at the current room or inspect a thing"
   go:

@@ -1,0 +1,411 @@
+{
+  "git_commit": "0e8d0a0eadbeeaa52cace7bbc79230c391b76f76",
+  "generated_at_utc": "2026-04-26T08:23:25.140215+00:00",
+  "initialize_commands_ok": true,
+  "command_count": 34,
+  "commands": [
+    {
+      "name": "agent",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.agent_commands.AgentCommand",
+      "file": "backend/app/commands/agent_commands.py"
+    },
+    {
+      "name": "agent_capabilities",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "agent.capabilities"
+      ],
+      "registry_aliases": [
+        "agent.capabilities"
+      ],
+      "class": "app.commands.agent_commands.AgentCapabilitiesCommand",
+      "file": "backend/app/commands/agent_commands.py"
+    },
+    {
+      "name": "agent_tools",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "agent.tools"
+      ],
+      "registry_aliases": [
+        "agent.tools"
+      ],
+      "class": "app.commands.agent_commands.AgentToolsCommand",
+      "file": "backend/app/commands/agent_commands.py"
+    },
+    {
+      "name": "aico",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.agent_commands.AicoCommand",
+      "file": "backend/app/commands/agent_commands.py"
+    },
+    {
+      "name": "create",
+      "command_type": "ADMIN",
+      "class_declared_aliases": [
+        "spawn",
+        "build",
+        "make"
+      ],
+      "registry_aliases": [
+        "build",
+        "make",
+        "spawn"
+      ],
+      "class": "app.commands.builder.create_command.CreateCommand",
+      "file": "backend/app/commands/builder/create_command.py"
+    },
+    {
+      "name": "create_info",
+      "command_type": "ADMIN",
+      "class_declared_aliases": [
+        "cinfo",
+        "model_info"
+      ],
+      "registry_aliases": [
+        "cinfo",
+        "model_info"
+      ],
+      "class": "app.commands.builder.create_command.CreateInfoCommand",
+      "file": "backend/app/commands/builder/create_command.py"
+    },
+    {
+      "name": "describe",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "examine",
+        "ex"
+      ],
+      "registry_aliases": [
+        "ex",
+        "examine"
+      ],
+      "class": "app.commands.graph_inspect_commands.DescribeCommand",
+      "file": "backend/app/commands/graph_inspect_commands.py"
+    },
+    {
+      "name": "down",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "d"
+      ],
+      "registry_aliases": [
+        "d"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "east",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "e"
+      ],
+      "registry_aliases": [
+        "e"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "enter",
+      "command_type": "GAME",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.game.enter_world_command.EnterWorldCommand",
+      "file": "backend/app/commands/game/enter_world_command.py"
+    },
+    {
+      "name": "find",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "@find",
+        "locate"
+      ],
+      "registry_aliases": [
+        "@find",
+        "locate"
+      ],
+      "class": "app.commands.graph_inspect_commands.FindCommand",
+      "file": "backend/app/commands/graph_inspect_commands.py"
+    },
+    {
+      "name": "go",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "walk"
+      ],
+      "registry_aliases": [
+        "walk"
+      ],
+      "class": "app.commands.game.direction_command.MovementCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "help",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "h",
+        "?"
+      ],
+      "registry_aliases": [
+        "?",
+        "h"
+      ],
+      "class": "app.commands.system_commands.HelpCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "in",
+      "command_type": "GAME",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "leave",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "ooc"
+      ],
+      "registry_aliases": [
+        "ooc"
+      ],
+      "class": "app.commands.game.leave_world_command.LeaveWorldCommand",
+      "file": "backend/app/commands/game/leave_world_command.py"
+    },
+    {
+      "name": "look",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "l",
+        "lookat",
+        "examine"
+      ],
+      "registry_aliases": [
+        "l",
+        "lookat"
+      ],
+      "class": "app.commands.game.look_command.LookCommand",
+      "file": "backend/app/commands/game/look_command.py"
+    },
+    {
+      "name": "north",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "n"
+      ],
+      "registry_aliases": [
+        "n"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "northeast",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "ne"
+      ],
+      "registry_aliases": [
+        "ne"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "northwest",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "nw"
+      ],
+      "registry_aliases": [
+        "nw"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "notice",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "notices"
+      ],
+      "registry_aliases": [
+        "notices"
+      ],
+      "class": "app.commands.game.notice_command.NoticeCommand",
+      "file": "backend/app/commands/game/notice_command.py"
+    },
+    {
+      "name": "out",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "o"
+      ],
+      "registry_aliases": [
+        "o"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "primer",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "manual"
+      ],
+      "registry_aliases": [
+        "manual"
+      ],
+      "class": "app.commands.system_primer_command.PrimerCommand",
+      "file": "backend/app/commands/system_primer_command.py"
+    },
+    {
+      "name": "quit",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "exit",
+        "q"
+      ],
+      "registry_aliases": [
+        "exit",
+        "q"
+      ],
+      "class": "app.commands.system_commands.QuitCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "south",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "s"
+      ],
+      "registry_aliases": [
+        "s"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "southeast",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "se"
+      ],
+      "registry_aliases": [
+        "se"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "southwest",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "sw"
+      ],
+      "registry_aliases": [
+        "sw"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "stats",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "stat",
+        "system"
+      ],
+      "registry_aliases": [
+        "stat",
+        "system"
+      ],
+      "class": "app.commands.system_commands.StatsCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "time",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "date"
+      ],
+      "registry_aliases": [
+        "date"
+      ],
+      "class": "app.commands.system_commands.TimeCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "up",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "u"
+      ],
+      "registry_aliases": [
+        "u"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "version",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [
+        "ver"
+      ],
+      "registry_aliases": [
+        "ver"
+      ],
+      "class": "app.commands.system_commands.VersionCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "west",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "w"
+      ],
+      "registry_aliases": [
+        "w"
+      ],
+      "class": "app.commands.game.direction_command.FixedDirectionCommand",
+      "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "who",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.system_commands.WhoCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "whoami",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.system_commands.WhoamiCommand",
+      "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "world",
+      "command_type": "ADMIN",
+      "class_declared_aliases": [
+        "worlds"
+      ],
+      "registry_aliases": [
+        "worlds"
+      ],
+      "class": "app.commands.game.world_command.WorldCommand",
+      "file": "backend/app/commands/game/world_command.py"
+    }
+  ]
+}

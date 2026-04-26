@@ -97,6 +97,7 @@ const handleRegister = async () => {
       try {
         await authApi.register({
           username: registerForm.username,
+          email: registerForm.email,
           password: registerForm.password
         })
 

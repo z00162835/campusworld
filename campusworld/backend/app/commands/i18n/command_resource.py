@@ -19,14 +19,14 @@ from __future__ import annotations
 
 import os
 from functools import lru_cache
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import yaml
 except Exception:  # pragma: no cover
     yaml = None  # type: ignore
 
-from app.commands.i18n.locale_text import FALLBACK_CHAIN, pick_i18n
+from app.commands.i18n.locale_text import FALLBACK_CHAIN, normalize_locale, pick_i18n
 
 # Files expected: ``<tag>.yaml`` in this package's ``locales`` directory
 _LOCALE_FILES: Tuple[str, ...] = ("zh-CN", "en-US")
@@ -93,6 +93,48 @@ def get_localized_string_from_resource(
         legacy_default=None,
     )
     return (p.value or "").strip()
+
+
+def get_command_i18n_text(
+    command_name: str,
+    key_path: str,
+    locale: str,
+    default: str,
+) -> str:
+    """Resolve ``commands.<command_name>.<key_path>`` text from locale YAMLs.
+
+    Walks the requested locale first, then ``FALLBACK_CHAIN``; returns ``default`` if no
+    bundle yields a non-empty string. Nested key paths use ``.`` separators
+    (e.g. ``"goodbye"`` or ``"error.unavailable"``).
+    """
+
+    def _dig(node: Any, path: List[str]) -> Optional[str]:
+        cur = node
+        for p in path:
+            if not isinstance(cur, dict):
+                return None
+            cur = cur.get(p)
+        if cur is None:
+            return None
+        txt = str(cur).strip()
+        return txt if txt else None
+
+    loc = normalize_locale(locale)
+    order: List[str] = [loc] + [normalize_locale(x) for x in FALLBACK_CHAIN if x]
+    seen: set = set()
+    unique: List[str] = []
+    for tag in order:
+        if tag not in seen:
+            seen.add(tag)
+            unique.append(tag)
+
+    parts = ["commands", str(command_name)] + [p for p in str(key_path).split(".") if p]
+    for tag in unique:
+        bundle = get_bundle_by_tag(tag)
+        val = _dig(bundle, parts)
+        if val is not None:
+            return val
+    return default
 
 
 def merge_description_i18n_for_ability(

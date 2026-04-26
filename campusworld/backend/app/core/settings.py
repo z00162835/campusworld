@@ -255,7 +255,7 @@ class AgentsConfig(BaseModel):
 class FindCommandConfig(BaseModel):
     """commands.find — tunables for the SYSTEM ``find`` command.
 
-    See docs/commands/SPEC/features/F01_FIND_COMMAND.md for semantics.
+    See docs/command/SPEC/features/F01_FIND_COMMAND.md for semantics.
     """
 
     hard_max_limit: int = Field(

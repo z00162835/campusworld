@@ -21,10 +21,20 @@ from app.core.log import get_logger, LoggerNames
 class SSHConsole:
     """优化的SSH控制台 - 解决乱码问题"""
     
-    def __init__(self, channel, session: Optional[SSHSession] = None):
+    def __init__(
+        self,
+        channel,
+        session: Optional[SSHSession] = None,
+        *,
+        session_manager: Optional[Any] = None,
+        game_handler: Optional[Any] = None,
+    ):
         """初始化SSH控制台"""
         self.channel = channel
         self.current_session = session
+        # CommandContext metadata dependencies (e.g. `who` command).
+        self.session_manager = session_manager
+        self.game_handler = game_handler
         
         # 设置日志级别
         self.debug_mode = os.getenv('SSH_DEBUG', 'false').lower() == 'true'
@@ -269,6 +279,11 @@ class SSHConsole:
             game_state = self._get_game_state()
             
             # 使用SSH处理器处理命令
+            context_metadata: Dict[str, Any] = {}
+            if self.session_manager is not None:
+                context_metadata["session_manager"] = self.session_manager
+            if self.game_handler is not None:
+                context_metadata["game_handler"] = self.game_handler
             result = self.ssh_handler.handle_interactive_command(
                 user_id=user_id,
                 username=username,
@@ -276,7 +291,8 @@ class SSHConsole:
                 permissions=permissions,
                 command_line=input_text,
                 session=self.current_session,
-                game_state=game_state
+                game_state=game_state,
+                metadata=context_metadata or None,
             )
             
             # 发送结果

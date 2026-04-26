@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import ParticleBackground from '@/components/auth/ParticleBackground.vue'
-import ScanlineOverlay from '@/components/auth/ScanlineOverlay.vue'
-import BootSequence from '@/components/auth/BootSequence.vue'
-import GlitchText from '@/components/auth/GlitchText.vue'
-import SystemStatus from '@/components/auth/SystemStatus.vue'
+
+// Dynamic imports for heavy animation components (reduce initial bundle)
+const ParticleBackground = defineAsyncComponent(() =>
+  import('@/components/auth/ParticleBackground.vue')
+)
+const ScanlineOverlay = defineAsyncComponent(() =>
+  import('@/components/auth/ScanlineOverlay.vue')
+)
+const BootSequence = defineAsyncComponent(() =>
+  import('@/components/auth/BootSequence.vue')
+)
+const GlitchText = defineAsyncComponent(() =>
+  import('@/components/auth/GlitchText.vue')
+)
+const SystemStatus = defineAsyncComponent(() =>
+  import('@/components/auth/SystemStatus.vue')
+)
 import CyberInput from '@/components/auth/CyberInput.vue'
 import CyberButton from '@/components/auth/CyberButton.vue'
 import { useAuthStore, getAuthErrorMessage } from '@/stores/auth'
@@ -192,7 +204,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
         <CyberButton
           label="AUTHENTICATE"
           :loading="loading"
-          :disabled="!isFormValid"
+          :disabled="loading || !isFormValid"
           size="large"
           class="auth-submit"
           @click="handleLogin"

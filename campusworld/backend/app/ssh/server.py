@@ -281,7 +281,12 @@ class CampusWorldSSHServer:
                     'event_type': 'ssh_console_setup_error'
                 })
 
-            console = SSHConsole(channel, ssh_session)
+            console = SSHConsole(
+                channel,
+                ssh_session,
+                session_manager=self.ssh_interface.session_manager,
+                game_handler=game_handler,
+            )
             console.run()
 
         except Exception as e:

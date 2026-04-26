@@ -130,7 +130,7 @@ your `tool_allowlist` intersected with `command_policies`.
 
 Reference commands for self-orientation (Evennia-inspired naming):
 `whoami`, `look`, `primer`, `primer <section>`,
-`find` (full contract in [F01_FIND_COMMAND](../../commands/SPEC/features/F01_FIND_COMMAND.md); supports
+`find` (full contract in [F01_FIND_COMMAND](../../command/SPEC/features/F01_FIND_COMMAND.md); supports
 `#<id>`, `*<account>`, `-n` / `-des` / `-t` / `-loc` / `-l` / `-a` AND combinations),
 `describe <id|name>`, `agent_capabilities`, `agent_tools`, `help <command>`.
 
