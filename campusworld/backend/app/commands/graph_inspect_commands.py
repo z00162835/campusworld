@@ -186,7 +186,7 @@ def _resolve_flag(token: str) -> Optional[Tuple[str, _FlagSpec]]:
 
 
 def _parse_find_args(args: List[str]) -> _ParsedFindArgs:
-    """Parse ``find`` arguments (v3; see docs/commands/SPEC/features/F01_FIND_COMMAND.md).
+    """Parse ``find`` arguments (v3; see docs/command/SPEC/features/F01_FIND_COMMAND.md).
 
     Accepts Evennia-style positional shortcuts (``#id``, ``*account``) plus
     the v3 flag surface. The first non-flag token is treated as the
@@ -283,6 +283,58 @@ def _parse_find_args(args: List[str]) -> _ParsedFindArgs:
     return out
 
 
+@dataclass(frozen=True)
+class _ParsedDescribeArgs:
+    """Result of ``describe`` argument parsing.
+
+    ``describe`` has a much smaller surface than ``find``: one positional
+    identifier (``<id>`` / ``#<id>`` / name) plus the boolean ``-a/--all``
+    switch which expands the attribute and out-edge blocks to full.
+    """
+
+    identifier: Optional[str]
+    show_all: bool
+    error: Optional[str]
+
+
+def _parse_describe_args(args: List[str]) -> _ParsedDescribeArgs:
+    """Parse ``describe`` arguments; see docs/command/SPEC/features/CMD_describe.md.
+
+    Accepts ``-a`` / ``--all`` (order-independent with the identifier).
+    Exactly one non-flag token is allowed; extra positionals or unknown
+    flags short-circuit to an error result so typos surface immediately
+    rather than silently dropping input.
+    """
+    identifier: Optional[str] = None
+    show_all = False
+    positional_count = 0
+    for token in args:
+        canonical = _FLAG_ALIASES.get(token, token)
+        if canonical == "--all":
+            show_all = True
+            continue
+        # Any other flag-looking token is unknown here (describe shares no
+        # other flags with find). Negative numbers are not meaningful as
+        # identifiers for describe, so we also reject them as flags.
+        if token.startswith("--") or (
+            token.startswith("-") and len(token) > 1 and not token[1].isdigit()
+        ):
+            return _ParsedDescribeArgs(
+                identifier=None,
+                show_all=False,
+                error=f"unknown flag: {token}",
+            )
+        positional_count += 1
+        if positional_count > 1:
+            return _ParsedDescribeArgs(
+                identifier=None,
+                show_all=False,
+                error="describe accepts a single <id|#id|name>",
+            )
+        identifier = token
+    return _ParsedDescribeArgs(identifier=identifier, show_all=show_all, error=None)
+
+
 def _truncate(text: Optional[str], max_chars: int) -> str:
     s = (text or "").strip()
     if len(s) <= max_chars:
@@ -330,7 +382,7 @@ class FindCommand(SystemCommand):
             "\n  find #42"
             "\n  find *admin"
             "\n  find atrium --exact"
-            "\nFull SPEC: docs/commands/SPEC/features/F01_FIND_COMMAND.md"
+            "\nFull SPEC: docs/command/SPEC/features/F01_FIND_COMMAND.md"
         )
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
@@ -372,24 +424,49 @@ class DescribeCommand(SystemCommand):
         )
 
     def get_usage(self) -> str:
-        return "describe <node_id | #<id> | node_name>"
+        return "describe <node_id | #<id> | node_name> [-a | --all]"
+
+    def _get_specific_help(self) -> str:
+        return (
+            "\nRenders one active graph node: header, description, location/home,"
+            "\n attributes, and outgoing edges."
+            "\nDefault mode previews for cheap LLM context: first 12 attribute keys"
+            "\n (alphabetical), single values truncated at 160 chars, and up to 8"
+            "\n out-edges sampled by (type_code, id)."
+            "\n-a / --all expands both blocks in full (every attribute key with the"
+            "\n raw value and every is_active=True out-edge) and adds `attributes`"
+            "\n and `out_edges` arrays to CommandResult.data for agent consumption."
+            "\nAliases: `examine`, `ex`."
+            "\n\nExamples:"
+            "\n  describe #1322"
+            "\n  describe Atrium"
+            "\n  ex 1322 -a"
+            "\n  describe --all #1322"
+            "\nFull SPEC: docs/command/SPEC/features/CMD_describe.md"
+        )
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         session = getattr(context, "db_session", None)
         if session is None:
             return CommandResult.error_result("describe requires an active DB session")
-        if not args:
+
+        parsed = _parse_describe_args(args)
+        if parsed.error:
+            return CommandResult.error_result(parsed.error)
+        if parsed.identifier is None:
             return CommandResult.error_result(self.get_usage())
 
-        raw = args[0].strip()
+        raw = parsed.identifier.strip()
+        original = raw
         if raw.startswith("#"):
             raw = raw[1:]
         node = _resolve_node_by_id_or_name(session, raw)
         if node is None:
             return CommandResult.error_result(
-                f"no active node found for identifier {args[0]!r}"
+                f"no active node found for identifier {original!r}"
             )
 
+        show_all = parsed.show_all
         lines: List[str] = []
         lines.append(f"[{node.id}] {node.type_code}: {node.name}")
         if node.description:
@@ -402,22 +479,25 @@ class DescribeCommand(SystemCommand):
             lines.append(f"home_id: {node.home_id}")
         attrs = node.attributes or {}
         if isinstance(attrs, dict) and attrs:
-            preview_keys = sorted(attrs.keys())[:12]
+            sorted_keys = sorted(attrs.keys())
+            preview_keys = sorted_keys if show_all else sorted_keys[:12]
             lines.append("")
-            lines.append("attributes (preview):")
+            lines.append("attributes:" if show_all else "attributes (preview):")
             for k in preview_keys:
                 v = attrs[k]
                 vs = str(v)
-                if len(vs) > 160:
+                if not show_all and len(vs) > 160:
                     vs = vs[:157] + "..."
                 lines.append(f"  {k}: {vs}")
-            if len(attrs) > len(preview_keys):
+            if not show_all and len(attrs) > len(preview_keys):
                 lines.append(f"  ... (+{len(attrs) - len(preview_keys)} more)")
 
-        out_edges = _sample_out_edges(session, node.id, limit=8)
+        out_edges = _sample_out_edges(
+            session, node.id, limit=None if show_all else 8
+        )
         if out_edges:
             lines.append("")
-            lines.append("out-edges (sample):")
+            lines.append("out-edges:" if show_all else "out-edges (sample):")
             for rel, other in out_edges:
                 other_label = (
                     f"[{other.id}] {other.type_code}: {other.name}"
@@ -427,15 +507,26 @@ class DescribeCommand(SystemCommand):
                 role = f" role={rel.target_role}" if rel.target_role else ""
                 lines.append(f"  -[{rel.type_code}{role}]-> {other_label}")
 
-        return CommandResult.success_result(
-            "\n".join(lines),
-            data={
-                "id": node.id,
-                "type_code": node.type_code,
-                "name": node.name,
-                "location_id": node.location_id,
-            },
-        )
+        data: Dict[str, Any] = {
+            "id": node.id,
+            "type_code": node.type_code,
+            "name": node.name,
+            "location_id": node.location_id,
+        }
+        if show_all:
+            data["attributes"] = dict(attrs) if isinstance(attrs, dict) else {}
+            data["out_edges"] = [
+                {
+                    "type_code": rel.type_code,
+                    "target_id": rel.target_id,
+                    "target_type": getattr(other, "type_code", None),
+                    "target_name": getattr(other, "name", None),
+                    "target_role": rel.target_role,
+                }
+                for rel, other in out_edges
+            ]
+
+        return CommandResult.success_result("\n".join(lines), data=data)
 
 
 # -------------------- query helpers --------------------
@@ -729,22 +820,25 @@ def _resolve_node_by_id_or_name(session, raw: str):
     )
 
 
-def _sample_out_edges(session, node_id: int, *, limit: int = 8):
-    """Return up to ``limit`` outgoing relationships with the target node.
+def _sample_out_edges(session, node_id: int, *, limit: Optional[int] = 8):
+    """Return outgoing relationships with the target node.
 
-    Best-effort: any DB error yields an empty list so ``describe`` keeps
-    working even with partial data.
+    ``limit`` caps the number of relationships; passing ``None`` returns the
+    full active out-edge set (used by ``describe -a``). Best-effort: any DB
+    error yields an empty list so ``describe`` keeps working even with
+    partial data.
     """
     from app.models.graph import Node, Relationship
 
     try:
-        rels = (
+        q = (
             session.query(Relationship)
             .filter(Relationship.source_id == node_id, Relationship.is_active == True)  # noqa: E712
             .order_by(Relationship.type_code.asc(), Relationship.id.asc())
-            .limit(limit)
-            .all()
         )
+        if limit is not None:
+            q = q.limit(limit)
+        rels = q.all()
         out: List[Tuple[Any, Any]] = []
         for r in rels:
             other = session.query(Node).filter(Node.id == r.target_id).first()

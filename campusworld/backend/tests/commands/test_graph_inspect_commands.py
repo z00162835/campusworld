@@ -18,6 +18,7 @@ from app.commands.base import CommandContext
 from app.commands.graph_inspect_commands import (
     DescribeCommand,
     FindCommand,
+    _parse_describe_args,
     _parse_find_args,
 )
 
@@ -231,7 +232,7 @@ def test_parse_find_args_caps_limit():
 
 
 # -------------------- v3 migration & flag-surface locks -------------------
-# See docs/commands/SPEC/features/F01_FIND_COMMAND.md §3 for the migration
+# See docs/command/SPEC/features/F01_FIND_COMMAND.md §3 for the migration
 # table; these tests regression-lock each row so v2->v3 rename cannot drift.
 
 
@@ -650,3 +651,225 @@ def test_find_data_query_limit_echoes_user_input_even_when_all(monkeypatch):
     res = FindCommand().execute(_ctx(session), ["-t", "room", "-a", "-l", "7"])
     assert res.data["query"]["limit"] == 7
     assert res.data["query"]["all"] is True
+
+
+# ---------------------- _parse_describe_args ----------------------
+# See docs/command/SPEC/features/CMD_describe.md §Implementation contract.
+
+
+@pytest.mark.unit
+def test_parse_describe_args_identifier_only():
+    p = _parse_describe_args(["#42"])
+    assert p.error is None
+    assert p.identifier == "#42"
+    assert p.show_all is False
+
+
+@pytest.mark.unit
+def test_parse_describe_args_bare_token_allowed():
+    p = _parse_describe_args(["Atrium"])
+    assert p.error is None
+    assert p.identifier == "Atrium"
+    assert p.show_all is False
+
+
+@pytest.mark.unit
+def test_parse_describe_args_all_flag_short_and_long():
+    for tok in ("-a", "--all"):
+        p = _parse_describe_args(["#1", tok])
+        assert p.error is None
+        assert p.identifier == "#1"
+        assert p.show_all is True
+
+
+@pytest.mark.unit
+def test_parse_describe_args_flag_order_independent():
+    p1 = _parse_describe_args(["-a", "#1"])
+    p2 = _parse_describe_args(["#1", "-a"])
+    assert p1.error is None and p2.error is None
+    assert p1.identifier == p2.identifier == "#1"
+    assert p1.show_all is True and p2.show_all is True
+
+
+@pytest.mark.unit
+def test_parse_describe_args_missing_identifier_is_ok_for_parser():
+    # Parser returns identifier=None; execute() converts that to usage error.
+    p = _parse_describe_args(["-a"])
+    assert p.error is None
+    assert p.identifier is None
+    assert p.show_all is True
+
+
+@pytest.mark.unit
+def test_parse_describe_args_unknown_flag_errors():
+    p = _parse_describe_args(["#1", "-z"])
+    assert p.error and "unknown flag: -z" in p.error
+
+
+@pytest.mark.unit
+def test_parse_describe_args_unknown_long_flag_errors():
+    p = _parse_describe_args(["#1", "--nope"])
+    assert p.error and "--nope" in p.error
+
+
+@pytest.mark.unit
+def test_parse_describe_args_multiple_positionals_error():
+    p = _parse_describe_args(["#1", "extra"])
+    assert p.error and "single" in p.error
+
+
+# ----------------------- describe -a behaviour -----------------------
+# See plan: describe_-a_full_expand — default preview vs full expansion.
+
+
+def _describe_session_with_target(target, rels, other_nodes):
+    """Build a _FakeSession where the first Node query yields `target`,
+    any later Node queries (edge target resolution) yield from `other_nodes`
+    in insertion order.
+    """
+
+    calls = {"n": 0}
+
+    def node_lookup(_all_nodes):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return [target]
+        idx = calls["n"] - 2
+        if 0 <= idx < len(other_nodes):
+            return [other_nodes[idx]]
+        return []
+
+    return _FakeSession(
+        nodes=[target, *other_nodes], rels=rels, node_lookup=node_lookup
+    )
+
+
+@pytest.mark.unit
+def test_describe_default_preview_truncates_attrs_and_edges():
+    long_value = "x" * 200
+    attrs = {f"k{i:02d}": f"v{i}" for i in range(14)}
+    attrs["k00"] = long_value  # ensure first key has a long value
+    target = _FakeNode(
+        id=1,
+        type_code="room",
+        name="Atrium",
+        attributes=attrs,
+    )
+    others = [_FakeNode(id=100 + i, type_code="room", name=f"r{i}") for i in range(10)]
+    rels = [
+        _FakeRel(id=i, type_code="connects_to", source_id=1, target_id=100 + i)
+        for i in range(10)
+    ]
+    sess = _describe_session_with_target(target, rels, others)
+
+    res = DescribeCommand().execute(_ctx(sess), ["#1"])
+    assert res.success, res.message or res.error
+    assert "attributes (preview):" in res.message
+    # 14 keys total, only 12 shown, surplus footer present
+    assert "... (+2 more)" in res.message
+    # k11 is the 12th sorted key; still in preview. k12/k13 are not.
+    assert "k11: v11" in res.message
+    assert "k12:" not in res.message
+    # Long value must be trimmed; raw long value must not appear.
+    assert long_value not in res.message
+    assert "..." in res.message
+    # Only 8 edges sampled
+    assert res.message.count("-[connects_to") == 8
+    assert "out-edges (sample):" in res.message
+    # data payload: non-`-a` shape is stable (no attributes / out_edges)
+    assert "attributes" not in res.data
+    assert "out_edges" not in res.data
+
+
+@pytest.mark.unit
+def test_describe_all_flag_expands_attrs_and_out_edges():
+    long_value = "y" * 200
+    attrs = {f"k{i:02d}": f"v{i}" for i in range(14)}
+    attrs["k00"] = long_value
+    target = _FakeNode(
+        id=1,
+        type_code="room",
+        name="Atrium",
+        attributes=attrs,
+    )
+    others = [_FakeNode(id=100 + i, type_code="room", name=f"r{i}") for i in range(10)]
+    rels = [
+        _FakeRel(id=i, type_code="connects_to", source_id=1, target_id=100 + i)
+        for i in range(10)
+    ]
+    sess = _describe_session_with_target(target, rels, others)
+
+    res = DescribeCommand().execute(_ctx(sess), ["#1", "-a"])
+    assert res.success, res.message or res.error
+    # Titles switch to full-mode wording.
+    assert "attributes:" in res.message
+    assert "attributes (preview)" not in res.message
+    assert "out-edges:" in res.message
+    assert "out-edges (sample)" not in res.message
+    # No "+N more" trailer, no "..." truncation.
+    assert "+2 more" not in res.message
+    assert long_value in res.message  # raw long value appears in full mode
+    # All 10 out-edges rendered.
+    assert res.message.count("-[connects_to") == 10
+    # data payload: `attributes` (full dict) and `out_edges` (10 entries)
+    assert res.data["attributes"] == attrs
+    assert len(res.data["out_edges"]) == 10
+    sample = res.data["out_edges"][0]
+    assert set(sample.keys()) == {
+        "type_code",
+        "target_id",
+        "target_type",
+        "target_name",
+        "target_role",
+    }
+    assert sample["type_code"] == "connects_to"
+    assert sample["target_type"] == "room"
+
+
+@pytest.mark.unit
+def test_describe_all_flag_positional_order_equivalent():
+    target = _FakeNode(
+        id=1,
+        type_code="room",
+        name="Atrium",
+        attributes={"k": "v"},
+    )
+    other = _FakeNode(id=2, type_code="room", name="Plaza")
+    rel = _FakeRel(id=1, type_code="connects_to", source_id=1, target_id=2)
+
+    def make_session():
+        return _describe_session_with_target(target, [rel], [other])
+
+    r1 = DescribeCommand().execute(_ctx(make_session()), ["-a", "#1"])
+    r2 = DescribeCommand().execute(_ctx(make_session()), ["#1", "-a"])
+    r3 = DescribeCommand().execute(_ctx(make_session()), ["#1", "--all"])
+    for r in (r1, r2, r3):
+        assert r.success, r.message or r.error
+        assert r.data["attributes"] == {"k": "v"}
+        assert len(r.data["out_edges"]) == 1
+        assert "out-edges:" in r.message
+
+
+@pytest.mark.unit
+def test_describe_unknown_flag_errors():
+    sess = _FakeSession(nodes=[])
+    res = DescribeCommand().execute(_ctx(sess), ["#1", "-z"])
+    assert not res.success
+    assert "unknown flag: -z" in (res.message or res.error or "")
+
+
+@pytest.mark.unit
+def test_describe_multiple_positionals_error():
+    sess = _FakeSession(nodes=[])
+    res = DescribeCommand().execute(_ctx(sess), ["#1", "extra"])
+    assert not res.success
+    assert "single" in (res.message or res.error or "")
+
+
+@pytest.mark.unit
+def test_describe_all_flag_with_missing_identifier_returns_usage():
+    sess = _FakeSession(nodes=[])
+    res = DescribeCommand().execute(_ctx(sess), ["-a"])
+    assert not res.success
+    msg = res.message or res.error or ""
+    assert "describe" in msg and "-a" in msg
