@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `notice` |
 | `CommandType` | GAME |
-| File | [`backend/app/commands/game/notice_command.py`](../../../../backend/app/commands/game/notice_command.py) |
+| Class | `app.commands.game.notice_command.NoticeCommand` |
+| Primary implementation | [`backend/app/commands/game/notice_command.py`](../../../../backend/app/commands/game/notice_command.py) |
 | Locale | `commands.notice`（`notices` 别名，见快照） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

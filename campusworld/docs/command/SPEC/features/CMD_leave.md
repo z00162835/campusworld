@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `leave` |
 | `CommandType` | GAME |
-| File | [`backend/app/commands/game/leave_world_command.py`](../../../../backend/app/commands/game/leave_world_command.py) |
+| Class | `app.commands.game.leave_world_command.LeaveWorldCommand` |
+| Primary implementation | [`backend/app/commands/game/leave_world_command.py`](../../../../backend/app/commands/game/leave_world_command.py) |
 | Locale | `commands.leave`（别名 `ooc` 见快照） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `stats` |
 | `CommandType` | SYSTEM |
-| File | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) `StatsCommand` |
+| Class | `app.commands.system_commands.StatsCommand` |
+| Primary implementation | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) |
 | Locale | `commands.stats`（含 `stats.title` / `stats.error` 文案 key） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

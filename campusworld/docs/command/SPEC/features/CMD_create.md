@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `create` |
 | `CommandType` | ADMIN |
-| File | [`backend/app/commands/builder/create_command.py`](../../../../backend/app/commands/builder/create_command.py) `CreateCommand` |
+| Class | `app.commands.builder.create_command.CreateCommand` |
+| Primary implementation | [`backend/app/commands/builder/create_command.py`](../../../../backend/app/commands/builder/create_command.py) |
 | Locale | `commands.create` |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

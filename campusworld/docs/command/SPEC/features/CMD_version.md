@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `version` |
 | `CommandType` | SYSTEM |
-| File | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) `VersionCommand` |
+| Class | `app.commands.system_commands.VersionCommand` |
+| Primary implementation | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) |
 | Locale | `commands.version` |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

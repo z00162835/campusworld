@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `agent_capabilities` |
 | `CommandType` | SYSTEM |
-| File | [`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py) |
+| Class | `app.commands.agent_commands.AgentCapabilitiesCommand` |
+| Primary implementation | [`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py) |
 | Locale | `commands.agent_capabilities` |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json)（别名 `agent.capabilities`） |
 | Last reviewed | 2026-04-26 |

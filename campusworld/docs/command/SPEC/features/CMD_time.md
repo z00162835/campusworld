@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `time` |
 | `CommandType` | SYSTEM |
-| File | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) `TimeCommand` |
+| Class | `app.commands.system_commands.TimeCommand` |
+| Primary implementation | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) |
 | Locale | `commands.time`（含 `time.format` 文案 key） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

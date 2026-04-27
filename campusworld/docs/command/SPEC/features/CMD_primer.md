@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `primer` |
 | `CommandType` | SYSTEM |
-| File | [`backend/app/commands/system_primer_command.py`](../../../../backend/app/commands/system_primer_command.py) |
+| Class | `app.commands.system_primer_command.PrimerCommand` |
+| Primary implementation | [`backend/app/commands/system_primer_command.py`](../../../../backend/app/commands/system_primer_command.py) |
 | Locale | `commands.primer`（正文来自 `build_ontology_primer`） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

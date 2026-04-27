@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `go` |
 | `CommandType` | GAME |
-| File | [`backend/app/commands/game/direction_command.py`](../../../../backend/app/commands/game/direction_command.py) `MovementCommand`（`name="go"`） |
+| Class | `app.commands.game.direction_command.MovementCommand`（`name="go"`） |
+| Primary implementation | [`backend/app/commands/game/direction_command.py`](../../../../backend/app/commands/game/direction_command.py) |
 | Locale | `commands.go`（别名 `walk`） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

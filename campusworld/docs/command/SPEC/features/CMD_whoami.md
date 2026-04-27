@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `whoami` |
 | `CommandType` | SYSTEM |
-| File | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) `WhoamiCommand` |
+| Class | `app.commands.system_commands.WhoamiCommand` |
+| Primary implementation | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) |
 | Locale | `commands.whoami`（不含 `who` 别名；`who` 为独立命令，见 [CMD_who.md](CMD_who.md)） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

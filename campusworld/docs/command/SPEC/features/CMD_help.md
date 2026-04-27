@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `help` |
 | `CommandType` | SYSTEM |
-| File | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) `HelpCommand` |
+| Class | `app.commands.system_commands.HelpCommand` |
+| Primary implementation | [`backend/app/commands/system_commands.py`](../../../../backend/app/commands/system_commands.py) |
 | Locale | `commands.help` + `help_shell_for_locale` 字符串（`app/commands/i18n/locale_text.py`） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

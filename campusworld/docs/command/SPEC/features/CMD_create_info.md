@@ -8,7 +8,8 @@
 |--------|--------|
 | Command | `create_info` |
 | `CommandType` | ADMIN |
-| File | [`backend/app/commands/builder/create_command.py`](../../../../backend/app/commands/builder/create_command.py) `CreateInfoCommand` |
+| Class | `app.commands.builder.create_command.CreateInfoCommand` |
+| Primary implementation | [`backend/app/commands/builder/create_command.py`](../../../../backend/app/commands/builder/create_command.py) |
 | Locale | `commands.create_info` |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json)（别名 `cinfo`/`model_info`） |
 | Last reviewed | 2026-04-26 |
