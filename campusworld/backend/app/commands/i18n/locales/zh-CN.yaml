@@ -61,6 +61,45 @@ commands:
     description: "按条件查找节点（非语义检索）"
   describe:
     description: "查看单个节点详情（类型、属性、关系摘要）"
+  space:
+    description: "按节点 id 查询空间（SPACE）四段摘要：环境、人物、设备、关系"
+    usage:
+      line: "space -t | space -i <node_id>"
+    section:
+      title:
+        "1": "空间描述："
+        "2": "空间人物："
+        "3": "空间设备："
+        "4": "空间关系："
+    table:
+      header:
+        id: "id"
+        name: "name"
+        direction: "direction"
+        type_code: "type_code"
+        status: "status"
+        description: "description"
+    s1:
+      name: "名称：{n}"
+      local_name: "本地名：{n}"
+      tagline: "标语：{n}"
+      short_desc: "短描述：{n}"
+      floor_name: "楼层名：{n}"
+      exit: "出口 {dir}：{name}"
+    type_list:
+      title: "SPACE 类型 type_code"
+      empty: "（无 SPACE 类型）"
+      footer: "共 {n} 个"
+    empty:
+      row: "（无）"
+    error:
+      no_session: "需要数据库会话"
+      not_found: "无此节点或不是空间"
+      bad_i: "-i 需要节点 id"
+      bad_id: "节点 id 须为正整数"
+      unknown_flag: "未知参数：{token}"
+    flags:
+      bad_combo: "不能同时使用 -t 与 -i"
   primer:
     description: "系统primer信息（建议用章节节省输出）"
   agent_capabilities:

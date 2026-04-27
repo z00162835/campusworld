@@ -3,6 +3,10 @@
 Reconcile `docs/command/SPEC/_generated/registry_snapshot.json` with `CMD_*.md` in features/.
 
 Exit 0 if every registered command name has a corresponding `CMD_<name>.md` (case-sensitive).
+
+`CMD_*.md` may exist for **planned** commands not yet in the registry; see
+``_PLANNED_SPEC_WITHOUT_REGISTRY`` (remove a name from that set when the
+command is registered and the snapshot is regenerated).
 """
 from __future__ import annotations
 
@@ -12,6 +16,9 @@ from pathlib import Path
 
 _BACKEND_ROOT = Path(__file__).resolve().parents[1]
 _REPO_ROOT = _BACKEND_ROOT.parent
+
+# Target-contract SPEC files before `export_command_registry_snapshot` includes the name.
+_PLANNED_SPEC_WITHOUT_REGISTRY: frozenset[str] = frozenset()
 
 
 def main() -> int:
@@ -24,7 +31,7 @@ def main() -> int:
     feat = _REPO_ROOT / "docs" / "command" / "SPEC" / "features"
     have = {p.stem[4:] for p in feat.glob("CMD_*.md")}
     missing = sorted(names - have)
-    extra = sorted(have - names)
+    extra = sorted((have - names) - _PLANNED_SPEC_WITHOUT_REGISTRY)
     if missing:
         print("Missing CMD_*.md for registered commands:", ", ".join(missing), file=sys.stderr)
     if extra:

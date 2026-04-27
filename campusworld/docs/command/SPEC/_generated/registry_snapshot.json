@@ -1,8 +1,8 @@
 {
-  "git_commit": "741970693b0db38036f3766978c9f8f32824d72d",
-  "generated_at_utc": "2026-04-26T14:02:37.513101+00:00",
+  "git_commit": "6f6b9671ecbd6c8cba34892a494f433eb3af675c",
+  "generated_at_utc": "2026-04-27T01:39:14.405349+00:00",
   "initialize_commands_ok": true,
-  "command_count": 35,
+  "command_count": 36,
   "commands": [
     {
       "name": "agent",
@@ -316,6 +316,14 @@
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py"
+    },
+    {
+      "name": "space",
+      "command_type": "SYSTEM",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.space_command.SpaceCommand",
+      "file": "backend/app/commands/space_command.py"
     },
     {
       "name": "stats",

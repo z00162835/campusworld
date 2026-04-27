@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from app.commands.base import CommandContext, CommandResult, SystemCommand
+from app.commands.space_command import SpaceCommand
 
 
 _DEFAULT_LIMIT = 12
@@ -849,4 +850,4 @@ def _sample_out_edges(session, node_id: int, *, limit: Optional[int] = 8):
 
 
 # Module-level list mirrors the SYSTEM_COMMANDS pattern used by init_commands.
-GRAPH_INSPECT_COMMANDS: List[SystemCommand] = [FindCommand(), DescribeCommand()]
+GRAPH_INSPECT_COMMANDS: List[SystemCommand] = [FindCommand(), DescribeCommand(), SpaceCommand()]

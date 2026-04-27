@@ -16,6 +16,7 @@
 
 - **Agent 四层架构（L1–L4）**：类型与数据、命令工具、思考模型、经验 Skill 的全局分层语言；规范真源见 [`features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)。
 - **System Entry Space**: `SingularityRoom`，系统级统一入口空间。
+- **空间语义 type_code（`trait_class: SPACE`）与 `space` 命令**: 图本体中 `building` / `building_floor` / `room` 等为空间类节点；**层级归属**的目标真源为 **`Node.location_id` 单父链**（Evennia 式；子空间 `location_id` 指向唯一父空间），**避免**用关系边密铺表达包含导致边膨胀。**`room` 间可通行邻接**为 **`connects_to`**，与 `look` 一致。系统命令 `space` 的按 id 查询与段 4 策略见 [`../../command/SPEC/features/CMD_space.md`](../../command/SPEC/features/CMD_space.md)（与命令侧规范对齐，**非** ORM `Building` 类独占地）。
 - **World Default Spawn**: 某个世界内部默认出生点（例如 `campus_life/campus`）。
 - **Last Location Resume**: 用户重连后的位置恢复策略。
 

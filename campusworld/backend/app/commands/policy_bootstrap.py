@@ -17,6 +17,8 @@ class PolicySeed(TypedDict, total=False):
 
 
 # Keys are primary command names (registry), not aliases.
+# Read-only graph commands (find, describe, space) use the default empty seed = allow when logged in;
+# enforcement matches other user commands unless a policy row overrides.
 DEFAULT_COMMAND_POLICIES: Dict[str, PolicySeed] = {
     # Most user-facing commands should be available by default (empty policy == allow).
     # Game/world constraints should be enforced by command execution logic, not authz.

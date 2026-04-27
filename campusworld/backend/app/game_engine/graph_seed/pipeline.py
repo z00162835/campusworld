@@ -339,6 +339,39 @@ def _effective_strict_relationships(
     return bool(getattr(profile, "strict_relationships", False))
 
 
+def _sync_space_hierarchy_location_ids(
+    session: Session,
+    id_to_node: Dict[str, Node],
+    world_id: str,
+) -> None:
+    """
+    Set ``Node.location_id`` for SPACE types so child.parent forms a single chain:
+    world (optional) ← building ← building_floor ← room.
+
+    Source of truth: package spatial fields on merged ``attributes`` (``world_id``,
+    ``building_id``, ``floor_id``) and ``id_to_node`` logical id keys.
+    """
+    for _logical_id, node in id_to_node.items():
+        tc = str(node.type_code or "")
+        attrs = dict(node.attributes or {})
+        if tc == "building":
+            wid = str(attrs.get("world_id") or world_id).strip()
+            parent = id_to_node.get(wid)
+            if parent is not None and int(node.location_id or 0) != int(parent.id):
+                node.location_id = int(parent.id)
+        elif tc == "building_floor":
+            bid = str(attrs.get("building_id") or "").strip()
+            parent = id_to_node.get(bid)
+            if parent is not None and int(node.location_id or 0) != int(parent.id):
+                node.location_id = int(parent.id)
+        elif tc == "room":
+            fid = str(attrs.get("floor_id") or "").strip()
+            parent = id_to_node.get(fid)
+            if parent is not None and int(node.location_id or 0) != int(parent.id):
+                node.location_id = int(parent.id)
+    session.flush()
+
+
 def _prune_world_topology_auto_connects(session: Session, world_node_ids: Set[int]) -> int:
     """
     Remove stale auto-generated in-world connects_to edges before re-applying snapshot relationships.
@@ -481,6 +514,10 @@ def run_graph_seed(
             rels_created += 1
         else:
             rels_skipped += 1
+
+    # Evennia-style: single-parent location_id chain for SPACE hierarchy (building → floor → room).
+    # Avoids using connects_to to model containment. Uses spatial attributes already merged on nodes.
+    _sync_space_hierarchy_location_ids(session, id_to_node, world_id)
 
     # Bidirectional connects_to: add reverse when only one directed edge declared
     for a, b in list(connects_pairs):

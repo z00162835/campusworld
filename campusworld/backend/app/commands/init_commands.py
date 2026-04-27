@@ -92,28 +92,23 @@ def initialize_commands(force_reinit: bool = False) -> bool:
         logger.info("command init: registering system + agent + game commands")
         from .agent_commands import get_agent_commands
         AGENT_COMMANDS = get_agent_commands()
-            # 注册系统命令
+
+        # 统一系统命令注册清单（四类）：SYSTEM / PRIMER / GRAPH_INSPECT / AGENT
+        system_command_groups = [
+            ("SYSTEM_COMMANDS", SYSTEM_COMMANDS),
+            ("PRIMER_COMMANDS", PRIMER_COMMANDS),
+            ("GRAPH_INSPECT_COMMANDS", GRAPH_INSPECT_COMMANDS),
+            ("AGENT_COMMANDS", AGENT_COMMANDS),
+        ]
+
+        # 注册系统命令
         system_success = 0
-        for command in SYSTEM_COMMANDS:
-            if command_registry.register_command(command):
-                system_success += 1
-            else:
-                logger.error(f"系统命令 '{command.name}' 注册失败")
-        for command in PRIMER_COMMANDS:
-            if command_registry.register_command(command):
-                system_success += 1
-            else:
-                logger.error(f"系统命令 '{command.name}' 注册失败")
-        for command in GRAPH_INSPECT_COMMANDS:
-            if command_registry.register_command(command):
-                system_success += 1
-            else:
-                logger.error(f"系统命令 '{command.name}' 注册失败")
-        for command in AGENT_COMMANDS:
-            if command_registry.register_command(command):
-                system_success += 1
-            else:
-                logger.error(f"系统命令 '{command.name}' 注册失败")
+        for _group_name, commands in system_command_groups:
+            for command in commands:
+                if command_registry.register_command(command):
+                    system_success += 1
+                else:
+                    logger.error(f"系统命令 '{command.name}' 注册失败")
 
             # 注册场景命令
         game_success = 0
@@ -145,12 +140,7 @@ def initialize_commands(force_reinit: bool = False) -> bool:
         _ = command_registry.get_commands_summary()
         logger.info("command init: scheduling command ability graph sync (non-blocking)")
         _schedule_command_ability_sync()
-        expected_sys = (
-            len(SYSTEM_COMMANDS)
-            + len(PRIMER_COMMANDS)
-            + len(GRAPH_INSPECT_COMMANDS)
-            + len(AGENT_COMMANDS)
-        )
+        expected_sys = sum(len(commands) for _, commands in system_command_groups)
         success = system_success == expected_sys and game_success == len(GAME_COMMANDS)
         return success
 

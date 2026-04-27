@@ -63,6 +63,45 @@ commands:
       Shortcuts: #<id>, *<account>. Returns data.results [{id,type_code,name,location_id,description}] + total/next_offset. Not semantic.
   describe:
     description: "Show a single node's details (type, name, description, attrs, edges)."
+  space:
+    description: "SPACE node summary by id (appearance, occupants, devices, relations)"
+    usage:
+      line: "space -t | space -i <node_id>"
+    section:
+      title:
+        "1": "Space description:"
+        "2": "Space occupants:"
+        "3": "Space devices:"
+        "4": "Space relations:"
+    table:
+      header:
+        id: "id"
+        name: "name"
+        direction: "direction"
+        type_code: "type_code"
+        status: "status"
+        description: "description"
+    s1:
+      name: "name: {n}"
+      local_name: "also known: {n}"
+      tagline: "tagline: {n}"
+      short_desc: "short: {n}"
+      floor_name: "floor: {n}"
+      exit: "exit {dir}: {name}"
+    type_list:
+      title: "SPACE type_code"
+      empty: "(no SPACE types)"
+      footer: "total: {n}"
+    empty:
+      row: "(none)"
+    error:
+      no_session: "requires an active DB session"
+      not_found: "node not found or not a space"
+      bad_i: "-i requires a node id"
+      bad_id: "node id must be a positive integer"
+      unknown_flag: "unknown flag: {token}"
+    flags:
+      bad_combo: "cannot combine -t with -i"
   primer:
     description: >-
       System primer — prefer `primer <section>` (e.g. primer ontology) to save tokens;

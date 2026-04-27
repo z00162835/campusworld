@@ -110,6 +110,7 @@ CommandResult（成功/失败，自然语言在实现中构造）
 | `create_info` | ADMIN | `cinfo`, `model_info` | [CMD_create_info](features/CMD_create_info.md) |
 | `describe` | SYSTEM | `ex`, `examine` | [CMD_describe](features/CMD_describe.md) 深契约占 [F01](features/F01_FIND_COMMAND.md) |
 | `find` | SYSTEM | `@find`, `locate` | [CMD_find](features/CMD_find.md) 深契约占 [F01](features/F01_FIND_COMMAND.md) |
+| `space` | SYSTEM | — | [CMD_space](features/CMD_space.md)（目标契约；**未**在注册表至实现前见文档 Metadata） |
 | `help` | SYSTEM | `h`, `?` | [CMD_help](features/CMD_help.md) |
 | `primer` | SYSTEM | `manual` | [CMD_primer](features/CMD_primer.md) |
 | `quit` | SYSTEM | `exit`, `q` | [CMD_quit](features/CMD_quit.md) |
@@ -148,7 +149,7 @@ CommandResult（成功/失败，自然语言在实现中构造）
 
 ### 图检索命令
 
-CampusWorld 的只读图检索由 `find`（列表）与 `describe`（单节点深度）两命令承担；两者的 **唯一权威契约** 在 [`docs/command/SPEC/features/F01_FIND_COMMAND.md`](features/F01_FIND_COMMAND.md)，本文件不再重复描述参数与返回契约。
+CampusWorld 的只读图检索由 `find`（列表）与 `describe`（单节点深度）两命令承担；两者的 **唯一权威契约** 在 [`docs/command/SPEC/features/F01_FIND_COMMAND.md`](features/F01_FIND_COMMAND.md)，本文件不再重复描述参数与返回契约。规划中的 **`space`** 按**空间**节点分段输出环境/占用者/设备/下一层或联通空间，契约见 [CMD_space](features/CMD_space.md)，与 `look` 的 room 联通关系对齐；**实现落地后**与本节命令表一并用注册表快照对账。
 
 ## Acceptance Criteria
 

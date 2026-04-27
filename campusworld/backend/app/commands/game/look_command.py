@@ -230,43 +230,9 @@ class LookCommand(GameCommand):
 
     def _exit_entries_from_connects_to(self, session, room_node_id: int) -> List[Dict[str, Any]]:
         """Outgoing graph exits as structured entries for readable room output."""
-        from app.game_engine.direction_util import normalize_direction
-        from app.models.graph import Node, Relationship
+        from app.commands.room_connects_to_query import connects_to_exit_entries_for_look
 
-        entries: List[Dict[str, Any]] = []
-        outgoing = (
-            session.query(Relationship, Node)
-            .join(Node, Relationship.target_id == Node.id)
-            .filter(
-                Relationship.source_id == room_node_id,
-                Relationship.type_code == "connects_to",
-                Relationship.is_active == True,  # noqa: E712
-                Node.is_active == True,  # noqa: E712
-            )
-            .all()
-        )
-        for rel, target in outgoing:
-            rattrs = dict(rel.attributes or {})
-            raw = str(rattrs.get("direction") or "").strip().lower()
-            if raw:
-                direction = normalize_direction(raw)
-            else:
-                pkg = str((target.attributes or {}).get("package_node_id") or "").strip().lower()
-                direction = pkg if pkg else ""
-            if not direction:
-                continue
-            tgt = self._target_room_display(target)
-            entries.append(
-                {
-                    "direction": direction,
-                    "target_display_name": tgt["target_display_name"],
-                    "target_short_desc": tgt["target_short_desc"],
-                    "target_package_node_id": tgt["target_package_node_id"],
-                    "is_cross_world": False,
-                }
-            )
-        entries.sort(key=lambda x: (str(x.get("direction") or ""), str(x.get("target_display_name") or "")))
-        return entries
+        return connects_to_exit_entries_for_look(session, room_node_id)
 
     def _get_room_from_graph_data(self, context: CommandContext, room_id: str) -> Optional[Dict[str, Any]]:
         """从图数据获取房间信息"""
