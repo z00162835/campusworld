@@ -4,6 +4,11 @@
 
 CampusWorld 采用**纯图数据设计**，所有模型基于图数据结构，存储在统一的 Node 表中，通过 type 和 typeclass 区分不同的对象类型。
 
+### Node 行 → 内存对象（hydrate）
+
+- 持久化以 `nodes` 表为准；从已有 `Node` 构造 `DefaultObject` 子类时，须 **`disable_auto_sync=True`** 或统一走 **`GraphSynchronizer.sync_node_to_object`**（含 `ModelManager._node_to_object` 委托路径），避免 `DefaultObject.__init__` 末尾按新 uuid **隐式 INSERT** 重复行。
+- 新建节点并要落库时，使用显式 **`sync_to_node` / `sync_object_to_node`** 或单次 ORM `Node` 写入，避免「内存构造已 sync + 手写 `Node`」双写。
+
 ## 模型列表
 
 ### 基础模型 (base.py)

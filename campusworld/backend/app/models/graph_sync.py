@@ -166,22 +166,110 @@ class GraphSynchronizer:
     # ==================== 图节点到对象同步 ====================
     
     def sync_node_to_object(self, node: Node, obj_class: Type['DefaultObject']) -> Optional['DefaultObject']:
-        """将图节点同步到DefaultObject"""
+        """从持久化 ``Node`` 构造内存中的 ``DefaultObject`` 子类实例（DB→内存单向）。
+
+        不在此处执行 ``sync_object_to_node``：构造过程必须 ``disable_auto_sync=True``，
+        否则 ``DefaultObject.__init__`` 末尾会按**新生成的** ``_node_uuid`` 插入一行重复节点。
+        与 Evennia 的惯例一致：数据库行是真相源；进程内对象是对该行的代理，首次 hydrate
+        不应隐式 ``save`` 出新库行。列字段（``location_id`` / ``home_id`` 等）与 ``uuid``
+        在抑制自动同步后从 ``node`` 对齐到对象。
+        未单独登记的 typeclass 若构造函数签名非 ``(name, **kwargs)``，应在此补分支。
+        """
         try:
-            # 从节点属性创建对象（不包含name）
-            attributes = node.attributes or {}
-            
-            # 从节点的独立name字段获取名称
-            name = node.name
-            
-            # 创建对象实例
-            obj = obj_class(name=name, **attributes)
-            
-            # 设置节点UUID
-            obj._node_uuid = node.uuid
-            
+            import inspect
+
+            from app.models.accounts import DefaultAccount
+            from app.models.exit import Exit
+            from app.models.room import Room
+
+            if not inspect.isclass(obj_class):
+                self.logger.error("sync_node_to_object: obj_class is not a type: %r", obj_class)
+                return None
+
+            raw_attrs = dict(node.attributes or {})
+            name = (node.name or "").strip()
+
+            tags_val = node.tags
+            if tags_val is None:
+                tags_list: List[Any] = []
+            elif isinstance(tags_val, list):
+                tags_list = list(tags_val)
+            else:
+                tags_list = list(tags_val or [])
+
+            common_kw: Dict[str, Any] = {
+                "disable_auto_sync": True,
+                "location_id": node.location_id,
+                "home_id": node.home_id,
+                "description": node.description or "",
+                "is_active": bool(node.is_active),
+                "is_public": bool(node.is_public),
+                "access_level": node.access_level or "normal",
+                "tags": tags_list,
+            }
+
+            def _apply_column_alignment(obj: Any) -> None:
+                obj._node_uuid = str(node.uuid)
+                obj._node_location_id = node.location_id
+                obj._node_home_id = node.home_id
+                if node.description is not None:
+                    obj._node_description = node.description or ""
+                obj._node_is_active = bool(node.is_active)
+                obj._node_is_public = bool(node.is_public)
+                obj._node_access_level = node.access_level or "normal"
+                obj._node_tags = list(tags_list)
+                if getattr(node, "created_at", None) is not None:
+                    obj._node_created_at = node.created_at
+                if getattr(node, "updated_at", None) is not None:
+                    obj._node_updated_at = node.updated_at
+
+            if issubclass(obj_class, Room):
+                room_attrs = dict(raw_attrs)
+                room_attrs.pop("tags", None)
+                room_attrs.pop("name", None)
+                obj = Room(name=name, disable_auto_sync=True, **room_attrs)
+                _apply_column_alignment(obj)
+                return obj
+
+            if issubclass(obj_class, Exit):
+                src = raw_attrs.get("source_room_id")
+                dst = raw_attrs.get("destination_room_id")
+                if src is None or dst is None:
+                    self.logger.error(
+                        "sync_node_to_object: exit node missing source_room_id/destination_room_id id=%s",
+                        getattr(node, "id", None),
+                    )
+                    return None
+                cfg_attrs = {
+                    k: v
+                    for k, v in raw_attrs.items()
+                    if k not in ("source_room_id", "destination_room_id")
+                }
+                cfg: Dict[str, Any] = {}
+                if cfg_attrs:
+                    cfg["attributes"] = cfg_attrs
+                if tags_list:
+                    cfg["tags"] = tags_list
+                obj = Exit(
+                    name=name,
+                    source_room_id=int(src),
+                    destination_room_id=int(dst),
+                    config=cfg or None,
+                    disable_auto_sync=True,
+                )
+                _apply_column_alignment(obj)
+                return obj
+
+            if issubclass(obj_class, DefaultAccount):
+                username = raw_attrs.pop("username", None) or name
+                email = raw_attrs.pop("email", None) or ""
+                obj = obj_class(username=username, email=email, **raw_attrs, **common_kw)
+            else:
+                obj = obj_class(name=name, **raw_attrs, **common_kw)
+
+            _apply_column_alignment(obj)
             return obj
-            
+
         except Exception as e:
             self.logger.error(f"同步图节点到对象失败: {e}")
             return None

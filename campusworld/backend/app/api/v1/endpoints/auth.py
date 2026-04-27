@@ -24,7 +24,7 @@ from app.core.security import (
 )
 from app.core.auth_service import AuthService
 from app.models.user import User
-from app.models.graph import Node
+from app.models.graph import Node, NodeType
 from app.models.system import ApiKey
 from app.schemas.auth import Token, UserCreate
 from app.schemas.account import RefreshTokenRequest, RefreshTokenResponse
@@ -85,10 +85,12 @@ def register(
         )
 
     hashed_password = get_password_hash(user_data.password)
+    # 禁止构造时写图；图账号行由下方单次 Node 写入（与 accounts API 单写语义一致）
     user = User(
         email=user_data.email,
         username=user_data.username,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        disable_auto_sync=True,
     )
 
     db.add(user)
@@ -97,8 +99,27 @@ def register(
 
     account_node = db.query(Node).filter(
         Node.type_code == "account",
-        Node.name == user_data.username
+        Node.name == user_data.username,
     ).first()
+
+    if not account_node:
+        account_type = db.query(NodeType).filter(NodeType.type_code == "account").first()
+        if account_type:
+            account_node = Node(
+                uuid=user.get_node_uuid(),
+                type_id=account_type.id,
+                type_code="account",
+                name=user_data.username,
+                description=f"用户账号: {user_data.username}",
+                is_active=True,
+                is_public=False,
+                access_level=user.get_node_access_level(),
+                attributes=user._node_attributes,
+                tags=user._node_tags,
+            )
+            db.add(account_node)
+            db.commit()
+            db.refresh(account_node)
 
     device = user_agent or "unknown"
 

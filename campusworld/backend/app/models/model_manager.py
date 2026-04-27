@@ -307,18 +307,13 @@ class ModelManager(ModelManager):
             return False
     
     def _node_to_object(self, node: Node) -> Optional[DefaultObject]:
-        """将Node转换为DefaultObject"""
+        """将 Node 转为内存对象（DB→内存单向 hydrate，见 GraphSynchronizer.sync_node_to_object）。"""
         try:
-            # 获取节点类
             node_class = self._get_node_type_class(node.type_code)
             if not node_class:
                 self.logger.warning(f"未找到节点类型对应的类: {node.type_code}")
                 return None
-            
-            # 创建对象 - 修复参数名
-            obj = node_class(name=node.name, **node.attributes or {})
-            obj._node_uuid = str(node.uuid)
-            return obj
+            return self.synchronizer.sync_node_to_object(node, node_class)
         except Exception as e:
             self.logger.error(f"转换Node到Object失败: {e}")
             return None

@@ -176,18 +176,23 @@ class SSHSession:
             self._user_object = self._load_user_object()
         return self._user_object
     def _load_user_object(self) -> Optional[Any]:
-        """加载用户对象"""
+        """从图库加载账号到内存（单向 hydrate，不写新 ``nodes`` 行）。
+
+        禁止 ``User(**attributes)`` 走默认构造里的 ``sync_to_node``，否则会按新 uuid
+        插入重复 ``account`` 节点；见 ``GraphSynchronizer.sync_node_to_object``。
+        """
         try:
+            from app.models.graph_sync import GraphSynchronizer
+
             with db_session_context() as session:
                 user_node = session.query(Node).filter(
                     Node.id == self.user_id,
-                    Node.type_code == 'account',
-                    Node.is_active == True
+                    Node.type_code == "account",
+                    Node.is_active == True,
                 ).first()
-                if user_node:
-                    attrs = user_node.attributes
-                    return User(**attrs)
-                return None
+                if not user_node:
+                    return None
+                return GraphSynchronizer().sync_node_to_object(user_node, User)
         except Exception as e:
             logger.error(f"Failed to load user object: {e}")
             return None

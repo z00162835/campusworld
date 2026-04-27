@@ -201,16 +201,14 @@ async def create_new_account(
                 detail=f"不支持的账号类型: {account_data.account_type}"
             )
         
-        # 创建账号对象
+        # 内存中组装属性；禁止构造时 sync（避免与下方 ORM Node 单次写入重复 INSERT）
         new_account = account_class(
             username=account_data.username,
             email=account_data.email,
-            password=account_data.password
+            password=account_data.password,
+            disable_auto_sync=True,
         )
-        
-        # 同步到数据库
-        new_account._schedule_node_sync()
-        
+
         # 获取账号类型信息
         account_type = db.query(NodeType).filter(
             NodeType.type_code == "account"

@@ -421,16 +421,11 @@ class Room(DefaultObject):
                     node = session.query(Node).filter(Node.uuid == exit_id).first()
                 
                 if node and node.type_code == 'exit':
-                    # 转换为 Exit 对象
-                    from .exit import Exit
-                    exit_obj = Exit(
-                        name=node.name,
-                        source_room_id=node.attributes.get('source_room_id') if node.attributes else None,
-                        destination_room_id=node.attributes.get('destination_room_id') if node.attributes else None,
-                        config={'attributes': node.attributes or {}}
-                    )
-                    exit_obj._node_uuid = str(node.uuid)
-                    if hasattr(node, 'id'):
+                    from app.models.exit import Exit
+                    from app.models.graph_sync import GraphSynchronizer
+
+                    exit_obj = GraphSynchronizer().sync_node_to_object(node, Exit)
+                    if exit_obj is not None and hasattr(node, "id"):
                         exit_obj.id = node.id
                     return exit_obj
                 

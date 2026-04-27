@@ -23,6 +23,7 @@ class Exit(DefaultObject):
     
     def __init__(self, name: str, source_room_id: int, destination_room_id: int, 
                  config: Dict[str, Any] = None, **kwargs):
+        disable_auto_sync = bool(kwargs.pop("disable_auto_sync", False))
         # 设置出口特定的节点类型
         self._node_type = 'exit'
         
@@ -108,7 +109,7 @@ class Exit(DefaultObject):
         # 设置出口的位置为源房间
         default_config['location_id'] = source_room_id
         
-        super().__init__(name=name, **default_config)
+        super().__init__(name=name, disable_auto_sync=disable_auto_sync, **default_config)
     
     def __repr__(self):
         exit_name = self._node_attributes.get('exit_name', '')

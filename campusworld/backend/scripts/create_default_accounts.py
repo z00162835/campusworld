@@ -62,7 +62,8 @@ def create_default_accounts():
             email='admin@campusworld.com',
             hashed_password=get_password_hash('admin123'),
             description='系统管理员账号，拥有所有管理权限',
-            created_by='system'
+            created_by='system',
+            disable_auto_sync=True,
         )
         
         # 处理datetime序列化问题
@@ -104,7 +105,8 @@ def create_default_accounts():
             email='dev@campusworld.com',
             hashed_password=get_password_hash('dev123'),
             description='开发者账号，拥有开发和调试权限',
-            created_by='admin'
+            created_by='admin',
+            disable_auto_sync=True,
         )
         
         # 处理datetime序列化问题
@@ -145,7 +147,8 @@ def create_default_accounts():
             email='campus@campusworld.com',
             hashed_password=get_password_hash('campus123'),
             description='园区用户账号，用于测试园区功能',
-            created_by='admin'
+            created_by='admin',
+            disable_auto_sync=True,
         )
         
         # 处理datetime序列化问题
