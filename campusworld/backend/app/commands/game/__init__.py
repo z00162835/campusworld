@@ -10,6 +10,7 @@ from .leave_world_command import LeaveWorldCommand
 from .direction_command import build_direction_commands
 from .notice_command import NoticeCommand
 from .world_command import WorldCommand
+from .task import TASK_COMMANDS, TaskCommand
 
 # 场景命令列表
 GAME_COMMANDS = [
@@ -19,6 +20,7 @@ GAME_COMMANDS = [
     *build_direction_commands(),
     NoticeCommand(),
     WorldCommand(),
+    *TASK_COMMANDS,
 ]
 
 __all__ = [
@@ -27,5 +29,6 @@ __all__ = [
     'LeaveWorldCommand',
     'NoticeCommand',
     'WorldCommand',
+    'TaskCommand',
     'GAME_COMMANDS',
 ]

@@ -185,3 +185,76 @@ commands:
     description: "Move in"
   out:
     description: "Move out"
+  task:
+    description: "Task command family (create / publish / claim / assign / complete / list / show / pool ...)"
+    usage:
+      root: "task <subcommand> [args]; available: create / list / show / claim / assign / publish / complete / pool"
+      create: "task create --title <T> [--workflow <key>] [--to-pool <pool_key>] [--priority <p>] [--visibility <v>] [--idempotency-key <k>]"
+      claim: "task claim <id> [--idempotency-key <k>]"
+      assign: "task assign <id> --to <principal_id> [--kind user|agent|group] [--idempotency-key <k>]"
+      publish: "task publish <id> --to-pool <pool_key> [--idempotency-key <k>]"
+      complete: "task complete <id> [--idempotency-key <k>]"
+      list: "task list [--mine|--pool <key>|--assigned] [--limit N] [--offset O]"
+      show: "task show <id>"
+      pool: "task pool <list|show|create|update|disable|enable> [args]"
+      pool_list: "task pool list [--scope <prefix>] [--include-inactive]"
+      pool_show: "task pool show <key>"
+      pool_create: "task pool create <key> --display-name <N> [--workflow <k>:<v>] [--visibility <v>] [--priority <p>] [--description <D>]"
+      pool_update: "task pool update <key> [--display-name <N>] [--description <D>] [--visibility <v>] [--priority <p>]"
+      pool_disable: "task pool disable <key>"
+      pool_enable: "task pool enable <key>"
+    create:
+      success: "Task created: #{task_id} state={to_state} version={state_version}"
+    publish:
+      success: "Task published: #{task_id} pool={pool_key} state={to_state}"
+    claim:
+      success: "Task claimed: #{task_id} state={to_state} version={state_version}"
+    assign:
+      success: "Task assigned: #{task_id} state={to_state} version={state_version}"
+    complete:
+      success: "Task completed: #{task_id} state={to_state} version={state_version}"
+    list:
+      header: "Task list (total={total}, rows {offset}–{end})"
+      empty: "No tasks match."
+      row: "#{id}  state={state}  pool={pool_key}  priority={priority}  title={title}"
+    show:
+      title: "Task #{id}"
+    pool:
+      list:
+        header: "Task pools (total={total})"
+        empty: "No active task pools."
+        row: "{key}  active={is_active}  visibility={visibility}  priority={priority}  workflow={workflow}"
+      show:
+        title: "Task pool {key}"
+      create:
+        success: "Task pool created: {key} (id={id})"
+      update:
+        success: "Task pool updated: {key}"
+      disable:
+        success: "Task pool disabled: {key}"
+      enable:
+        success: "Task pool enabled: {key}"
+    error:
+      generic: "Task system error: {detail}"
+      forbidden: "Permission denied for task operation: {detail}"
+      not_found: "Task not found: #{task_id}"
+      invalid_event: "Workflow does not allow this event: {detail}"
+      version_stale: "State version is stale; refresh and retry: {detail}"
+      already_claimed: "Task already claimed: {detail}"
+      role_required: "Required role missing: {detail}"
+      precondition_failed: "Precondition failed: {detail}"
+      workflow_not_found: "Workflow definition not found: {detail}"
+      workflow_inactive: "Workflow definition is inactive: {detail}"
+      pool_not_found: "Task pool not found: {detail}"
+      pool_inactive: "Task pool is inactive: {detail}"
+      publish_denied: "Publish denied by pool ACL: {detail}"
+      consume_denied: "Claim denied by pool ACL: {detail}"
+      children_not_terminal: "Child tasks not yet terminal: {detail}"
+      cycle_detected: "Task dependency would form a cycle: {detail}"
+      selector_bounds_exceeded: "Selector bounds exceeded: {detail}"
+      empty_selector: "Selector is empty: {detail}"
+      unknown_trait_class: "Unknown trait_class: {detail}"
+      unknown_trait_mask: "Unknown trait_mask name: {detail}"
+      expansion_backpressure: "expand backpressure: {detail}"
+      unauthenticated: "Caller is not authenticated via the account system; task system refuses to act: {detail}"
+      visibility_unsupported: "Visibility level not supported (allowed: private, explicit, pool_open): {detail}"

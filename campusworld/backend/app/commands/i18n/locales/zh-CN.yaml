@@ -177,3 +177,76 @@ commands:
     description: "向内移动"
   out:
     description: "向外/离开方向移动"
+  task:
+    description: "任务命令（create / publish / claim / assign / complete / list / show / pool ...）"
+    usage:
+      root: "task <子命令> [参数]；可用：create / list / show / claim / assign / publish / complete / pool"
+      create: "task create --title <T> [--workflow <key>] [--to-pool <pool_key>] [--priority <p>] [--visibility <v>] [--idempotency-key <k>]"
+      claim: "task claim <id> [--idempotency-key <k>]"
+      assign: "task assign <id> --to <principal_id> [--kind user|agent|group] [--idempotency-key <k>]"
+      publish: "task publish <id> --to-pool <pool_key> [--idempotency-key <k>]"
+      complete: "task complete <id> [--idempotency-key <k>]"
+      list: "task list [--mine|--pool <key>|--assigned] [--limit N] [--offset O]"
+      show: "task show <id>"
+      pool: "task pool <list|show|create|update|disable|enable> [args]"
+      pool_list: "task pool list [--scope <prefix>] [--include-inactive]"
+      pool_show: "task pool show <key>"
+      pool_create: "task pool create <key> --display-name <N> [--workflow <k>:<v>] [--visibility <v>] [--priority <p>] [--description <D>]"
+      pool_update: "task pool update <key> [--display-name <N>] [--description <D>] [--visibility <v>] [--priority <p>]"
+      pool_disable: "task pool disable <key>"
+      pool_enable: "task pool enable <key>"
+    create:
+      success: "任务已创建：#{task_id} 状态={to_state} 版本={state_version}"
+    publish:
+      success: "任务已发布到池：#{task_id} 池={pool_key} 状态={to_state}"
+    claim:
+      success: "任务已认领：#{task_id} 状态={to_state} 版本={state_version}"
+    assign:
+      success: "任务已派发：#{task_id} 状态={to_state} 版本={state_version}"
+    complete:
+      success: "任务已完成：#{task_id} 状态={to_state} 版本={state_version}"
+    list:
+      header: "任务清单（共 {total} 条，第 {offset}–{end} 条）"
+      empty: "未匹配任何任务。"
+      row: "#{id}  state={state}  pool={pool_key}  priority={priority}  title={title}"
+    show:
+      title: "任务 #{id}"
+    pool:
+      list:
+        header: "任务池清单（共 {total} 个）"
+        empty: "暂无激活的任务池。"
+        row: "{key}  active={is_active}  visibility={visibility}  priority={priority}  workflow={workflow}"
+      show:
+        title: "任务池 {key}"
+      create:
+        success: "任务池已创建：{key} (id={id})"
+      update:
+        success: "任务池已更新：{key}"
+      disable:
+        success: "任务池已停用：{key}"
+      enable:
+        success: "任务池已启用：{key}"
+    error:
+      generic: "任务系统错误：{detail}"
+      forbidden: "无权限执行任务操作：{detail}"
+      not_found: "未找到任务 #{task_id}"
+      invalid_event: "工作流不允许该事件：{detail}"
+      version_stale: "状态版本已变更，请刷新后重试：{detail}"
+      already_claimed: "任务已被认领：{detail}"
+      role_required: "缺少所需角色：{detail}"
+      precondition_failed: "前置条件未满足：{detail}"
+      workflow_not_found: "工作流定义未找到：{detail}"
+      workflow_inactive: "工作流定义已停用：{detail}"
+      pool_not_found: "任务池未找到：{detail}"
+      pool_inactive: "任务池已停用：{detail}"
+      publish_denied: "发布被池 ACL 拒绝：{detail}"
+      consume_denied: "认领被池 ACL 拒绝：{detail}"
+      children_not_terminal: "子任务尚未全部终态：{detail}"
+      cycle_detected: "任务依赖关系会形成环：{detail}"
+      selector_bounds_exceeded: "选择器越界：{detail}"
+      empty_selector: "选择器为空：{detail}"
+      unknown_trait_class: "未知 trait_class：{detail}"
+      unknown_trait_mask: "未知 trait_mask 名：{detail}"
+      expansion_backpressure: "expand 背压：{detail}"
+      unauthenticated: "调用方未通过账号系统认证，任务系统拒绝处理：{detail}"
+      visibility_unsupported: "不支持该可见性等级（仅支持 private / explicit / pool_open）：{detail}"
