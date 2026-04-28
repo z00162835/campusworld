@@ -85,6 +85,16 @@ GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, st
         "LoungeFurniture",
         "app.models.things.seating",
     ),
+    # Task node (docs/task/SPEC F01) — generic graph node, no dedicated ORM model.
+    # typeclass / module_path are informational; node_types stores them as strings.
+    (
+        "task",
+        "default_object",
+        "任务",
+        "app.models.task.Task",
+        "Task",
+        "app.models.task",
+    ),
 )
 
 
@@ -787,6 +797,128 @@ def ensure_nodes_world_id_index(engine) -> None:
                 WHERE attributes ? 'world_id'
             """,
         )
+    finally:
+        conn.close()
+
+
+def ensure_task_system_schema(engine) -> None:
+    """
+    Phase B: ensure 8 task-system relational tables exist.
+
+    SSOT: docs/task/SPEC/features/F04_TASK_RELATIONAL_SUBSTRATE_AND_OBSERVABILITY.md §3
+    Section delimited by `-- BEGIN task_system` / `-- END task_system` in
+    db/schemas/database_schema.sql.
+
+    Tables: task_workflow_definitions / task_pools / task_details / task_assignments /
+            task_state_transitions / task_runs / task_events / task_outbox
+    Plus 7 nodes JSONB expression indexes for task hot paths.
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        # Quick existence check; if all 8 + outbox already present, skip section apply.
+        rels = (
+            "task_workflow_definitions",
+            "task_pools",
+            "task_details",
+            "task_assignments",
+            "task_state_transitions",
+            "task_runs",
+            "task_events",
+            "task_outbox",
+        )
+        present = 0
+        for r in rels:
+            row = conn.execute(text(f"select to_regclass('public.{r}');")).scalar()
+            if row:
+                present += 1
+        # Always apply the section (idempotent via IF NOT EXISTS); skip-fast only logs.
+        sql_path = Path(__file__).parent / "schemas" / "database_schema.sql"
+        schema_sql = sql_path.read_text(encoding="utf-8")
+        start = "-- BEGIN task_system"
+        end = "-- END task_system"
+        if start not in schema_sql or end not in schema_sql:
+            raise SchemaMigrationError("task_system section not found in database_schema.sql")
+        section = schema_sql.split(start, 1)[1].split(end, 1)[0].strip()
+        if not section:
+            raise SchemaMigrationError("task_system section is empty")
+        _must_exec(conn, section, "apply task_system schema from database_schema.sql failed")
+        _ = present  # documented usage; kept for future verbose logging.
+    finally:
+        conn.close()
+
+
+def ensure_task_system_seed(engine) -> None:
+    """
+    Phase B: seed `default_v1` workflow + 3 hicampus pools.
+
+    Idempotent via ON CONFLICT (key, version) / (key) DO NOTHING.
+
+    SSOT:
+      - workflow spec: docs/task/SPEC/features/F03 §2.3
+      - pools:         docs/task/SPEC/features/F05 §9
+    """
+    import json
+
+    from db.seeds.task_seed import (
+        DEFAULT_WORKFLOW_SEED,
+        SEED_TASK_POOLS,
+    )
+
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        wf = DEFAULT_WORKFLOW_SEED
+        conn.execute(
+            text(
+                """
+                INSERT INTO task_workflow_definitions (key, version, spec, is_active, description)
+                VALUES (:key, :version, CAST(:spec AS jsonb), TRUE, :description)
+                ON CONFLICT (key, version) DO NOTHING
+                """
+            ),
+            {
+                "key": wf["key"],
+                "version": wf["version"],
+                "spec": json.dumps(wf["spec"], ensure_ascii=False),
+                "description": wf.get("description") or "default task workflow v1 (Phase B seed)",
+            },
+        )
+
+        for pool in SEED_TASK_POOLS:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO task_pools (
+                        key, display_name, description,
+                        owner_principal_id, owner_principal_kind,
+                        default_workflow_ref, default_visibility, default_priority,
+                        publish_acl, consume_acl, quota, attributes, is_active
+                    )
+                    VALUES (
+                        :key, :display_name, :description,
+                        NULL, NULL,
+                        CAST(:default_workflow_ref AS jsonb), :default_visibility, :default_priority,
+                        CAST(:publish_acl AS jsonb), CAST(:consume_acl AS jsonb),
+                        NULL, CAST(:attributes AS jsonb), TRUE
+                    )
+                    ON CONFLICT (key) DO NOTHING
+                    """
+                ),
+                {
+                    "key": pool["key"],
+                    "display_name": pool["display_name"],
+                    "description": pool.get("description"),
+                    "default_workflow_ref": json.dumps(
+                        pool["default_workflow_ref"], ensure_ascii=False
+                    ),
+                    "default_visibility": pool["default_visibility"],
+                    "default_priority": pool.get("default_priority", "normal"),
+                    "publish_acl": json.dumps(pool["publish_acl"], ensure_ascii=False),
+                    "consume_acl": json.dumps(pool["consume_acl"], ensure_ascii=False),
+                    "attributes": json.dumps(
+                        pool.get("attributes", {"_schema_version": 1}), ensure_ascii=False
+                    ),
+                },
+            )
     finally:
         conn.close()
 

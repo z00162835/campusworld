@@ -18,6 +18,8 @@ EVENT_BASED = 1 << 6  # 64
 MOBILE = 1 << 7  # 128
 AUTO = 1 << 8  # 256
 LOAD_BEARING = 1 << 9  # 512
+# Task identity bit (docs/task/SPEC §6 / F01 §6); reserved trait_class=TASK marker.
+TASK_MARKER = 1 << 10  # 1024
 
 # --- Common composites (HiCampus / examples) ---
 
@@ -29,6 +31,9 @@ NPC_AGENT = FACTUAL | TEMPORAL | CONTROLLABLE | EVENT_BASED | MOBILE | AUTO  # 4
 LOGICAL_ZONE = CONCEPTUAL | EVENT_BASED  # 65
 WORLD_ENTRANCE = CONCEPTUAL | SPATIAL | CONTROLLABLE | EVENT_BASED  # 101
 LOCATION_RELATIONSHIP_EDGE = CONCEPTUAL | SPATIAL  # 5 (connects_to / contains / located_in)
+# Task node baseline composite: conceptual + event-based + task marker (1 | 64 | 1024 = 1089).
+# State semantics live in workflow_definition; the mask only tags node identity.
+TASK = CONCEPTUAL | EVENT_BASED | TASK_MARKER  # 1089
 
 MASK_QUERY_ZERO_DESCRIPTION = (
     "trait_mask 过滤：0 表示不按位过滤（全量）。非 0 时使用按位与匹配；"

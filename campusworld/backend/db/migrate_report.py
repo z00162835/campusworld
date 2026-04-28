@@ -71,6 +71,8 @@ def run_schema_migrations(engine) -> List[MigrationStepResult]:
         ensure_graph_schema,
         ensure_graph_seed_ontology,
         ensure_nodes_world_id_index,
+        ensure_task_system_schema,
+        ensure_task_system_seed,
         ensure_world_runtime_schema,
     )
 
@@ -85,6 +87,8 @@ def run_schema_migrations(engine) -> List[MigrationStepResult]:
         ("ensure_builtin_node_type_schema_envelopes", ensure_builtin_node_type_schema_envelopes),
         ("ensure_account_data_access_defaults", ensure_account_data_access_defaults),
         ("ensure_nodes_world_id_index", ensure_nodes_world_id_index),
+        ("ensure_task_system_schema", ensure_task_system_schema),
+        ("ensure_task_system_seed", ensure_task_system_seed),
     ]
     results: List[MigrationStepResult] = []
     for name, fn in steps:

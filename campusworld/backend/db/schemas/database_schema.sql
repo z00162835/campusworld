@@ -342,6 +342,218 @@ CREATE INDEX IF NOT EXISTS ix_ltm_links_agent_target
     ON agent_long_term_memory_links (agent_node_id, target_ltm_id);
 -- END f02_agent_memory
 
+-- BEGIN task_system
+-- Task System (Phase B): see docs/task/SPEC/SPEC.md and features/F04_TASK_RELATIONAL_SUBSTRATE_AND_OBSERVABILITY.md
+-- 8 relational tables backing the thin `task` graph node + workflow / pool / outbox.
+-- All FKs default ON DELETE RESTRICT (SPEC §1.7 — no physical deletes in v1).
+
+-- 1. workflow definitions (versioned per (key, version))
+CREATE TABLE IF NOT EXISTS task_workflow_definitions (
+    id          BIGSERIAL PRIMARY KEY,
+    key         VARCHAR(64) NOT NULL,
+    version     INT NOT NULL,
+    spec        JSONB NOT NULL,
+    is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    description TEXT,
+    CONSTRAINT uq_task_workflow_def_key_version UNIQUE (key, version)
+);
+CREATE INDEX IF NOT EXISTS idx_task_workflow_def_active
+    ON task_workflow_definitions (key) WHERE is_active;
+
+-- 2. pools (first-class registry, F05)
+CREATE TABLE IF NOT EXISTS task_pools (
+    id                     BIGSERIAL PRIMARY KEY,
+    key                    VARCHAR(64) NOT NULL UNIQUE,
+    display_name           TEXT NOT NULL,
+    description            TEXT,
+    owner_principal_id     BIGINT NULL,
+    owner_principal_kind   VARCHAR(16) NULL,
+    default_workflow_ref   JSONB NOT NULL,
+    default_visibility     VARCHAR(32) NOT NULL,
+    default_priority       VARCHAR(16) NOT NULL DEFAULT 'normal',
+    publish_acl            JSONB NOT NULL,
+    consume_acl            JSONB NOT NULL,
+    quota                  JSONB NULL,
+    attributes             JSONB,
+    is_active              BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT chk_task_pools_key_format CHECK (
+        key ~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,3}$'
+    )
+);
+CREATE INDEX IF NOT EXISTS idx_task_pools_active ON task_pools (key) WHERE is_active;
+CREATE INDEX IF NOT EXISTS idx_task_pools_owner
+    ON task_pools (owner_principal_id) WHERE owner_principal_id IS NOT NULL;
+
+-- 3. task details (1:1 with task node)
+CREATE TABLE IF NOT EXISTS task_details (
+    task_node_id   BIGINT PRIMARY KEY REFERENCES nodes (id) ON DELETE RESTRICT,
+    description_md TEXT,
+    checklist      JSONB,
+    sla            JSONB,
+    tags           TEXT[],
+    extra          JSONB,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 4. assignments (M:N, multi-role identity link)
+CREATE TABLE IF NOT EXISTS task_assignments (
+    id                BIGSERIAL PRIMARY KEY,
+    task_node_id      BIGINT NOT NULL REFERENCES nodes (id) ON DELETE RESTRICT,
+    principal_id      BIGINT NULL,
+    principal_kind    VARCHAR(16) NOT NULL,
+    principal_tag     TEXT NULL,
+    role              VARCHAR(32) NOT NULL,
+    stage             VARCHAR(32) NOT NULL,
+    is_active         BOOLEAN NOT NULL DEFAULT TRUE,
+    assigned_by       BIGINT NULL,
+    assigned_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    released_at       TIMESTAMPTZ NULL,
+    -- OQ-19 method B: lease + heartbeat columns reserved (NULL in v1; Phase C will populate).
+    lease_expires_at  TIMESTAMPTZ NULL,
+    last_heartbeat_at TIMESTAMPTZ NULL,
+    CONSTRAINT chk_task_assignments_principal_shape CHECK (
+        (principal_kind = 'group' AND principal_tag IS NOT NULL AND principal_id IS NULL)
+        OR
+        (principal_kind <> 'group' AND principal_tag IS NULL AND principal_id IS NOT NULL)
+    )
+);
+CREATE INDEX IF NOT EXISTS idx_task_assignments_principal_active
+    ON task_assignments (principal_id, is_active)
+    WHERE principal_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_task_assignments_principal_tag_active
+    ON task_assignments (principal_tag, is_active)
+    WHERE principal_tag IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_task_assignments_task_role_stage
+    ON task_assignments (task_node_id, role, stage);
+CREATE INDEX IF NOT EXISTS idx_task_assignments_stage_active
+    ON task_assignments (stage, is_active);
+CREATE INDEX IF NOT EXISTS idx_task_assignments_lease_expiring
+    ON task_assignments (lease_expires_at)
+    WHERE is_active AND role = 'executor' AND lease_expires_at IS NOT NULL;
+
+-- 5. state transitions (append-only audit ledger; per-task event_seq monotonic)
+CREATE TABLE IF NOT EXISTS task_state_transitions (
+    id                       BIGSERIAL PRIMARY KEY,
+    task_node_id             BIGINT NOT NULL REFERENCES nodes (id) ON DELETE RESTRICT,
+    event_seq                INT NOT NULL,
+    idempotency_key          TEXT NULL,
+    idempotency_expires_at   TIMESTAMPTZ NULL,
+    from_state               VARCHAR(32) NOT NULL,
+    to_state                 VARCHAR(32) NOT NULL,
+    event                    VARCHAR(32) NOT NULL,
+    actor_principal_id       BIGINT NULL,
+    actor_principal_kind     VARCHAR(16) NOT NULL,
+    stage                    VARCHAR(32) NOT NULL,
+    reason                   TEXT,
+    correlation_id           TEXT NULL,
+    trace_id                 TEXT NULL,
+    metadata                 JSONB,
+    created_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uq_task_transitions_event_seq UNIQUE (task_node_id, event_seq),
+    CONSTRAINT chk_task_transitions_idem_shape CHECK (
+        (idempotency_key IS NULL AND idempotency_expires_at IS NULL)
+        OR
+        (idempotency_key IS NOT NULL AND idempotency_expires_at IS NOT NULL)
+    )
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_task_transitions_idempotency
+    ON task_state_transitions (task_node_id, idempotency_key)
+    WHERE idempotency_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_task_transitions_task_seq_desc
+    ON task_state_transitions (task_node_id, event_seq DESC);
+CREATE INDEX IF NOT EXISTS idx_task_transitions_correlation
+    ON task_state_transitions (correlation_id) WHERE correlation_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_task_transitions_idem_expiring
+    ON task_state_transitions (idempotency_expires_at)
+    WHERE idempotency_key IS NOT NULL;
+
+-- 6. runs (PDCA + expansion)
+CREATE TABLE IF NOT EXISTS task_runs (
+    id                    BIGSERIAL PRIMARY KEY,
+    task_node_id          BIGINT NOT NULL REFERENCES nodes (id) ON DELETE RESTRICT,
+    actor_principal_id    BIGINT NULL,
+    actor_principal_kind  VARCHAR(16) NOT NULL,
+    phase                 VARCHAR(32) NOT NULL,
+    status                VARCHAR(32) NOT NULL,
+    command_trace         JSONB,
+    result_summary        JSONB,
+    graph_ops_summary     JSONB,
+    extra                 JSONB,
+    correlation_id        TEXT NULL,
+    trace_id              TEXT NULL,
+    started_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ended_at              TIMESTAMPTZ NULL
+);
+CREATE INDEX IF NOT EXISTS idx_task_runs_task_started
+    ON task_runs (task_node_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_task_runs_phase_status
+    ON task_runs (phase, status) WHERE status = 'running';
+CREATE INDEX IF NOT EXISTS idx_task_runs_correlation
+    ON task_runs (correlation_id) WHERE correlation_id IS NOT NULL;
+
+-- 7. observable events stream
+CREATE TABLE IF NOT EXISTS task_events (
+    id                    BIGSERIAL PRIMARY KEY,
+    task_node_id          BIGINT NOT NULL REFERENCES nodes (id) ON DELETE RESTRICT,
+    kind                  VARCHAR(64) NOT NULL,
+    actor_principal_id    BIGINT NULL,
+    actor_principal_kind  VARCHAR(16) NULL,
+    payload               JSONB,
+    correlation_id        TEXT NULL,
+    trace_id              TEXT NULL,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_task_events_task_created
+    ON task_events (task_node_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_task_events_kind_created
+    ON task_events (kind, created_at DESC);
+
+-- 8. transactional outbox (state machine writes within same tx; v1 has no dispatcher)
+CREATE TABLE IF NOT EXISTS task_outbox (
+    id              BIGSERIAL PRIMARY KEY,
+    task_node_id    BIGINT NOT NULL REFERENCES nodes (id) ON DELETE RESTRICT,
+    pool_key        VARCHAR(64) NULL,
+    event_kind      VARCHAR(64) NOT NULL,
+    payload         JSONB NOT NULL,
+    correlation_id  TEXT NULL,
+    trace_id        TEXT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    dispatched_at   TIMESTAMPTZ NULL,
+    retry_count     INT NOT NULL DEFAULT 0,
+    last_error      TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_task_outbox_pending
+    ON task_outbox (created_at) WHERE dispatched_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_task_outbox_pool_pending
+    ON task_outbox (pool_key, created_at) WHERE dispatched_at IS NULL;
+
+-- 9. nodes JSONB expression indexes for task hot paths (F04 §3.9 / OQ-30)
+CREATE INDEX IF NOT EXISTS idx_nodes_task_current_state
+    ON nodes ((attributes->>'current_state'))
+    WHERE type_code = 'task';
+CREATE INDEX IF NOT EXISTS idx_nodes_task_pool_id
+    ON nodes (((attributes->>'pool_id')::bigint))
+    WHERE type_code = 'task' AND attributes ? 'pool_id';
+CREATE INDEX IF NOT EXISTS idx_nodes_task_assignee_kind
+    ON nodes ((attributes->>'assignee_kind'))
+    WHERE type_code = 'task';
+CREATE INDEX IF NOT EXISTS idx_nodes_task_visibility
+    ON nodes ((attributes->>'visibility'))
+    WHERE type_code = 'task';
+CREATE INDEX IF NOT EXISTS idx_nodes_task_priority_created
+    ON nodes ((attributes->>'priority'), created_at)
+    WHERE type_code = 'task';
+CREATE INDEX IF NOT EXISTS idx_nodes_task_workflow_key
+    ON nodes ((attributes->'workflow_ref'->>'key'))
+    WHERE type_code = 'task';
+CREATE INDEX IF NOT EXISTS idx_nodes_task_due_at
+    ON nodes (((attributes->>'due_at')::timestamptz))
+    WHERE type_code = 'task' AND attributes ? 'due_at';
+-- END task_system
+
 -- ==================================================
 -- 第三阶段：索引（几何 / 向量 / 查询）
 -- ==================================================

@@ -482,3 +482,150 @@ node_types:
           type: string
           value_kind: static
           mutability: package_seed
+  task:
+    trait_class: TASK
+    trait_mask: 1089
+    tags:
+    - graph_seed
+    - task
+    schema_definition:
+      type: object
+      title: task attributes (v1 — docs/task/SPEC F01)
+      description: 任务节点；瘦属性 + SSOT；详情/分派/历史走独立关系表（F04）。
+      properties:
+        current_state:
+          type: string
+          title: 主状态 SSOT
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        state_version:
+          type: integer
+          title: 乐观锁版本号
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        workflow_ref:
+          type: object
+          title: 工作流引用（创建时 pin，OQ-23）
+          value_kind: static
+          mutability: instance_managed
+          properties:
+            key:
+              type: string
+            version:
+              type: integer
+        title:
+          type: string
+          title: 任务标题
+          maxLength: 120
+          value_kind: static
+          mutability: instance_managed
+        priority:
+          type: string
+          enum:
+          - low
+          - normal
+          - high
+          - urgent
+          value_kind: static
+          mutability: instance_managed
+        due_at:
+          type: string
+          title: 截止时间（ISO8601；v1 仅记录，不驱动状态机）
+          value_kind: static
+          mutability: instance_managed
+        assignee_kind:
+          type: string
+          enum:
+          - user
+          - agent
+          - pool
+          - group
+          value_kind: static
+          mutability: instance_managed
+        scope_selector:
+          type: object
+          title: 作用对象选择器（late-binding；trait_class / trait_mask 过滤）
+          value_kind: static
+          mutability: instance_managed
+          properties:
+            _schema_version:
+              type: integer
+            anchor_ref:
+              type: integer
+            bounds:
+              type: object
+              properties:
+                min:
+                  type: integer
+                max:
+                  type: integer
+            include:
+              type: array
+              items:
+                type: object
+                properties:
+                  node_id:
+                    type: integer
+                  type_code:
+                    type: string
+                  trait_class:
+                    type: string
+                  trait_mask_any_of:
+                    type: array
+                    items:
+                      type: string
+                  trait_mask_all_of:
+                    type: array
+                    items:
+                      type: string
+                  descendants_of_anchor:
+                    type: boolean
+                  tags_any:
+                    type: array
+                    items:
+                      type: string
+                  tags_all:
+                    type: array
+                    items:
+                      type: string
+                  attr_eq:
+                    type: object
+            exclude:
+              type: array
+              items:
+                type: object
+        visibility:
+          type: string
+          enum:
+          - private
+          - explicit
+          - role_scope
+          - world_scope
+          - pool_open
+          value_kind: static
+          mutability: instance_managed
+        tags:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        children_summary:
+          type:
+          - object
+          - 'null'
+          title: 父任务子节点计数瘦摘要（I8；非父任务为 null）
+          value_kind: dynamic_snapshot
+          mutability: runtime
+          properties:
+            total:
+              type: integer
+            by_state:
+              type: object
+        pool_id:
+          type:
+          - integer
+          - 'null'
+          title: 池归属（FK → task_pools.id；assignee_kind=pool 时必填）
+          value_kind: static
+          mutability: instance_managed

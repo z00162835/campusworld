@@ -40,6 +40,7 @@ def test_graph_seed_ontology_node_rows_matches_matrix_targets():
         "lighting_fixture": "world_thing",
         "conference_seating": "furniture",
         "lounge_furniture": "furniture",
+        "task": "default_object",
     }
     got = {row[0]: row[1] for row in GRAPH_SEED_ONTOLOGY_NODE_ROWS}
     assert got == expected_parent
