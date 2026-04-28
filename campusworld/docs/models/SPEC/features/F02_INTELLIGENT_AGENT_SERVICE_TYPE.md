@@ -78,6 +78,18 @@
 - **F10** 面向 **管理 UI、集成、契约测试**；**Agent 行为建模** 以 **命令 + 工具** 为第一性接口，**降低设计与运维心智负担**。
 - 详见 §6 对比表。
 
+### 4.1 任务接单契约（Task System 接续点）
+
+**Task System** 在独立模块 [`docs/task/SPEC/`](../../../task/SPEC/SPEC.md) 中以 `type_code=task` 节点 + 独立关系表组承载用户/Agent 协作任务。`npc_agent` 与任务系统的接续完全复用 §7 的既有静态字段，**无需** 在本 SPEC 引入新属性：
+
+- **订阅池家族**：实例 `subscription_bindings[].queue_name` 取值约定为 `task.pool.<scope_tag>`，其中 `<scope_tag>` 与任务节点 `attributes.pool_tags` 中的某项匹配；池视图为"无 active executor 行 + selector 家族过滤 + F11 数据范围"的并集（详见 [task F02](../../../task/SPEC/features/F02_TASK_POOL_AND_CLAIM_PROTOCOL.md)）。
+- **认领工具白名单**：`tool_allowlist` 含 `command.task.list / command.task.claim / command.task.show / command.task.complete`（最小集合）；其余命令按业务需要追加。
+- **服务账号绑定**：自主接单时 `effective principal` 为 `npc_agent.attributes.service_account_id` 指向的账号节点；与 [F11 `data_access`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 一致。
+- **PDCA 与 task_runs 关联**：Agent 在 `do` 阶段产生的命令调用经 `task_state_machine.transition` 写入 `task_runs / task_state_transitions`；`agent_run_records.correlation_id` 与 `task_runs.correlation_id` 应同源（由 `CommandContext` 注入）。
+- **记忆边界**：Agent 执行期细粒度观测仍写 `agent_memory_entries(kind=raw)`；任务侧只记**审计级**事件（见 [task F04 §7](../../../task/SPEC/features/F04_TASK_RELATIONAL_SUBSTRATE_AND_OBSERVABILITY.md#7-与-agent-记忆的边界)），避免双写长文本。
+
+> 本节仅描述对接锚点；任务节点本体、状态机、可见性矩阵、I1–I6 不变式等规范以 task SPEC 为真源。
+
 ---
 
 ## 5. 术语

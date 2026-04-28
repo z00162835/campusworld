@@ -155,6 +155,12 @@
 - `F10` AICO 性能与延迟（tick SLO、可观测性、代码重复与工具单点收敛、分阶段路线图；**扩展** [**F03**](features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md) / [**F08**](features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)）  
   [`features/F10_AICO_PERFORMANCE_AND_LATENCY.md`](features/F10_AICO_PERFORMANCE_AND_LATENCY.md)
 
+### 任务系统（独立模块，跨 models / command / database / api）
+
+- **Task System**：`type_code=task` 节点 + 独立关系子底座（`task_workflow_definitions / task_details / task_assignments / task_state_transitions / task_runs / task_events / task_outbox`）+ 唯一状态机服务 `task_state_machine.transition`；以用户/Agent 为中心的协作任务、任务池、审批接力（agent1 → admin → agent2）。设计律 D1 边稀疏 / D2 属性瘦独立表厚 / D3 SSOT 单事务幂等。  
+  主 SPEC：[`../../task/SPEC/SPEC.md`](../../task/SPEC/SPEC.md)；命令族：[`../../command/SPEC/features/CMD_task.md`](../../command/SPEC/features/CMD_task.md)。  
+  与本模块 `npc_agent`（F02）的接续点：Agent 通过既有 `triggers / subscription_bindings` 订阅 `task.pool.<scope>` 并经 `task claim` 自主接单（详见 task SPEC F02）。
+
 ## Open Questions
 
 - [ ] GraphNode/GraphEdge 表是否需要支持向量属性（用于语义搜索）？
