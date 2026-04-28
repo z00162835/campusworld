@@ -124,6 +124,15 @@ def test_nodes_jsonb_expression_indexes_present():
 
 
 @pytest.mark.unit
+def test_due_at_index_uses_materialized_epoch_ms():
+    section = _section()
+    assert "idx_nodes_task_due_at" in section
+    assert "attributes->>'due_at_epoch_ms'" in section
+    assert "::bigint" in section
+    assert "attributes ? 'due_at_epoch_ms'" in section
+
+
+@pytest.mark.unit
 def test_outbox_partial_indexes_for_dispatcher_handoff():
     """v1 has no dispatcher; partial indexes pre-create the v2 handoff path."""
     section = _section()

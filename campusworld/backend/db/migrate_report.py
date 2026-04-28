@@ -62,6 +62,7 @@ def reset_public_schema(engine) -> None:
 def run_schema_migrations(engine) -> List[MigrationStepResult]:
     from db.schema_migrations import (
         SchemaMigrationError,
+        ensure_account_permission_defaults,
         ensure_account_data_access_defaults,
         ensure_builtin_node_type_schema_envelopes,
         ensure_command_policy_schema,
@@ -86,6 +87,7 @@ def run_schema_migrations(engine) -> List[MigrationStepResult]:
         ("ensure_graph_seed_ontology", ensure_graph_seed_ontology),
         ("ensure_builtin_node_type_schema_envelopes", ensure_builtin_node_type_schema_envelopes),
         ("ensure_account_data_access_defaults", ensure_account_data_access_defaults),
+        ("ensure_account_permission_defaults", ensure_account_permission_defaults),
         ("ensure_nodes_world_id_index", ensure_nodes_world_id_index),
         ("ensure_task_system_schema", ensure_task_system_schema),
         ("ensure_task_system_seed", ensure_task_system_seed),

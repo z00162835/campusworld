@@ -306,16 +306,17 @@ def ensure_default_accounts(session) -> bool:
     if not account_type:
         return False
 
-    # 若任何默认账号已存在，则跳过创建（保持幂等）
+    # 逐账号幂等：已存在则修复缺失字段，不存在则创建。
     existing = (
         session.query(Node)
         .filter(Node.type_code == "account")
         .filter(Node.name.in_(["admin", "dev", "campus"]))
+        .order_by(Node.id.asc())
         .all()
     )
-    if existing:
-        logger.info(f"Default accounts already exist, skipping creation (idempotent)")
-        return True
+    existing_by_name = {}
+    for node in existing:
+        existing_by_name.setdefault(str(node.name), node)
 
     def _attrs(obj, data_access: dict) -> dict:
         attrs = dict(obj._node_attributes or {})
@@ -326,7 +327,7 @@ def ensure_default_accounts(session) -> bool:
         attrs["data_access"] = deepcopy(data_access)
         return attrs
 
-    logger.info("Starting default account creation...")
+    logger.info("Starting default account upsert/repair...")
 
     # 使用 disable_auto_sync=True 避免在对象创建时自动同步（会与传入的session冲突）
     # seed_data 的设计是手动创建 Node 对象，不依赖自动同步
@@ -355,46 +356,77 @@ def ensure_default_accounts(session) -> bool:
         disable_auto_sync=True,
     )
 
-    nodes = [
-        Node(
-            uuid=uuid.uuid4(),
-            type_id=account_type.id,
-            type_code="account",
-            name="admin",
-            description="系统管理员账号，拥有所有管理权限",
-            is_active=True,
-            is_public=False,
-            access_level="admin",
-            attributes=_attrs(admin, ADMIN_DATA_ACCESS),
-            tags=["system", "admin", "default"],
+    defaults = [
+        (
+            "admin",
+            "系统管理员账号，拥有所有管理权限",
+            "admin",
+            _attrs(admin, ADMIN_DATA_ACCESS),
+            ["system", "admin", "default"],
+            False,
         ),
-        Node(
-            uuid=uuid.uuid4(),
-            type_id=account_type.id,
-            type_code="account",
-            name="dev",
-            description="开发者账号，拥有开发和调试权限",
-            is_active=True,
-            is_public=False,
-            access_level="developer",
-            attributes=_attrs(dev, DEV_DATA_ACCESS),
-            tags=["system", "dev", "default"],
+        (
+            "dev",
+            "开发者账号，拥有开发和调试权限",
+            "developer",
+            _attrs(dev, DEV_DATA_ACCESS),
+            ["system", "dev", "default"],
+            False,
         ),
-        Node(
-            uuid=uuid.uuid4(),
-            type_id=account_type.id,
-            type_code="account",
-            name="campus",
-            description="园区用户账号，用于测试园区功能",
-            is_active=True,
-            is_public=True,
-            access_level="normal",
-            attributes=_attrs(campus, USER_LIKE_DATA_ACCESS),
-            tags=["system", "user", "campus", "default"],
+        (
+            "campus",
+            "园区用户账号，用于测试园区功能",
+            "normal",
+            _attrs(campus, USER_LIKE_DATA_ACCESS),
+            ["system", "user", "campus", "default"],
+            True,
         ),
     ]
 
-    session.add_all(nodes)
+    created = 0
+    repaired = 0
+    for name, description, access_level, attrs_seed, tags, is_public in defaults:
+        if name == "admin":
+            perms = attrs_seed.get("permissions")
+            if isinstance(perms, list) and "task.*" not in perms:
+                attrs_seed["permissions"] = [*perms, "task.*"]
+        node = existing_by_name.get(name)
+        if node is None:
+            node = Node(
+                uuid=uuid.uuid4(),
+                type_id=account_type.id,
+                type_code="account",
+                name=name,
+                description=description,
+                is_active=True,
+                is_public=is_public,
+                access_level=access_level,
+                attributes=attrs_seed,
+                tags=tags,
+            )
+            session.add(node)
+            created += 1
+            continue
+
+        attrs = dict(node.attributes or {})
+        changed = False
+        if not isinstance(attrs.get("roles"), list) or not attrs.get("roles"):
+            attrs["roles"] = list(attrs_seed.get("roles") or [])
+            changed = True
+        if not isinstance(attrs.get("permissions"), list) or not attrs.get("permissions"):
+            attrs["permissions"] = list(attrs_seed.get("permissions") or [])
+            changed = True
+        if attrs.get("data_access") is None:
+            attrs["data_access"] = deepcopy(attrs_seed.get("data_access"))
+            changed = True
+        if not str(attrs.get("access_level") or "").strip():
+            attrs["access_level"] = str(node.access_level or access_level)
+            changed = True
+        if changed:
+            node.attributes = attrs
+            repaired += 1
+
+    logger.info("Default accounts upsert complete created=%s repaired=%s", created, repaired)
     session.commit()
     return True
 

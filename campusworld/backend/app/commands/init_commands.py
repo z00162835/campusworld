@@ -128,8 +128,10 @@ def initialize_commands(force_reinit: bool = False) -> bool:
         try:
             from app.core.database import db_session_context
             from app.commands.policy_store import ensure_default_command_policies
+            from app.services.task.permissions import register_task_permissions_into_admin
 
             logger.info("command init: ensuring default command_policies (required for authz)")
+            register_task_permissions_into_admin()
             with db_session_context() as session:
                 ensure_default_command_policies(session)
         except Exception as e:

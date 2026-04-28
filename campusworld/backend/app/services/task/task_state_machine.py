@@ -849,7 +849,9 @@ def create_task(
             "tags": list(tags or []),
         }
         if due_at is not None:
-            attributes["due_at"] = due_at.astimezone(tz=timezone.utc).isoformat()
+            due_at_utc = due_at.astimezone(tz=timezone.utc)
+            attributes["due_at"] = due_at_utc.isoformat()
+            attributes["due_at_epoch_ms"] = int(due_at_utc.timestamp() * 1000)
         if scope_selector is not None:
             attributes["scope_selector"] = scope_selector
         if pool_id is not None:

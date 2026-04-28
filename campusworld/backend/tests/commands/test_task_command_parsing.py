@@ -157,6 +157,14 @@ def test_require_permission_global_wildcard_pass():
 
 
 @pytest.mark.unit
+def test_require_permission_admin_wildcard_does_not_cover_task_namespace():
+    ctx = _ctx(permissions=["admin.*"])
+    res = require_permission(ctx, "task.read")
+    assert res is not None
+    assert res.error == "commands.task.error.forbidden"
+
+
+@pytest.mark.unit
 def test_task_command_dispatch_unknown_subcommand_returns_error():
     from app.commands.game.task.task_command import TaskCommand
 

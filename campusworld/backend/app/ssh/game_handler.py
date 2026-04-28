@@ -149,6 +149,10 @@ class GameHandler:
 
                     # 更新最后登录时间
                     attrs["last_login"] = datetime.now().isoformat()
+                    # Keep attributes aligned with column-level access_level so
+                    # permission hydration can rely on a single source shape.
+                    if not str(attrs.get("access_level") or "").strip():
+                        attrs["access_level"] = str(user_node.access_level or "normal")
                     user_node.attributes = attrs
                     session.commit()
 

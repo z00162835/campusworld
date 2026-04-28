@@ -58,14 +58,23 @@ class SSHSession:
             self.permissions = []
         self.access_level = str(self.user_attrs.get("access_level") or "normal")
 
-        # 图账号节点通常只有 data_access / access_level，不显式存 permissions。
-        # command_policies 里大量要求 admin.* / admin.world.*；空列表会导致 check_permission 全拒。
+        # Emergency fallback only: normal path is attributes.permissions.
+        # Keep command path alive for legacy accounts while surfacing data drift.
         if not self.permissions:
             al = self.access_level.lower()
             if al in ("admin", "developer", "dev", "development"):
                 self.permissions = ["admin.*"]
             elif al in ("normal", "user", "campus"):
                 self.permissions = ["player"]
+            logger.warning(
+                "ssh_session_permission_fallback",
+                extra={
+                    "username": self.username,
+                    "user_id": self.user_id,
+                    "access_level": self.access_level,
+                    "fallback_permissions": list(self.permissions),
+                },
+            )
     
     def update_activity(self):
         """更新最后活动时间"""

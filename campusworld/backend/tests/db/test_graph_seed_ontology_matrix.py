@@ -44,3 +44,12 @@ def test_graph_seed_ontology_node_rows_matches_matrix_targets():
     }
     got = {row[0]: row[1] for row in GRAPH_SEED_ONTOLOGY_NODE_ROWS}
     assert got == expected_parent
+
+
+@pytest.mark.unit
+def test_task_node_type_uses_existing_default_object_class_metadata():
+    row = next(r for r in GRAPH_SEED_ONTOLOGY_NODE_ROWS if r[0] == "task")
+    # task is a thin graph node with no dedicated app.models.task module/class.
+    assert row[3] == "app.models.base.DefaultObject"
+    assert row[4] == "DefaultObject"
+    assert row[5] == "app.models.base"

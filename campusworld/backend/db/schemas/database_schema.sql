@@ -549,9 +549,25 @@ CREATE INDEX IF NOT EXISTS idx_nodes_task_priority_created
 CREATE INDEX IF NOT EXISTS idx_nodes_task_workflow_key
     ON nodes ((attributes->'workflow_ref'->>'key'))
     WHERE type_code = 'task';
+-- Backfill materialized due_at epoch for existing tasks.
+UPDATE nodes
+   SET attributes = jsonb_set(
+       attributes,
+       '{due_at_epoch_ms}',
+       to_jsonb((extract(epoch FROM ((attributes->>'due_at')::timestamptz)) * 1000)::bigint),
+       TRUE
+   )
+ WHERE type_code = 'task'
+   AND attributes ? 'due_at'
+   AND NOT (attributes ? 'due_at_epoch_ms')
+   AND (attributes->>'due_at') ~ (
+       '^[0-9]{4}-[0-9]{2}-[0-9]{2}T'
+       || '[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?'
+       || '(Z|[+-][0-9]{2}:[0-9]{2})$'
+   );
 CREATE INDEX IF NOT EXISTS idx_nodes_task_due_at
-    ON nodes (((attributes->>'due_at')::timestamptz))
-    WHERE type_code = 'task' AND attributes ? 'due_at';
+    ON nodes (((attributes->>'due_at_epoch_ms')::bigint))
+    WHERE type_code = 'task' AND attributes ? 'due_at_epoch_ms';
 -- END task_system
 
 -- ==================================================

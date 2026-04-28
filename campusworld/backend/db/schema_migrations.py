@@ -91,9 +91,9 @@ GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, st
         "task",
         "default_object",
         "任务",
-        "app.models.task.Task",
-        "Task",
-        "app.models.task",
+        "app.models.base.DefaultObject",
+        "DefaultObject",
+        "app.models.base",
     ),
 )
 
@@ -112,13 +112,128 @@ def _try_exec(conn, sql: str) -> None:
 
 def _must_exec(conn, sql: str, err: str) -> None:
     try:
-        # Some SQL sections include multiple statements; split naively by ';'
-        # and execute non-empty statements.
-        statements = [s.strip() for s in sql.split(";") if s.strip()]
+        # Some schema sections contain comments with semicolons.
+        # We must split only on real statement boundaries.
+        statements = _split_sql_statements(sql)
         for stmt in statements:
             conn.execute(text(stmt))
     except Exception as e:
         raise SchemaMigrationError(f"{e}") from e
+
+
+def _split_sql_statements(sql: str) -> list[str]:
+    statements: list[str] = []
+    buf: list[str] = []
+    i = 0
+    n = len(sql)
+
+    in_single = False
+    in_double = False
+    in_line_comment = False
+    in_block_comment = False
+    dollar_tag: str | None = None
+
+    while i < n:
+        ch = sql[i]
+        nxt = sql[i + 1] if i + 1 < n else ""
+
+        if in_line_comment:
+            buf.append(ch)
+            if ch == "\n":
+                in_line_comment = False
+            i += 1
+            continue
+
+        if in_block_comment:
+            buf.append(ch)
+            if ch == "*" and nxt == "/":
+                buf.append(nxt)
+                i += 2
+                in_block_comment = False
+                continue
+            i += 1
+            continue
+
+        if dollar_tag is not None:
+            if sql.startswith(dollar_tag, i):
+                buf.append(dollar_tag)
+                i += len(dollar_tag)
+                dollar_tag = None
+                continue
+            buf.append(ch)
+            i += 1
+            continue
+
+        if in_single:
+            buf.append(ch)
+            if ch == "'" and nxt == "'":
+                buf.append(nxt)
+                i += 2
+                continue
+            if ch == "'":
+                in_single = False
+            i += 1
+            continue
+
+        if in_double:
+            buf.append(ch)
+            if ch == '"':
+                in_double = False
+            i += 1
+            continue
+
+        if ch == "-" and nxt == "-":
+            buf.append(ch)
+            buf.append(nxt)
+            i += 2
+            in_line_comment = True
+            continue
+
+        if ch == "/" and nxt == "*":
+            buf.append(ch)
+            buf.append(nxt)
+            i += 2
+            in_block_comment = True
+            continue
+
+        if ch == "'":
+            buf.append(ch)
+            i += 1
+            in_single = True
+            continue
+
+        if ch == '"':
+            buf.append(ch)
+            i += 1
+            in_double = True
+            continue
+
+        if ch == "$":
+            j = i + 1
+            while j < n and (sql[j].isalnum() or sql[j] == "_"):
+                j += 1
+            if j < n and sql[j] == "$":
+                tag = sql[i : j + 1]
+                buf.append(tag)
+                i = j + 1
+                dollar_tag = tag
+                continue
+
+        if ch == ";":
+            stmt = "".join(buf).strip()
+            if stmt:
+                statements.append(stmt)
+            buf = []
+            i += 1
+            continue
+
+        buf.append(ch)
+        i += 1
+
+    tail = "".join(buf).strip()
+    if tail:
+        statements.append(tail)
+    return statements
 
 
 def _try_exec_mapped(conn, sql: str, params: dict) -> None:
@@ -960,5 +1075,121 @@ def ensure_account_data_access_defaults(engine) -> None:
                 ),
                 {"name": name, "merge": merge},
             )
+    finally:
+        conn.close()
+
+
+def ensure_account_permission_defaults(engine) -> None:
+    """
+    Repair default account permission/role/access_level attributes when missing.
+
+    Idempotent:
+    - Does not overwrite non-empty permissions/roles on existing accounts.
+    - Ensures admin always includes `task.*` to cover task command family.
+    """
+    import json
+
+    defaults = {
+        "admin": {
+            "roles": ["admin"],
+            "permissions": [
+                "user.*",
+                "campus.*",
+                "world.*",
+                "system.*",
+                "admin.*",
+                "admin.system_notice",
+                "task.*",
+            ],
+            "access_level": "admin",
+        },
+        "dev": {
+            "roles": ["dev"],
+            "permissions": [
+                "user.view",
+                "campus.view",
+                "campus.edit",
+                "campus.manage",
+                "world.view",
+                "world.edit",
+                "world.manage",
+                "system.view",
+                "system.debug",
+                "system.test",
+                "system.develop",
+                "logs.view",
+                "ontology.read",
+                "ontology.write",
+                "graph.read",
+                "graph.write",
+            ],
+            "access_level": "developer",
+        },
+        "campus": {
+            "roles": ["user", "campus_user"],
+            "permissions": [
+                "user.login",
+                "user.logout",
+                "user.view_profile",
+                "user.edit_profile",
+                "campus.view",
+                "campus.join",
+                "campus.leave",
+                "campus.participate",
+                "world.view",
+                "ontology.read",
+                "graph.read",
+            ],
+            "access_level": "normal",
+        },
+    }
+
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, name, access_level, attributes
+                  FROM nodes
+                 WHERE type_code = 'account'
+                   AND name IN ('admin', 'dev', 'campus')
+                """
+            )
+        ).all()
+        for row in rows:
+            name = str(row[1] or "")
+            target = defaults.get(name)
+            if target is None:
+                continue
+            attrs_raw = row[3]
+            attrs = attrs_raw if isinstance(attrs_raw, dict) else json.loads(attrs_raw or "{}")
+            if not isinstance(attrs, dict):
+                attrs = {}
+            changed = False
+
+            roles = attrs.get("roles")
+            if not isinstance(roles, list) or not roles:
+                attrs["roles"] = list(target["roles"])
+                changed = True
+
+            perms = attrs.get("permissions")
+            if not isinstance(perms, list) or not perms:
+                attrs["permissions"] = list(target["permissions"])
+                perms = attrs["permissions"]
+                changed = True
+            elif name == "admin" and "task.*" not in [str(x) for x in perms]:
+                attrs["permissions"] = [*perms, "task.*"]
+                changed = True
+
+            if not str(attrs.get("access_level") or "").strip():
+                fallback_level = str(row[2] or "").strip() or str(target["access_level"])
+                attrs["access_level"] = fallback_level
+                changed = True
+
+            if changed:
+                conn.execute(
+                    text("UPDATE nodes SET attributes = CAST(:attrs AS jsonb) WHERE id = :id"),
+                    {"id": int(row[0]), "attrs": json.dumps(attrs, ensure_ascii=False)},
+                )
     finally:
         conn.close()

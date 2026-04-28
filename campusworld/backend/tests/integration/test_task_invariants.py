@@ -18,6 +18,7 @@ from __future__ import annotations
 import os
 import threading
 import uuid
+from datetime import datetime, timezone
 from typing import Generator
 
 import pytest
@@ -138,6 +139,37 @@ def test_create_task_emits_initial_transition_and_outbox(session):
         {"tid": res.task_id},
     ).first()
     assert ob[0] == "task.created"
+
+
+def test_create_task_materializes_due_at_epoch_ms(session):
+    from app.services.task.permissions import Principal
+    from app.services.task.task_state_machine import create_task
+
+    actor_id = _make_actor(session, name=f"actor-due-{uuid.uuid4()}")
+    actor = Principal(id=actor_id, kind="user")
+    due_at = datetime(2026, 5, 1, 12, 0, tzinfo=timezone.utc)
+
+    res = create_task(
+        title="Task With Due At",
+        actor=actor,
+        workflow_key="default_v1",
+        due_at=due_at,
+        db_session=session,
+    )
+
+    row = session.execute(
+        text(
+            """
+            SELECT attributes->>'due_at', (attributes->>'due_at_epoch_ms')::bigint
+              FROM nodes
+             WHERE id = :tid
+            """
+        ),
+        {"tid": res.task_id},
+    ).first()
+    assert row is not None
+    assert row[0] == due_at.isoformat()
+    assert int(row[1]) == int(due_at.timestamp() * 1000)
 
     # Owner assignment present.
     assn = session.execute(
