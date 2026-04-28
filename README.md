@@ -1,14 +1,13 @@
 # CampusWorld
 
-新一代智慧园区 OS，基于原生 AI 架构，借鉴 MUD 世界设计原理构筑世界语义，基于模型驱动理念，采用全图数据结构实现物理世界设备、系统、人的语义孪生并实现与物理世界与系统的交互。
+试验性的下一代Campus OS系统，基于原生AI架构，借鉴MUD游戏世界设计，基于图模型驱动理念，构筑物理世界人、物、事、设备、空间等完整的语义孪生世界， CampusWorld系统一切服务皆是Agent，通过AI + 人的设计构筑新的交互体验。
 
 ## 技术栈
-
 | 层级 | 技术 |
 |------|------|
-| 后端 | Python 3.11+ · FastAPI · SQLAlchemy · Paramiko (SSH) · PostgreSQL |
+| 后端 | Python 3.11+ · FastAPI · SQLAlchemy · Paramiko (SSH) |
 | 前端 | Vue 3 · TypeScript · Vite · Element Plus · Pinia |
-| 基础设施 | Docker Compose · Redis · GitHub Actions |
+| 基础设施 | Docker Compose · Redis · PostgreSQL|
 
 ## 快速启动
 
@@ -30,8 +29,6 @@ cd frontend && npm install && npm run dev
 访问：`http://localhost:5173`（前端）· `http://localhost:8000/docs`（API 文档）· `ssh localhost -p 2222`（终端）
 
 ## 项目结构
-
-- [CLAUDE.md](./CLAUDE.md) — 开发者完整上下文（模块路径、命令、配置）
 - [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) — 详细目录结构说明
 - [docs/README.md](./docs/README.md) — 完整文档导航
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — 贡献指南
