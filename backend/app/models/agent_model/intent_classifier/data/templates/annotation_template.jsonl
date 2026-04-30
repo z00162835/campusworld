@@ -1,0 +1,3 @@
+{"id":"sample-001","language":"zh-CN","text":"","label":"informational","reason_tokens":[],"has_execute_confirmation":false,"conflict_case":false,"notes":""}
+{"id":"sample-002","language":"en-US","text":"","label":"verify_state","reason_tokens":[],"has_execute_confirmation":false,"conflict_case":false,"notes":""}
+{"id":"sample-003","language":"zh-CN","text":"","label":"execute","reason_tokens":[],"has_execute_confirmation":true,"conflict_case":true,"notes":""}

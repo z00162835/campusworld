@@ -1,0 +1,10 @@
+{"id":"seed-zh-001","language":"zh-CN","text":"给一个task create的例子","label":"informational","reason_tokens":["例子"],"has_execute_confirmation":false,"conflict_case":false}
+{"id":"seed-zh-002","language":"zh-CN","text":"task命令怎么用","label":"informational","reason_tokens":["怎么用"],"has_execute_confirmation":false,"conflict_case":false}
+{"id":"seed-zh-003","language":"zh-CN","text":"帮我查一下当前任务状态","label":"verify_state","reason_tokens":["查一下","当前"],"has_execute_confirmation":false,"conflict_case":false}
+{"id":"seed-zh-004","language":"zh-CN","text":"请执行并创建一个新任务","label":"execute","reason_tokens":["请执行","创建"],"has_execute_confirmation":true,"conflict_case":true}
+{"id":"seed-zh-005","language":"zh-CN","text":"给我一个模板并帮我现在创建任务","label":"informational","reason_tokens":["模板","创建"],"has_execute_confirmation":false,"conflict_case":true}
+{"id":"seed-en-001","language":"en-US","text":"show me an example of task create","label":"informational","reason_tokens":["example"],"has_execute_confirmation":false,"conflict_case":false}
+{"id":"seed-en-002","language":"en-US","text":"check current task status","label":"verify_state","reason_tokens":["current","status"],"has_execute_confirmation":false,"conflict_case":false}
+{"id":"seed-en-003","language":"en-US","text":"yes, execute and create a task now","label":"execute","reason_tokens":["yes, execute","create"],"has_execute_confirmation":true,"conflict_case":true}
+{"id":"seed-en-004","language":"en-US","text":"create task usage and syntax","label":"informational","reason_tokens":["usage","syntax"],"has_execute_confirmation":false,"conflict_case":true}
+{"id":"seed-noise-001","language":"zh-CN","text":"呃那个task...","label":"informational","reason_tokens":["uncertain"],"has_execute_confirmation":false,"conflict_case":false}

@@ -1,0 +1,23 @@
+# Optional stack for intent classifier fine-tuning (not installed by default CI).
+#
+# Environment: install into the project-standard Conda env **campusworld**
+# (see repo CLAUDE.md / QUICKSTART). Example:
+#   conda activate campusworld
+#   cd backend
+#
+# Install PyTorch for your platform first: https://pytorch.org/get-started/locally/
+#
+# Example:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements/ml-intent-classifier.txt
+
+# Qwen3 (model_type qwen3) expects a recent transformers release (HF lists 4.51.0+).
+transformers>=4.51.0
+accelerate>=0.33.0
+datasets>=2.20.0
+peft>=0.12.0
+safetensors>=0.4.0
+sentencepiece>=0.2.0
+protobuf>=4.25.0
+numpy>=1.26.0
+pyarrow>=14.0.0

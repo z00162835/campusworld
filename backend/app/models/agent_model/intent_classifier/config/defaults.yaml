@@ -1,0 +1,62 @@
+version: "intent-classifier-v0"
+labels:
+  - informational
+  - verify_state
+  - execute
+default_label_on_failure: informational
+global_schema:
+  confidence_range: [0.0, 1.0]
+  output_fields:
+    - intent
+    - confidence
+    - reason_tokens
+    - source
+agent_overrides:
+  aico:
+    conflict_strategy: "per_agent_priority"
+    intent_priority: ["execute", "verify_state", "informational"]
+    require_confirmation_for_execute: true
+    downgrade_execute_without_confirmation_to: informational
+    kpi_targets:
+      informational_mutate_plan_rate: 0.05
+      clarify_instead_of_guess_rate: 0.70
+
+# Supervised fine-tuning defaults tuned for ~10k labeled samples + Qwen3 4B Instruct.
+# Rationale (high level): stable val metrics (10% holdout), modest epoch count to limit
+# overfitting on a narrow JSON intent task, effective batch ~16 via accumulation, slightly
+# lower LR than tiny-set prototyping, wider LoRA rank when data supports it.
+#
+# VRAM / smaller backbone: override `base_model_id` (example lighter official checkpoint:
+# `Qwen/Qwen3-1.7B`) or drop `per_device_*_batch_size` to 1 and raise `gradient_accumulation_steps`
+# to keep a similar effective batch size.
+#
+# GPU mixed precision: set `bf16: true` on CUDA Ampere+ when transformers/torch support it;
+# leave false for CPU-only smoke runs.
+training:
+  base_model_id: "Qwen/Qwen3-4B-Instruct-2507"
+  val_ratio: 0.1
+  num_train_epochs: 3
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_seq_length: 512
+  warmup_ratio: 0.05
+  logging_steps: 25
+  seed: 42
+  bf16: false
+  fp16: false
+  gradient_checkpointing: true
+  lora_r: 32
+  lora_alpha: 64
+  lora_dropout: 0.05
+  # Typical Llama/Qwen linear projection names; widen via CLI if layers mismatch logs.
+  lora_target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
