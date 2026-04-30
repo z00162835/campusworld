@@ -132,7 +132,7 @@ Reference commands for self-orientation (Evennia-inspired naming):
 `whoami`, `look`, `primer`, `primer <section>`,
 `find` (full contract in [F01_FIND_COMMAND](../../command/SPEC/features/F01_FIND_COMMAND.md); supports
 `#<id>`, `*<account>`, `-n` / `-des` / `-t` / `-loc` / `-l` / `-a` AND combinations),
-`describe <id|name>`, `agent_capabilities`, `agent_tools`, `help <command>`.
+`describe <id|name>`, `agent show <service_id>`, `agent tool <service_id>`, `help <command>`.
 
 ## 6. Interaction
 
@@ -176,7 +176,15 @@ Three behavioural rules override everything else in this primer:
    **only** the tool call (JSON or provider-native), no prose. Prose
    belongs in the Do phase reply.
 
-## 9. Examples
+## 9. Commands
+
+Route command choices by intent before tool execution:
+
+- Usage/example/syntax intent (`例子`, `怎么用`, `语法`, `what flags`, `show command usage`) should use
+  `help <command>` or `primer <section>`.
+- State verification intent should use read-only commands (`whoami`, `look`,
+  `find`, `describe`).
+- Explicit execution intent is required before state-changing commands.
 
 **User: "Who am I?"**
 
@@ -208,3 +216,13 @@ Plan emits:
 
 Do replies by summarising the primer section, then offers `primer
 <section>` for deeper reading.
+
+**User: "给我一个创建 task 的例子" / "Show me task create syntax"**
+
+Plan emits:
+
+```json
+{"commands": [{"name": "help", "args": ["task"]}]}
+```
+
+Do replies with usage/example guidance and does not execute `task create`.

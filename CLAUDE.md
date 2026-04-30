@@ -67,6 +67,7 @@ CampusWorld 的核心设计理念是"**世界语义驱动**"：
 - **推荐**：先 `conda activate campusworld`，再进入 `backend` 执行 `pip install`、`pytest`、`python campusworld.py`。
 - **无需持久激活时**：在 `backend` 目录下使用 `conda run -n campusworld pytest …` 或 `conda run -n campusworld python campusworld.py`（与下文「测试」一节一致）。
 - **CI**：流水线应使用与 `requirements` 声明一致的 Python 版本；若 CI 使用 Conda，环境名可与本地对齐为 `campusworld` 或等价锁定文件。
+- **可选（Agent 意图分类器本地微调）**：`requirements/ml-intent-classifier.txt` 不在默认 `dev.txt` 中；需在 **`campusworld`** 内另行安装 PyTorch（按平台）与该文件后再运行训练/离线评估脚本。步骤见 `backend/app/models/agent_model/intent_classifier/train/README.md`。
 
 ### 启动开发环境
 

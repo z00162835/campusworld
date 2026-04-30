@@ -56,6 +56,12 @@ pytest
 conda run -n campusworld pytest
 ```
 
+### 意图分类器训练依赖（可选）
+
+`backend/requirements/ml-intent-classifier.txt` **不属于**默认后端测试依赖；普通 `pytest` 与 CI 无需安装 PyTorch。与数据集构造、配置合并相关的单元测试（例如 `tests/models/agent_model/`）仅依赖常规后端环境。
+
+若在本地执行意图分类器的 LoRA 训练或 `eval_intent_classifier`，请在 Conda **`campusworld`** 中安装 PyTorch（按平台）与该可选 requirements；环境与命令示例见仓库内 `backend/app/models/agent_model/intent_classifier/train/README.md`。
+
 ### 验证分层与失败/超时说明
 
 | 场景 | 命令 | 说明 |

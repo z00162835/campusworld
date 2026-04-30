@@ -179,6 +179,8 @@ flowchart LR
 
 - 实现采纳后，建议新增 **ADR**（例：ADR-F08-AICO-Tool-Context）描述 **ToolGather** 插入点与与 **`LlmPDCAFramework`** 的代码级决策。
 - **F03** 可在 §5.5 保持摘要，以 **指向本 SPEC** 为 **扩展来源**（见 F03 交叉引用）。
+- 内部 backlog：Plan 阶段 harness 结构化块（`intent` / `epistemic_gap` /
+  `planned_tools`）仅作审计增强项，暂不作为当前实现门禁。
 
 ---
 

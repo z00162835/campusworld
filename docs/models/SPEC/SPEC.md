@@ -161,6 +161,9 @@
 - `F10` AICO 性能与延迟（tick SLO、可观测性、代码重复与工具单点收敛、分阶段路线图；**扩展** [**F03**](features/F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md) / [**F08**](features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)）  
   [`features/F10_AICO_PERFORMANCE_AND_LATENCY.md`](features/F10_AICO_PERFORMANCE_AND_LATENCY.md)
 
+- `F11` Agent 意图分类器运行时契约（前置意图判定、共享接口、训练与标注闭环；面向多 agent 共用）  
+  [`features/F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md`](features/F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)
+
 ### 任务系统（独立模块，跨 models / command / database / api）
 
 - **Task System**：`type_code=task` 节点 + 独立关系子底座（`task_workflow_definitions / task_details / task_assignments / task_state_transitions / task_runs / task_events / task_outbox`）+ 唯一状态机服务 `task_state_machine.transition`；以用户/Agent 为中心的协作任务、任务池、审批接力（agent1 → admin → agent2）。设计律 D1 边稀疏 / D2 属性瘦独立表厚 / D3 SSOT 单事务幂等。  

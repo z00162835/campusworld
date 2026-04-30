@@ -87,6 +87,8 @@ conda activate campusworld
 python campusworld.py
 ```
 
+**可选 — Agent 意图分类器本地训练/评估**：默认 `requirements/dev.txt` 不包含 PyTorch / transformers。若要对意图分类器做 LoRA 微调或离线贪心评估，请在已激活的 Conda **`campusworld`** 环境中进入 `backend`，按 [PyTorch 官网指引](https://pytorch.org/get-started/locally/) 安装与本机匹配的 PyTorch 后执行 `pip install -r requirements/ml-intent-classifier.txt`。命令与产物说明见 [`backend/app/models/agent_model/intent_classifier/train/README.md`](backend/app/models/agent_model/intent_classifier/train/README.md)。
+
 **系统入口说明**：请使用 **`python campusworld.py`**。主程序会依次拉起 **引擎（GameLoader）**、**HTTP/WebSocket**（FastAPI，见 `app.api.http_app`）、**SSH**。默认 **`game_engine.load_installed_worlds_on_start: true`**：会在启动时对 **`world_runtime_states` 中已 `install` 的世界**执行 `load_game`（重启后保留安装状态并自动进内存）。首次使用仍需 **`world install <world_id>`**（例如 `hicampus`）写入安装状态。可选 **`game_engine.auto_load_discovered_on_start`**（或旧键 **`auto_load_on_start`**）用于额外按「磁盘发现的包」装载，与 install 状态无关。
 
 ### 4. 前端设置
