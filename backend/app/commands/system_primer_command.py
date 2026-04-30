@@ -7,7 +7,7 @@ not a single service.
 Usage:
 
     primer <section>       # preferred: one of identity/structure/ontology/world/
-                           #           actions/interaction/memory/invariants/examples
+                           #           actions/interaction/memory/invariants/commands
     primer                 # full document (minus maintainer banner); large
     primer --toc           # list available sections
     primer --raw           # markdown with placeholders intact (admin.doc.read)
@@ -27,7 +27,7 @@ class PrimerCommand(SystemCommand):
     def __init__(self):
         super().__init__(
             "primer",
-            "CampusWorld system primer — prefer `primer <section>` (e.g. primer ontology) "
+    "CampusWorld system primer — prefer `primer <section>` (e.g. primer ontology) "
             "to save tokens; bare `primer` returns the full nine-section document.",
             aliases=["manual"],
         )

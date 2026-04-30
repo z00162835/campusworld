@@ -97,6 +97,21 @@ class SysSampleWorker(AgentWorker):
             roles=[],
             db_session=session,
         )
+        fb_meta = dict(fb.metadata or {})
+        fb_meta["agent_interaction_profile"] = str(attrs.get("interaction_profile") or "mutate")
+        if isinstance(attrs.get("invocation_policy"), dict):
+            fb_meta["agent_invocation_policy"] = dict(attrs.get("invocation_policy") or {})
+        fb = CommandContext(
+            user_id=fb.user_id,
+            username=fb.username,
+            session_id=fb.session_id,
+            permissions=list(fb.permissions or []),
+            roles=list(fb.roles or []),
+            db_session=fb.db_session,
+            caller=fb.caller,
+            game_state=fb.game_state,
+            metadata=fb_meta,
+        )
         tool_ctx = command_context_for_npc_agent(session, agent, fb)
         mem = SqlAlchemyMemoryPort(session, agent_node_id)
         tools = RegistryToolExecutor()
@@ -219,10 +234,14 @@ class LlmPdcaAssistantWorker(AgentWorker):
         # Build tool manifest once at worker-create time. The allowed surface
         # is stable across ticks for a given agent node; rebuild happens when
         # the worker is recreated (e.g. after ``tool_allowlist`` changes).
-        # Tool manifest uses ``app.default_locale`` (see ``tool_manifest_locale``), not the invoker's help locale.
+        manifest_locale = None
+        if invoker_context is not None and isinstance(getattr(invoker_context, "metadata", None), dict):
+            v = invoker_context.metadata.get("locale")
+            if isinstance(v, str) and v.strip():
+                manifest_locale = v.strip()
         try:
             manifest_text, tool_schemas = build_llm_tool_manifest(
-                surface, _command_registry, session=session
+                surface, _command_registry, session=session, locale=manifest_locale
             )
         except Exception:
             # Defensive: never fail worker creation because of manifest issues.

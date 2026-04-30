@@ -197,8 +197,31 @@ def gather_tool_observations(
                 "args": args,
                 "success": res.success,
                 "message_len": len(str(res.message or "")),
+                "error": str(res.error or ""),
             }
         )
+        guard_decision = None
+        if isinstance(res.data, dict):
+            guard_decision = str(res.data.get("guard_decision") or "")
+        if guard_decision == "guard_pass":
+            trace_entries.append(
+                {
+                    "step": "guard_pass",
+                    "phase": phase_label,
+                    "command_name": command_name,
+                    "intent": str((res.data or {}).get("guard_intent") or ""),
+                    "effective_profile": str((res.data or {}).get("guard_effective_profile") or ""),
+                }
+            )
+        elif str(res.error or "").startswith("guard_blocked_"):
+            trace_entries.append(
+                {
+                    "step": "guard_block",
+                    "phase": phase_label,
+                    "command_name": command_name,
+                    "reason": str(res.error or ""),
+                }
+            )
     text = "\n\n".join(chunks)
     return text, trace_entries
 

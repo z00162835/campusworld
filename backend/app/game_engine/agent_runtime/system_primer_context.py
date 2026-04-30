@@ -30,10 +30,13 @@ PRIMER_SECTIONS: Tuple[Tuple[str, str], ...] = (
     ("interaction", "6. Interaction"),
     ("memory", "7. Memory"),
     ("invariants", "8. Invariants"),
-    ("examples", "9. Examples"),
+    ("commands", "9. Commands"),
 )
 
 _SECTION_KEYS = {key for key, _ in PRIMER_SECTIONS}
+_SECTION_ALIASES = {
+    "examples": "commands",
+}
 
 _primer_cache_lock = threading.Lock()
 _primer_raw_cache: Optional[str] = None
@@ -254,6 +257,7 @@ def build_ontology_primer(
             chosen = body
         else:
             key = section.strip().lower()
+            key = _SECTION_ALIASES.get(key, key)
             if key not in _SECTION_KEYS:
                 raise ValueError(
                     f"unknown primer section '{section}'; known: {sorted(_SECTION_KEYS)}"
