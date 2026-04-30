@@ -8,8 +8,7 @@ Public builders here:
 
 * :func:`build_world_snapshot` — per-tick dynamic facts for the Plan user turn.
 * :func:`build_world_snapshot_from_session` — convenience wrapper with shallow DB reads.
-* :func:`build_llm_tool_manifest` — dual-form tool manifest for native and JSON channels
-  (text locale: ``app.default_locale`` from config by default, not per-user ``help`` language).
+* :func:`build_llm_tool_manifest` — dual-form tool manifest for native and JSON channels.
 """
 
 from __future__ import annotations
@@ -18,6 +17,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from app.commands.tool_semantics import get_command_tool_semantics, pick_routing_hint
 from app.game_engine.agent_runtime.tool_calling import ToolSchema, tool_schemas_from_surface
 from app.game_engine.agent_runtime.world_runtime_queries import installed_worlds_from_session
 
@@ -167,6 +167,51 @@ def _llm_hint_from_command_node(session, name: str, *, locale: str) -> Optional[
     return None
 
 
+def _command_semantics_from_node(session, name: str) -> Dict[str, Any]:
+    base = get_command_tool_semantics(name)
+    if session is None:
+        return base
+    try:
+        from app.models.graph import Node
+
+        row = (
+            session.query(Node)
+            .filter(
+                Node.type_code == "system_command_ability",
+                Node.attributes["command_name"].astext == name,
+                Node.is_active == True,  # noqa: E712
+            )
+            .first()
+        )
+        if row is None:
+            return base
+        attrs = row.attributes or {}
+        profile = str(attrs.get("interaction_profile") or "").strip().lower()
+        if profile in {"document", "read", "mutate"}:
+            base["interaction_profile"] = profile
+        if isinstance(attrs.get("invocation_guard"), dict):
+            base["invocation_guard"] = dict(attrs["invocation_guard"])
+        routing = pick_routing_hint(attrs, "en-US")
+        if routing:
+            base["routing_hint"] = routing
+        if isinstance(attrs.get("routing_hint_i18n"), dict):
+            base["routing_hint_i18n"] = dict(attrs["routing_hint_i18n"])
+    except Exception:
+        return base
+    return base
+
+
+def _manifest_section_title(locale: str, profile: str) -> str:
+    zh = str(locale or "").lower().startswith("zh")
+    if profile == "document":
+        return "文档类（document）" if zh else "Document tools"
+    if profile == "read":
+        return "查询类（read）" if zh else "Read-only tools"
+    if profile == "mutate":
+        return "变更类（mutate）" if zh else "State-changing tools"
+    return "其它" if zh else "Other tools"
+
+
 def build_llm_tool_manifest(
     surface,
     command_registry,
@@ -178,15 +223,14 @@ def build_llm_tool_manifest(
 ) -> Tuple[str, List[ToolSchema]]:
     from app.commands.i18n.locale_text import tool_manifest_locale
 
-    # ``locale`` defaults to :func:`app.commands.i18n.locale_text.tool_manifest_locale`
-    # (``app.default_locale`` in config), not the invoker's help locale.
     loc = tool_manifest_locale(locale)
     schemas = tool_schemas_from_surface(surface, command_registry)
 
     patched: List[ToolSchema] = []
-    text_rows: List[str] = []
+    rows_by_profile: Dict[str, List[str]] = {"document": [], "read": [], "mutate": [], "other": []}
     for schema in schemas:
         hint = _llm_hint_from_command_node(session, schema.name, locale=loc)
+        sem = _command_semantics_from_node(session, schema.name)
         cmd = command_registry.get_command(schema.name)
         reg_desc = ""
         if cmd is not None:
@@ -195,9 +239,23 @@ def build_llm_tool_manifest(
             except Exception:
                 reg_desc = (getattr(cmd, "description", None) or "").strip()
         desc = (hint or reg_desc or schema.description or "").strip()
-        if len(desc) > max_description_chars:
-            desc = desc[: max_description_chars - 3] + "..."
-        patched.append(ToolSchema(name=schema.name, description=desc, input_schema=dict(schema.input_schema)))
+        profile = str(sem.get("interaction_profile") or "read").strip().lower()
+        if profile not in {"document", "read", "mutate"}:
+            profile = "other"
+
+        attrs_for_hint = {
+            "routing_hint": sem.get("routing_hint"),
+            "routing_hint_i18n": sem.get("routing_hint_i18n"),
+        }
+        routing_hint = pick_routing_hint(attrs_for_hint, loc) or ""
+        schema_desc = desc
+        if routing_hint:
+            schema_desc = f"{desc} Routing: {routing_hint}"
+        if len(schema_desc) > max_description_chars:
+            schema_desc = schema_desc[: max_description_chars - 3] + "..."
+        patched.append(
+            ToolSchema(name=schema.name, description=schema_desc, input_schema=dict(schema.input_schema))
+        )
         usage = ""
         if cmd is not None:
             try:
@@ -208,11 +266,20 @@ def build_llm_tool_manifest(
                 except Exception:
                     usage = ""
         row = f"- {schema.name}: {desc}"
+        if routing_hint:
+            row += f"  (routing: {routing_hint})"
         if usage:
             row += f"  (usage: {usage})"
         if include_json_example:
             row += f"  example: {json.dumps({'commands': [{'name': schema.name, 'args': []}]}, ensure_ascii=False)}"
-        text_rows.append(row)
+        rows_by_profile[profile].append(row)
 
+    text_rows: List[str] = []
+    for profile in ("document", "read", "mutate", "other"):
+        rows = rows_by_profile.get(profile) or []
+        if not rows:
+            continue
+        text_rows.append(f"[{_manifest_section_title(loc, profile)}]")
+        text_rows.extend(rows)
     text = "\n".join(text_rows)
     return text, patched

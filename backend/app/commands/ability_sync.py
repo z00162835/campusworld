@@ -14,6 +14,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.core.log import get_logger, LoggerNames
+from app.commands.tool_semantics import get_command_tool_semantics
 from app.models.graph import Node, NodeType
 from app.models.root_manager import RootNodeManager
 from db.ontology.schema_envelope import system_command_ability_node_type_schema_definition
@@ -49,6 +50,26 @@ def _sync_llm_hints_from_command(cmd: Any, attrs: Dict[str, Any]) -> None:
         attrs["llm_hint_i18n"] = {str(k): str(v) for k, v in merged.items() if str(v).strip()}
     else:
         attrs.pop("llm_hint_i18n", None)
+
+
+def _sync_tool_semantics(command_name: str, attrs: Dict[str, Any]) -> None:
+    sem = get_command_tool_semantics(command_name)
+    attrs["interaction_profile"] = sem["interaction_profile"]
+    attrs["semantic_pending"] = bool(sem.get("semantic_pending", False))
+    attrs["invocation_guard"] = dict(sem.get("invocation_guard") or {})
+
+    hint = str(sem.get("routing_hint") or "").strip()
+    if hint:
+        attrs["routing_hint"] = hint
+    else:
+        attrs.pop("routing_hint", None)
+    hints_i18n = sem.get("routing_hint_i18n") or {}
+    if isinstance(hints_i18n, dict) and hints_i18n:
+        attrs["routing_hint_i18n"] = {
+            str(k): str(v) for k, v in hints_i18n.items() if str(v).strip()
+        }
+    else:
+        attrs.pop("routing_hint_i18n", None)
 
 
 def _get_or_create_command_ability_type(session: Session) -> Optional[int]:
@@ -123,6 +144,7 @@ def ensure_command_ability_nodes(session: Session) -> int:
                 }
             )
             _sync_llm_hints_from_command(cmd, attrs)
+            _sync_tool_semantics(command_name, attrs)
             existing.attributes = attrs
             if root_node_id and not existing.location_id:
                 existing.location_id = root_node_id
@@ -141,6 +163,7 @@ def ensure_command_ability_nodes(session: Session) -> int:
             "updated_at": now,
         }
         _sync_llm_hints_from_command(cmd, base_attr)
+        _sync_tool_semantics(command_name, base_attr)
         node = Node(
             type_id=type_id,
             type_code="system_command_ability",

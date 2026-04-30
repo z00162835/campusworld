@@ -97,3 +97,18 @@ def test_manifest_sorts_tools_and_includes_example_payload():
     # native tool use has a concrete template to mimic.
     for name in ("help", "find", "whoami"):
         assert f"'name': '{name}'" in text or f'"name": "{name}"' in text
+    assert ("[Document tools]" in text) or ("[文档类（document）]" in text)
+    assert ("[Read-only tools]" in text) or ("[查询类（read）]" in text)
+
+
+@pytest.mark.unit
+def test_manifest_includes_routing_hint_for_task():
+    surface = _surface_for({"task"})
+    text, schemas = build_llm_tool_manifest(
+        surface, command_registry, session=None, locale="en-US"
+    )
+    assert len(schemas) == 1 and schemas[0].name == "task"
+    assert "help task" in text
+    assert "help task" in schemas[0].description
+    assert "example requests" in schemas[0].description.lower()
+    assert "[State-changing tools]" in text
