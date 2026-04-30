@@ -23,6 +23,7 @@ from app.game_engine.agent_runtime.frameworks.base import (
     ThinkingFramework,
 )
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
+from app.game_engine.agent_runtime.intent_classifier_interface import classify_intent
 from app.game_engine.agent_runtime.llm_client import (
     LlmCallSpec,
     LlmClient,
@@ -83,6 +84,7 @@ def _resolve_npc_agent_empty_reply_message(cfg: AgentLlmServiceConfig) -> str:
     if isinstance(raw, str) and raw.strip():
         return raw.strip()
     return _DEFAULT_NPC_AGENT_EMPTY_REPLY
+
 
 _LLM_PDCA_LOG = logging.getLogger(__name__)
 
@@ -458,9 +460,26 @@ class LlmPDCAFramework(ThinkingFramework):
                 if not calls:
                     break
 
+                base_tool_ctx = self._tool_command_context
+                runtime_tool_ctx = base_tool_ctx
+                if base_tool_ctx is not None:
+                    rt_meta = dict(base_tool_ctx.metadata or {})
+                    rt_meta["user_message"] = str(ctx.payload.get("message") or ctx.payload.get("text") or "")
+                    runtime_tool_ctx = CommandContext(
+                        user_id=base_tool_ctx.user_id,
+                        username=base_tool_ctx.username,
+                        session_id=base_tool_ctx.session_id,
+                        permissions=list(base_tool_ctx.permissions or []),
+                        roles=list(base_tool_ctx.roles or []),
+                        db_session=base_tool_ctx.db_session,
+                        caller=base_tool_ctx.caller,
+                        game_state=base_tool_ctx.game_state,
+                        metadata=rt_meta,
+                    )
+
                 view = resolve_tool_runtime_view(
                     pre_tool=self._pre_tool,
-                    tool_command_context=self._tool_command_context,
+                    tool_command_context=runtime_tool_ctx,
                     budgets=self._tool_budgets,
                     counters=counters,
                 )
@@ -590,12 +609,27 @@ class LlmPDCAFramework(ThinkingFramework):
         mem = (ctx.memory_context or "").strip()
         world_snapshot = str(ctx.payload.get("world_snapshot") or "").strip()
         tool_manifest_text = str(ctx.payload.get("tool_manifest_text") or "").strip()
+        if isinstance(ctx.payload.get("intent_hint"), dict):
+            intent_hint = dict(ctx.payload.get("intent_hint") or {})
+        else:
+            ic = classify_intent(
+                user_msg,
+                agent_id=str(ctx.agent_node_id),
+                metadata={"correlation_id": str(correlation or "")},
+            )
+            intent_hint = {
+                "intent": ic.intent,
+                "reason_tokens": list(ic.reason_tokens or []),
+                "confidence": float(ic.confidence),
+                "source": ic.source,
+            }
 
         plan_user = _assemble_plan_user(
             user_msg=user_msg,
             memory=mem,
             world_snapshot=world_snapshot,
             tool_manifest_text=tool_manifest_text,
+            intent_hint=intent_hint,
         )
 
         # ---------------- PLAN ----------------
@@ -855,6 +889,7 @@ def _assemble_plan_user(
     memory: str,
     world_snapshot: str,
     tool_manifest_text: str,
+    intent_hint: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Build the first Plan user turn.
 
@@ -871,6 +906,12 @@ def _assemble_plan_user(
         segments.append(f"World snapshot:\n{world_snapshot}")
     if tool_manifest_text:
         segments.append(f"Tools available:\n{tool_manifest_text}")
+    if intent_hint:
+        segments.append(
+            "Intent hint (runtime pre-classifier):\n"
+            f"  intent: {intent_hint.get('intent') or 'informational'}\n"
+            f"  reason_tokens: {intent_hint.get('reason_tokens') or []}"
+        )
     segments.append(f"Retrieved memory (may be empty):\n{memory or '(none)'}")
     segments.append(f"User message:\n{user_msg}")
     return "\n\n".join(segments)

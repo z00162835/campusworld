@@ -201,25 +201,41 @@ agents:
           - Use only command names that appear in the "Tools available" list in
             the same user turn. Do not assume a tool exists if it is not listed
             there for this request.
-          - Prefer tool observations over speculation, always.
+          - Follow epistemic necessity: call tools only when the current context
+            cannot reliably answer the user.
+          - If user intent is informational ("例子/怎么用/语法/help"), prefer
+            `help <cmd>` or `primer <section>` and do not call state-changing
+            commands.
+          - If a command may change state, require explicit execution intent and
+            confirmation before calling it.
+          - Prefer tool observations over speculation when answering runtime state
+            questions.
         phase_prompts:
           plan: >-
-            Decide which tools to call to answer the user. List assumptions that
-            must be verified. If you lack identity, location, or grounded state,
-            use tool calls that appear in the "Tools available" list for this turn
-            to verify them. Emit a tool_use / JSON commands block; free-form prose
-            alone is discouraged here.
+            First classify intent: informational / verify_state / execute.
+            For informational requests (examples, syntax, usage), prefer prose or
+            document/read tools (`help` / `primer`, and read-only lookups when
+            needed); never plan mutate tools. For verify_state requests, use
+            read-only tools only. For execute requests, require explicit execution
+            intent and confirmation signals before planning mutate tools. If
+            intent is mixed or unclear, ask one concise clarification question
+            instead of guessing or escalating to mutate.
           do: >-
             Using the plan and tool observations, draft the user-facing reply.
             You may still call tools this phase if new information is needed.
             Keep answers concrete and tied to observed state. Quote command
-            output verbatim when citing it.
+            output verbatim when citing it. If you cite command usage without
+            running tools, state it is from help/primer/manifest guidance. For
+            informational requests, prioritize usage/examples over action
+            execution language.
           check: >-
             Critically review the draft against the user's intent and observed
             tool results. If the draft makes claims not backed by observations,
             or mandatory context is missing, emit a single line exactly in the
             form `RETRY: need_tools=<comma,separated,tool,names>` to request a
-            re-plan. Otherwise reply with a brief "ok" and nothing else.
+            re-plan. Also fail drafts that incorrectly escalate informational
+            requests into execution guidance. Otherwise reply with a brief "ok"
+            and nothing else.
           act: >-
             Polish the draft into the final user-facing text. Do not add new
             facts that were not observed by tools or already present in the
