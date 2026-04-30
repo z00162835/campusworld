@@ -7,6 +7,10 @@ from typing import FrozenSet, List, Optional, Sequence
 
 from app.commands.base import CommandContext, CommandResult
 from app.commands.registry import command_registry
+from app.game_engine.agent_runtime.execution_gate import (
+    evaluate_execution_gate,
+    guard_error_message,
+)
 from app.game_engine.agent_runtime.tooling import RegistryToolExecutor, ToolExecutor, ToolRouter
 
 
@@ -112,6 +116,17 @@ class PreauthorizedToolExecutor:
             return CommandResult.error_result(f"unknown command: {command_name}")
         meta = dict(context.metadata or {})
         meta["agent_tool_invocation"] = True
+        decision = evaluate_execution_gate(
+            db_session=context.db_session,
+            command_name=primary,
+            args=args,
+            context_metadata=meta,
+        )
+        if not decision.allow:
+            return CommandResult.error_result(
+                guard_error_message(primary, decision.reason_code),
+                error=decision.reason_code,
+            )
         ctx = CommandContext(
             user_id=context.user_id,
             username=context.username,
@@ -123,4 +138,14 @@ class PreauthorizedToolExecutor:
             game_state=context.game_state,
             metadata=meta,
         )
-        return cmd.execute(ctx, args)
+        res = cmd.execute(ctx, args)
+        data = dict(res.data or {}) if isinstance(res.data, dict) else {}
+        data.update(
+            {
+                "guard_decision": decision.reason_code,
+                "guard_intent": decision.intent,
+                "guard_effective_profile": decision.effective_profile,
+            }
+        )
+        res.data = data
+        return res
