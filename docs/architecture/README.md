@@ -229,6 +229,7 @@ completion:
 
 ### 规范索引（单一事实来源）
 
+- 全图 `Node` 与 `nodes.attributes` 不重复表列（架构约束）：[`docs/models/SPEC/SPEC.md`](../models/SPEC/SPEC.md)（见「nodes.attributes 与表列分离」）
 - 世界总体与拓扑：`docs/games/hicampus/SPEC/SPEC.md`
 - 数据包契约（双模型）：`docs/games/hicampus/SPEC/features/F02_WORLD_DATA_PACKAGE.md`
 - 数据包测试与验收要点：`docs/games/hicampus/SPEC/features/F02_WORLD_DATA_PACKAGE_TEST_SPEC.md`

@@ -77,21 +77,14 @@ def test_manifest_contains_updated_agent_description():
     desc = schemas[0].description
     # Subcommands must be enumerated so an LLM asked to "list agents"
     # does not skip this tool.
-    for sub in ("list", "status", "nlp"):
+    for sub in ("list", "status", "tool", "show"):
         assert sub in desc
 
 
 @pytest.mark.unit
-def test_manifest_contains_updated_agent_tools_description():
-    surface = _surface_for({"agent_tools"})
-    _, schemas = build_llm_tool_manifest(
-        surface, command_registry, session=None, locale="en-US"
-    )
-    assert len(schemas) == 1 and schemas[0].name == "agent_tools"
-    desc = schemas[0].description
-    # Must make the "registered, not necessarily callable" distinction.
-    assert "registered" in desc.lower()
-    assert "agent_capabilities" in desc
+def test_legacy_agent_tools_not_registered():
+    assert command_registry.get_command("agent_tools") is None
+    assert command_registry.get_command("agent_capabilities") is None
 
 
 @pytest.mark.unit

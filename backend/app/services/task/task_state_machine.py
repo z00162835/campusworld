@@ -869,18 +869,20 @@ def create_task(
             )
         type_id = int(type_id_row[0])
 
+        task_uuid = uuid.uuid4()
         node_row = session.execute(
             text(
                 """
-                INSERT INTO nodes (type_id, type_code, name, description,
+                INSERT INTO nodes (uuid, type_id, type_code, name, description,
                                    attributes, tags, is_active, is_public)
-                VALUES (:type_id, 'task', :name, :description,
+                VALUES (:uuid, :type_id, 'task', :name, :description,
                         CAST(:attrs AS jsonb), CAST(:tag_array AS jsonb),
                         TRUE, FALSE)
                 RETURNING id
                 """
             ),
             {
+                "uuid": task_uuid,
                 "type_id": type_id,
                 "name": title[:255],
                 "description": None,

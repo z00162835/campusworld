@@ -37,14 +37,14 @@ def test_agent_list_table_message_shape():
     """Tabular message: header, row, footer; i18n keys for en-US."""
     rows = [
         {
-            "service_id": "aico",
+            "id": "aico",
             "name": "AICO",
             "status": "idle",
             "agent_node_id": 42,
         }
     ]
     msg = _format_agent_list_message(rows, "en-US")
-    assert "service_id" in msg
+    assert "id" in msg
     assert "agent_node_id" in msg
     assert "aico" in msg
     assert "(total=1)" in msg
@@ -130,7 +130,7 @@ def test_agent_list_and_status_consistency():
         assert r_list.data is not None
         data = r_list.data
         assert "agents" in data
-        mine = next((a for a in data["agents"] if a.get("service_id") == svc), None)
+        mine = next((a for a in data["agents"] if a.get("id") == svc), None)
         assert mine is not None
         assert mine["status"] == "idle"
         assert mine["agent_node_id"] == agent.id
@@ -139,7 +139,7 @@ def test_agent_list_and_status_consistency():
         assert r_st.success
         one = json.loads(r_st.message)
         assert one["status"] == mine["status"]
-        assert one["service_id"] == svc
+        assert one["id"] == svc
 
         r_bad = ac.execute(ctx, ["status", "no-such-service-id-f05"])
         assert not r_bad.success
@@ -200,7 +200,7 @@ def test_agent_list_includes_disabled_as_unavailable():
         assert r_list.success
         assert r_list.data is not None
         data = r_list.data
-        row = next((a for a in data["agents"] if a.get("service_id") == svc), None)
+        row = next((a for a in data["agents"] if a.get("id") == svc), None)
         assert row is not None
         assert row["status"] == "unavailable"
 

@@ -55,6 +55,12 @@
 | `GraphEdge` | graph.py | GraphEdge 表的 ORM 模型 |
 | `NodeType` | graph.py | 节点类型注册表 |
 
+### `nodes.attributes` 与表列分离（架构约束）
+
+- **`nodes.attributes`（JSONB）** 仅承载**非列**的业务字段与扩展语义；**不得**与 **`nodes` 表已有列**重复存储同一含义的数据（例如与 [`backend/app/models/graph.py`](../../../backend/app/models/graph.py) 中 `Node` 已建模的列：`name`、`description`、`access_level`、`tags`、`location_id`、`home_id`、`is_active`、`is_public` 以及向量/几何等列）。
+- **真源**：可查询列以 SQL 列为准；从图节点 hydrate 到内存对象（如 `GraphSynchronizer.sync_node_to_object`）时以列与统一传入的构造字段为准，JSON 中若存在历史镜像键应在入口侧忽略或与列对齐策略一致。
+- **存量数据**：允许渐进清理历史重复键；新写入、种子与迁移应遵守本约束。
+
 ### `NodeType` 与本体属性元数据
 
 持久化表为 **`nodes`** / **`relationships`**（`Node` / `Relationship`，非历史文档中的 `graph_nodes` / `graph_edges` 命名）。**`node_types.schema_definition`** 按 **`type_code`** 描述该类型在 **`nodes.attributes`** 上的属性注册：以 JSON Schema 惯用 **`properties.<attr_name>`** 为键，与实例 JSON 同层键名对齐；**`value_kind`**、**`mutability`**、**`semantic_type`**、**`role`** 等与 **`type`** / **`enum`** / **`title`** **同级并列**（默认写法）。**`inferred_rules`** 承载跨属性约束；**`ui_config`** 承载表单布局并通过 `property_ref` 引用属性路径。图种子类型的扩展定义见 [`docs/ontology/NODE_TYPES_SCHEMA.md`](../ontology/NODE_TYPES_SCHEMA.md) 与 [`backend/db/ontology/graph_seed_node_types.yaml`](../../../backend/db/ontology/graph_seed_node_types.yaml)。字段与 DDL 见 [`backend/db/schemas/README.md`](../../../backend/db/schemas/README.md)。
@@ -128,7 +134,7 @@
 
 - `F02` Intelligent Agent Service（`npc_agent` 扩展、命令优先、记忆/运行独立表）  
   [`features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)  
-  实现锚点：`app/models/system/agent_memory_tables.py`（ORM）、`app/game_engine/agent_runtime/`（PDCA / MemoryPort / 注册表）、`app/commands/agent_commands.py`（`agent_capabilities` / `agent_tools` / `aico` / `agent` 等）。  
+  实现锚点：`app/models/system/agent_memory_tables.py`（ORM）、`app/game_engine/agent_runtime/`（PDCA / MemoryPort / 注册表）、`app/commands/agent_commands.py`（统一 [`agent`](../../command/SPEC/features/CMD_agent.md) 含 `list` / `status` / `tool` / `show`，以及独立 `aico`）。  
   扩展（向量检索、LTM 间关联）：[`features/F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](features/F02_LTM_VECTORS_AND_MEMORY_LINKS.md) — 检索与扩展实现见 `app/services/ltm_semantic_retrieval.py`。
 
 - `F03` 系统默认助手 AICO（`npc_agent` 单例、奇点屋锚点、trait 不可移动、初始配置与 schema；**含 AICO 优化可观测专用日志 §5.7**）  

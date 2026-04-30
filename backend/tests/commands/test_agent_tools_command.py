@@ -1,12 +1,11 @@
-"""Unit tests for ``AgentToolsCommand``.
+"""Unit tests for ``agent tool`` (unified ``AgentCommand``).
 
-Covers the dispatcher routes mandated by ``CMD_agent_tools.md``:
+Covers dispatcher routes for the tool subcommand:
 
 1. No-arg list — one row per active ``npc_agent`` rendered in a table.
-2. Single-agent query — preserves the legacy ``{"tools":[...]}`` JSON
-   message contract while exposing a structured ``data`` mirror.
-3. ``add`` / ``del`` — atomic, idempotent edits gated by
-   ``admin.agent.tools.manage`` with alias→primary normalization.
+2. Single-agent query — ``{"tools":[...]}`` JSON message + structured ``data``.
+3. ``add`` / ``del`` — idempotent edits gated by ``admin.agent.tools.manage``
+   with alias→primary normalization.
 """
 
 from __future__ import annotations
@@ -22,7 +21,7 @@ from app.commands.agent_commands import (
     AGENT_TOOLS_FORBIDDEN,
     AGENT_TOOLS_MISORDERED,
     AGENT_TOOLS_UNKNOWN_TOOL,
-    AgentToolsCommand,
+    AgentCommand,
 )
 from app.commands.base import CommandContext
 
@@ -31,7 +30,7 @@ from app.commands.base import CommandContext
 def _ensure_commands_loaded():
     """Initialize the global ``command_registry`` once so tool name resolution finds real primaries.
 
-    ``AgentToolsCommand`` resolves user-supplied tool names via
+    ``agent tool`` resolves user-supplied tool names via
     ``command_registry.get_command``; without ``initialize_commands`` the
     registry is empty and every name would be rejected as unknown.
     """
@@ -155,18 +154,18 @@ def test_agent_tools_default_lists_all_agents_per_row(patch_agent_query, monkeyp
     monkeypatch.setattr(agent_commands, "_effective_tools_for_agent", _eff)
     monkeypatch.setattr(agent_commands, "_excluded_by_policy_on_allowlist", _excl)
 
-    res = AgentToolsCommand().execute(_ctx(db_session=MagicMock()), [])
+    res = AgentCommand().execute(_ctx(db_session=MagicMock()), ["tool"])
 
     assert res.success, res.message
     msg = res.message
     # Header + sorted rows + total footer.
-    assert "service_id" in msg and "tools" in msg
+    assert "id" in msg and "tools" in msg
     assert msg.find("aico") < msg.find("helper")
     assert "version" in msg
     assert "(total=2)" in msg
 
     agents = res.data["agents"]
-    assert [a["service_id"] for a in agents] == ["aico", "helper"]
+    assert [a["id"] for a in agents] == ["aico", "helper"]
     aico_row = agents[0]
     assert aico_row["agent_node_id"] == 11
     assert aico_row["status"] == "idle"
@@ -189,8 +188,8 @@ def test_no_arg_effective_tools_match_single_agent_output(patch_agent_query, pat
     patch_resolve["aico"] = node
     session = MagicMock()
     ctx = _ctx(db_session=session)
-    r_list = AgentToolsCommand().execute(ctx, [])
-    r_one = AgentToolsCommand().execute(ctx, ["aico"])
+    r_list = AgentCommand().execute(ctx, ["tool"])
+    r_one = AgentCommand().execute(ctx, ["tool", "aico"])
     assert r_list.success and r_one.success
     t_row = r_list.data["agents"][0]["tools"]
     t_one = json.loads(r_one.message)["tools"]
@@ -201,7 +200,7 @@ def test_no_arg_effective_tools_match_single_agent_output(patch_agent_query, pat
 @pytest.mark.unit
 def test_agent_tools_default_empty_uses_empty_locale(patch_agent_query):
     patch_agent_query["nodes"] = []
-    res = AgentToolsCommand().execute(_ctx(db_session=MagicMock()), [])
+    res = AgentCommand().execute(_ctx(db_session=MagicMock()), ["tool"])
     assert res.success
     assert "No agents registered." in res.message
     assert res.data == {"agents": [], "total": 0}
@@ -209,7 +208,7 @@ def test_agent_tools_default_empty_uses_empty_locale(patch_agent_query):
 
 @pytest.mark.unit
 def test_agent_tools_default_requires_db_session():
-    res = AgentToolsCommand().execute(_ctx(db_session=None), [])
+    res = AgentCommand().execute(_ctx(db_session=None), ["tool"])
     assert not res.success
     assert "database session required" in res.message
 
@@ -241,7 +240,7 @@ def test_agent_tools_default_drops_unregistered_aliases(
         "_excluded_by_policy_on_allowlist",
         lambda n, e: [] if n.id == 21 else [],
     )
-    res = AgentToolsCommand().execute(_ctx(db_session=MagicMock()), [])
+    res = AgentCommand().execute(_ctx(db_session=MagicMock()), ["tool"])
     assert res.success
     assert res.data["agents"][0]["tools"] == ["help"]
     assert res.data["agents"][0]["excluded_by_policy"] == []
@@ -253,21 +252,21 @@ def test_agent_tools_default_drops_unregistered_aliases(
 @pytest.mark.unit
 def test_agent_tools_misordered_add_gives_i18n_corrective_en():
     """``agent_tools <service_id> add ...`` is parsed as a query for ``service_id``; return hint."""
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), locale="en-US"),
-        ["aico", "add", "find"],
+        ["tool", "aico", "add", "find"],
     )
     assert not res.success
     assert res.error == AGENT_TOOLS_MISORDERED
-    assert "agent_tools add" in (res.message or "")
+    assert "agent tool add" in (res.message or "")
     assert "aico" in (res.message or "")
 
 
 @pytest.mark.unit
 def test_agent_tools_misordered_del_gives_i18n_corrective_zh():
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), locale="zh-CN"),
-        ["aico", "del", "find"],
+        ["tool", "aico", "del", "find"],
     )
     assert not res.success
     assert res.error == AGENT_TOOLS_MISORDERED
@@ -310,12 +309,12 @@ def test_agent_tools_single_agent_returns_json_message_and_data(patch_resolve, m
     monkeypatch.setattr(tooling_mod, "RegistryToolExecutor", _StubExecutor)
     monkeypatch.setattr(tooling_mod, "ToolRouter", _StubRouter)
 
-    res = AgentToolsCommand().execute(_ctx(db_session=MagicMock()), ["aico"])
+    res = AgentCommand().execute(_ctx(db_session=MagicMock()), ["tool", "aico"])
 
     assert res.success
     assert json.loads(res.message) == {"tools": ["help", "look"]}
     assert res.data == {
-        "service_id": "aico",
+        "id": "aico",
         "agent_node_id": 42,
         "tools": ["help", "look"],
         "excluded_by_policy": [],
@@ -324,7 +323,7 @@ def test_agent_tools_single_agent_returns_json_message_and_data(patch_resolve, m
 
 @pytest.mark.unit
 def test_agent_tools_single_agent_resolve_error_propagates(patch_resolve):
-    res = AgentToolsCommand().execute(_ctx(db_session=MagicMock()), ["nope"])
+    res = AgentCommand().execute(_ctx(db_session=MagicMock()), ["tool", "nope"])
     assert not res.success
     assert "unknown agent handle" in res.message
 
@@ -334,9 +333,9 @@ def test_agent_tools_single_agent_resolve_error_propagates(patch_resolve):
 
 @pytest.mark.unit
 def test_agent_tools_add_requires_admin_permission(patch_resolve):
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), permissions=[]),
-        ["add", "aico", "help"],
+        ["tool", "add", "aico", "help"],
     )
     assert not res.success
     assert res.error == AGENT_TOOLS_FORBIDDEN
@@ -345,9 +344,9 @@ def test_agent_tools_add_requires_admin_permission(patch_resolve):
 
 @pytest.mark.unit
 def test_agent_tools_add_requires_db_session():
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=None, permissions=["admin.agent.tools.manage"]),
-        ["add", "aico", "help"],
+        ["tool", "add", "aico", "help"],
     )
     assert not res.success
     assert "database session required" in res.message
@@ -361,9 +360,9 @@ def test_agent_tools_add_appends_and_is_idempotent(patch_resolve, patch_flag_mod
     patch_resolve["aico"] = node
     session = MagicMock()
 
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=session, permissions=["admin.agent.tools.manage"]),
-        ["add", "aico", "help", "look"],
+        ["tool", "add", "aico", "help", "look"],
     )
 
     assert res.success, res.message
@@ -384,9 +383,9 @@ def test_agent_tools_add_normalizes_alias_to_primary(patch_resolve, patch_flag_m
     )
     patch_resolve["aico"] = node
 
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), permissions=["admin.agent.tools.manage"]),
-        ["add", "aico", "ex"],
+        ["tool", "add", "aico", "ex"],
     )
 
     assert res.success, res.message
@@ -402,9 +401,9 @@ def test_agent_tools_add_rejects_unknown_tool_without_writing(patch_resolve, pat
     patch_resolve["aico"] = node
     session = MagicMock()
 
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=session, permissions=["admin.agent.tools.manage"]),
-        ["add", "aico", "look", "definitely-not-a-command"],
+        ["tool", "add", "aico", "look", "definitely-not-a-command"],
     )
 
     assert not res.success
@@ -417,12 +416,12 @@ def test_agent_tools_add_rejects_unknown_tool_without_writing(patch_resolve, pat
 
 @pytest.mark.unit
 def test_agent_tools_add_usage_when_tool_missing(patch_resolve):
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), permissions=["admin.agent.tools.manage"]),
-        ["add", "aico"],
+        ["tool", "add", "aico"],
     )
     assert not res.success
-    assert "agent_tools add" in res.message
+    assert "agent tool add" in res.message
 
 
 @pytest.mark.unit
@@ -432,9 +431,9 @@ def test_agent_tools_del_removes_and_is_idempotent(patch_resolve, patch_flag_mod
     )
     patch_resolve["aico"] = node
 
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), permissions=["admin.agent.tools.manage"]),
-        ["del", "aico", "look", "primer"],
+        ["tool", "del", "aico", "look", "primer"],
     )
 
     assert res.success, res.message
@@ -453,9 +452,9 @@ def test_agent_tools_del_unknown_tool_rejected(patch_resolve, patch_flag_modifie
     )
     patch_resolve["aico"] = node
 
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), permissions=["admin.agent.tools.manage"]),
-        ["del", "aico", "no-such-tool"],
+        ["tool", "del", "aico", "no-such-tool"],
     )
     assert not res.success
     assert res.error == AGENT_TOOLS_UNKNOWN_TOOL
@@ -469,9 +468,9 @@ def test_agent_tools_admin_wildcard_grants_write(patch_resolve, patch_flag_modif
     )
     patch_resolve["aico"] = node
 
-    res = AgentToolsCommand().execute(
+    res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), permissions=["admin.*"]),
-        ["add", "aico", "help"],
+        ["tool", "add", "aico", "help"],
     )
     assert res.success
     assert node.attributes["tool_allowlist"] == ["help"]

@@ -1,6 +1,6 @@
 # CampusWorld 快速启动指南
 
-本指南将帮助您快速启动 CampusWorld 项目，包括环境搭建、依赖安装和项目运行。
+本指南将帮助您快速启动 CampusWorld 项目的开发，包括环境搭建、依赖安装和项目运行。
 
 ## 🚀 快速启动 (推荐方式)
 
@@ -8,7 +8,7 @@
 
 ```bash
 # 克隆项目
-git clone <your-repository-url>
+git clone <repository-url>
 cd campusworld
 
 # 运行初始化脚本 (自动完成所有设置)

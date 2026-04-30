@@ -20,6 +20,17 @@ from app.core.database import db_session_context
 if TYPE_CHECKING:
     from .base import DefaultObject
 
+
+def _strip_raw_attrs_shadowed_by_common_kw(raw_attrs: Dict[str, Any], common_kw: Dict[str, Any]) -> None:
+    """Drop JSON attribute keys that duplicate column-aligned keys passed via ``common_kw``.
+
+    ``nodes`` column values (and ``disable_auto_sync``) are the source of truth for hydrate;
+    mirroring the same keys under ``node.attributes`` must not collide with ``**common_kw``.
+    """
+    for k in common_kw:
+        raw_attrs.pop(k, None)
+
+
 class GraphSynchronizer:
     """
     图同步器
@@ -207,6 +218,7 @@ class GraphSynchronizer:
                 "access_level": node.access_level or "normal",
                 "tags": tags_list,
             }
+            _strip_raw_attrs_shadowed_by_common_kw(raw_attrs, common_kw)
 
             def _apply_column_alignment(obj: Any) -> None:
                 obj._node_uuid = str(node.uuid)

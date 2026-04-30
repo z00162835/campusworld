@@ -5,14 +5,14 @@
 ## 技术栈
 | 层级 | 技术 |
 |------|------|
-| 后端 | Python 3.11+ · FastAPI · SQLAlchemy · Paramiko (SSH) |
-| 前端 | Vue 3 · TypeScript · Vite · Element Plus · Pinia |
+| 前端 | TypeScript · Vue 3 · Vite · Element Plus · Pinia |
+| 后端 | Python 3.11+ · FastAPI · SQLAlchemy |
 | 基础设施 | Docker Compose · Redis · PostgreSQL|
 
-## 快速启动
+## 本地快速启动
 
 ```bash
-# 一键初始化（推荐）
+# 一键初始化
 ./scripts/setup.sh
 
 # 或手动启动
@@ -26,7 +26,7 @@ python campusworld.py          # 系统入口：引擎 + HTTP + SSH
 cd frontend && npm install && npm run dev
 ```
 
-访问：`http://localhost:5173`（前端）· `http://localhost:8000/docs`（API 文档）· `ssh localhost -p 2222`（终端）
+本地访问：`http://localhost:3000`（前端） · `ssh localhost -p 2222`（终端）
 
 ## 项目结构
 - [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) — 详细目录结构说明

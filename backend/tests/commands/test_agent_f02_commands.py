@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.commands.agent_commands import AgentCapabilitiesCommand
+from app.commands.agent_commands import AgentCommand
 from app.commands.base import CommandContext
 from app.commands.npc_agent_nlp import run_npc_agent_nlp_tick
 from app.game_engine.agent_runtime.agent_llm_config import invalidate_aico_system_llm_config
@@ -17,7 +17,7 @@ from app.models.system import AgentRunRecord
 
 
 @pytest.mark.postgres_integration
-def test_agent_capabilities_resolves_service_id():
+def test_agent_show_resolves_service_id():
     from app.core.database import SessionLocal, engine
     from db.migrate_report import is_postgresql_engine
     from db.schema_migrations import (
@@ -63,11 +63,11 @@ def test_agent_capabilities_resolves_service_id():
             permissions=["admin.system"],
             db_session=session,
         )
-        cap = AgentCapabilitiesCommand()
-        r1 = cap.execute(ctx, [svc])
+        ag = AgentCommand()
+        r1 = ag.execute(ctx, ["show", svc])
         assert r1.success
         data = json.loads(r1.message)
-        assert data["service_id"] == svc
+        assert data["id"] == svc
         assert data["agent_node_id"] == agent.id
 
         session.delete(agent)

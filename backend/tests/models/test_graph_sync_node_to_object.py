@@ -39,6 +39,46 @@ def test_sync_node_to_object_user_one_way_hydrate():
 
 
 @pytest.mark.unit
+def test_sync_node_to_object_strips_json_keys_that_shadow_node_columns():
+    """attributes must not mirror column semantics; hydrate uses columns + common_kw."""
+    node = MagicMock()
+    node.name = "admin"
+    node.attributes = {
+        "username": "admin",
+        "email": "a@b.com",
+        "roles": ["admin"],
+        "access_level": "legacy-json",
+        "tags": ["from-json"],
+        "description": "json-desc",
+        "is_active": False,
+        "is_public": True,
+        "location_id": 999,
+        "home_id": 888,
+    }
+    node.location_id = 10
+    node.home_id = 11
+    node.description = "from-column"
+    node.is_active = True
+    node.is_public = False
+    node.access_level = "admin"
+    node.tags = ["system"]
+    uid = uuid.uuid4()
+    node.uuid = uid
+    node.created_at = None
+    node.updated_at = None
+
+    obj = GraphSynchronizer().sync_node_to_object(node, User)
+    assert obj is not None
+    assert obj.get_node_access_level() == "admin"
+    assert obj._node_tags == ["system"]
+    assert obj.get_node_description() == "from-column"
+    assert obj.get_node_location_id() == 10
+    assert obj.get_node_home_id() == 11
+    assert obj.is_active is True
+    assert obj.is_public is False
+
+
+@pytest.mark.unit
 def test_sync_node_to_object_username_fallback_to_node_name():
     node = MagicMock()
     node.name = "campus"

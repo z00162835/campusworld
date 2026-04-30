@@ -106,59 +106,60 @@ commands:
     description: >-
       System primer — prefer `primer <section>` (e.g. primer ontology) to save tokens;
       bare `primer` returns the full nine-section document.
-  agent_capabilities:
-    description: "List agent capabilities for a service_id"
-  agent_tools:
-    description: >-
-      List visible agents tools.
-    title: "Agent Tools"
-    header:
-      service_id: "service_id"
-      name: "name"
-      status: "status"
-      n_tools: "n"
-      tools: "tools"
-    footer:
-      total: "(total={n})"
-    empty: "No agents registered."
-    tools_empty: "(none)"
-    usage:
-      add: "agent_tools add <service_id> <tool> [<tool>...]"
-      del: "agent_tools del <service_id> <tool> [<tool>...]"
-    summary:
-      add_success: "add {sid} {tools} succeeded (allowlist updated)."
-      add_mixed: "add {sid} {added} succeeded. Already in allowlist: {unchanged}."
-      add_noop: "No change: {tools} already in the allowlist for {sid}."
-      del_success: "del {sid} {tools} succeeded (allowlist updated)."
-      del_mixed: "del {sid} {removed} succeeded. Not in allowlist: {unchanged}."
-      del_noop: "No change: {tools} not in the allowlist for {sid}."
-    error:
-      no_session: "database session required"
-      forbidden: "Permission denied for agent_tools {action}"
-      unknown_tool: "unknown tool: {name}"
-      misordered_add_del: >-
-        Subcommand {second} must come first after agent_tools. Use: {expected}
-        (This line was parsed as: query agent '{first}' only; '{second}' and the rest were ignored.)
   aico:
     description: "Talk to AICO"
   agent:
     description: >-
-      Query Agent information: list / status / nlp
+      Agent directory: list / status / tool / show
     list:
       empty: |-
         agent list: no active npc_agent nodes found.
         Expected: nodes with type_code=npc_agent, is_active=true
       header:
-        service_id: "service_id"
+        id: "id"
         name: "name"
         status: "status"
-        id: "agent_node_id"
+        agent_node_id: "agent_node_id"
       footer: "(total={n})"
-      hint: "Example: agent status <service_id>"
+      hint: "Example: agent status <id>"
+    status:
+      usage: "usage: agent status <id>"
     status_value:
       unavailable: "unavailable"
       idle: "idle"
       working: "working"
+    tool:
+      title: "Agent tools"
+      header:
+        id: "id"
+        name: "name"
+        status: "status"
+        n_tools: "n"
+        tools: "tools"
+      footer:
+        total: "(total={n})"
+      empty: "No agents registered."
+      tools_empty: "(none)"
+      usage:
+        add: "agent tool add <id> <tool> [<tool>...]"
+        del: "agent tool del <id> <tool> [<tool>...]"
+      summary:
+        add_success: "add {sid} {tools} succeeded (allowlist updated)."
+        add_mixed: "add {sid} {added} succeeded. Already in allowlist: {unchanged}."
+        add_noop: "No change: {tools} already in the allowlist for {sid}."
+        del_success: "del {sid} {tools} succeeded (allowlist updated)."
+        del_mixed: "del {sid} {removed} succeeded. Not in allowlist: {unchanged}."
+        del_noop: "No change: {tools} not in the allowlist for {sid}."
+      error:
+        no_session: "database session required"
+        forbidden: "Permission denied for agent tool {action}"
+        unknown_tool: "unknown tool: {name}"
+        misordered_add_del: >-
+          Subcommand {second} must come first after agent tool. Use: {expected}
+          (This line was parsed as: query agent '{first}' only; '{second}' and the rest were ignored.)
+    show:
+      usage: "usage: agent show <id>"
+      description: "Capability summary for one agent by id"
     error:
       no_session: "database session required"
   north:

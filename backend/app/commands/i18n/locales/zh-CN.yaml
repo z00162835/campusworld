@@ -102,55 +102,57 @@ commands:
       bad_combo: "不能同时使用 -t 与 -i"
   primer:
     description: "系统primer信息（建议用章节节省输出）"
-  agent_capabilities:
-    description: "按service_id查询 Agent 能力摘要"
-  agent_tools:
-    description: 列出Agent可使用工具列表。
-    title: "Agent 工具"
-    header:
-      service_id: "service_id"
-      name: "名称"
-      status: "状态"
-      n_tools: "数"
-      tools: "工具"
-    footer:
-      total: "（共 {n} 个）"
-    empty: "暂无已注册 Agent。"
-    tools_empty: "（无）"
-    usage:
-      add: "agent_tools add <service_id> <tool> [<tool>...]"
-      del: "agent_tools del <service_id> <tool> [<tool>...]"
-    summary:
-      add_success: "add {sid} {tools} 成功（已更新白名单）。"
-      add_mixed: "add {sid} {added} 成功；{unchanged} 本已在白名单中，未改。"
-      add_noop: "无变更：{tools} 已在 {sid} 白名单中。"
-      del_success: "del {sid} {tools} 成功（已更新白名单）。"
-      del_mixed: "del {sid} {removed} 成功；{unchanged} 本不在白名单中，未改。"
-      del_noop: "无变更：{tools} 本不在 {sid} 白名单中。"
-    error:
-      no_session: "缺少数据库会话"
-      forbidden: "无权限执行 agent_tools {action}"
-      unknown_tool: "未知工具：{name}"
-      misordered_add_del: 子命令 {second} 须紧跟在 agent_tools 之后。请使用：{expected}
   aico:
     description: "与AICO对话"
   agent:
-    description: "查询Agent信息(list / status / nlp)"
+    description: "Agent 目录：list / status / tool / show"
     list:
       empty: |-
         agent list：当前无可见的活跃 npc_agent 节点。
         预期：图节点 type_code=npc_agent 且 is_active=true
       header:
-        service_id: "service_id"
+        id: "id"
         name: "名称"
         status: "状态"
-        id: "节点ID"
+        agent_node_id: "节点ID"
       footer: "（共 {n} 个）"
-      hint: "单实例：agent status <service_id>"
+      hint: "单实例：agent status <id>"
+    status:
+      usage: "用法：agent status <id>"
     status_value:
       unavailable: "不可用"
       idle: "空闲"
       working: "工作中"
+    tool:
+      title: "Agent 工具"
+      header:
+        id: "id"
+        name: "名称"
+        status: "状态"
+        n_tools: "数"
+        tools: "工具"
+      footer:
+        total: "（共 {n} 个）"
+      empty: "暂无已注册 Agent。"
+      tools_empty: "（无）"
+      usage:
+        add: "agent tool add <id> <tool> [<tool>...]"
+        del: "agent tool del <id> <tool> [<tool>...]"
+      summary:
+        add_success: "add {sid} {tools} 成功。"
+        add_mixed: "add {sid} {added} 成功；{unchanged} 本已在白名单中，未改。"
+        add_noop: "无变更：{tools} 已在 {sid} 白名单中。"
+        del_success: "del {sid} {tools} 成功。"
+        del_mixed: "del {sid} {removed} 成功；{unchanged} 本不在白名单中，未改。"
+        del_noop: "无变更：{tools} 本不在 {sid} 白名单中。"
+      error:
+        no_session: "缺少数据库会话"
+        forbidden: "无权限执行 agent tool {action}"
+        unknown_tool: "未知工具：{name}"
+        misordered_add_del: 子命令 {second} 须紧跟在 agent tool 之后。请使用：{expected}
+    show:
+      usage: "用法：agent show <id>"
+      description: "按 id 查询 Agent 能力摘要"
     error:
       no_session: "需要数据库会话"
   north:
