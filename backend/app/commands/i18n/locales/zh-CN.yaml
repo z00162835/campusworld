@@ -2,7 +2,7 @@
 # 用途：help 列表、按语言搜索、与 app.default_locale 对齐的 graph/AICO 文案等。
 commands:
   help:
-    description: "列出当前可用命令，或显示某条命令的详细帮助。"
+    description: "列出当前可用命令，或显示某条命令的详细帮助"
   stats:
     description: "显示系统资源与运行统计"
     title: "系统统计"
@@ -39,8 +39,8 @@ commands:
       preview: "共 {total} 个，已显示前 {shown} 个；使用 -a 查看全部。"
       all: "共 {total} 个 active 类型。"
     error:
-      no_session: "节点类型列表不可用（缺少数据库会话）。"
-      empty: "暂无 active 节点类型。"
+      no_session: "节点类型列表不可用，缺少数据库会话。"
+      empty: "暂无激活的节点类型。"
   look:
     description: "查看当前环境或指定物品/对象"
   go:
@@ -50,19 +50,19 @@ commands:
   leave:
     description: "离开当前世界，回到奇点屋"
   notice:
-    description: "管理系统公告（发布/编辑/归档/列表）"
+    description: "管理系统公告(publish/edit/archive/list)"
   world:
-    description: "世界包管理（列表/安装/卸载/重载/校验等）"
+    description: "世界包管理(list/install/uninstall/reload/status/validate/repair/content/bridge)"
   create:
-    description: "按模型创建对象：create 类名 = {参数}"
+    description: "按模型创建对象"
   create_info:
     description: "查看可创建模型的元数据与字段"
   find:
-    description: "按条件查找节点（非语义检索）"
+    description: "按条件查找节点"
   describe:
-    description: "查看单个节点详情（类型、属性、关系摘要）"
+    description: "查看单个节点详情"
   space:
-    description: "按节点 id 查询空间（SPACE）四段摘要：环境、人物、设备、关系"
+    description: "按节点id查询空间信息"
     usage:
       line: "space -t | space -i <node_id>"
     section:
@@ -101,15 +101,14 @@ commands:
     flags:
       bad_combo: "不能同时使用 -t 与 -i"
   primer:
-    description: "系统primer信息（建议用章节节省输出）"
+    description: "系统primer信息"
   aico:
     description: "与AICO对话"
   agent:
-    description: "Agent 目录：list / status / tool / show"
+    description: "查询Agent信息(list/status/tools/show)"
     list:
       empty: |-
-        agent list：当前无可见的活跃 npc_agent 节点。
-        预期：图节点 type_code=npc_agent 且 is_active=true
+        agent list：当前无可见的活跃Agent。
       header:
         id: "id"
         name: "名称"
@@ -180,9 +179,9 @@ commands:
   out:
     description: "向外/离开方向移动"
   task:
-    description: "任务命令（create / publish / claim / assign / complete / list / show / pool ...）"
+    description: "任务命令(create/publish/claim/assign/complete/list/show/pool)"
     usage:
-      root: "task <子命令> [参数]；可用：create / list / show / claim / assign / publish / complete / pool"
+      root: "task <子命令> [参数]；可用：create/list/show/claim/assign/publish/complete/pool"
       create: "task create --title <T> [--workflow <key>] [--to-pool <pool_key>] [--priority <p>] [--visibility <v>] [--idempotency-key <k>]"
       claim: "task claim <id> [--idempotency-key <k>]"
       assign: "task assign <id> --to <principal_id> [--kind user|agent|group] [--idempotency-key <k>]"

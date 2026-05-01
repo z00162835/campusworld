@@ -50,9 +50,9 @@ commands:
   leave:
     description: "Leave the current world and return to the Singularity Room"
   notice:
-    description: "Manage system bulletins (publish, edit, archive, list)"
+    description: "Manage system bulletins (publish/edit/archive/list)"
   world:
-    description: "World package management (list, install, uninstall, reload, status, …)"
+    description: "World package management (list/install/uninstall/reload/status/validate/repair/content/bridge)"
   create:
     description: "Create an object: create ClassName = {args}"
   create_info:

@@ -89,7 +89,7 @@ class WorldCommand(AdminCommand):
     def __init__(self):
         super().__init__(
             name="world",
-            description="世界包管理（list/install/uninstall/reload/status/validate/repair/content）",
+            description="世界包管理(list/install/uninstall/reload/status/validate/repair/content/bridge)",
             aliases=["worlds"],
         )
 

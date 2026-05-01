@@ -16,7 +16,7 @@ class NoticeCommand(GameCommand):
     def __init__(self):
         super().__init__(
             name="notice",
-            description="管理系统公告（publish/edit/archive/list）",
+            description="管理系统公告(publish/edit/archive/list)",
             aliases=["notices"],
             game_name="campus_life",
         )
