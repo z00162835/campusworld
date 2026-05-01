@@ -180,6 +180,12 @@ agents:
         # reply is blank. Omit the key to use the built-in default in code.
         # extra:
         #   npc_agent_empty_reply_message: "抱歉，我没有能力处理此问题。你可以换一个问题。"
+        # Intent classifier (optional LoRA SLM; default off — requires ml-intent-classifier + trained artifact):
+        #   use_intent_slm: false
+        #   artifact_dir: "app/models/agent_model/intent_classifier/artifacts/run001"
+        #   intent_classifier_allowed_path_prefixes: ["app/models/agent_model/intent_classifier/artifacts"]
+        #   max_new_tokens: 96
+        #   system_prompt_file: ""  # omit for packaged default prompt
         extra: {}
         system_prompt: |
           You are AICO, the default system assistant of CampusWorld — a graph-native

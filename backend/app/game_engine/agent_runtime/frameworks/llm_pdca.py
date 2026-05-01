@@ -23,7 +23,11 @@ from app.game_engine.agent_runtime.frameworks.base import (
     ThinkingFramework,
 )
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
-from app.game_engine.agent_runtime.intent_classifier_interface import classify_intent
+from app.game_engine.agent_runtime.intent_classifier_interface import (
+    IntentClassifier,
+    RuleFallbackIntentClassifier,
+    classify_intent,
+)
 from app.game_engine.agent_runtime.llm_client import (
     LlmCallSpec,
     LlmClient,
@@ -228,6 +232,7 @@ class LlmPDCAFramework(ThinkingFramework):
         tool_gather_budgets: Optional[ToolGatherBudgets] = None,
         tick_hooks: Optional[AgentTickHooks] = None,
         tool_schemas: Optional[Sequence[ToolSchema]] = None,
+        intent_classifier: Optional[IntentClassifier] = None,
     ):
         self._memory = memory
         self._cfg = llm_config
@@ -242,6 +247,7 @@ class LlmPDCAFramework(ThinkingFramework):
         )
         self._tick_hooks: AgentTickHooks = tick_hooks or NoOpAgentTickHooks()
         self._tool_schemas: List[ToolSchema] = list(tool_schemas or [])
+        self._intent_classifier: Optional[IntentClassifier] = intent_classifier
 
     @property
     def framework_id(self) -> str:
@@ -612,11 +618,21 @@ class LlmPDCAFramework(ThinkingFramework):
         if isinstance(ctx.payload.get("intent_hint"), dict):
             intent_hint = dict(ctx.payload.get("intent_hint") or {})
         else:
+            icls = self._intent_classifier or RuleFallbackIntentClassifier()
             ic = classify_intent(
                 user_msg,
                 agent_id=str(ctx.agent_node_id),
                 metadata={"correlation_id": str(correlation or "")},
+                classifier=icls,
             )
+            ic_extra: Dict[str, Any] = {
+                "intent": ic.intent,
+                "intent_confidence": float(ic.confidence),
+                "intent_source": ic.source,
+            }
+            if ic.latency_ms is not None:
+                ic_extra["intent_slm_latency_ms"] = float(ic.latency_ms)
+            _LLM_PDCA_LOG.info("intent_classified", extra=ic_extra)
             intent_hint = {
                 "intent": ic.intent,
                 "reason_tokens": list(ic.reason_tokens or []),
@@ -898,8 +914,9 @@ def _assemble_plan_user(
 
     1. World snapshot (caller identity, location, installed worlds).
     2. Tools available (manifest summary).
-    3. Retrieved memory (LTM or empty).
-    4. User message.
+    3. Intent hint when present (pre-classifier label, confidence, source).
+    4. Retrieved memory (LTM or empty).
+    5. User message.
     """
     segments: List[str] = []
     if world_snapshot:
@@ -910,6 +927,8 @@ def _assemble_plan_user(
         segments.append(
             "Intent hint (runtime pre-classifier):\n"
             f"  intent: {intent_hint.get('intent') or 'informational'}\n"
+            f"  confidence: {intent_hint.get('confidence')}\n"
+            f"  source: {intent_hint.get('source') or 'unknown'}\n"
             f"  reason_tokens: {intent_hint.get('reason_tokens') or []}"
         )
     segments.append(f"Retrieved memory (may be empty):\n{memory or '(none)'}")

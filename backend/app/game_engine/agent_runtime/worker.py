@@ -89,6 +89,7 @@ class SysSampleWorker(AgentWorker):
         agent = session.query(Node).filter(Node.id == agent_node_id).first()
         if agent is None:
             raise ValueError(f"agent node {agent_node_id} not found")
+        attrs = agent.attributes or {}
         fb = invoker_context or CommandContext(
             user_id=str(agent_node_id),
             username="agent_worker",
@@ -255,6 +256,13 @@ class LlmPdcaAssistantWorker(AgentWorker):
                 get_logger(LoggerNames.AICO_AGENT),
                 max_phase_output_chars=get_aico_max_phase_output_chars(cm),
             )
+        from app.game_engine.agent_runtime.intent_classifier_runtime import (
+            build_intent_classifier_for_tick,
+            resolve_intent_classifier_runtime,
+        )
+
+        ic_runtime = resolve_intent_classifier_runtime(dict(cfg.extra or {}), attrs)
+        intent_classifier = build_intent_classifier_for_tick(ic_runtime)
         fw = LlmPDCAFramework(
             memory=mem,
             llm_config=cfg,
@@ -267,6 +275,7 @@ class LlmPdcaAssistantWorker(AgentWorker):
             tool_gather_budgets=budgets,
             tick_hooks=tick_hooks,
             tool_schemas=tool_schemas,
+            intent_classifier=intent_classifier,
         )
         return cls(
             memory=mem,

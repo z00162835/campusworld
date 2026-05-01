@@ -51,7 +51,14 @@ def test_plan_user_contains_structured_intent_hint():
         memory="",
         world_snapshot="",
         tool_manifest_text="",
-        intent_hint={"intent": "informational", "reason_tokens": ["informational_cue"]},
+        intent_hint={
+            "intent": "informational",
+            "confidence": 0.65,
+            "source": "rule_fallback",
+            "reason_tokens": ["informational_cue"],
+        },
     )
     assert "Intent hint (runtime pre-classifier):" in assembled
     assert "intent: informational" in assembled
+    assert "confidence: 0.65" in assembled
+    assert "source: rule_fallback" in assembled

@@ -6,6 +6,10 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Protocol
 
+from app.core.log import LoggerNames, get_logger
+
+_LOG = get_logger(LoggerNames.GAME)
+
 
 @dataclass(frozen=True)
 class IntentClassification:
@@ -13,6 +17,7 @@ class IntentClassification:
     confidence: float
     reason_tokens: List[str]
     source: str
+    latency_ms: Optional[float] = None
 
 
 class IntentClassifier(Protocol):
@@ -24,6 +29,32 @@ class IntentClassifier(Protocol):
         metadata: Optional[Dict[str, object]] = None,
     ) -> IntentClassification:
         ...
+
+
+class ChainedIntentClassifier:
+    """Try primary classifier first; on failure or invalid label use fallback."""
+
+    def __init__(self, *, primary: IntentClassifier, fallback: IntentClassifier):
+        self._primary = primary
+        self._fallback = fallback
+
+    def classify_intent(
+        self,
+        user_message: str,
+        *,
+        agent_id: Optional[str] = None,
+        metadata: Optional[Dict[str, object]] = None,
+    ) -> IntentClassification:
+        try:
+            out = self._primary.classify_intent(user_message, agent_id=agent_id, metadata=metadata)
+            if out.intent in {"informational", "verify_state", "execute"}:
+                return out
+        except Exception as exc:
+            _LOG.warning(
+                "intent_classifier_primary_failed",
+                extra={"error": str(exc)},
+            )
+        return self._fallback.classify_intent(user_message, agent_id=agent_id, metadata=metadata)
 
 
 class RuleFallbackIntentClassifier:

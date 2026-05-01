@@ -39,6 +39,7 @@ def main() -> int:
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    from app.models.agent_model.intent_classifier.runtime.inference import greedy_decode_intent_json
     from app.models.agent_model.intent_classifier.train.dataset_builder import (
         VALID_LABELS,
         IntentTrainSample,
@@ -83,32 +84,20 @@ def main() -> int:
     rows_total = len(samples)
 
     def score_sample(sample: IntentTrainSample) -> Tuple[bool, Dict[str, Any]]:
-        messages = [
-            {"role": "system", "content": system_prompt.strip()},
-            {"role": "user", "content": sample.text},
-        ]
-        prompt = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-        inputs = tokenizer(prompt, return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-        with torch.no_grad():
-            output_ids = model.generate(
-                **inputs,
-                max_new_tokens=int(args.max_new_tokens),
-                do_sample=False,
-                pad_token_id=tokenizer.pad_token_id,
-                eos_token_id=tokenizer.eos_token_id,
-            )
-        generated = output_ids[0][inputs["input_ids"].shape[-1] :]
-        text = tokenizer.decode(generated, skip_special_tokens=True).strip()
         obj: Dict[str, Any]
         try:
-            obj = json.loads(text)
-        except json.JSONDecodeError:
-            return False, {"raw": text, "error": "json_decode"}
+            obj = greedy_decode_intent_json(
+                model=model,
+                tokenizer=tokenizer,
+                device=device,
+                system_prompt=system_prompt,
+                user_message=sample.text,
+                max_new_tokens=int(args.max_new_tokens),
+            )
+        except json.JSONDecodeError as exc:
+            return False, {"raw": "", "error": "json_decode", "detail": str(exc)}
+        except Exception as exc:
+            return False, {"raw": "", "error": "inference", "detail": str(exc)}
         intent = str(obj.get("intent") or "").strip()
         ok_label = intent == sample.label and intent in VALID_LABELS
         return ok_label, {"parsed": obj, "raw": text}
