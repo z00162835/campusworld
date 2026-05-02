@@ -16,6 +16,11 @@ class FrameworkRunContext:
     system_prompt: Optional[str] = None
     phase_prompts: Dict[str, str] = field(default_factory=dict)
     memory_context: Optional[str] = None
+    #: When set with retrieved_memory, Plan orders STM then LTM per F12 §7; else memory_context alone (legacy).
+    recent_conversation: Optional[str] = None
+    retrieved_memory: Optional[str] = None
+    #: When set, Do / Check phases use this instead of repeating full STM/LTM (F12 D5).
+    memory_context_do: Optional[str] = None
     # Raw dict per phase -> merged into PhaseLlmPhaseConfig (tick-level phase_llm overrides)
     phase_llm_overrides: Dict[str, Any] = field(default_factory=dict)
 

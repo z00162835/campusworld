@@ -5,6 +5,7 @@ Schema and behavior contracts live under ``docs/models/SPEC/features/``.
 
 from __future__ import annotations
 
+import uuid
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from sqlalchemy import text
@@ -22,6 +23,8 @@ def search_ltm_by_embedding(
     *,
     k: int = 8,
     embedding_model: Optional[str] = None,
+    caller_account_node_id: Optional[int] = None,
+    conversation_thread_id: Optional[uuid.UUID] = None,
 ) -> List[Tuple[int, str, float]]:
     """
     Cosine-distance KNN within one agent's LTM rows that have embeddings.
@@ -39,6 +42,12 @@ def search_ltm_by_embedding(
     WHERE agent_node_id = :aid AND embedding IS NOT NULL
     """
     params: Dict[str, Any] = {"aid": agent_node_id, "qv": vec_literal, "k": k}
+    if caller_account_node_id is not None:
+        sql += " AND caller_account_node_id = :cid"
+        params["cid"] = int(caller_account_node_id)
+    if conversation_thread_id is not None:
+        sql += " AND conversation_thread_id = :tid"
+        params["tid"] = str(conversation_thread_id)
     if embedding_model is not None:
         sql += " AND embedding_model = :em"
         params["em"] = embedding_model
@@ -164,6 +173,8 @@ def build_ltm_memory_context_for_tick(
     user_message: str,
     limit: int = 8,
     max_chars: int = 2000,
+    caller_account_node_id: Optional[int] = None,
+    conversation_thread_id: Optional[uuid.UUID] = None,
 ) -> Optional[str]:
     """
     Concatenate recent LTM row summaries for optional NLP memory_context injection.
@@ -173,13 +184,12 @@ def build_ltm_memory_context_for_tick(
     user_message is reserved for future relevance ranking.
     """
     _ = user_message
-    rows = (
-        session.query(AgentLongTermMemory)
-        .filter(AgentLongTermMemory.agent_node_id == agent_node_id)
-        .order_by(AgentLongTermMemory.id.desc())
-        .limit(limit)
-        .all()
-    )
+    q = session.query(AgentLongTermMemory).filter(AgentLongTermMemory.agent_node_id == agent_node_id)
+    if caller_account_node_id is not None:
+        q = q.filter(AgentLongTermMemory.caller_account_node_id == int(caller_account_node_id))
+    if conversation_thread_id is not None:
+        q = q.filter(AgentLongTermMemory.conversation_thread_id == conversation_thread_id)
+    rows = q.order_by(AgentLongTermMemory.id.desc()).limit(limit).all()
     parts: List[str] = []
     for r in rows:
         s = str(r.summary or "").strip()

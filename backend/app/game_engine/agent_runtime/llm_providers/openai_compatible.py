@@ -45,7 +45,9 @@ class OpenAiCompatibleHttpLlmClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        body.update(spec.extra or {})
+        extra = dict(spec.extra or {})
+        extra.pop("prompt_fingerprint", None)
+        body.update(extra)
         url = f"{self._base}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self._api_key}",

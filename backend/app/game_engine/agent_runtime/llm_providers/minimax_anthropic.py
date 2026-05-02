@@ -90,7 +90,9 @@ class MinimaxAnthropicMessagesHttpLlmClient:
             "stream": False,
             "temperature": temp,
         }
-        body.update(spec.extra or {})
+        extra = dict(spec.extra or {})
+        extra.pop("prompt_fingerprint", None)
+        body.update(extra)
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "x-api-key": self._api_key,
@@ -141,7 +143,9 @@ class MinimaxAnthropicMessagesHttpLlmClient:
             "temperature": temp,
             "tools": [_tool_schema_to_anthropic(t) for t in tools],
         }
-        body.update(spec.extra or {})
+        extra = dict(spec.extra or {})
+        extra.pop("prompt_fingerprint", None)
+        body.update(extra)
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "x-api-key": self._api_key,

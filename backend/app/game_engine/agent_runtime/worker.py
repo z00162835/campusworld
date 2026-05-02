@@ -53,6 +53,9 @@ class AgentWorker:
         system_prompt: Optional[str] = None,
         phase_prompts: Optional[Dict[str, str]] = None,
         memory_context: Optional[str] = None,
+        recent_conversation: Optional[str] = None,
+        retrieved_memory: Optional[str] = None,
+        memory_context_do: Optional[str] = None,
         phase_llm_overrides: Optional[Dict[str, Any]] = None,
     ):
         # Tier-ed context: enrich payload with the precomputed tool manifest
@@ -68,6 +71,9 @@ class AgentWorker:
             system_prompt=system_prompt,
             phase_prompts=dict(phase_prompts or {}),
             memory_context=memory_context,
+            recent_conversation=recent_conversation,
+            retrieved_memory=retrieved_memory,
+            memory_context_do=memory_context_do,
             phase_llm_overrides=dict(phase_llm_overrides or {}),
         )
         return self.framework.run(ctx)

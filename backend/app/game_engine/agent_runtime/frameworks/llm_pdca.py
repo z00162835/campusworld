@@ -4,6 +4,7 @@ import logging
 import re
 import time
 import uuid
+from dataclasses import replace
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from app.commands.base import CommandContext
@@ -261,6 +262,14 @@ class LlmPDCAFramework(ThinkingFramework):
             default_model=(self._cfg.model or "").strip(),
         )
 
+    def _augment_spec_from_ctx(self, spec: LlmCallSpec, ctx: FrameworkRunContext) -> LlmCallSpec:
+        fp = (ctx.payload or {}).get("prompt_fingerprint")
+        if isinstance(fp, str) and fp.strip():
+            extra = dict(spec.extra or {})
+            extra["prompt_fingerprint"] = fp.strip()
+            return replace(spec, extra=extra)
+        return spec
+
     # -------------------- low-level LLM invocation (text) --------------------
 
     def _call_llm(
@@ -271,7 +280,7 @@ class LlmPDCAFramework(ThinkingFramework):
         ctx: FrameworkRunContext,
     ) -> Tuple[str, Dict[str, Any]]:
         """Single plain-text LLM call (back-compat shape for existing tests)."""
-        spec = self._spec_for_phase(phase, ctx)
+        spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx)
         cm = get_config()
         if should_emit_aico_full_chain_logs(cm):
             log_aico_llm_call(
@@ -343,7 +352,7 @@ class LlmPDCAFramework(ThinkingFramework):
         Returns ``(text, tool_calls, trace_entry)``. ``tool_calls`` is empty
         when the model chose to answer with prose or when parsing failed.
         """
-        spec = self._spec_for_phase(phase, ctx)
+        spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx)
         cm = get_config()
         user_text_for_log = _render_turns_as_text(turns)
         if should_emit_aico_full_chain_logs(cm):
@@ -613,6 +622,11 @@ class LlmPDCAFramework(ThinkingFramework):
         merged_phases = _merge_phase_prompts(dict(self._cfg.phase_prompts), ctx.phase_prompts)
 
         mem = (ctx.memory_context or "").strip()
+        mem_for_do = (
+            (ctx.memory_context_do or "").strip()
+            if ctx.memory_context_do is not None
+            else mem
+        )
         world_snapshot = str(ctx.payload.get("world_snapshot") or "").strip()
         tool_manifest_text = str(ctx.payload.get("tool_manifest_text") or "").strip()
         if isinstance(ctx.payload.get("intent_hint"), dict):
@@ -640,13 +654,25 @@ class LlmPDCAFramework(ThinkingFramework):
                 "source": ic.source,
             }
 
-        plan_user = _assemble_plan_user(
-            user_msg=user_msg,
-            memory=mem,
-            world_snapshot=world_snapshot,
-            tool_manifest_text=tool_manifest_text,
-            intent_hint=intent_hint,
-        )
+        if ctx.recent_conversation is not None or ctx.retrieved_memory is not None:
+            rc = (ctx.recent_conversation or "").strip()
+            rm = (ctx.retrieved_memory or "").strip()
+            plan_user = _assemble_plan_user(
+                user_msg=user_msg,
+                memory=rm or "(none)",
+                world_snapshot=world_snapshot,
+                tool_manifest_text=tool_manifest_text,
+                intent_hint=intent_hint,
+                recent_conversation=rc if rc else None,
+            )
+        else:
+            plan_user = _assemble_plan_user(
+                user_msg=user_msg,
+                memory=mem,
+                world_snapshot=world_snapshot,
+                tool_manifest_text=tool_manifest_text,
+                intent_hint=intent_hint,
+            )
 
         # ---------------- PLAN ----------------
         self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
@@ -673,11 +699,11 @@ class LlmPDCAFramework(ThinkingFramework):
         if plan_block:
             do_user = (
                 f"User message:\n{user_msg}\n\nPlan:\n{plan_out}\n{tool_blocks_plan}\n\n"
-                f"Memory:\n{mem or '(none)'}"
+                f"Memory:\n{mem_for_do or '(none)'}"
             )
         else:
             do_user = (
-                f"User message:\n{user_msg}{tool_blocks_plan}\n\nMemory:\n{mem or '(none)'}"
+                f"User message:\n{user_msg}{tool_blocks_plan}\n\nMemory:\n{mem_for_do or '(none)'}"
             )
         do_sys = _phase_system(base_system, PDCAPhase.do.value, merged_phases)
         reply, do_tools_text, _do_results, do_entry = self._phase_react_loop(
@@ -761,7 +787,7 @@ class LlmPDCAFramework(ThinkingFramework):
             )
             do2_user = (
                 f"User message:\n{user_msg}\n\nPlan:\n{plan2_out or plan_out}\n{do2_blocks}\n\n"
-                f"Memory:\n{mem or '(none)'}"
+                f"Memory:\n{mem_for_do or '(none)'}"
             )
             reply2, do2_tools_text, _dr2, _de2 = self._phase_react_loop(
                 PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace
@@ -906,6 +932,7 @@ def _assemble_plan_user(
     world_snapshot: str,
     tool_manifest_text: str,
     intent_hint: Optional[Dict[str, Any]] = None,
+    recent_conversation: Optional[str] = None,
 ) -> str:
     """Build the first Plan user turn.
 
@@ -915,8 +942,9 @@ def _assemble_plan_user(
     1. World snapshot (caller identity, location, installed worlds).
     2. Tools available (manifest summary).
     3. Intent hint when present (pre-classifier label, confidence, source).
-    4. Retrieved memory (LTM or empty).
-    5. User message.
+    4. Recent conversation (STM) when provided (F12 §7).
+    5. Retrieved memory (LTM or empty).
+    6. User message.
     """
     segments: List[str] = []
     if world_snapshot:
@@ -931,6 +959,8 @@ def _assemble_plan_user(
             f"  source: {intent_hint.get('source') or 'unknown'}\n"
             f"  reason_tokens: {intent_hint.get('reason_tokens') or []}"
         )
+    if recent_conversation:
+        segments.append(f"Recent conversation:\n{recent_conversation}")
     segments.append(f"Retrieved memory (may be empty):\n{memory or '(none)'}")
     segments.append(f"User message:\n{user_msg}")
     return "\n\n".join(segments)
