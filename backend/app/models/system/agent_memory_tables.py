@@ -40,6 +40,54 @@ class AgentRunRecord(Base):
     ended_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class AgentConversationStm(Base):
+    """Mode A: one row per (caller, transport session, agent, conversation thread)."""
+
+    __tablename__ = "agent_conversation_stm"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    caller_account_node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    transport_session_id = Column(Text, nullable=False)
+    agent_node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    conversation_thread_id = Column(UUID(as_uuid=True), nullable=False)
+    messages = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    rolling_summary = Column(Text, nullable=False, server_default="")
+    stm_generation = Column(BigInteger, nullable=False, server_default="0")
+    flush_generation = Column(Integer, nullable=False, server_default="0")
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class AgentDaemonStmLock(Base):
+    """Mode B: possession + STM on one row per daemon agent instance."""
+
+    __tablename__ = "agent_daemon_stm_lock"
+
+    agent_node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), primary_key=True)
+    locked_by_account_node_id = Column(Integer, ForeignKey("nodes.id", ondelete="SET NULL"), nullable=True)
+    lock_transport_session_id = Column(Text, nullable=True)
+    last_successful_tick_at = Column(DateTime(timezone=True), nullable=True)
+    possession_generation = Column(BigInteger, nullable=False, server_default="0")
+    messages = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    rolling_summary = Column(Text, nullable=False, server_default="")
+    stm_generation = Column(BigInteger, nullable=False, server_default="0")
+    bound_username = Column(Text, nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class AgentConversationThread(Base):
+    """Thread directory row for multi-dialogue UX (`aico -l`)."""
+
+    __tablename__ = "agent_conversation_thread"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    owner_account_node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    agent_node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    transport_session_id = Column(Text, nullable=False)
+    title_snippet = Column(Text, nullable=True)
+    last_message_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class AgentLongTermMemory(Base):
     __tablename__ = "agent_long_term_memory"
 
@@ -60,6 +108,8 @@ class AgentLongTermMemory(Base):
     embedding = Column(Vector(1536), nullable=True)
     embedding_model = Column(String(64), nullable=True)
     embedding_updated_at = Column(DateTime(timezone=True), nullable=True)
+    caller_account_node_id = Column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    conversation_thread_id = Column(UUID(as_uuid=True), nullable=True)
 
 
 class AgentLongTermMemoryLink(Base):
