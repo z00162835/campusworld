@@ -713,6 +713,100 @@ CREATE INDEX IF NOT EXISTS ix_agent_ltm_embedding_hnsw
         conn.close()
 
 
+def _enforce_agent_ltm_caller_account_not_null(conn) -> None:
+    """Drop nullable LTM caller rows, then NOT NULL + FK ON DELETE CASCADE (per-caller multi-turn memory)."""
+    col_exists = conn.execute(
+        text(
+            """
+            SELECT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = 'public'
+                AND table_name = 'agent_long_term_memory'
+                AND column_name = 'caller_account_node_id'
+            )
+            """
+        )
+    ).scalar()
+    if not col_exists:
+        return
+    nullable = conn.execute(
+        text(
+            """
+            SELECT is_nullable FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'agent_long_term_memory'
+              AND column_name = 'caller_account_node_id'
+            """
+        )
+    ).scalar()
+    if nullable != "YES":
+        return
+    _try_exec(conn, "DELETE FROM agent_long_term_memory WHERE caller_account_node_id IS NULL;")
+    _try_exec(
+        conn,
+        "ALTER TABLE agent_long_term_memory DROP CONSTRAINT IF EXISTS agent_long_term_memory_caller_account_node_id_fkey;",
+    )
+    _must_exec(
+        conn,
+        "ALTER TABLE agent_long_term_memory ALTER COLUMN caller_account_node_id SET NOT NULL;",
+        "agent_long_term_memory caller_account_node_id SET NOT NULL failed",
+    )
+    _must_exec(
+        conn,
+        """
+ALTER TABLE agent_long_term_memory
+    ADD CONSTRAINT agent_long_term_memory_caller_account_node_id_fkey
+    FOREIGN KEY (caller_account_node_id) REFERENCES nodes(id) ON DELETE CASCADE
+        """.strip(),
+        "agent_long_term_memory caller_account_node_id FK failed",
+    )
+
+
+def ensure_multi_turn_conversation_memory_schema(engine) -> None:
+    """
+    Multi-turn dialogue memory: ``agent_conversation_stm``, ``agent_daemon_stm_lock``,
+    ``agent_conversation_thread``, and LTM caller/thread columns.
+
+    SSOT: ``db/schemas/database_schema.sql`` section ``conversation_multi_turn_memory``.
+    """
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        stm_ok = bool(conn.execute(text("select to_regclass('public.agent_conversation_stm');")).scalar())
+        daemon_ok = bool(conn.execute(text("select to_regclass('public.agent_daemon_stm_lock');")).scalar())
+        thread_ok = bool(conn.execute(text("select to_regclass('public.agent_conversation_thread');")).scalar())
+        if stm_ok and daemon_ok and thread_ok:
+            _try_exec(
+                conn,
+                "ALTER TABLE agent_long_term_memory ADD COLUMN IF NOT EXISTS caller_account_node_id "
+                "INTEGER REFERENCES nodes (id) ON DELETE CASCADE;",
+            )
+            _try_exec(
+                conn,
+                "ALTER TABLE agent_long_term_memory ADD COLUMN IF NOT EXISTS conversation_thread_id UUID;",
+            )
+            _try_exec(
+                conn,
+                "CREATE INDEX IF NOT EXISTS ix_agent_ltm_caller_agent ON agent_long_term_memory "
+                "(caller_account_node_id, agent_node_id) WHERE caller_account_node_id IS NOT NULL;",
+            )
+            _enforce_agent_ltm_caller_account_not_null(conn)
+            return
+
+        sql_path = Path(__file__).parent / "schemas" / "database_schema.sql"
+        schema_sql = sql_path.read_text(encoding="utf-8")
+        start = "-- BEGIN conversation_multi_turn_memory"
+        end = "-- END conversation_multi_turn_memory"
+        if start not in schema_sql or end not in schema_sql:
+            raise SchemaMigrationError("conversation_multi_turn_memory section not found in database_schema.sql")
+        section = schema_sql.split(start, 1)[1].split(end, 1)[0].strip()
+        if not section:
+            raise SchemaMigrationError("conversation_multi_turn_memory section is empty")
+        _must_exec(conn, section, "apply conversation_multi_turn_memory schema from database_schema.sql failed")
+        _enforce_agent_ltm_caller_account_not_null(conn)
+    finally:
+        conn.close()
+
+
 def ensure_content_visibility_backfill(engine) -> None:
     """
     Backfill semantic content visibility attributes for existing nodes.

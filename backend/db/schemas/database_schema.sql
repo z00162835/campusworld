@@ -342,6 +342,65 @@ CREATE INDEX IF NOT EXISTS ix_ltm_links_agent_target
     ON agent_long_term_memory_links (agent_node_id, target_ltm_id);
 -- END f02_agent_memory
 
+-- BEGIN conversation_multi_turn_memory
+-- Multi-turn dialogue: per-scope STM, Mode B daemon lock, thread directory, LTM scope columns (see docs/models/ADR/ADR-F12-conversation-stm-and-ltm.md)
+CREATE TABLE IF NOT EXISTS agent_conversation_stm (
+    id BIGSERIAL PRIMARY KEY,
+    caller_account_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    transport_session_id TEXT NOT NULL,
+    agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    conversation_thread_id UUID NOT NULL,
+    messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+    rolling_summary TEXT NOT NULL DEFAULT '',
+    stm_generation BIGINT NOT NULL DEFAULT 0,
+    flush_generation INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_agent_conversation_stm_scope UNIQUE (
+        caller_account_node_id,
+        transport_session_id,
+        agent_node_id,
+        conversation_thread_id
+    )
+);
+CREATE INDEX IF NOT EXISTS ix_agent_conversation_stm_agent
+    ON agent_conversation_stm (agent_node_id);
+CREATE INDEX IF NOT EXISTS ix_agent_conversation_stm_caller
+    ON agent_conversation_stm (caller_account_node_id, agent_node_id);
+
+CREATE TABLE IF NOT EXISTS agent_daemon_stm_lock (
+    agent_node_id INTEGER PRIMARY KEY REFERENCES nodes (id) ON DELETE CASCADE,
+    locked_by_account_node_id INTEGER REFERENCES nodes (id) ON DELETE SET NULL,
+    lock_transport_session_id TEXT,
+    last_successful_tick_at TIMESTAMPTZ,
+    possession_generation BIGINT NOT NULL DEFAULT 0,
+    messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+    rolling_summary TEXT NOT NULL DEFAULT '',
+    stm_generation BIGINT NOT NULL DEFAULT 0,
+    bound_username TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS agent_conversation_thread (
+    id UUID PRIMARY KEY,
+    owner_account_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    transport_session_id TEXT NOT NULL,
+    title_snippet TEXT,
+    last_message_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_agent_conv_thread_list
+    ON agent_conversation_thread (owner_account_node_id, agent_node_id, last_message_at DESC);
+
+ALTER TABLE agent_long_term_memory
+    ADD COLUMN IF NOT EXISTS caller_account_node_id INTEGER REFERENCES nodes (id) ON DELETE CASCADE;
+ALTER TABLE agent_long_term_memory
+    ADD COLUMN IF NOT EXISTS conversation_thread_id UUID;
+CREATE INDEX IF NOT EXISTS ix_agent_ltm_caller_agent
+    ON agent_long_term_memory (caller_account_node_id, agent_node_id)
+    WHERE caller_account_node_id IS NOT NULL;
+-- END conversation_multi_turn_memory
+
 -- BEGIN task_system
 -- Task System (Phase B): see docs/task/SPEC/SPEC.md and features/F04_TASK_RELATIONAL_SUBSTRATE_AND_OBSERVABILITY.md
 -- 8 relational tables backing the thin `task` graph node + workflow / pool / outbox.
