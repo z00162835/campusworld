@@ -164,6 +164,9 @@
 - `F11` Agent 意图分类器运行时契约（前置意图判定、共享接口、训练与标注闭环；面向多 agent 共用）  
   [`features/F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md`](features/F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)
 
+- `F12` NLP Agent 多轮对话与会话记忆（STM/LTM、compaction；**per_user_session** 与 **system_shared_exclusive（附身：拒绝非占有者、默认 60s 无 tick 自动释放、多实例分流）**；面向 `npc_agent` 公共 NLP 路径）  
+  [`features/F12_NLP_AGENT_MULTI_TURN_SESSION_MEMORY.md`](features/F12_NLP_AGENT_MULTI_TURN_SESSION_MEMORY.md)
+
 ### 任务系统（独立模块，跨 models / command / database / api）
 
 - **Task System**：`type_code=task` 节点 + 独立关系子底座（`task_workflow_definitions / task_details / task_assignments / task_state_transitions / task_runs / task_events / task_outbox`）+ 唯一状态机服务 `task_state_machine.transition`；以用户/Agent 为中心的协作任务、任务池、审批接力（agent1 → admin → agent2）。设计律 D1 边稀疏 / D2 属性瘦独立表厚 / D3 SSOT 单事务幂等。  
