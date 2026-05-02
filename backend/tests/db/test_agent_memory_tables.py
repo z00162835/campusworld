@@ -18,6 +18,7 @@ def test_f02_agent_memory_schema_and_orm_roundtrip():
     from db.schema_migrations import (
         ensure_f02_agent_memory_schema,
         ensure_f02_ltm_semantic_extension,
+        ensure_multi_turn_conversation_memory_schema,
         ensure_graph_schema,
         ensure_graph_seed_ontology,
     )
@@ -29,6 +30,7 @@ def test_f02_agent_memory_schema_and_orm_roundtrip():
     ensure_graph_seed_ontology(engine)
     ensure_f02_agent_memory_schema(engine)
     ensure_f02_ltm_semantic_extension(engine)
+    ensure_multi_turn_conversation_memory_schema(engine)
 
     session = SessionLocal()
     try:
@@ -77,6 +79,7 @@ def test_f02_agent_memory_schema_and_orm_roundtrip():
 
         ltm = AgentLongTermMemory(
             agent_node_id=n.id,
+            caller_account_node_id=n.id,
             summary="curated",
             payload={"k": "v"},
             source_memory_entry_id=mem.id,
@@ -93,9 +96,8 @@ def test_f02_agent_memory_schema_and_orm_roundtrip():
         assert got.phase == "plan"
         assert got.command_trace[0]["command"] == "noop"
 
-        session.delete(ltm)
-        session.delete(run)
-        session.delete(mem)
+        # Single-node delete: FK CASCADE removes run/mem/LTM rows without ORM
+        # multi-delete ordering issues (ObjectDeletedError on flush).
         session.delete(n)
         session.commit()
     finally:

@@ -23,6 +23,7 @@ def test_agent_show_resolves_service_id():
     from db.schema_migrations import (
         ensure_f02_agent_memory_schema,
         ensure_f02_ltm_semantic_extension,
+        ensure_multi_turn_conversation_memory_schema,
         ensure_graph_schema,
         ensure_graph_seed_ontology,
     )
@@ -34,6 +35,7 @@ def test_agent_show_resolves_service_id():
     ensure_graph_seed_ontology(engine)
     ensure_f02_agent_memory_schema(engine)
     ensure_f02_ltm_semantic_extension(engine)
+    ensure_multi_turn_conversation_memory_schema(engine)
 
     session = SessionLocal()
     try:
@@ -87,6 +89,7 @@ def test_npc_agent_nlp_tick_stub_llm_writes_run_record(monkeypatch):
     from db.schema_migrations import (
         ensure_f02_agent_memory_schema,
         ensure_f02_ltm_semantic_extension,
+        ensure_multi_turn_conversation_memory_schema,
         ensure_graph_schema,
         ensure_graph_seed_ontology,
     )
@@ -114,6 +117,7 @@ def test_npc_agent_nlp_tick_stub_llm_writes_run_record(monkeypatch):
     ensure_graph_seed_ontology(engine)
     ensure_f02_agent_memory_schema(engine)
     ensure_f02_ltm_semantic_extension(engine)
+    ensure_multi_turn_conversation_memory_schema(engine)
 
     session = SessionLocal()
     try:

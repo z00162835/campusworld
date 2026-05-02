@@ -29,6 +29,7 @@ def test_ltm_embedding_knn_and_link_expansion():
     from db.schema_migrations import (
         ensure_f02_agent_memory_schema,
         ensure_f02_ltm_semantic_extension,
+        ensure_multi_turn_conversation_memory_schema,
         ensure_graph_schema,
         ensure_graph_seed_ontology,
     )
@@ -40,6 +41,7 @@ def test_ltm_embedding_knn_and_link_expansion():
     ensure_graph_seed_ontology(engine)
     ensure_f02_agent_memory_schema(engine)
     ensure_f02_ltm_semantic_extension(engine)
+    ensure_multi_turn_conversation_memory_schema(engine)
 
     session = SessionLocal()
     try:
@@ -60,13 +62,27 @@ def test_ltm_embedding_knn_and_link_expansion():
         session.commit()
         session.refresh(agent)
 
+        nt_acc = session.query(NodeType).filter(NodeType.type_code == "account").first()
+        assert nt_acc is not None
+        caller = Node(
+            type_id=nt_acc.id,
+            type_code="account",
+            name="ltm_semantic_caller_test",
+            attributes={},
+        )
+        session.add(caller)
+        session.commit()
+        session.refresh(caller)
+
         ltm_a = AgentLongTermMemory(
             agent_node_id=agent.id,
+            caller_account_node_id=caller.id,
             summary="building inspection A",
             payload={"k": "a"},
         )
         ltm_b = AgentLongTermMemory(
             agent_node_id=agent.id,
+            caller_account_node_id=caller.id,
             summary="device batch B",
             payload={"k": "b"},
         )
@@ -111,6 +127,7 @@ def test_ltm_embedding_knn_and_link_expansion():
         assert ltm_b.id in expanded
 
         session.delete(agent)
+        session.delete(caller)
         session.commit()
     finally:
         session.close()
