@@ -226,12 +226,31 @@ class SessionManager:
     
     def remove_session(self, session_id: str):
         """移除会话"""
+        sess_obj = None
         with self.lock:
             if session_id in self.sessions:
-                session = self.sessions[session_id]
-                session.cleanup()
-                del self.sessions[session_id]
-                self.logger.info(f"Session removed: {session_id}")
+                sess_obj = self.sessions.pop(session_id)
+        if sess_obj is None:
+            return
+        try:
+            from app.game_engine.agent_runtime.conversation_stm_service import (
+                release_mode_b_possession_for_transport_session_if_configured,
+            )
+
+            with db_session_context() as db:
+                release_mode_b_possession_for_transport_session_if_configured(db, session_id)
+                db.commit()
+        except Exception as e:
+            self.logger.warning(
+                "release_mode_b_on_transport_close failed session_id=%s error=%s",
+                session_id,
+                e,
+            )
+        try:
+            sess_obj.cleanup()
+        except Exception as e:
+            self.logger.warning("session.cleanup failed session_id=%s error=%s", session_id, e)
+        self.logger.info(f"Session removed: {session_id}")
     
     def get_session(self, session_id: str) -> Optional[SSHSession]:
         """获取指定会话"""
@@ -318,20 +337,57 @@ class SessionManager:
     def cleanup_all(self):
         """清理所有会话"""
         with self.lock:
-            for session in self.sessions.values():
-                session.cleanup()
+            ids = [sid for sid in self.sessions.keys()]
+            sessions = list(self.sessions.values())
             self.sessions.clear()
-            self.logger.info("All sessions cleaned up")
+        for sid in ids:
+            try:
+                from app.game_engine.agent_runtime.conversation_stm_service import (
+                    release_mode_b_possession_for_transport_session_if_configured,
+                )
+
+                with db_session_context() as db:
+                    release_mode_b_possession_for_transport_session_if_configured(db, sid)
+                    db.commit()
+            except Exception as e:
+                self.logger.warning(
+                    "release_mode_b_on_transport_close failed session_id=%s error=%s",
+                    sid,
+                    e,
+                )
+        for session in sessions:
+            try:
+                session.cleanup()
+            except Exception as e:
+                self.logger.warning("session.cleanup failed error=%s", e)
+        self.logger.info("All sessions cleaned up")
 
     def force_close_all(self):
         """强制关闭所有会话（参照 Evennia shutdown）"""
         with self.lock:
-            for session in self.sessions.values():
-                session.is_closing = True
-                session._close_channel()
-                session.is_active = False
+            ids = [s.session_id for s in self.sessions.values()]
+            sessions = list(self.sessions.values())
             self.sessions.clear()
-            self.logger.warning("All sessions force closed")
+        for sid in ids:
+            try:
+                from app.game_engine.agent_runtime.conversation_stm_service import (
+                    release_mode_b_possession_for_transport_session_if_configured,
+                )
+
+                with db_session_context() as db:
+                    release_mode_b_possession_for_transport_session_if_configured(db, sid)
+                    db.commit()
+            except Exception as e:
+                self.logger.warning(
+                    "release_mode_b_on_transport_close failed session_id=%s error=%s",
+                    sid,
+                    e,
+                )
+        for session in sessions:
+            session.is_closing = True
+            session._close_channel()
+            session.is_active = False
+        self.logger.warning("All sessions force closed")
     
     def _cleanup_worker(self):
         """清理工作线程"""

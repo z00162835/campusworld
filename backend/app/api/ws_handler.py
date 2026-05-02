@@ -34,6 +34,27 @@ logger = get_logger(LoggerNames.API)
 audit_logger = get_logger(LoggerNames.AUDIT)
 
 
+def _release_mode_b_possession_for_transport_sync(transport_session_id: Optional[str]) -> None:
+    """F12 Mode B: release daemon locks bound to this WebSocket session id (config-gated)."""
+    sid = str(transport_session_id or "").strip()
+    if not sid:
+        return
+    try:
+        from app.game_engine.agent_runtime.conversation_stm_service import (
+            release_mode_b_possession_for_transport_session_if_configured,
+        )
+
+        with db_session_context() as db:
+            release_mode_b_possession_for_transport_session_if_configured(db, sid)
+            db.commit()
+    except Exception as e:
+        logger.warning(
+            "websocket mode_b transport release failed session_id=%s err=%s",
+            sid,
+            e,
+        )
+
+
 def _ensure_command_registry_loaded() -> None:
     """SSH 控制台未连接时 registry 可能未初始化；WS 路径兜底。"""
     from app.commands.init_commands import ensure_commands_initialized
@@ -274,7 +295,10 @@ class WSHandler:
         """处理 WebSocket 断开"""
         conn = _rate_limiter._connections.get(id(websocket))
         if conn:
+            sid = conn.session_id
             await _rate_limiter.remove_connection(websocket, conn)
+            if sid:
+                await asyncio.to_thread(_release_mode_b_possession_for_transport_sync, sid)
 
             # 审计日志
             if conn.authenticated:

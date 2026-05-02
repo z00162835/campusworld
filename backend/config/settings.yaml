@@ -40,6 +40,13 @@ server:
   reload: true
   access_log: true
 
+# npc_agent Mode B (daemon exclusive / system_shared_exclusive): platform defaults.
+# Not tied to AICO: applies to any daemon agent whose lock row matches CommandContext.session_id.
+# Per-node override may later merge from agents.llm extra / attributes (see docs/models/SPEC/features/).
+npc_agent:
+  daemon_possession:
+    possession_release_on_transport_close: true
+
 ssh:
   host: "0.0.0.0"
   port: 2222
@@ -186,6 +193,12 @@ agents:
         #   intent_classifier_allowed_path_prefixes: ["app/models/agent_model/intent_classifier/artifacts"]
         #   max_new_tokens: 96
         #   system_prompt_file: ""  # omit for packaged default prompt
+        # Conversation STM (PostgreSQL): enable after migrate applies `ensure_multi_turn_conversation_memory_schema`.
+        # enable_conversation_stm: false
+        # stm_max_turns: 20
+        # stm_max_chars: 32000
+        # compaction_trigger_ratio: 0.9
+        # ltm_retrieval_scope: user_agent
         extra: {}
         system_prompt: |
           You are AICO, the default system assistant of CampusWorld — a graph-native
