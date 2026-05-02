@@ -19,7 +19,7 @@ from app.commands.npc_agent_resolve import (
 )
 from app.core.permissions import permission_checker
 from app.models.graph import Node, NodeType
-from app.models.system import AgentRunRecord
+from app.models.system import AgentConversationThread, AgentRunRecord
 
 AGENT_TOOLS_FORBIDDEN = "AGENT_TOOLS_FORBIDDEN"
 AGENT_TOOLS_MISORDERED = "AGENT_TOOLS_MISORDERED"
@@ -550,28 +550,100 @@ class AicoCommand(SystemCommand):
         super().__init__("aico", "Talk to default assistant AICO", [])
 
     def get_usage(self) -> str:
-        return "aico <message...>"
+        return "aico [-nd <text>] | [-l] | [-cd <uuid>] | <message...>"
 
     def _get_specific_help(self) -> str:
-        return "\nEquivalent to: @aico <message>\n"
+        return (
+            "\nEquivalent to: @aico <message>\n"
+            "  -nd <text>  New dialogue thread and run first tick with <text>.\n"
+            "  -nd         Start a new thread (next aico <msg> uses it).\n"
+            "  -l          List your dialogue threads for AICO.\n"
+            "  -cd <uuid>  Continue an existing thread.\n"
+        )
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
+        import uuid as uuid_mod
+
         from app.commands.npc_agent_nlp import assistant_nlp_command_result, run_npc_agent_nlp_tick
+        from app.game_engine.agent_runtime.command_caller_graph import resolve_caller_node_id
+        from app.game_engine.agent_runtime.conversation_stm_service import (
+            list_threads_for_owner_agent,
+            set_thread_id_on_context,
+        )
 
         if not args:
-            return CommandResult.error_result("usage: aico <message...>")
+            return CommandResult.error_result("usage: " + self.get_usage())
         if not context.db_session:
             return CommandResult.error_result("database session required")
-        message = " ".join(args).strip()
         node, rerr = resolve_npc_agent_by_handle(context.db_session, "aico")
         if rerr:
             return CommandResult.error_result(rerr)
         attrs = node.attributes or {}
         if str(attrs.get("decision_mode", "")).lower() != "llm":
             return CommandResult.error_result("aico requires decision_mode=llm on the agent node")
+        sid = str(attrs.get("service_id") or "aico")
+
+        if args[0] == "-l":
+            cid = resolve_caller_node_id(context.db_session, context)
+            if cid is None:
+                return CommandResult.error_result("cannot resolve caller account")
+            rows = list_threads_for_owner_agent(
+                context.db_session,
+                owner_account_node_id=cid,
+                agent_node_id=node.id,
+            )
+            if not rows:
+                return CommandResult.success_result("(no conversation threads yet)")
+            lines = []
+            for r in rows:
+                tid = str(r.id)
+                title = (r.title_snippet or "").strip() or "(untitled)"
+                lines.append(f"{tid}  {title}")
+            return CommandResult.success_result("\n".join(lines))
+
+        if args[0] == "-cd":
+            if len(args) < 2:
+                return CommandResult.error_result("usage: aico -cd <conversation_thread_uuid>")
+            cid = resolve_caller_node_id(context.db_session, context)
+            if cid is None:
+                return CommandResult.error_result("cannot resolve caller account")
+            try:
+                tid = uuid_mod.UUID(str(args[1]).strip())
+            except Exception:
+                return CommandResult.error_result("invalid thread uuid")
+            row = (
+                context.db_session.query(AgentConversationThread)
+                .filter(
+                    AgentConversationThread.id == tid,
+                    AgentConversationThread.owner_account_node_id == cid,
+                    AgentConversationThread.agent_node_id == node.id,
+                )
+                .first()
+            )
+            if row is None:
+                return CommandResult.error_result("thread not found")
+            set_thread_id_on_context(context, tid)
+            context.db_session.commit()
+            return CommandResult.success_result(f"Switched to thread {tid}.")
+
+        if args[0] == "-nd":
+            if context.metadata is None:
+                context.metadata = {}
+            context.metadata.pop("conversation_thread_id", None)
+            rest = args[1:]
+            if not rest:
+                context.db_session.commit()
+                return CommandResult.success_result("New dialogue thread started. Send: aico <message>")
+            message = " ".join(rest).strip()
+            if len(message) >= 2 and message[0] == message[-1] and message[0] in "'\"":
+                message = message[1:-1].strip()
+            res = run_npc_agent_nlp_tick(context.db_session, node, context, message)
+            context.db_session.commit()
+            return assistant_nlp_command_result("aico", res, service_id=sid)
+
+        message = " ".join(args).strip()
         res = run_npc_agent_nlp_tick(context.db_session, node, context, message)
         context.db_session.commit()
-        sid = str(attrs.get("service_id") or "aico")
         return assistant_nlp_command_result("aico", res, service_id=sid)
 
 
