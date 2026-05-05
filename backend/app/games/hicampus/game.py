@@ -10,7 +10,7 @@ class Game(BaseGame):
     def __init__(self):
         super().__init__(name="hicampus", version="1.0.0")
         self.description = "HiCampus high-tech R&D and office park world package"
-        self.author = "CampusWorld Team"
+        self.author = "CampusWorld OS Team"
         self._initialized = False
 
     def start(self) -> bool:

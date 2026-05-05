@@ -24,7 +24,7 @@ class CampusLifeGameListCommand(GameCommand):
                 "description": "园区生活模拟场景",
                 "version": "1.0.0",
                 "status": "available",
-                "author": "CampusWorld Team"
+                "author": "CampusWorld OS Team"
             }
         ]
         

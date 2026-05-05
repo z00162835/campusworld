@@ -26,7 +26,7 @@ class Game(BaseGame):
         )
         
         self.description = "一个基于文本的园区生活模拟场景"
-        self.author = "CampusWorld Team"
+        self.author = "CampusWorld OS Team"
         
         # 场景组件
         self.commands = CampusLifeCommands(self)
