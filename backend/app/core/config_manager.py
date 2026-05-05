@@ -423,13 +423,15 @@ class ConfigManager:
     
     def get_config_summary(self) -> str:
         """获取配置摘要"""
+        from app.version import get_version
+
         summary = []
         summary.append("Configuration Summary")
         summary.append("=" * 50)
-        
+
         # 应用信息
         app = self.get_app_config()
-        summary.append(f"Application: {app.get('name', 'Unknown')} v{app.get('version', 'Unknown')}")
+        summary.append(f"Application: {app.get('name', 'Unknown')} v{get_version()}")
         summary.append(f"Environment: {app.get('environment', 'Unknown')}")
         summary.append(f"Debug: {app.get('debug', False)}")
         

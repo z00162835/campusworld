@@ -17,7 +17,6 @@ project:
 # 应用基础配置
 app:
   name: "CampusWorld"
-  version: "0.1.0"
   description: "Campus World OS"
   debug: false
   # 系统级默认语言（AICO/LLM tool manifest；per-user help 仍走 account / metadata）

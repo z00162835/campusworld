@@ -4,7 +4,6 @@ CampusWorld 场景引擎包
 提供场景与引擎解耦的基础设施，参考Evennia框架设计。
 """
 
-__version__ = "0.1.0"
 __author__ = "CampusWorld OS Team"
 
 from .base import GameEngine, BaseGame

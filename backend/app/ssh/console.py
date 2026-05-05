@@ -115,16 +115,9 @@ class SSHConsole:
     def _display_welcome(self):
         """显示欢迎信息 - 使用i18n"""
         from app.commands.i18n.locale_text import resolve_locale, help_shell_for_locale
+        from app.version import get_version
 
-        # 安全获取版本 - 优先使用 importlib.metadata（业界最佳实践），降级到包属性
-        try:
-            from importlib.metadata import version, PackageNotFoundError
-            try:
-                version_str = version("campusworld")
-            except PackageNotFoundError:
-                version_str = getattr(__import__('app'), '__version__', '0.0.0')
-        except Exception:
-            version_str = getattr(__import__('app'), '__version__', '0.0.0')
+        version_str = get_version()
 
         # 获取用户信息
         if self.current_session:

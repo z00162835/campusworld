@@ -2,5 +2,6 @@
 CampusWorld Backend Application Package
 """
 
-__version__ = "0.1.2"
+from app.version import get_version, __version__
+
 __author__ = "CampusWorld OS Team"

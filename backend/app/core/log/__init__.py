@@ -21,9 +21,6 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 import os
 
-# 版本信息
-__version__ = "1.0.0"
-
 # 全局日志管理器实例
 _logging_manager: Optional['object'] = None
 
