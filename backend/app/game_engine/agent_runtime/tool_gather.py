@@ -145,6 +145,59 @@ def format_tool_observation_block(
     return "\n".join(lines)
 
 
+def format_gathered_observations_for_end_user(gathered_text: str) -> str:
+    """Turn F08 ``format_tool_observation_block`` concat into concise text for humans.
+
+    ``gather_tool_observations`` output is machine-oriented (delimiters, ok=, args=).
+    User-visible drafts (e.g. Do skipped + plan-phase appendix) must not leak that
+    framing. Returns empty string when no recognized blocks are present so callers
+    can fall back to the raw string (legacy free-text observations).
+    """
+    if not (gathered_text or "").strip():
+        return ""
+    bullets: List[str] = []
+    for segment in gathered_text.split("--- tool_observation begin ---"):
+        if "--- tool_observation end ---" not in segment:
+            continue
+        inner, _, _ = segment.partition("--- tool_observation end ---")
+        inner = inner.strip()
+        if not inner:
+            continue
+        cmd_name = ""
+        ok = True
+        msg_lines: List[str] = []
+        mode = "seek"
+        for line in inner.splitlines():
+            s = line.strip()
+            if mode == "seek":
+                if s.startswith("[") and "] command=" in s:
+                    tail = s.split("command=", 1)[1]
+                    if " args=" in tail:
+                        cmd_name = tail.split(" args=", 1)[0].strip()
+                    else:
+                        cmd_name = tail.strip()
+                elif s.startswith("ok="):
+                    ok = s == "ok=True"
+                elif s == "message:":
+                    mode = "msg"
+            else:
+                if s.startswith("data:"):
+                    break
+                msg_lines.append(line)
+        msg = "\n".join(msg_lines).strip()
+        if not cmd_name:
+            continue
+        suffix = "" if ok else " (failed)"
+        if msg:
+            if "\n" in msg:
+                bullets.append(f"• **{cmd_name}**{suffix}:\n{msg}")
+            else:
+                bullets.append(f"• **{cmd_name}**{suffix}: {msg}")
+        else:
+            bullets.append(f"• **{cmd_name}**{suffix}")
+    return "\n".join(bullets) if bullets else ""
+
+
 def gather_tool_observations(
     executor: ToolExecutor,
     tool_context: CommandContext,

@@ -88,6 +88,32 @@ def test_legacy_agent_tools_not_registered():
 
 
 @pytest.mark.unit
+def test_manifest_describe_lists_aliases_and_nonempty_example():
+    surface = _surface_for({"describe"})
+    text, schemas = build_llm_tool_manifest(
+        surface, command_registry, session=None, locale="en-US"
+    )
+    assert len(schemas) == 1 and schemas[0].name == "describe"
+    assert "aliases:" in text
+    assert '"args": ["35"]' in text
+
+
+@pytest.mark.unit
+def test_manifest_informational_filter_excludes_mutate_tools():
+    surface = _surface_for({"describe", "find", "task"})
+    _, schemas = build_llm_tool_manifest(
+        surface,
+        command_registry,
+        session=None,
+        locale="en-US",
+        manifest_interaction_filter="informational",
+    )
+    names = {s.name for s in schemas}
+    assert "describe" in names and "find" in names
+    assert "task" not in names
+
+
+@pytest.mark.unit
 def test_manifest_sorts_tools_and_includes_example_payload():
     surface = _surface_for({"help", "find", "whoami"})
     text, schemas = build_llm_tool_manifest(surface, command_registry, session=None)

@@ -130,7 +130,7 @@ class _RecordingTextLlm:
 
 @pytest.mark.unit
 def test_tiered_context_ordering_in_plan_user_turn():
-    """Plan user turn must be World snapshot → Tools → Memory → User message."""
+    """Plan user turn must be Tools → World snapshot → Memory → User message."""
     rec = _RecordingTextLlm()
     fw = LlmPDCAFramework(
         memory=_FakeMem(),
@@ -157,7 +157,7 @@ def test_tiered_context_ordering_in_plan_user_turn():
     i_mem = plan_user.find("Retrieved memory (may be empty):")
     i_msg = plan_user.find("User message:")
     assert i_ws != -1 and i_tools != -1 and i_mem != -1 and i_msg != -1
-    assert i_ws < i_tools < i_mem < i_msg
+    assert i_tools < i_ws < i_mem < i_msg
     # Subsequent phases must NOT repeat the snapshot or manifest — they are
     # Plan-only (Tier-2). Do/Check/Act prompts carry the draft reply.
     for later in rec.users[1:]:

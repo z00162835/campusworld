@@ -210,9 +210,13 @@ def merge_system_prompt_with_primer_tier1(
     ).strip()
     if not snippet:
         return base_system_prompt if base_system_prompt is not None else ""
+    pointer = (
+        "Authoritative per-turn command JSON shapes live under \"Tools available\" in the Plan user message; "
+        "for narrative-only detail run `primer commands`."
+    )
     if not base:
-        return snippet + "\n"
-    return snippet + "\n\n" + base + "\n"
+        return snippet + "\n\n" + pointer + "\n"
+    return snippet + "\n\n" + base + "\n\n" + pointer + "\n"
 
 
 def build_ontology_primer(

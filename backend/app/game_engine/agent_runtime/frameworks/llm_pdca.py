@@ -30,6 +30,7 @@ from app.game_engine.agent_runtime.intent_classifier_interface import (
     classify_intent,
 )
 from app.game_engine.agent_runtime.llm_client import (
+    AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC,
     LlmCallSpec,
     LlmClient,
     StubLlmClient,
@@ -78,6 +79,72 @@ _CHECK_RETRY_RE = re.compile(
 
 # When Plan/Do/Act complete without error but produce no user-visible text.
 _DEFAULT_NPC_AGENT_EMPTY_REPLY = "抱歉，我没有能力处理此问题。你可以换一个问题。"
+
+# When ``phase_llm.do.mode == skip``: user-visible draft is Plan prose only.
+# Plan-phase F08 observations go to Check (if enabled) and trace, not SSH.
+# See docs/models/SPEC/AGENT_PDCA_PHASE_MERGE_TRADEOFFS.md (Skip Do).
+
+
+def assemble_plan_skip_do_draft(plan_out: str, _plan_tools_text: str) -> str:
+    """Text shown to the user when the Do phase LLM is skipped.
+
+    Tool observations are omitted here; they are appended only to the Check-phase
+    prompt for grounding. ``_plan_tools_text`` remains on the signature for stable
+    call sites and tests.
+    """
+    return (plan_out or "").strip()
+
+
+# Short system for Do / Check / Act to avoid repeating the full Plan-tier primer+contract.
+_DEFAULT_PD_CA_SLIM_FOLLOWUP = (
+    "You are a CampusWorld npc_agent continuing after Plan (Do / Check / Act).\n"
+    "- Ground factual claims about live graph or command output only in tool observations "
+    "or text already present in this user turn (Plan, Memory, Draft). "
+    "Do not invent nodes, locations, or command results.\n"
+    "- Tool calling: use native tool_use when the runtime supports it; otherwise emit exactly "
+    "one fenced JSON block of the form {\"commands\": [{\"name\": \"<registered_tool>\", "
+    "\"args\": [\"...\"]}, ...]}. Do not claim a tool ran unless observations include its output.\n"
+    "- Match the user's language; stay concise unless the phase prompt asks otherwise."
+)
+
+
+def _resolve_pdca_slim_followup_system(cfg: AgentLlmServiceConfig) -> Optional[str]:
+    """Return slim follow-up system text, or None to keep the full base system on every phase.
+
+    YAML ``extra.pdca_use_slim_followup_system: false`` disables slimming.
+    ``extra.pdca_followup_system_prompt`` overrides the default slim block.
+    """
+    extra = getattr(cfg, "extra", None) or {}
+    if not isinstance(extra, dict):
+        return _DEFAULT_PD_CA_SLIM_FOLLOWUP
+    if extra.get("pdca_use_slim_followup_system") is False:
+        return None
+    raw = extra.get("pdca_followup_system_prompt")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return _DEFAULT_PD_CA_SLIM_FOLLOWUP
+
+
+def _phase_system_core(
+    base_full: str,
+    phase: str,
+    phase_prompts: Dict[str, str],
+    slim_base: Optional[str],
+) -> str:
+    core = (
+        slim_base
+        if slim_base and phase in {PDCAPhase.do.value, PDCAPhase.check.value, PDCAPhase.act.value}
+        else base_full
+    )
+    return _phase_system(core, phase, phase_prompts)
+
+
+def _tool_schema_allowlist_from_payload(payload: Dict[str, Any]) -> Optional[List[str]]:
+    raw = payload.get("pdca_tool_schema_allowlist")
+    if not isinstance(raw, list) or not raw:
+        return None
+    out = [str(x).strip() for x in raw if str(x).strip()]
+    return out or None
 
 
 def _resolve_npc_agent_empty_reply_message(cfg: AgentLlmServiceConfig) -> str:
@@ -264,11 +331,26 @@ class LlmPDCAFramework(ThinkingFramework):
 
     def _augment_spec_from_ctx(self, spec: LlmCallSpec, ctx: FrameworkRunContext) -> LlmCallSpec:
         fp = (ctx.payload or {}).get("prompt_fingerprint")
+        extra = dict(spec.extra or {})
         if isinstance(fp, str) and fp.strip():
-            extra = dict(spec.extra or {})
             extra["prompt_fingerprint"] = fp.strip()
+        cm_extra = getattr(self._cfg, "extra", None) or {}
+        if isinstance(cm_extra, dict):
+            for key in AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC:
+                if key in cm_extra:
+                    extra[key] = cm_extra[key]
+        if extra != (spec.extra or {}):
             return replace(spec, extra=extra)
         return spec
+
+    def _effective_tool_schemas(self, ctx: FrameworkRunContext) -> List[ToolSchema]:
+        """Optional Plan-phase narrowing via ``payload.pdca_tool_schema_allowlist`` (native JSON paths)."""
+        allow = _tool_schema_allowlist_from_payload(ctx.payload or {})
+        if not allow:
+            return self._tool_schemas
+        allowed_set = set(allow)
+        filtered = [s for s in self._tool_schemas if getattr(s, "name", None) in allowed_set]
+        return filtered if filtered else self._tool_schemas
 
     # -------------------- low-level LLM invocation (text) --------------------
 
@@ -370,13 +452,14 @@ class LlmPDCAFramework(ThinkingFramework):
         channel = "text"
         text = ""
         calls: List[ToolCall] = []
-        if supports_tools(self._llm) and self._tool_schemas:
+        phase_tools = self._effective_tool_schemas(ctx)
+        if supports_tools(self._llm) and phase_tools:
             try:
                 res: CompleteWithToolsResult = complete_with_tools(
                     self._llm,
                     system=system,
                     turns=turns,
-                    tools=self._tool_schemas,
+                    tools=phase_tools,
                     call_spec=spec,
                 )
                 channel = "tool_use"
@@ -396,8 +479,8 @@ class LlmPDCAFramework(ThinkingFramework):
             calls = _tool_calls_from_text(text)
 
         dropped: List[str] = []
-        if self._tool_schemas and calls:
-            calls, dropped = _filter_tool_calls_to_schemas(calls, self._tool_schemas)
+        if phase_tools and calls:
+            calls, dropped = _filter_tool_calls_to_schemas(calls, phase_tools)
             if dropped:
                 _LLM_PDCA_LOG.warning(
                     "tool_call_filtered phase=%s dropped=%s",
@@ -620,6 +703,7 @@ class LlmPDCAFramework(ThinkingFramework):
 
         base_system = (ctx.system_prompt or self._cfg.system_prompt or "").strip()
         merged_phases = _merge_phase_prompts(dict(self._cfg.phase_prompts), ctx.phase_prompts)
+        slim_followup = _resolve_pdca_slim_followup_system(self._cfg)
 
         mem = (ctx.memory_context or "").strip()
         mem_for_do = (
@@ -705,10 +789,26 @@ class LlmPDCAFramework(ThinkingFramework):
             do_user = (
                 f"User message:\n{user_msg}{tool_blocks_plan}\n\nMemory:\n{mem_for_do or '(none)'}"
             )
-        do_sys = _phase_system(base_system, PDCAPhase.do.value, merged_phases)
-        reply, do_tools_text, _do_results, do_entry = self._phase_react_loop(
-            PDCAPhase.do.value, do_sys, do_user, ctx, gather_counters, trace
+        do_sys = _phase_system_core(
+            base_system, PDCAPhase.do.value, merged_phases, slim_followup
         )
+        do_spec = self._augment_spec_from_ctx(
+            self._spec_for_phase(PDCAPhase.do.value, ctx), ctx
+        )
+        if do_spec.mode == PhaseLlmMode.skip:
+            reply = assemble_plan_skip_do_draft(plan_out or "", plan_tools_text or "")
+            do_tools_text = ""
+            do_entry: Dict[str, Any] = {
+                "step": PDCAPhase.do.value,
+                "skipped": True,
+                "mode": PhaseLlmMode.skip.value,
+                "skip_do_draft_chars": len(reply or ""),
+            }
+            trace.append(do_entry)
+        else:
+            reply, do_tools_text, _do_results, do_entry = self._phase_react_loop(
+                PDCAPhase.do.value, do_sys, do_user, ctx, gather_counters, trace
+            )
         self._memory.update_run(run_id, PDCAPhase.do.value, trace, "running")
         self._tick_hooks.on_after_phase(
             ThinkingPhaseId.do,
@@ -723,10 +823,19 @@ class LlmPDCAFramework(ThinkingFramework):
         tool_blocks_do = (
             f"\n\nTool observations (do phase):\n{do_tools_text}" if do_tools_text else ""
         )
+        plan_grounding_for_check = ""
+        if do_spec.mode == PhaseLlmMode.skip and (plan_tools_text or "").strip():
+            plan_grounding_for_check = (
+                "\n\nPlan-phase tool observations (runtime grounding; not shown to user):\n"
+                f"{plan_tools_text}"
+            )
         check_user = (
-            f"User message:\n{user_msg}\n\nDraft reply:\n{reply}{tool_blocks_do}"
+            f"User message:\n{user_msg}\n\nDraft reply:\n{reply}"
+            f"{plan_grounding_for_check}{tool_blocks_do}"
         )
-        check_sys = _phase_system(base_system, PDCAPhase.check.value, merged_phases)
+        check_sys = _phase_system_core(
+            base_system, PDCAPhase.check.value, merged_phases, slim_followup
+        )
         self._tick_hooks.on_before_phase(ThinkingPhaseId.check, ctx)
         t_check = time.perf_counter()
         check_out, check_entry = self._call_llm(
@@ -789,9 +898,26 @@ class LlmPDCAFramework(ThinkingFramework):
                 f"User message:\n{user_msg}\n\nPlan:\n{plan2_out or plan_out}\n{do2_blocks}\n\n"
                 f"Memory:\n{mem_for_do or '(none)'}"
             )
-            reply2, do2_tools_text, _dr2, _de2 = self._phase_react_loop(
-                PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace
-            )
+            reply2 = ""
+            do2_tools_text = ""
+            if do_spec.mode == PhaseLlmMode.skip:
+                reply2 = assemble_plan_skip_do_draft(
+                    (plan2_out or plan_out or ""),
+                    plan2_tools_text or "",
+                )
+                trace.append(
+                    {
+                        "step": PDCAPhase.do.value,
+                        "skipped": True,
+                        "mode": PhaseLlmMode.skip.value,
+                        "after_check_retry": True,
+                        "skip_do_draft_chars": len(reply2 or ""),
+                    }
+                )
+            else:
+                reply2, do2_tools_text, _dr2, _de2 = self._phase_react_loop(
+                    PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace
+                )
             if reply2.strip():
                 final_text = reply2
             if do2_tools_text:
@@ -806,7 +932,9 @@ class LlmPDCAFramework(ThinkingFramework):
             f"User message:\n{user_msg}\n\nDraft reply:\n{final_text}{tool_blocks_check}\n\n"
             f"Polish for final user-facing text."
         )
-        act_sys = _phase_system(base_system, PDCAPhase.act.value, merged_phases)
+        act_sys = _phase_system_core(
+            base_system, PDCAPhase.act.value, merged_phases, slim_followup
+        )
         t_act = time.perf_counter()
         act_out, act_entry = self._call_llm(PDCAPhase.act.value, act_sys, act_user, ctx)
         _trace_phase_timing(
@@ -936,21 +1064,20 @@ def _assemble_plan_user(
 ) -> str:
     """Build the first Plan user turn.
 
-    Order (Anthropic's "place the most actionable facts nearest the user
-    instruction" guidance):
+    Order (cache-friendly: slower-changing blocks before the user line):
 
-    1. World snapshot (caller identity, location, installed worlds).
-    2. Tools available (manifest summary).
+    1. Tools available (manifest; stable for a given worker).
+    2. World snapshot (caller identity, location, installed worlds).
     3. Intent hint when present (pre-classifier label, confidence, source).
-    4. Recent conversation (STM) when provided (F12 §7).
+    4. Recent conversation (STM) when provided.
     5. Retrieved memory (LTM or empty).
     6. User message.
     """
     segments: List[str] = []
-    if world_snapshot:
-        segments.append(f"World snapshot:\n{world_snapshot}")
     if tool_manifest_text:
         segments.append(f"Tools available:\n{tool_manifest_text}")
+    if world_snapshot:
+        segments.append(f"World snapshot:\n{world_snapshot}")
     if intent_hint:
         segments.append(
             "Intent hint (runtime pre-classifier):\n"

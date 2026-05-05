@@ -158,13 +158,18 @@ _AICO_LEGACY_PHASE_LLM = {
     "check": {"mode": "skip"},
     "act": {"mode": "skip"},
 }
-# Check runs as a lightweight guardrail that can emit a ``RETRY:`` signal to
-# re-plan when the Do reply is not backed by tool observations. See
-# ``LlmPDCAFramework._parse_check_retry_signal``.
-_AICO_DEFAULT_PHASE_LLM = {
+# Seed shipped with plan+do+check LLM before default Do skip (idempotent upgrade target).
+_AICO_PREVIOUS_DEFAULT_PHASE_LLM = {
     "plan": {"mode": "fast"},
     "do": {"mode": "fast"},
     "check": {"mode": "fast"},
+    "act": {"mode": "skip"},
+}
+# Plan stays on LLM; Do skipped (SSH/API reply is Plan prose only; see AGENT_PDCA_PHASE_MERGE_TRADEOFFS.md).
+_AICO_DEFAULT_PHASE_LLM = {
+    "plan": {"mode": "fast"},
+    "do": {"mode": "skip"},
+    "check": {"mode": "skip"},
     "act": {"mode": "skip"},
 }
 
@@ -176,6 +181,21 @@ def _aico_phase_llm_is_legacy(phase_llm: object) -> bool:
     if set(phase_llm.keys()) != keys:
         return False
     return all(phase_llm.get(k) == v for k, v in _AICO_LEGACY_PHASE_LLM.items())
+
+
+def _aico_phase_llm_matches_template(phase_llm: object, template: dict) -> bool:
+    if not isinstance(phase_llm, dict):
+        return False
+    keys = {"plan", "do", "check", "act"}
+    if set(phase_llm.keys()) != keys:
+        return False
+    return all(phase_llm.get(k) == v for k, v in template.items())
+
+
+def _aico_phase_llm_should_upgrade_to_current_default(phase_llm: object) -> bool:
+    return _aico_phase_llm_is_legacy(phase_llm) or _aico_phase_llm_matches_template(
+        phase_llm, _AICO_PREVIOUS_DEFAULT_PHASE_LLM
+    )
 
 
 def ensure_root_node(session=None) -> bool:
@@ -214,7 +234,7 @@ def ensure_aico_npc_agent(session) -> bool:
         if "phase_llm" not in merged:
             merged["phase_llm"] = {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()}
             changed = True
-        elif _aico_phase_llm_is_legacy(merged.get("phase_llm")):
+        elif _aico_phase_llm_should_upgrade_to_current_default(merged.get("phase_llm")):
             merged["phase_llm"] = {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()}
             changed = True
         if changed:
