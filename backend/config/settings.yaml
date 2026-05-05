@@ -40,7 +40,7 @@ server:
   reload: true
   access_log: true
 
-# npc_agent Mode B (daemon exclusive / system_shared_exclusive): platform defaults.
+# npc_agent exclusive daemon agents (`conversation_scope_mode: system_shared_exclusive`): platform defaults.
 # Not tied to AICO: applies to any daemon agent whose lock row matches CommandContext.session_id.
 # Per-node override may later merge from agents.llm extra / attributes (see docs/models/SPEC/features/).
 npc_agent:
@@ -121,6 +121,9 @@ logging:
     requests: "WARNING"
     sqlalchemy: "WARNING"
     passlib: "WARNING"
+    passlib.utils: "WARNING"
+    passlib.utils.compat: "WARNING"
+    passlib.registry: "WARNING"
 
 # CORS配置
 cors:
@@ -194,12 +197,19 @@ agents:
         #   max_new_tokens: 96
         #   system_prompt_file: ""  # omit for packaged default prompt
         # Conversation STM (PostgreSQL): enable after migrate applies `ensure_multi_turn_conversation_memory_schema`.
-        # enable_conversation_stm: false
-        # stm_max_turns: 20
-        # stm_max_chars: 32000
-        # compaction_trigger_ratio: 0.9
-        # ltm_retrieval_scope: user_agent
-        extra: {}
+        extra:
+          enable_conversation_stm: true
+          stm_max_turns: 20
+          stm_max_chars: 32000
+          compaction_trigger_ratio: 0.9
+          ltm_retrieval_scope: user_agent
+          # PDCA / manifest tuning (see docs/models/SPEC/AGENT_PDCA_PHASE_MERGE_TRADEOFFS.md)
+          tool_gather_max_rounds_per_phase: 2
+          pdca_use_slim_followup_system: true
+          enable_intent_tool_manifest_subset: false
+          # When true, providers that support prompt caching may apply it (see llm_client passthrough).
+          use_prompt_cache: false
+          enable_stm_llm_compaction: false
         system_prompt: |
           You are AICO, the default system assistant of CampusWorld — a graph-native
           "smart campus OS" whose worlds are navigated and modified exclusively through
@@ -239,6 +249,12 @@ agents:
             intent and confirmation signals before planning mutate tools. If
             intent is mixed or unclear, ask one concise clarification question
             instead of guessing or escalating to mutate.
+            When the user gives a numeric node id, `#id`, or asks to inspect one
+            node, prefer `describe` (CLI `ex`/`examine`) with that id before
+            concluding the graph has no match. For spatial layout (occupants,
+            devices, exits or child spaces), combine `find` (e.g. `find -t …`)
+            with `space -i <id>` as needed. Never assert absence of a node or
+            space without tool observations.
           do: >-
             Using the plan and tool observations, draft the user-facing reply.
             You may still call tools this phase if new information is needed.

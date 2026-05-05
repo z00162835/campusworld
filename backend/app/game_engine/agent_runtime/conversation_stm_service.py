@@ -1,4 +1,4 @@
-"""Conversation STM (Mode A / Mode B), thread ids, deterministic compaction."""
+"""Conversation STM: transcript storage, thread ids, daemon-exclusive lock, compaction."""
 
 from __future__ import annotations
 
@@ -17,13 +17,87 @@ from app.models.system.agent_memory_tables import (
 )
 
 CONV_SCOPE_PER_USER = "per_user_session"
-CONV_SCOPE_DAEMON = "system_shared_exclusive"
+# Matches ``npc_agent.attributes.conversation_scope_mode`` value for exclusive shared daemon agents.
+CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE = "system_shared_exclusive"
+
+
+def _conversation_thread_ephemeral_storage_key(agent_node_id: int) -> str:
+    """Map key on ``command_ephemeral``: implicit conversation thread UUID per agent on this transport."""
+
+    return f"stm_default_thread:{int(agent_node_id)}"
+
+
+def persist_conversation_thread_for_transport(
+    context: CommandContext,
+    agent_node_id: int,
+    tid: uuid.UUID,
+) -> None:
+    """Remember implicit default thread on the transport session object (e.g. SSHSession, WSConnection)."""
+
+    sess = context.session
+    if sess is None:
+        return
+    ep = getattr(sess, "command_ephemeral", None)
+    if not isinstance(ep, dict):
+        return
+    ep[_conversation_thread_ephemeral_storage_key(agent_node_id)] = str(tid)
+
+
+def clear_conversation_thread_for_transport(context: CommandContext, agent_node_id: int) -> None:
+    sess = context.session
+    if sess is None:
+        return
+    ep = getattr(sess, "command_ephemeral", None)
+    if not isinstance(ep, dict):
+        return
+    ep.pop(_conversation_thread_ephemeral_storage_key(agent_node_id), None)
+
+
+def try_restore_conversation_thread_from_transport(
+    db_session: Session,
+    context: CommandContext,
+    *,
+    caller_account_node_id: int,
+    agent_node_id: int,
+) -> Optional[uuid.UUID]:
+    """Load thread UUID from transport ephemeral if it matches a persisted AgentConversationThread row."""
+
+    sess = context.session
+    if sess is None:
+        return None
+    ep = getattr(sess, "command_ephemeral", None)
+    if not isinstance(ep, dict):
+        return None
+    key = _conversation_thread_ephemeral_storage_key(agent_node_id)
+    raw = ep.get(key)
+    if raw is None or not str(raw).strip():
+        return None
+    try:
+        tid = uuid.UUID(str(raw).strip())
+    except Exception:
+        ep.pop(key, None)
+        return None
+    transport = str(context.session_id or "")
+    row = (
+        db_session.query(AgentConversationThread)
+        .filter(
+            AgentConversationThread.id == tid,
+            AgentConversationThread.owner_account_node_id == caller_account_node_id,
+            AgentConversationThread.agent_node_id == agent_node_id,
+            AgentConversationThread.transport_session_id == transport,
+        )
+        .first()
+    )
+    if row is None:
+        ep.pop(key, None)
+        return None
+    return tid
 
 
 def parse_conversation_scope_mode(attrs: Dict[str, Any]) -> str:
     raw = str((attrs or {}).get("conversation_scope_mode") or CONV_SCOPE_PER_USER).strip().lower()
-    if raw == CONV_SCOPE_DAEMON:
-        return CONV_SCOPE_DAEMON
+    if raw == CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE:
+        return CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE
     return CONV_SCOPE_PER_USER
 
 
@@ -46,16 +120,30 @@ def set_thread_id_on_context(context: CommandContext, tid: uuid.UUID) -> None:
     context.metadata["conversation_thread_id"] = str(tid)
 
 
-def ensure_mode_a_thread_id(
+def ensure_conversation_thread_id(
     session: Session,
     *,
     context: CommandContext,
     caller_account_node_id: int,
     agent_node_id: int,
 ) -> uuid.UUID:
+    """Return the active conversation thread UUID for this caller, transport, and agent (metadata, transport ephemeral, or new row)."""
     existing = get_thread_id_from_context(context)
     if existing:
+        persist_conversation_thread_for_transport(context, agent_node_id, existing)
         return existing
+
+    restored = try_restore_conversation_thread_from_transport(
+        session,
+        context,
+        caller_account_node_id=caller_account_node_id,
+        agent_node_id=agent_node_id,
+    )
+    if restored is not None:
+        set_thread_id_on_context(context, restored)
+        persist_conversation_thread_for_transport(context, agent_node_id, restored)
+        return restored
+
     tid = uuid.uuid4()
     transport = str(context.session_id or "")
     session.add(
@@ -69,10 +157,11 @@ def ensure_mode_a_thread_id(
     )
     session.flush()
     set_thread_id_on_context(context, tid)
+    persist_conversation_thread_for_transport(context, agent_node_id, tid)
     return tid
 
 
-def load_or_create_mode_a_stm(
+def load_or_create_conversation_stm(
     session: Session,
     *,
     caller_account_node_id: int,
@@ -80,6 +169,7 @@ def load_or_create_mode_a_stm(
     agent_node_id: int,
     conversation_thread_id: uuid.UUID,
 ) -> AgentConversationStm:
+    """Load or insert the ``agent_conversation_stm`` row for the given conversation scope."""
     row = (
         session.query(AgentConversationStm)
         .filter(
@@ -241,7 +331,7 @@ def finalize_daemon_possession_after_success(
     transport_session_id: str,
     username_for_bound: str,
 ) -> None:
-    """Record Mode B holder after FrameworkRunResult.ok; bumps possession_generation only when newly held."""
+    """Record exclusive daemon possession holder after ``FrameworkRunResult.ok``; bumps ``possession_generation`` when holder changes."""
     prev = row.locked_by_account_node_id
     if prev is None:
         row.locked_by_account_node_id = caller_account_node_id
@@ -286,10 +376,10 @@ def touch_thread_metadata(session: Session, thread_id: uuid.UUID, snippet: str) 
         row.title_snippet = snippet[:200]
 
 
-def release_mode_b_possession_for_transport_session(session: Session, transport_session_id: str) -> int:
+def release_daemon_possession_for_transport_session(session: Session, transport_session_id: str) -> int:
     """
-    Clear Mode B locks bound to this transport session (SSH / WebSocket CommandContext.session_id).
-    Idempotent. Clears in-memory STM blob on those rows (same pattern as idle takeover).
+    Clear daemon STM lock rows whose ``lock_transport_session_id`` matches this transport (SSH / WebSocket ``CommandContext.session_id``).
+    Idempotent. Clears STM payload on those rows (same pattern as idle takeover).
     """
     sid = str(transport_session_id or "").strip()
     if not sid:
@@ -313,7 +403,7 @@ def release_mode_b_possession_for_transport_session(session: Session, transport_
     return n
 
 
-def release_mode_b_possession_for_transport_session_if_configured(session: Session, transport_session_id: str) -> int:
+def release_daemon_possession_for_transport_session_if_configured(session: Session, transport_session_id: str) -> int:
     from app.core.config_manager import get_nested_setting
 
     if not bool(
@@ -325,7 +415,7 @@ def release_mode_b_possession_for_transport_session_if_configured(session: Sessi
         )
     ):
         return 0
-    return release_mode_b_possession_for_transport_session(session, transport_session_id)
+    return release_daemon_possession_for_transport_session(session, transport_session_id)
 
 
 def list_threads_for_owner_agent(

@@ -58,7 +58,7 @@ class AgentConversationStm(Base):
 
 
 class AgentDaemonStmLock(Base):
-    """Mode B: possession + STM on one row per daemon agent instance."""
+    """Exclusive shared daemon agent: possession + STM on one row per agent node instance."""
 
     __tablename__ = "agent_daemon_stm_lock"
 

@@ -36,6 +36,15 @@ def minimax_anthropic_messages_url(base_url: str) -> str:
     return f"{b}/anthropic/v1/messages"
 
 
+def _anthropic_system_blocks(system: str, extra: Dict[str, Any]) -> Any:
+    """Plain string by default; Anthropic-style cache breakpoint when ``use_prompt_cache`` is set."""
+    use = bool(extra.pop("use_prompt_cache", False))
+    text = system or " "
+    if use:
+        return [{"type": "text", "text": text, "cache_control": {"type": "ephemeral"}}]
+    return text
+
+
 def clamp_anthropic_temperature(value: float) -> float:
     """MiniMax Anthropic layer documents temperature in (0, 1]."""
     if value <= 0.0:
@@ -77,10 +86,13 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         temp = clamp_anthropic_temperature(float(temp))
 
         url = minimax_anthropic_messages_url(self._base_url)
+        extra = dict(spec.extra or {})
+        extra.pop("prompt_fingerprint", None)
+        sys_payload = _anthropic_system_blocks(system, extra)
         body: Dict[str, Any] = {
             "model": model,
             "max_tokens": int(max_tokens),
-            "system": system or " ",
+            "system": sys_payload,
             "messages": [
                 {
                     "role": "user",
@@ -90,8 +102,6 @@ class MinimaxAnthropicMessagesHttpLlmClient:
             "stream": False,
             "temperature": temp,
         }
-        extra = dict(spec.extra or {})
-        extra.pop("prompt_fingerprint", None)
         body.update(extra)
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -134,17 +144,18 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         messages = _turns_to_anthropic_messages(turns)
         allowed_names = {str(t.name) for t in tools if getattr(t, "name", None)}
         _validate_anthropic_tool_messages(messages, allowed_tool_names=allowed_names)
+        extra = dict(spec.extra or {})
+        extra.pop("prompt_fingerprint", None)
+        sys_payload = _anthropic_system_blocks(system, extra)
         body: Dict[str, Any] = {
             "model": model,
             "max_tokens": int(max_tokens),
-            "system": system or " ",
+            "system": sys_payload,
             "messages": messages,
             "stream": False,
             "temperature": temp,
             "tools": [_tool_schema_to_anthropic(t) for t in tools],
         }
-        extra = dict(spec.extra or {})
-        extra.pop("prompt_fingerprint", None)
         body.update(extra)
         headers = {
             "Authorization": f"Bearer {self._api_key}",

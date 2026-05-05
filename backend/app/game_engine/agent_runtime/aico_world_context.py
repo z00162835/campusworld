@@ -212,6 +212,71 @@ def _manifest_section_title(locale: str, profile: str) -> str:
     return "其它" if zh else "Other tools"
 
 
+_INFORMATIONAL_MANIFEST_PROFILES = frozenset({"document", "read"})
+_INFORMATIONAL_MANIFEST_ALWAYS = frozenset(
+    {
+        "describe",
+        "find",
+        "space",
+        "help",
+        "primer",
+        "look",
+        "whoami",
+        "version",
+        "time",
+        "stats",
+        "type",
+    }
+)
+
+
+def _manifest_agent_routing_preamble(locale: str) -> str:
+    zh = str(locale or "").lower().startswith("zh")
+    if zh:
+        return (
+            "路由提示（JSON 中 name 须为注册主名；用户口语里的 alias 见各行 aliases）：\n"
+            "- 节点数字 id / #id / 查看节点详情 → describe（别名 ex、examine）；示例 args 含 id。\n"
+            "- 按类型列举或筛选 → find -t <type_code>；不确定 type_code 时可用 type 对照。\n"
+            "- 空间四段信息 → space -t（SPACE 类 type_code）或 space -i <node_id>。\n"
+            "- 典型链：find -t building → 从结果取 id → space -i <id>；用户已给 id 可先 describe 再决定是否 space -i。\n"
+            "- 无工具观测时不要断言节点或空间不存在。\n"
+        )
+    return (
+        "Routing (JSON ``name`` must be the registered primary; spoken aliases are listed per line):\n"
+        "- Numeric node id / #dbref / inspect-one-node → describe (aliases: ex, examine); examples use an id in args.\n"
+        "- Filter or list by graph type → find -t <type_code>; use ``type`` when unsure of valid type codes.\n"
+        "- Spatial rollup → space -t (SPACE-capable type_codes) or space -i <node_id>.\n"
+        "- Typical chain: find -t building → pick an id from results → space -i <id>; if the user gave an id, describe/ex first, then space -i if you need occupants/links.\n"
+        "- Do not claim a node or space is absent without tool observations.\n"
+    )
+
+
+def _manifest_command_aliases_suffix(cmd) -> str:
+    if cmd is None:
+        return ""
+    als = getattr(cmd, "aliases", None) or []
+    cleaned = [str(a).strip() for a in als if str(a).strip()]
+    if not cleaned:
+        return ""
+    return f"  (aliases: {', '.join(cleaned)})"
+
+
+def _manifest_json_example_command(schema_name: str) -> Dict[str, Any]:
+    if schema_name == "describe":
+        args: List[str] = ["35"]
+    elif schema_name == "find":
+        args = ["-t", "building"]
+    elif schema_name == "space":
+        args = ["-i", "35"]
+    elif schema_name == "help":
+        args = ["describe"]
+    elif schema_name == "primer":
+        args = ["commands"]
+    else:
+        args = []
+    return {"commands": [{"name": schema_name, "args": args}]}
+
+
 def build_llm_tool_manifest(
     surface,
     command_registry,
@@ -220,6 +285,7 @@ def build_llm_tool_manifest(
     locale: Optional[str] = None,
     max_description_chars: int = 240,
     include_json_example: bool = True,
+    manifest_interaction_filter: Optional[str] = None,
 ) -> Tuple[str, List[ToolSchema]]:
     from app.commands.i18n.locale_text import tool_manifest_locale
 
@@ -242,6 +308,10 @@ def build_llm_tool_manifest(
         profile = str(sem.get("interaction_profile") or "read").strip().lower()
         if profile not in {"document", "read", "mutate"}:
             profile = "other"
+
+        if manifest_interaction_filter == "informational":
+            if profile not in _INFORMATIONAL_MANIFEST_PROFILES and schema.name not in _INFORMATIONAL_MANIFEST_ALWAYS:
+                continue
 
         attrs_for_hint = {
             "routing_hint": sem.get("routing_hint"),
@@ -266,13 +336,26 @@ def build_llm_tool_manifest(
                 except Exception:
                     usage = ""
         row = f"- {schema.name}: {desc}"
+        row += _manifest_command_aliases_suffix(cmd)
         if routing_hint:
             row += f"  (routing: {routing_hint})"
         if usage:
             row += f"  (usage: {usage})"
         if include_json_example:
-            row += f"  example: {json.dumps({'commands': [{'name': schema.name, 'args': []}]}, ensure_ascii=False)}"
+            ex = _manifest_json_example_command(schema.name)
+            row += f"  example: {json.dumps(ex, ensure_ascii=False)}"
         rows_by_profile[profile].append(row)
+
+    if manifest_interaction_filter and not patched:
+        return build_llm_tool_manifest(
+            surface,
+            command_registry,
+            session=session,
+            locale=locale,
+            max_description_chars=max_description_chars,
+            include_json_example=include_json_example,
+            manifest_interaction_filter=None,
+        )
 
     text_rows: List[str] = []
     for profile in ("document", "read", "mutate", "other"):
@@ -281,5 +364,7 @@ def build_llm_tool_manifest(
             continue
         text_rows.append(f"[{_manifest_section_title(loc, profile)}]")
         text_rows.extend(rows)
-    text = "\n".join(text_rows)
+    body = "\n".join(text_rows)
+    pre = _manifest_agent_routing_preamble(loc)
+    text = f"{pre}\n{body}" if body.strip() else pre
     return text, patched

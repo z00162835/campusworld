@@ -2,32 +2,45 @@
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
 
 from unittest.mock import MagicMock
 
+from app.commands.base import CommandContext
 from app.game_engine.agent_runtime.conversation_stm_service import (
     apply_compaction_truncate,
     append_turns_to_messages,
+    clear_conversation_thread_for_transport,
+    ensure_conversation_thread_id,
     finalize_daemon_possession_after_success,
     format_stm_for_prompt,
+    get_thread_id_from_context,
     normalize_messages,
+    persist_conversation_thread_for_transport,
     stm_should_compact_after_append,
+    try_restore_conversation_thread_from_transport,
+    _conversation_thread_ephemeral_storage_key,
 )
 from app.game_engine.agent_runtime.frameworks.llm_pdca import _assemble_plan_user
 
 
 @pytest.mark.unit
-def test_assemble_plan_user_puts_recent_conversation_before_retrieved_memory():
+def test_assemble_plan_user_orders_tools_world_stm_memory_user():
     text = _assemble_plan_user(
         user_msg="hi",
         memory="LTM_BLOCK",
-        world_snapshot="",
-        tool_manifest_text="",
+        world_snapshot="WORLD_BLOCK",
+        tool_manifest_text="TOOLS_BLOCK",
         intent_hint=None,
         recent_conversation="STM_BLOCK",
     )
+    assert text.index("Tools available") < text.index("World snapshot")
+    assert text.index("World snapshot") < text.index("Recent conversation")
     assert text.index("Recent conversation") < text.index("Retrieved memory")
+    assert text.index("Retrieved memory") < text.index("User message")
+    assert "TOOLS_BLOCK" in text and "WORLD_BLOCK" in text
     assert "STM_BLOCK" in text and "LTM_BLOCK" in text
 
 
@@ -100,3 +113,160 @@ def test_finalize_daemon_possession_sets_holder_once():
     )
     assert row.possession_generation == 1
     assert row.lock_transport_session_id == "ssh_sess_2"
+
+
+@pytest.mark.unit
+def test_try_restore_conversation_thread_validates_db_row():
+    tid = uuid.uuid4()
+    ssh = MagicMock()
+    ssh.command_ephemeral = {_conversation_thread_ephemeral_storage_key(7): str(tid)}
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="transport-a",
+        permissions=[],
+        session=ssh,
+        metadata={},
+    )
+    db = MagicMock()
+    db.query.return_value.filter.return_value.first.return_value = object()
+    assert (
+        try_restore_conversation_thread_from_transport(
+            db,
+            ctx,
+            caller_account_node_id=5,
+            agent_node_id=7,
+        )
+        == tid
+    )
+
+
+@pytest.mark.unit
+def test_try_restore_conversation_thread_bad_uuid_clears_ephemeral():
+    ssh = MagicMock()
+    key = _conversation_thread_ephemeral_storage_key(7)
+    ssh.command_ephemeral = {key: "not-a-uuid"}
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="transport-a",
+        permissions=[],
+        session=ssh,
+        metadata={},
+    )
+    db = MagicMock()
+    assert try_restore_conversation_thread_from_transport(db, ctx, caller_account_node_id=5, agent_node_id=7) is None
+    assert key not in ssh.command_ephemeral
+
+
+@pytest.mark.unit
+def test_try_restore_conversation_thread_missing_row_clears_ephemeral():
+    tid = uuid.uuid4()
+    ssh = MagicMock()
+    key = _conversation_thread_ephemeral_storage_key(7)
+    ssh.command_ephemeral = {key: str(tid)}
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="transport-a",
+        permissions=[],
+        session=ssh,
+        metadata={},
+    )
+    db = MagicMock()
+    db.query.return_value.filter.return_value.first.return_value = None
+    assert try_restore_conversation_thread_from_transport(db, ctx, caller_account_node_id=5, agent_node_id=7) is None
+    assert key not in ssh.command_ephemeral
+
+
+@pytest.mark.unit
+def test_ensure_conversation_thread_id_restores_without_db_insert():
+    tid = uuid.uuid4()
+    ssh = MagicMock()
+    ssh.command_ephemeral = {_conversation_thread_ephemeral_storage_key(99): str(tid)}
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="tr1",
+        permissions=[],
+        session=ssh,
+        metadata=None,
+    )
+    db = MagicMock()
+    db.query.return_value.filter.return_value.first.return_value = object()
+    out = ensure_conversation_thread_id(
+        db,
+        context=ctx,
+        caller_account_node_id=10,
+        agent_node_id=99,
+    )
+    assert out == tid
+    assert get_thread_id_from_context(ctx) == tid
+    db.add.assert_not_called()
+
+
+@pytest.mark.unit
+def test_ensure_conversation_thread_id_creates_and_sets_ephemeral(monkeypatch):
+    fixed = uuid.UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+    monkeypatch.setattr(
+        "app.game_engine.agent_runtime.conversation_stm_service.uuid.uuid4",
+        lambda: fixed,
+    )
+    ssh = MagicMock()
+    ssh.command_ephemeral = {}
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="tr2",
+        permissions=[],
+        session=ssh,
+        metadata=None,
+    )
+    db = MagicMock()
+    db.query.return_value.filter.return_value.first.return_value = None
+
+    out = ensure_conversation_thread_id(
+        db,
+        context=ctx,
+        caller_account_node_id=10,
+        agent_node_id=42,
+    )
+    assert out == fixed
+    assert ssh.command_ephemeral[_conversation_thread_ephemeral_storage_key(42)] == str(fixed)
+    db.add.assert_called_once()
+    db.flush.assert_called_once()
+
+
+@pytest.mark.unit
+def test_clear_conversation_thread_for_transport():
+    tid = uuid.uuid4()
+    ssh = MagicMock()
+    key = _conversation_thread_ephemeral_storage_key(3)
+    ssh.command_ephemeral = {key: str(tid)}
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="x",
+        permissions=[],
+        session=ssh,
+        metadata={},
+    )
+    clear_conversation_thread_for_transport(ctx, 3)
+    assert key not in ssh.command_ephemeral
+
+
+@pytest.mark.unit
+def test_persist_conversation_thread_for_transport():
+    tid = uuid.uuid4()
+    ssh = MagicMock()
+    ssh.command_ephemeral = {}
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="x",
+        permissions=[],
+        session=ssh,
+        metadata={},
+    )
+    persist_conversation_thread_for_transport(ctx, 5, tid)
+    assert ssh.command_ephemeral[_conversation_thread_ephemeral_storage_key(5)] == str(tid)

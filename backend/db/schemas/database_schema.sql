@@ -343,7 +343,7 @@ CREATE INDEX IF NOT EXISTS ix_ltm_links_agent_target
 -- END f02_agent_memory
 
 -- BEGIN conversation_multi_turn_memory
--- Multi-turn dialogue: per-scope STM, Mode B daemon lock, thread directory, LTM scope columns (see docs/models/ADR/ADR-F12-conversation-stm-and-ltm.md)
+-- Multi-turn dialogue: per-scope STM, daemon STM lock row, thread directory, LTM scope columns (see docs/models/ADR/ADR-F12-conversation-stm-and-ltm.md)
 CREATE TABLE IF NOT EXISTS agent_conversation_stm (
     id BIGSERIAL PRIMARY KEY,
     caller_account_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,

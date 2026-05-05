@@ -29,6 +29,11 @@ class LlmCallSpec:
     extra: Dict[str, Any] = field(default_factory=dict)
 
 
+# Keys from ``agents.llm.by_service_id.<id>.extra`` merged into :attr:`LlmCallSpec.extra`
+# on each agent-framework LLM call. HTTP adapters read only keys they implement.
+AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC = frozenset({"use_prompt_cache"})
+
+
 @runtime_checkable
 class LlmClient(Protocol):
     """LLM surface for agent frameworks; supports per-phase call_spec.

@@ -15,6 +15,108 @@ _NPC_AGENT_NLP_LOG = get_logger("app.commands.npc_agent_nlp")
 NPC_AGENT_LLM_FAILURE_USER_MSG = "我这边暂时无法处理，请再描述一下你的目标。"
 
 
+def _stm_llm_merge_rolling_summary(llm, cfg, previous_rs: str, transcript_excerpt: str) -> str:
+    """Optional STM compaction merge via LLM; failures leave ``previous_rs`` unchanged."""
+    extra = dict(cfg.extra or {}) if isinstance(cfg.extra, dict) else {}
+    model_raw = extra.get("stm_compaction_model") or cfg.model
+    model_s = str(model_raw).strip() if model_raw else ""
+    sys_s = str(extra.get("stm_compaction_system_prompt") or "").strip()
+    if not sys_s:
+        sys_s = (
+            "Merge the previous rolling summary with the conversation excerpt into a short factual summary "
+            "for an assistant context. Keep user goals, named entities, and open tasks. "
+            "Max about 800 characters. Plain text only, no markdown fences."
+        )
+    user_blob = f"Previous summary:\n{previous_rs or '(none)'}\n\nTranscript:\n{transcript_excerpt[:12000]}"
+    try:
+        from app.game_engine.agent_runtime.llm_client import LlmCallSpec
+
+        mtok = cfg.max_tokens if cfg.max_tokens is not None else 512
+        spec = LlmCallSpec(
+            model=model_s or None,
+            max_tokens=min(512, int(mtok)),
+            temperature=0.2,
+        )
+        out = llm.complete(system=sys_s, user=user_blob, call_spec=spec)
+        return (out or "").strip()
+    except Exception:
+        _NPC_AGENT_NLP_LOG.warning("stm rolling_summary LLM merge failed", exc_info=True)
+        return (previous_rs or "").strip()
+
+
+def _apply_stm_compaction_with_optional_llm(
+    extra: Dict[str, Any],
+    llm,
+    cfg,
+    msgs,
+    rs: str,
+    *,
+    max_turns: int,
+    max_chars: int,
+):
+    from app.game_engine.agent_runtime.agent_llm_extra import parse_bool_extra
+    from app.game_engine.agent_runtime.conversation_stm_service import (
+        apply_compaction_truncate,
+        format_stm_for_prompt,
+    )
+
+    if parse_bool_extra(extra, "enable_stm_llm_compaction", False):
+        blob = format_stm_for_prompt(msgs, rs)
+        merged = _stm_llm_merge_rolling_summary(llm, cfg, rs, blob)
+        if merged:
+            rs = merged
+    return apply_compaction_truncate(msgs, rs, stm_max_turns=max_turns, stm_max_chars=max_chars)
+
+
+def _informational_manifest_payload_overrides(
+    session,
+    node: Node,
+    context: CommandContext,
+    message: str,
+    attrs: Dict[str, Any],
+    cfg_extra: Dict[str, Any],
+) -> Dict[str, Any]:
+    from app.game_engine.agent_runtime.agent_llm_extra import parse_bool_extra
+
+    if not parse_bool_extra(cfg_extra, "enable_intent_tool_manifest_subset", False):
+        return {}
+    from app.commands.registry import command_registry
+    from app.game_engine.agent_runtime.aico_world_context import build_llm_tool_manifest
+    from app.game_engine.agent_runtime.intent_classifier_interface import (
+        RuleFallbackIntentClassifier,
+        classify_intent,
+    )
+    from app.game_engine.agent_runtime.resolved_tool_surface import build_resolved_tool_surface
+
+    ic = classify_intent(
+        message,
+        agent_id=str(node.id),
+        metadata={"correlation_id": str(context.session_id or "")},
+        classifier=RuleFallbackIntentClassifier(),
+    )
+    if ic.intent != "informational":
+        return {}
+    raw_allow = attrs.get("tool_allowlist") or []
+    allowlist = [str(x) for x in raw_allow] if isinstance(raw_allow, list) else []
+    surface = build_resolved_tool_surface(node_tool_allowlist=allowlist, tool_command_context=context)
+    loc = None
+    md = context.metadata or {}
+    v = md.get("locale")
+    if isinstance(v, str) and v.strip():
+        loc = v.strip()
+    mtext, mschemas = build_llm_tool_manifest(
+        surface,
+        command_registry,
+        session=session,
+        locale=loc,
+        manifest_interaction_filter="informational",
+    )
+    return {
+        "tool_manifest_text": mtext,
+        "pdca_tool_schema_allowlist": [s.name for s in mschemas],
+    }
+
+
 def maybe_ltm_memory_context(
     session,
     agent_node_id: int,
@@ -62,11 +164,10 @@ def run_npc_agent_nlp_tick(
     )
     from app.game_engine.agent_runtime.aico_world_context import build_world_snapshot_from_session
     from app.game_engine.agent_runtime.conversation_stm_service import (
-        CONV_SCOPE_DAEMON,
+        CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE,
         append_turns_to_messages,
-        apply_compaction_truncate,
         format_stm_for_prompt,
-        load_or_create_mode_a_stm,
+        load_or_create_conversation_stm,
         normalize_messages,
         parse_conversation_scope_mode,
         refresh_daemon_success_tick,
@@ -74,7 +175,7 @@ def run_npc_agent_nlp_tick(
         touch_thread_metadata,
         try_acquire_daemon_possession,
         finalize_daemon_possession_after_success,
-        ensure_mode_a_thread_id,
+        ensure_conversation_thread_id,
     )
     from app.game_engine.agent_runtime.frameworks.base import FrameworkRunResult
     from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config, http_llm_available
@@ -90,7 +191,7 @@ def run_npc_agent_nlp_tick(
         model_config_ref=model_ref_s,
         node_attributes=attrs,
     )
-    # Passthrough does not touch Mode B possession or STM; does not refresh last_successful_tick_at.
+    # Passthrough does not touch exclusive daemon possession or STM; does not refresh last_successful_tick_at.
     if not http_llm_available(cfg):
         return FrameworkRunResult(
             ok=True,
@@ -149,11 +250,11 @@ def run_npc_agent_nlp_tick(
     retrieved_mem: Optional[str] = None
     mem_do: Optional[str] = None
     daemon_row = None
-    mode_a_stm_row = None
+    conversation_stm_row = None
     thread_id = None
 
     if stm_on and caller_id is not None:
-        if scope_mode == CONV_SCOPE_DAEMON:
+        if scope_mode == CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE:
             ok_poss, err_poss, daemon_row = try_acquire_daemon_possession(
                 session,
                 agent_node_id=node.id,
@@ -171,34 +272,34 @@ def run_npc_agent_nlp_tick(
             msgs = normalize_messages(daemon_row.messages)
             rs = daemon_row.rolling_summary or ""
             if stm_should_compact_after_append(msgs, rs, stm_max_chars=max_chars, compaction_trigger_ratio=trig):
-                msgs, rs = apply_compaction_truncate(
-                    msgs, rs, stm_max_turns=max_turns, stm_max_chars=max_chars
+                msgs, rs = _apply_stm_compaction_with_optional_llm(
+                    extra, llm, cfg, msgs, rs, max_turns=max_turns, max_chars=max_chars
                 )
                 daemon_row.messages = msgs
                 daemon_row.rolling_summary = rs
             stm_text = format_stm_for_prompt(msgs, rs)
         else:
-            thread_id = ensure_mode_a_thread_id(
+            thread_id = ensure_conversation_thread_id(
                 session,
                 context=context,
                 caller_account_node_id=caller_id,
                 agent_node_id=node.id,
             )
-            mode_a_stm_row = load_or_create_mode_a_stm(
+            conversation_stm_row = load_or_create_conversation_stm(
                 session,
                 caller_account_node_id=caller_id,
                 transport_session_id=str(context.session_id or ""),
                 agent_node_id=node.id,
                 conversation_thread_id=thread_id,
             )
-            msgs = normalize_messages(mode_a_stm_row.messages)
-            rs = mode_a_stm_row.rolling_summary or ""
+            msgs = normalize_messages(conversation_stm_row.messages)
+            rs = conversation_stm_row.rolling_summary or ""
             if stm_should_compact_after_append(msgs, rs, stm_max_chars=max_chars, compaction_trigger_ratio=trig):
-                msgs, rs = apply_compaction_truncate(
-                    msgs, rs, stm_max_turns=max_turns, stm_max_chars=max_chars
+                msgs, rs = _apply_stm_compaction_with_optional_llm(
+                    extra, llm, cfg, msgs, rs, max_turns=max_turns, max_chars=max_chars
                 )
-                mode_a_stm_row.messages = msgs
-                mode_a_stm_row.rolling_summary = rs
+                conversation_stm_row.messages = msgs
+                conversation_stm_row.rolling_summary = rs
             stm_text = format_stm_for_prompt(msgs, rs)
 
         ltm_scope = str(extra.get("ltm_retrieval_scope") or "user_agent").strip().lower()
@@ -236,9 +337,13 @@ def run_npc_agent_nlp_tick(
         payload: Dict[str, Any] = {"message": message}
         if world_snapshot_text:
             payload["world_snapshot"] = world_snapshot_text
+        payload.update(
+            _informational_manifest_payload_overrides(session, node, context, message, attrs, extra)
+        )
+        manifest_for_fp = str(payload.get("tool_manifest_text") or w.tool_manifest_text or "")
         payload["prompt_fingerprint"] = compute_npc_prompt_fingerprint(
             world_snapshot=world_snapshot_text,
-            tool_manifest_text=w.tool_manifest_text or "",
+            tool_manifest_text=manifest_for_fp,
             user_message=message,
         )
         try:
@@ -265,7 +370,7 @@ def run_npc_agent_nlp_tick(
 
         if stm_on and caller_id is not None and res.ok:
             assistant_reply = str(res.message or "").strip()
-            if scope_mode == CONV_SCOPE_DAEMON and daemon_row is not None:
+            if scope_mode == CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE and daemon_row is not None:
                 finalize_daemon_possession_after_success(
                     session,
                     daemon_row,
@@ -282,29 +387,29 @@ def run_npc_agent_nlp_tick(
                 if stm_should_compact_after_append(
                     msgs, rs, stm_max_chars=max_chars, compaction_trigger_ratio=trig
                 ):
-                    msgs, rs = apply_compaction_truncate(
-                        msgs, rs, stm_max_turns=max_turns, stm_max_chars=max_chars
+                    msgs, rs = _apply_stm_compaction_with_optional_llm(
+                        extra, llm, cfg, msgs, rs, max_turns=max_turns, max_chars=max_chars
                     )
                 daemon_row.messages = msgs
                 daemon_row.rolling_summary = rs
                 daemon_row.stm_generation = int(daemon_row.stm_generation or 0) + 1
                 refresh_daemon_success_tick(session, daemon_row)
-            elif mode_a_stm_row is not None:
+            elif conversation_stm_row is not None:
                 msgs = append_turns_to_messages(
-                    normalize_messages(mode_a_stm_row.messages),
+                    normalize_messages(conversation_stm_row.messages),
                     user_text=message,
                     assistant_text=assistant_reply,
                 )
-                rs = mode_a_stm_row.rolling_summary or ""
+                rs = conversation_stm_row.rolling_summary or ""
                 if stm_should_compact_after_append(
                     msgs, rs, stm_max_chars=max_chars, compaction_trigger_ratio=trig
                 ):
-                    msgs, rs = apply_compaction_truncate(
-                        msgs, rs, stm_max_turns=max_turns, stm_max_chars=max_chars
+                    msgs, rs = _apply_stm_compaction_with_optional_llm(
+                        extra, llm, cfg, msgs, rs, max_turns=max_turns, max_chars=max_chars
                     )
-                mode_a_stm_row.messages = msgs
-                mode_a_stm_row.rolling_summary = rs
-                mode_a_stm_row.stm_generation = int(mode_a_stm_row.stm_generation or 0) + 1
+                conversation_stm_row.messages = msgs
+                conversation_stm_row.rolling_summary = rs
+                conversation_stm_row.stm_generation = int(conversation_stm_row.stm_generation or 0) + 1
                 if thread_id is not None:
                     touch_thread_metadata(session, thread_id, message)
 
