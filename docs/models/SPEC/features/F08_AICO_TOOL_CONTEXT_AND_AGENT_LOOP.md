@@ -79,9 +79,11 @@
 3. **Do（LLM）**：`user` 含 **用户消息**、**Plan 输出**、**Plan 阶段 ToolObservation**、**`memory_context`**（见实现拼接顺序）。
 4. **ToolGather（Do / Check）**：对 Do、Check 阶段 LLM 输出中若含 JSON 计划，同样可执行并注入后续阶段（**Act** 阶段默认不再从 LLM 输出追加工具执行，以避免与「润色-only」冲突；可配置迭代）。
 
-### 5.3 方案 B（**后续**）
+**当前默认实现（与上表「单趟」叙述的关系）：** `LlmPDCAFramework`（`llm_pdca.py`）在 **Plan** 与 **Do** 内使用 **有上界的 ReAct**（「LLM → ToolGather → 再 LLM …」），轮次上限由 `ToolGatherBudgets.max_tool_rounds_per_phase` 等与 [**F10**](F10_AICO_PERFORMANCE_AND_LATENCY.md) 一致；仍在单次 tick 的 Plan→Do→Check→Act 骨架内。下文 §6 各阶段职责表描述 **语义角色**；**调用次数与尾延迟** 以 F10 为准。
 
-多轮 **LLM ↔ 工具**：直到模型输出 **`FINAL`** 或明确表示无需再调用工具。更接近深度 **agent 循环**，复杂度高；**v1 可不采纳**。
+### 5.3 方案 B（多轮 agent 循环）
+
+**已实现子集：** Plan / Do 内的 ReAct（见 §5.2 说明）。**未采纳：** 直到模型输出 **`FINAL`**（或等价终止标记）的全局协议与无界深度循环；复杂场景仍受每 tick / 每 phase 预算约束。
 
 ```mermaid
 flowchart LR
@@ -111,7 +113,7 @@ flowchart LR
 | -------------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
 | **Plan**       | **可选**            | 输出 **`llm_tool_plan`**（推荐）或纯文本计划；**不直接执行**命令，除非实现将「解析 + 执行」合并为同一子阶段（不推荐）。                                |
 | **ToolGather** | **必执行（当有合法计划项时）** | 非 LLM 阶段；执行 0..N 条命令，受 **上限** 约束（§8）。                                                                    |
-| **Do**         | **间接**            | 基于 **ToolObservation** 生成草稿答复；**本阶段不再默认执行新命令**（避免与方案 B 混淆）。                                              |
+| **Do**         | **可选（ReAct）**   | 语义上基于已有 **ToolObservation** 与 Plan 材料起草答复；实现上 **可与 ToolGather 交替多轮**（`llm_pdca.py`、预算见 F10），新命令输出仍须落实为观测后再写入事实性结论。 |
 | **Check**      | **通常否**           | 以 Do 草稿与 F03 **check** prompt 为主；若需二次核对世界状态，实现可选用 **只读** 命令（如 `look`），须在 **tool_allowlist** 与策略中显式允许并计次。 |
 | **Act**        | **否**             | 润色最终用户可见文本；不引入新观测。                                                                                       |
 

@@ -6,7 +6,9 @@
 
 **交叉引用：** [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（Command-as-Tool、`memory_context` 与 ToolObservation）、[**F07**](F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)（用户级记忆与异步晋升；本文 flush 与晋升边界见 §9）、[**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)（Plan 前意图提示）、[**F06**](F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)（CampusLibrary；与本节 LTM 检索互补）。
 
-**实现锚点（现状）：** [`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`、`maybe_ltm_memory_context`）、[`backend/app/game_engine/agent_runtime/worker.py`](../../../../backend/app/game_engine/agent_runtime/worker.py)（`LlmPdcaAssistantWorker.tick`、`FrameworkRunContext.memory_context`）、[`backend/app/game_engine/agent_runtime/memory_port.py`](../../../../backend/app/game_engine/agent_runtime/memory_port.py)（`SqlAlchemyMemoryPort`、`AgentRunRecord`）、[`backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py`](../../../../backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py)（`_assemble_plan_user`）、[`backend/app/services/ltm_semantic_retrieval.py`](../../../../backend/app/services/ltm_semantic_retrieval.py)（LTM 检索）、[`backend/app/game_engine/agent_runtime/conversation_stm_service.py`](../../../../backend/app/game_engine/agent_runtime/conversation_stm_service.py)（Mode A/B STM、附身、`release_mode_b_possession_for_transport_session_if_configured`）；SSH [`backend/app/ssh/session.py`](../../../../backend/app/ssh/session.py) `SessionManager.remove_session` 与 WebSocket [`backend/app/api/ws_handler.py`](../../../../backend/app/api/ws_handler.py) 断开时在配置开启下 **幂等释放** Mode B 锁行。
+**实现锚点（现状）：** [`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`、`maybe_ltm_memory_context`）、[`backend/app/game_engine/agent_runtime/worker.py`](../../../../backend/app/game_engine/agent_runtime/worker.py)（`LlmPdcaAssistantWorker.tick`、`FrameworkRunContext.memory_context`）、[`backend/app/game_engine/agent_runtime/memory_port.py`](../../../../backend/app/game_engine/agent_runtime/memory_port.py)（`SqlAlchemyMemoryPort`、`AgentRunRecord`）、[`backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py`](../../../../backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py)（`_assemble_plan_user`）、[`backend/app/services/ltm_semantic_retrieval.py`](../../../../backend/app/services/ltm_semantic_retrieval.py)（LTM 检索）、[`backend/app/game_engine/agent_runtime/conversation_stm_service.py`](../../../../backend/app/game_engine/agent_runtime/conversation_stm_service.py)（每用户会话 STM、独占 daemon STM / 附身、`release_daemon_possession_for_transport_session_if_configured`）；SSH [`backend/app/ssh/session.py`](../../../../backend/app/ssh/session.py) `SessionManager.remove_session` 与 WebSocket [`backend/app/api/ws_handler.py`](../../../../backend/app/api/ws_handler.py) 断开时在配置开启下 **幂等释放** daemon STM 锁行。
+
+**默认对话线程（传输锚点）：** 同一条 SSH / WebSocket 连接上，`SSHSession.command_ephemeral` 与 `WSConnection.command_ephemeral` 使用键 `stm_default_thread:<agent_node_id>` 保存隐式 `conversation_thread_id`，供多次 `aico` / `@handle` 与 `ensure_conversation_thread_id` 对齐（§23.3.2）。
 
 ### 实现状态对照（§18 摘要）
 
@@ -442,7 +444,7 @@ flowchart TD
 
 - [x] **惰性 idle 释放（tick 路径）**：非占有者 tick 时比对 `now - last_successful_tick_at` ≥ 阈值 → 抢占释放。
 - [ ] **后台 sweep**：低频任务扫描 Mode B 行，避免「无下一请求则永不释放」。
-- [x] **传输会话结束幂等释放**：SSH `SessionManager.remove_session` / WebSocket `handle_disconnect` → `release_mode_b_possession_for_transport_session_if_configured`（见 **`npc_agent.daemon_possession.possession_release_on_transport_close`**）。
+- [x] **传输会话结束幂等释放**：SSH `SessionManager.remove_session` / WebSocket `handle_disconnect` → `release_daemon_possession_for_transport_session_if_configured`（见 **`npc_agent.daemon_possession.possession_release_on_transport_close`**）。
 - [ ] **结构化日志** `release_reason=idle|transport_close|detach`。
 - [ ] **时间统一 UTC**（跨洲 skew 策略另议）。
 - [ ] **观测**：idle 释放计数、锁等待，与 **D14** 面板对齐。
@@ -613,6 +615,14 @@ Slack / Teams / ChatGPT 常见 **首条消息同时开线程**。
 
 **已定（§18 D18）**  
 **每 `(caller_user_id, transport_session_id, agent_node_id)` 懒创建 **一条**隐式 default **`conversation_thread_id`**（首次需要时 UUID）。**不做**跨传输会话的全局默认线程（避免用户不知「仍在旧话题」）。
+
+**实现（传输层默认线程锚点）**  
+`CommandContext.metadata` 仅在单次命令执行期间存在；为保证「同一 SSH / WebSocket 传输会话内多次 `aico` / `@handle`」复用 **同一条隐式 default thread**，运行时在同一条传输连接对象上持久化 UUID：
+
+- **SSH**：`SSHSession.command_ephemeral`，键 `stm_default_thread:<agent_node_id>`（见 `conversation_stm_service.persist_conversation_thread_for_transport` / `try_restore_conversation_thread_from_transport`）。
+- **WebSocket**：`WSConnection.command_ephemeral`，同等约定；`CommandContext.session` 指向该连接对象以便 NLP tick 读写。
+
+`ensure_conversation_thread_id` 顺序：**metadata 已有 thread → 校验并写回 ephemeral**；否则 **尝试从 ephemeral 恢复并与 `agent_conversation_thread` 行核对**；否则 **新建线程并写入 DB + ephemeral**。`aico -nd` 清除 metadata 与对应 ephemeral；`aico -cd` 在绑定线程后同步写入 ephemeral，使后续裸 `aico` 继续该线程。
 
 #### 23.3.3 LTM 检索是否按 thread 隔离
 

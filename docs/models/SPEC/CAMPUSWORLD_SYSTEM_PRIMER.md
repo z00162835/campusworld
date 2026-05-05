@@ -183,8 +183,19 @@ Route command choices by intent before tool execution:
 - Usage/example/syntax intent (`例子`, `怎么用`, `语法`, `what flags`, `show command usage`) should use
   `help <command>` or `primer <section>`.
 - State verification intent should use read-only commands (`whoami`, `look`,
-  `find`, `describe`).
+  `find`, `describe`, `space`).
 - Explicit execution intent is required before state-changing commands.
+
+**Agent graph inspection (compact)**
+
+Per tick, the LLM receives a **Tools available** block with registered primary names,
+CLI aliases (e.g. `describe` ↔ `ex` / `examine`), and JSON examples. Prefer that block
+over memorising syntax.
+
+- **Numeric / `#` node id or “inspect this node”** → `describe` with the id in args (same as human `ex <id>`).
+- **Filter by ontology type** → `find -t <type_code>` (combine with name/query flags as needed); use `type` when unsure of codes.
+- **Spatial summary** (appearance, occupants, devices, exits or child spaces) → `space -i <node_id>`; `space -t` lists SPACE-capable type codes in the graph.
+- **Typical chain**: `find -t building` → pick an id from results → `space -i <id>`. Do not claim a node is missing without tool output.
 
 **User: "Who am I?"**
 
