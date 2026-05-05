@@ -241,17 +241,10 @@ class LoggingManager:
         self._setup_queue_logging(handlers)
 
         logger = logging.getLogger("campusworld.logging")
-        logger.info(f"默认日志文件已配置: {log_file}")
 
     def _setup_queue_logging(self, handlers: List[logging.Handler]):
         """
         设置队列日志系统
-
-        这是 Evennia 风格日志系统的核心：
-        - QueueHandler 将日志发送到队列（非阻塞）
-        - QueueListener 在单一线程中顺序处理所有日志
-        - 解决了多线程日志顺序错乱的问题
-
         Args:
             handlers: 要注册的处理器列表
         """
@@ -332,6 +325,9 @@ class LoggingManager:
             'requests': 'WARNING',
             'sqlalchemy': 'WARNING',
             'passlib': 'WARNING',
+            'passlib.utils': 'WARNING',
+            'passlib.utils.compat': 'WARNING',
+            'passlib.registry': 'WARNING',
         }
 
         # 合并配置

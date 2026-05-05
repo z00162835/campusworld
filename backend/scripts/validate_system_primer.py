@@ -32,7 +32,7 @@ REQUIRED_SECTIONS: List[Tuple[str, str]] = [
     ("interaction", "6. Interaction"),
     ("memory", "7. Memory"),
     ("invariants", "8. Invariants"),
-    ("examples", "9. Examples"),
+    ("commands", "9. Commands"),
 ]
 
 ALLOWED_PLACEHOLDERS: Set[str] = {
@@ -48,6 +48,7 @@ COMMAND_NAMES_IN_PRIMER: List[str] = [
     "primer",
     "find",
     "describe",
+    "space",
     "agent_capabilities",
     "agent_tools",
     "help",

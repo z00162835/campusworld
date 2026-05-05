@@ -34,22 +34,22 @@ logger = get_logger(LoggerNames.API)
 audit_logger = get_logger(LoggerNames.AUDIT)
 
 
-def _release_mode_b_possession_for_transport_sync(transport_session_id: Optional[str]) -> None:
-    """F12 Mode B: release daemon locks bound to this WebSocket session id (config-gated)."""
+def _release_daemon_possession_for_transport_sync(transport_session_id: Optional[str]) -> None:
+    """Release daemon STM locks bound to this WebSocket transport session id when configured."""
     sid = str(transport_session_id or "").strip()
     if not sid:
         return
     try:
         from app.game_engine.agent_runtime.conversation_stm_service import (
-            release_mode_b_possession_for_transport_session_if_configured,
+            release_daemon_possession_for_transport_session_if_configured,
         )
 
         with db_session_context() as db:
-            release_mode_b_possession_for_transport_session_if_configured(db, sid)
+            release_daemon_possession_for_transport_session_if_configured(db, sid)
             db.commit()
     except Exception as e:
         logger.warning(
-            "websocket mode_b transport release failed session_id=%s err=%s",
+            "websocket daemon_possession_transport_release_failed session_id=%s err=%s",
             sid,
             e,
         )
@@ -242,6 +242,8 @@ class WSConnection:
         self.roles: List[str] = []
         self.authenticated = False
         self.authenticated_at: Optional[float] = None
+        # Implicit conversation_thread_id per agent on this transport (same contract as SSHSession.command_ephemeral).
+        self.command_ephemeral: Dict[str, Any] = {}
 
     async def send_json(self, data: Dict[str, Any]) -> bool:
         """发送 JSON 消息"""
@@ -298,7 +300,7 @@ class WSHandler:
             sid = conn.session_id
             await _rate_limiter.remove_connection(websocket, conn)
             if sid:
-                await asyncio.to_thread(_release_mode_b_possession_for_transport_sync, sid)
+                await asyncio.to_thread(_release_daemon_possession_for_transport_sync, sid)
 
             # 审计日志
             if conn.authenticated:
@@ -511,6 +513,7 @@ class WSHandler:
                 session_id=conn.session_id or "unknown",
                 permissions=conn.permissions,
                 roles=conn.roles,
+                session=conn,
                 db_session=db_session,
             )
 

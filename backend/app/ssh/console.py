@@ -113,7 +113,19 @@ class SSHConsole:
             self._cleanup()
     
     def _display_welcome(self):
-        """显示欢迎信息 - 简化版本，避免乱码"""
+        """显示欢迎信息 - 使用i18n"""
+        from app.commands.i18n.locale_text import resolve_locale, help_shell_for_locale
+
+        # 安全获取版本 - 优先使用 importlib.metadata（业界最佳实践），降级到包属性
+        try:
+            from importlib.metadata import version, PackageNotFoundError
+            try:
+                version_str = version("campusworld")
+            except PackageNotFoundError:
+                version_str = getattr(__import__('app'), '__version__', '0.0.0')
+        except Exception:
+            version_str = getattr(__import__('app'), '__version__', '0.0.0')
+
         # 获取用户信息
         if self.current_session:
             username = self.current_session.username
@@ -121,7 +133,7 @@ class SSHConsole:
         else:
             username = "Guest"
             user_id = "guest"
-        
+
         # 获取权限信息
         permissions = self.current_session.permissions if self.current_session else ["guest"]
 
@@ -136,26 +148,28 @@ class SSHConsole:
                 roles=roles,
             )
             available_commands = command_registry.get_available_commands(context)
+            loc = resolve_locale(context)
+            shell = help_shell_for_locale(loc)
 
         # 构建欢迎信息
         welcome_lines = [
-            "Welcome to CampusWorld!",
+            f"CampusWorld OS v{version_str}",
             "",
-            "Available Commands:",
+            f"{shell['title_list']}:",
         ]
         for cmd in available_commands:
-            welcome_lines.append(f"  {cmd.name:<15} - {cmd.description}")
-        
+            welcome_lines.append(f"  {cmd.name:<15} - {cmd.get_localized_description(loc)}")
+
         welcome_lines.extend([
             "",
-            "Type 'help' for detailed information",
+            f"{shell['footer']}",
             f"Connected as: {username}",
             f"Terminal: {self.terminal_width}x{self.terminal_height}",
             f"Time: {time.strftime('%Y-%m-%d %H:%M:%S')}",
             "Ready for adventure!",
             ""
         ])
-        
+
         # 逐行发送欢迎信息
         for line in welcome_lines:
             self._safe_send_output(line)

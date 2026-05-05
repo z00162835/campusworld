@@ -15,6 +15,13 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 import threading
+import logging
+
+# 在导入任何可能触发 passlib 的模块之前设置日志级别
+# passlib 在 app.core.security 中被导入，此时日志系统尚未初始化
+for _logger_name in ['passlib', 'passlib.utils', 'passlib.utils.compat', 'passlib.registry']:
+    logging.getLogger(_logger_name).setLevel(logging.WARNING)
+
 from app.ssh.server import CampusWorldSSHServer
 from app.core.config_manager import get_setting, get_config
 from app.core.log import (

@@ -5,7 +5,7 @@ CampusWorld 场景引擎包
 """
 
 __version__ = "0.1.0"
-__author__ = "CampusWorld Team"
+__author__ = "CampusWorld OS Team"
 
 from .base import GameEngine, BaseGame
 from .loader import GameLoader

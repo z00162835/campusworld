@@ -39,7 +39,7 @@ class SSHSession:
     terminal_size: Optional[tuple] = None
     command_history: List[str] = field(default_factory=list)
     output_buffer: List[str] = field(default_factory=list)
-    # 命令间短暂状态（如 look 多匹配编号消歧）；不写入 DB
+    # 命令间短暂状态（如 look 多匹配编号消歧、默认对话线程 UUID 锚点）；不写入 DB
     command_ephemeral: Dict[str, Any] = field(default_factory=dict)
 
     # SSH channel 引用（用于强制关闭）
@@ -234,15 +234,15 @@ class SessionManager:
             return
         try:
             from app.game_engine.agent_runtime.conversation_stm_service import (
-                release_mode_b_possession_for_transport_session_if_configured,
+                release_daemon_possession_for_transport_session_if_configured,
             )
 
             with db_session_context() as db:
-                release_mode_b_possession_for_transport_session_if_configured(db, session_id)
+                release_daemon_possession_for_transport_session_if_configured(db, session_id)
                 db.commit()
         except Exception as e:
             self.logger.warning(
-                "release_mode_b_on_transport_close failed session_id=%s error=%s",
+                "daemon_possession_transport_release_failed session_id=%s error=%s",
                 session_id,
                 e,
             )
@@ -343,15 +343,15 @@ class SessionManager:
         for sid in ids:
             try:
                 from app.game_engine.agent_runtime.conversation_stm_service import (
-                    release_mode_b_possession_for_transport_session_if_configured,
+                    release_daemon_possession_for_transport_session_if_configured,
                 )
 
                 with db_session_context() as db:
-                    release_mode_b_possession_for_transport_session_if_configured(db, sid)
+                    release_daemon_possession_for_transport_session_if_configured(db, sid)
                     db.commit()
             except Exception as e:
                 self.logger.warning(
-                    "release_mode_b_on_transport_close failed session_id=%s error=%s",
+                    "daemon_possession_transport_release_failed session_id=%s error=%s",
                     sid,
                     e,
                 )
@@ -371,15 +371,15 @@ class SessionManager:
         for sid in ids:
             try:
                 from app.game_engine.agent_runtime.conversation_stm_service import (
-                    release_mode_b_possession_for_transport_session_if_configured,
+                    release_daemon_possession_for_transport_session_if_configured,
                 )
 
                 with db_session_context() as db:
-                    release_mode_b_possession_for_transport_session_if_configured(db, sid)
+                    release_daemon_possession_for_transport_session_if_configured(db, sid)
                     db.commit()
             except Exception as e:
                 self.logger.warning(
-                    "release_mode_b_on_transport_close failed session_id=%s error=%s",
+                    "daemon_possession_transport_release_failed session_id=%s error=%s",
                     sid,
                     e,
                 )

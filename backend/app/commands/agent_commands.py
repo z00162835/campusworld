@@ -567,7 +567,9 @@ class AicoCommand(SystemCommand):
         from app.commands.npc_agent_nlp import assistant_nlp_command_result, run_npc_agent_nlp_tick
         from app.game_engine.agent_runtime.command_caller_graph import resolve_caller_node_id
         from app.game_engine.agent_runtime.conversation_stm_service import (
+            clear_conversation_thread_for_transport,
             list_threads_for_owner_agent,
+            persist_conversation_thread_for_transport,
             set_thread_id_on_context,
         )
 
@@ -623,6 +625,7 @@ class AicoCommand(SystemCommand):
             if row is None:
                 return CommandResult.error_result("thread not found")
             set_thread_id_on_context(context, tid)
+            persist_conversation_thread_for_transport(context, node.id, tid)
             context.db_session.commit()
             return CommandResult.success_result(f"Switched to thread {tid}.")
 
@@ -630,6 +633,7 @@ class AicoCommand(SystemCommand):
             if context.metadata is None:
                 context.metadata = {}
             context.metadata.pop("conversation_thread_id", None)
+            clear_conversation_thread_for_transport(context, node.id)
             rest = args[1:]
             if not rest:
                 context.db_session.commit()

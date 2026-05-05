@@ -48,6 +48,10 @@ ssh/
 └── rate_limiter.py     # 连接速率限制（安全增强）
 ```
 
+### 默认对话线程（单 SSH 连接内）
+
+`SSHSession.command_ephemeral` 可按 **`stm_default_thread:<agent_node_id>`** 保存隐式对话线程 UUID，使同一 SSH 连接上连续多次 `aico` / `@handle` 复用与数据库一致的 `conversation_thread_id`。逻辑在 `game_engine/agent_runtime/conversation_stm_service.py`；规范性说明见仓库 `docs/models/SPEC/features/` 下多轮对话与会话记忆文档。
+
 ### server.py - SSH服务器
 
 **CampusWorldSSHServerInterface** (继承自 `SSHProtocolHandler`)
