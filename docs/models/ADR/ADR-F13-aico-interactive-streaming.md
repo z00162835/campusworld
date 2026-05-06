@@ -1,0 +1,59 @@
+# ADR: F13 AICO 交互式会话与 SSH 流式（首版）
+
+## 状态
+
+Accepted（与 [`docs/models/SPEC/features/F13_AICO_INTERACTIVE_UPGRADE.md`](../SPEC/features/F13_AICO_INTERACTIVE_UPGRADE.md) 及执行计划 P1–P10 对齐）
+
+## 上下文
+
+- 命令经 [`SSHHandler`](../../../backend/app/protocols/ssh_handler.py) 单次返回字符串；助手 NLP 经 [`run_npc_agent_nlp_tick`](../../../backend/app/commands/npc_agent_nlp.py)。
+- 首版验收 **仅 SSH**：`-i` REPL、NDJSON **侧写 channel**、`_format_command_result` **简短尾行**；**WebSocket 流式** 延后 backlog。
+- **`supports_aico_stream` 默认关闭**；由 [`SSHSession.command_ephemeral`](../../../backend/app/ssh/session.py) 显式置 true（opt-in）。
+
+## 决策
+
+### 产品（P1–P10 摘要）
+
+| 项 | 决议 |
+|----|------|
+| P1 | `-i` 仅 SSH |
+| P2 | 侧写 NDJSON；格式化输出仅用简短尾行 |
+| P3 | WS 多帧流式 — backlog |
+| P4 | `aico` / `@aico` 共用 argv 解析 |
+| P5 | `aico -d <uuid>` → 提示 `aico -d confirm`（ephemeral 绑定 uuid，TTL） |
+| P6 | Ctrl+C：停增量 + best-effort 中断 |
+| P7 | 能力默认关 |
+| P8 | 同 thread 并发 tick → 可读错误（PG advisory lock） |
+| P9 | SSH 先交付 |
+| P10 | `-his` 按 thread 聚合 STM，M1 MUST |
+
+### NDJSON（最小）
+
+每行一个 JSON 对象：
+
+- `{"kind":"meta","thread_id":"…","correlation_id":"…"}`（可选）
+- `{"kind":"delta","text":"…"}`
+- `{"kind":"end","full_text":"…"}`
+- `{"kind":"error","code":"…","message":"…"}`（可选）
+
+首版可在拿到 **完整 assistant 文本** 后按块 **模拟增量** 写出 delta（provider 真流式可后续替换）。
+
+### D4
+
+[`try_restore_conversation_thread_from_transport`](../../../backend/app/game_engine/agent_runtime/conversation_stm_service.py) **不得以 thread.transport_session_id 拒绝** 合法线程；续聊依赖 owner + agent + thread id。
+
+### WS backlog
+
+独立多帧 `type` + payload，末帧 `result` 含全文 `message`；见执行计划 todo `backlog-ws-streaming`。
+
+## 后果
+
+- SSH 客户端需在 opt-in 时解析 NDJSON 行或展示裸流（调试）。
+- 并发 tick 依赖 PostgreSQL advisory lock；非 PG 测试环境跳过锁。
+
+## Review / 一致性（执行计划 阶段 C + C2）
+
+- **授权**：`!` 路径与普通命令一致；禁止 `!aico`。
+- **兼容**：未开启 `supports_aico_stream` 且未设置 `SSH_AICO_STREAM` 时行为与历史上批量 `message` 一致。
+- **文档**：[`F13_AICO_INTERACTIVE_UPGRADE.md`](../SPEC/features/F13_AICO_INTERACTIVE_UPGRADE.md) 命令面与 `get_usage` / help 对齐。
+- **WS 延后**：[F13-ws-streaming-backlog.md](F13-ws-streaming-backlog.md)。
