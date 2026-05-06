@@ -14,6 +14,7 @@ from app.models.system.agent_memory_tables import (
     AgentConversationStm,
     AgentConversationThread,
     AgentDaemonStmLock,
+    AgentLongTermMemory,
 )
 
 CONV_SCOPE_PER_USER = "per_user_session"
@@ -77,14 +78,12 @@ def try_restore_conversation_thread_from_transport(
     except Exception:
         ep.pop(key, None)
         return None
-    transport = str(context.session_id or "")
     row = (
         db_session.query(AgentConversationThread)
         .filter(
             AgentConversationThread.id == tid,
             AgentConversationThread.owner_account_node_id == caller_account_node_id,
             AgentConversationThread.agent_node_id == agent_node_id,
-            AgentConversationThread.transport_session_id == transport,
         )
         .first()
     )
@@ -418,20 +417,106 @@ def release_daemon_possession_for_transport_session_if_configured(session: Sessi
     return release_daemon_possession_for_transport_session(session, transport_session_id)
 
 
+def aggregate_stm_messages_for_thread(
+    session: Session,
+    *,
+    owner_account_node_id: int,
+    agent_node_id: int,
+    conversation_thread_id: uuid.UUID,
+) -> List[Dict[str, Any]]:
+    """Merge all Mode-A STM rows for this thread (cross-transport), sorted by message ts."""
+    rows = (
+        session.query(AgentConversationStm)
+        .filter(
+            AgentConversationStm.caller_account_node_id == owner_account_node_id,
+            AgentConversationStm.agent_node_id == agent_node_id,
+            AgentConversationStm.conversation_thread_id == conversation_thread_id,
+        )
+        .all()
+    )
+    merged: List[Dict[str, Any]] = []
+    for r in rows:
+        merged.extend(normalize_messages(r.messages))
+
+    def _ts(m: Dict[str, Any]) -> float:
+        t = m.get("ts")
+        if isinstance(t, (int, float)):
+            return float(t)
+        if isinstance(t, str):
+            try:
+                from datetime import datetime as _dt
+
+                return _dt.fromisoformat(t.replace("Z", "+00:00")).timestamp()
+            except Exception:
+                return 0.0
+        return 0.0
+
+    merged.sort(key=_ts)
+    return merged
+
+
+def delete_conversation_thread_for_owner(
+    session: Session,
+    *,
+    owner_account_node_id: int,
+    agent_node_id: int,
+    thread_id: uuid.UUID,
+) -> bool:
+    """Delete thread row + all STM rows for thread; LTM conversation_thread_id SET NULL. Returns False if thread missing."""
+    thr = (
+        session.query(AgentConversationThread)
+        .filter(
+            AgentConversationThread.id == thread_id,
+            AgentConversationThread.owner_account_node_id == owner_account_node_id,
+            AgentConversationThread.agent_node_id == agent_node_id,
+        )
+        .first()
+    )
+    if thr is None:
+        return False
+    session.query(AgentConversationStm).filter(
+        AgentConversationStm.caller_account_node_id == owner_account_node_id,
+        AgentConversationStm.agent_node_id == agent_node_id,
+        AgentConversationStm.conversation_thread_id == thread_id,
+    ).delete(synchronize_session=False)
+    session.delete(thr)
+    session.query(AgentLongTermMemory).filter(
+        AgentLongTermMemory.agent_node_id == agent_node_id,
+        AgentLongTermMemory.caller_account_node_id == owner_account_node_id,
+        AgentLongTermMemory.conversation_thread_id == thread_id,
+    ).update({"conversation_thread_id": None}, synchronize_session=False)
+    return True
+
+
+def try_acquire_conversation_thread_tick_lock(session: Session, thread_id: uuid.UUID) -> bool:
+    """PostgreSQL advisory transaction lock per thread; non-PG dialects always succeed."""
+    bind = session.get_bind()
+    if bind is None or getattr(bind.dialect, "name", None) != "postgresql":
+        return True
+    import hashlib
+
+    h = hashlib.sha256(thread_id.bytes).digest()
+    k1 = int.from_bytes(h[0:4], "big", signed=False) & 0x7FFFFFFF
+    k2 = int.from_bytes(h[4:8], "big", signed=False) & 0x7FFFFFFF
+    row = session.execute(text("SELECT pg_try_advisory_xact_lock(:k1, :k2)"), {"k1": k1, "k2": k2}).scalar()
+    return bool(row)
+
+
 def list_threads_for_owner_agent(
     session: Session,
     *,
     owner_account_node_id: int,
     agent_node_id: int,
-    limit: int = 32,
+    limit: Optional[int] = 32,
 ) -> List[AgentConversationThread]:
-    return (
+    q = (
         session.query(AgentConversationThread)
         .filter(
             AgentConversationThread.owner_account_node_id == owner_account_node_id,
             AgentConversationThread.agent_node_id == agent_node_id,
         )
         .order_by(AgentConversationThread.last_message_at.desc())
-        .limit(limit)
-        .all()
     )
+    if limit is None:
+        return q.all()
+    return q.limit(limit).all()
