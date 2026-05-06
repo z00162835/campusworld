@@ -173,7 +173,7 @@ SEED_TASK_POOLS: List[Dict[str, Any]] = [
     {
         "key": "hicampus.cleaning",
         "display_name": "Hicampus 清洁任务池",
-        "description": "校园清洁日常任务（保洁/巡保等）。",
+        "description": "园区清洁日常任务（保洁/巡保等）。",
         "default_workflow_ref": {
             "_schema_version": 1,
             "key": "default_v1",
@@ -188,7 +188,7 @@ SEED_TASK_POOLS: List[Dict[str, Any]] = [
     {
         "key": "hicampus.security",
         "display_name": "Hicampus 安防任务池",
-        "description": "校园安防巡检 / 异常处置任务。",
+        "description": "园区安防巡检 / 异常处置任务。",
         "default_workflow_ref": {
             "_schema_version": 1,
             "key": "default_v1",
@@ -203,7 +203,7 @@ SEED_TASK_POOLS: List[Dict[str, Any]] = [
     {
         "key": "hicampus.maintenance",
         "display_name": "Hicampus 维修任务池",
-        "description": "校园设施 / 设备的维护与维修任务。",
+        "description": "园区设施 / 设备的维护与维修任务。",
         "default_workflow_ref": {
             "_schema_version": 1,
             "key": "default_v1",

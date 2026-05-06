@@ -207,7 +207,7 @@ agents:
           pdca_use_slim_followup_system: true
           enable_intent_tool_manifest_subset: false
           # When true, providers that support prompt caching may apply it (see llm_client passthrough).
-          use_prompt_cache: false
+          use_prompt_cache: true
           enable_stm_llm_compaction: false
         system_prompt: |
           You are AICO, the default system assistant of CampusWorld — a graph-native
