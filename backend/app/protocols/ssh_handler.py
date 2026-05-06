@@ -3,6 +3,7 @@ SSH协议处理器
 处理SSH特定的命令执行和交互逻辑
 """
 
+import os
 import time
 from typing import List, Dict, Any, Optional
 from .base import ProtocolHandler
@@ -19,7 +20,58 @@ class SSHHandler(ProtocolHandler):
     def __init__(self):
         super().__init__()
         self.logger.info("SSH协议处理器已初始化")
-    
+
+    def _attach_aico_stream_context(self, context: CommandContext, session: Optional[Any]) -> None:
+        """F13: opt-in NDJSON side channel via session ephemeral or SSH_AICO_STREAM env."""
+        stream_on = False
+        if session is not None:
+            ep = getattr(session, "command_ephemeral", None)
+            if isinstance(ep, dict) and ep.get("supports_aico_stream"):
+                stream_on = True
+        if not stream_on and os.environ.get("SSH_AICO_STREAM", "").strip().lower() in ("1", "true", "yes"):
+            stream_on = True
+        if not stream_on:
+            return
+        context.supports_aico_stream = True
+        ch = getattr(session, "channel", None) if session is not None else None
+        if ch is None:
+            return
+
+        def _emit(line: str) -> None:
+            try:
+                ch.send((line + "\n").encode("utf-8"))
+            except Exception:
+                pass
+
+        context.stream_emit = _emit
+
+    def _attach_aico_repl_human_progress(self, context: CommandContext, session: Optional[Any]) -> None:
+        """
+        F13 §17.7: plain-text processing hint for ``aico -i`` on native SSH — not NDJSON.
+        Suppressed when ``supports_aico_stream`` (thin client / debug pipe owns the wire).
+        """
+        if getattr(context, "supports_aico_stream", False):
+            return
+        if session is None:
+            return
+        nr = getattr(session, "nested_repl", None)
+        if nr is None:
+            return
+        bind = getattr(nr, "binds_aico_progress_emit", None)
+        if not callable(bind) or not bind():
+            return
+        ch = getattr(session, "channel", None)
+        if ch is None:
+            return
+
+        def _emit(text: str) -> None:
+            try:
+                ch.send(text.encode("utf-8"))
+            except Exception:
+                pass
+
+        context.aico_progress_emit = _emit
+
     def handle_interactive_command(self, user_id: str, username: str, session_id: str, 
                                  permissions: List[str], command_line: str,
                                  session: Optional[Any] = None,
@@ -41,6 +93,8 @@ class SSHHandler(ProtocolHandler):
                     db_session=db_session,
                     metadata=metadata,
                 )
+                self._attach_aico_stream_context(context, session)
+                self._attach_aico_repl_human_progress(context, session)
                 at_res = try_dispatch_at_line(command_line, context)
                 if at_res is not None:
                     return self._format_command_result(at_res)
@@ -114,9 +168,15 @@ class SSHHandler(ProtocolHandler):
     def _format_command_result(self, result: CommandResult) -> str:
         """格式化命令结果"""
         if result.success:
+            data = result.data or {}
+            if data.get("aico_stream_used"):
+                return "[stream complete]\n"
             return result.message + "\n"
         if self._usage_like_result(result):
             return self._format_usage_message(result)
+        data = result.data or {}
+        if data.get("aico_stream_used"):
+            return "[stream complete]\n" + f"Error: {result.message}\n"
         return f"Error: {result.message}\n"
     
     def _format_error(self, error: str) -> str:

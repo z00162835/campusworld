@@ -176,6 +176,7 @@ def run_npc_agent_nlp_tick(
         try_acquire_daemon_possession,
         finalize_daemon_possession_after_success,
         ensure_conversation_thread_id,
+        try_acquire_conversation_thread_tick_lock,
     )
     from app.game_engine.agent_runtime.frameworks.base import FrameworkRunResult
     from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config, http_llm_available
@@ -292,6 +293,12 @@ def run_npc_agent_nlp_tick(
                 agent_node_id=node.id,
                 conversation_thread_id=thread_id,
             )
+            if not try_acquire_conversation_thread_tick_lock(session, thread_id):
+                return FrameworkRunResult(
+                    ok=False,
+                    message="Another session is using this conversation thread. Wait and retry.",
+                    final_phase="gate",
+                )
             msgs = normalize_messages(conversation_stm_row.messages)
             rs = conversation_stm_row.rolling_summary or ""
             if stm_should_compact_after_append(msgs, rs, stm_max_chars=max_chars, compaction_trigger_ratio=trig):
@@ -346,6 +353,31 @@ def run_npc_agent_nlp_tick(
             tool_manifest_text=manifest_for_fp,
             user_message=message,
         )
+        emit_fn = getattr(context, "stream_emit", None)
+        stream_on = bool(getattr(context, "supports_aico_stream", False) and emit_fn)
+        progress_emit = getattr(context, "aico_progress_emit", None)
+        tick_ndjson_started = False
+        corr_s = str(context.session_id or "")
+        if context.metadata is None:
+            context.metadata = {}
+
+        if stream_on:
+            from app.commands.aico_stream import emit_tick_lifecycle_meta
+
+            emit_tick_lifecycle_meta(
+                emit_fn,
+                phase="start",
+                thread_id=thread_id,
+                correlation_id=corr_s or None,
+                client_hint="running",
+            )
+            tick_ndjson_started = True
+            context.metadata["_aico_stream_emitted"] = True
+        elif progress_emit:
+            from app.commands.aico_stream import aico_repl_progress_message
+
+            progress_emit(aico_repl_progress_message())
+
         try:
             res = w.tick(
                 payload,
@@ -362,11 +394,48 @@ def run_npc_agent_nlp_tick(
                 service_id,
                 context.session_id,
             )
+            if tick_ndjson_started and emit_fn:
+                from app.commands.aico_stream import emit_aico_error_ndjson
+
+                emit_aico_error_ndjson(
+                    emit_fn,
+                    code="tick_exception",
+                    message=NPC_AGENT_LLM_FAILURE_USER_MSG,
+                )
             return FrameworkRunResult(
                 ok=False,
                 message=NPC_AGENT_LLM_FAILURE_USER_MSG,
                 final_phase="error",
             )
+
+        if tick_ndjson_started and emit_fn:
+            from app.commands.aico_stream import (
+                emit_aico_error_ndjson,
+                emit_assistant_stream_ndjson,
+                emit_tick_lifecycle_meta,
+            )
+
+            if not res.ok:
+                fail_msg = str(res.message or "").strip() or NPC_AGENT_LLM_FAILURE_USER_MSG
+                emit_aico_error_ndjson(emit_fn, code="tick_failed", message=fail_msg)
+            else:
+                assistant_reply = str(res.message or "").strip()
+                emit_assistant_stream_ndjson(
+                    emit_fn,
+                    assistant_reply,
+                    thread_id=thread_id,
+                    correlation_id=corr_s or None,
+                    allow_empty_body=True,
+                )
+                emit_tick_lifecycle_meta(
+                    emit_fn,
+                    phase="complete",
+                    thread_id=thread_id,
+                    correlation_id=corr_s or None,
+                    ok=True,
+                    final_phase=res.final_phase,
+                    empty_reply=not bool(assistant_reply),
+                )
 
         if stm_on and caller_id is not None and res.ok:
             assistant_reply = str(res.message or "").strip()
@@ -423,6 +492,7 @@ def assistant_nlp_command_result(
     res,
     *,
     service_id: Optional[str] = None,
+    context: Optional[Any] = None,
 ) -> CommandResult:
     """Assistant NLP tick → CommandResult: human text in message; machine fields in data."""
     msg = str(res.message or "").strip()
@@ -433,4 +503,13 @@ def assistant_nlp_command_result(
     }
     if service_id:
         data["service_id"] = service_id
-    return CommandResult.success_result(msg, data=data)
+    if context is not None and (context.metadata or {}).get("_aico_stream_emitted"):
+        data["aico_stream_used"] = True
+    if res.ok:
+        return CommandResult.success_result(msg, data=data)
+    return CommandResult(
+        success=False,
+        message=msg or NPC_AGENT_LLM_FAILURE_USER_MSG,
+        data=data,
+        error="aico_tick_failed",
+    )

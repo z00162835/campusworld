@@ -29,6 +29,12 @@ class CommandContext:
     metadata: Optional[Dict[str, Any]] = None
     db_session: Optional[Any] = None
     roles: List[str] = field(default_factory=list)
+    #: F13: opt-in NDJSON stream (SSH); default False per product decision P7.
+    supports_aico_stream: bool = False
+    #: Callable taking one NDJSON line (no trailing newline required).
+    stream_emit: Optional[Any] = None
+    #: F13: native SSH ``aico -i`` human progress (plain text only); MUST NOT be JSON. Unused when ``supports_aico_stream``.
+    aico_progress_emit: Optional[Any] = None
 
     def get_caller(self):
         if self.caller is None and self.session:

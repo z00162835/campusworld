@@ -26,10 +26,11 @@ def try_dispatch_at_line(command_line: str, context: CommandContext) -> Optional
         )
     parts = split_command_line(rest)
     handle = parts[0].lower()
-    message = " ".join(parts[1:]).strip() if len(parts) > 1 else ""
-    if not message:
+    payload_parts = parts[1:] if len(parts) > 1 else []
+
+    if not payload_parts:
         return CommandResult.error_result(
-            "usage: @<handle> <message>. Type 'help' for available commands."
+            "usage: @<handle> <message or flags>. Examples: @aico hello ; @aico -l ; @aico -his <uuid>"
         )
 
     ref = command_registry.get_command("aico")
@@ -52,7 +53,14 @@ def try_dispatch_at_line(command_line: str, context: CommandContext) -> Optional
     if str(attrs.get("decision_mode", "")).lower() != "llm":
         return CommandResult.error_result("@ agent requires decision_mode=llm on the agent node")
 
+    sid_key = str((node.attributes or {}).get("service_id") or handle).strip().lower()
+    if sid_key == "aico" or handle == "aico":
+        from app.commands.aico_exec import execute_aico_command
+
+        return execute_aico_command(context, payload_parts)
+
+    message = " ".join(payload_parts).strip()
     res = run_npc_agent_nlp_tick(context.db_session, node, context, message)
     context.db_session.commit()
     sid = str((node.attributes or {}).get("service_id") or handle)
-    return assistant_nlp_command_result(handle, res, service_id=sid)
+    return assistant_nlp_command_result(handle, res, service_id=sid, context=context)

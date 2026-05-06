@@ -15,6 +15,7 @@ from app.protocols.ssh_handler import SSHHandler
 from app.commands.init_commands import initialize_commands
 from app.commands.base import CommandContext
 from app.commands.registry import command_registry
+from app.ssh.nested_repl.io import SshReplIo
 from app.core.database import db_session_context
 from app.core.log import get_logger, LoggerNames
 
@@ -198,7 +199,7 @@ class SSHConsole:
         except Exception as e:
             self.logger.error(f"提示符发送失败: {e}")
             return False
-    
+
     def _process_raw_input(self):
         """处理原始输入数据 - 简化版本"""
         try:
@@ -313,6 +314,11 @@ class SSHConsole:
             if self._should_exit(input_text):
                 self.running = False
                 return
+
+            if self.running and self.current_session:
+                nr = getattr(self.current_session, "nested_repl", None)
+                if nr is not None:
+                    nr.run(SshReplIo(self))
 
             # 显示新提示符
             if self.running:
