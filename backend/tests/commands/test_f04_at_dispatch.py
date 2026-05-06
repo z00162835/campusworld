@@ -17,12 +17,14 @@ def test_try_dispatch_not_at_line():
 
 
 @pytest.mark.unit
-@patch("app.commands.at_agent_dispatch.run_npc_agent_nlp_tick")
+@patch("app.commands.aico_exec.run_npc_agent_nlp_tick")
+@patch("app.commands.aico_exec.resolve_npc_agent_by_handle")
 @patch("app.commands.at_agent_dispatch.resolve_npc_agent_by_handle")
-def test_try_dispatch_success(mock_resolve, mock_tick):
+def test_try_dispatch_success(mock_resolve_dispatch, mock_resolve_aico, mock_tick):
     node = MagicMock()
-    node.attributes = {"decision_mode": "llm"}
-    mock_resolve.return_value = (node, None)
+    node.attributes = {"decision_mode": "llm", "service_id": "aico"}
+    mock_resolve_dispatch.return_value = (node, None)
+    mock_resolve_aico.return_value = (node, None)
     mock_res = MagicMock()
     mock_res.ok = True
     mock_res.message = "hi"
