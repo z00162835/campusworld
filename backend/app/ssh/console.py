@@ -5,18 +5,27 @@
 
 import time
 import select
+import unicodedata
 from typing import Optional, Dict, Any
 import os
 
 import paramiko
 
+
+def _terminal_text_width(text: str) -> int:
+    """终端占位宽度估算（SSH 下块状字符多为 EastAsianWidth A，常按双列渲染）。"""
+    n = 0
+    for ch in text:
+        if unicodedata.east_asian_width(ch) in ("F", "W", "A"):
+            n += 2
+        else:
+            n += 1
+    return n
+
 from app.ssh.session import SSHSession
 from app.protocols.ssh_handler import SSHHandler
 from app.commands.init_commands import initialize_commands
-from app.commands.base import CommandContext
-from app.commands.registry import command_registry
 from app.ssh.nested_repl.io import SshReplIo
-from app.core.database import db_session_context
 from app.core.log import get_logger, LoggerNames
 
 class SSHConsole:
@@ -114,59 +123,28 @@ class SSHConsole:
             self._cleanup()
     
     def _display_welcome(self):
-        """显示欢迎信息 - 使用i18n"""
-        from app.commands.i18n.locale_text import resolve_locale, help_shell_for_locale
+        """显示欢迎信息：块状猫头鹰（风格对齐 Claude Code 终端吉祥物）与版本号。"""
         from app.version import get_version
 
         version_str = get_version()
-
-        # 获取用户信息
-        if self.current_session:
-            username = self.current_session.username
-            user_id = str(self.current_session.user_id)
-        else:
-            username = "Guest"
-            user_id = "guest"
-
-        # 获取权限信息
-        permissions = self.current_session.permissions if self.current_session else ["guest"]
-
-        with db_session_context() as db_session:
-            roles = list(self.current_session.roles) if self.current_session else []
-            context = CommandContext(
-                user_id=user_id,
-                username=username,
-                session_id=self.current_session.session_id if self.current_session else "guest_session",
-                permissions=permissions,
-                db_session=db_session,
-                roles=roles,
-            )
-            available_commands = command_registry.get_available_commands(context)
-            loc = resolve_locale(context)
-            shell = help_shell_for_locale(loc)
-
-        # 构建欢迎信息
-        welcome_lines = [
-            f"CampusWorld OS v{version_str}",
-            "",
-            f"{shell['title_list']}:",
+        # 块状猫头鹰（UTF-8），含顶部耳羽两行。
+        owl_lines = [
+            "                 ▝▘   ▝▘",
+            "                 ▐▛███▜▌",
+            "                 ▜██ ██▛",
+            "                  ▘▘ ▝▝",
         ]
-        for cmd in available_commands:
-            welcome_lines.append(f"  {cmd.name:<15} - {cmd.get_localized_description(loc)}")
-
-        welcome_lines.extend([
-            "",
-            f"{shell['footer']}",
-            f"Connected as: {username}",
-            f"Terminal: {self.terminal_width}x{self.terminal_height}",
-            f"Time: {time.strftime('%Y-%m-%d %H:%M:%S')}",
-            "Ready for adventure!",
-            ""
-        ])
-
-        # 逐行发送欢迎信息
-        for line in welcome_lines:
-            self._safe_send_output(line)
+        for line in owl_lines:
+            self._safe_send_output(line, strip_leading_whitespace=False)
+        self._send_newline()
+        max_banner_w = max(_terminal_text_width(line) for line in owl_lines)
+        version_text = f"CampusWorld OS v{version_str}"
+        version_pad = max(0, (max_banner_w - _terminal_text_width(version_text)) // 2)
+        self._safe_send_output(
+            f"{' ' * version_pad}{version_text}",
+            strip_leading_whitespace=False,
+        )
+        self._send_newline()
     
     def _display_prompt(self):
         """显示提示符 - 简化版本"""
@@ -373,7 +351,7 @@ class SSHConsole:
             self.logger.error(f"SSH通道状态检查失败: {e}")
             return False
     
-    def _safe_send_output(self, message: str) -> bool:
+    def _safe_send_output(self, message: str, *, strip_leading_whitespace: bool = True) -> bool:
         """安全发送输出 - 修复版本，参考console.py的输出处理"""
         try:
             if not self._check_channel_status():
@@ -381,19 +359,22 @@ class SSHConsole:
                 return False
             
             # 确保消息格式正确
-            if not message or not message.strip():
+            if not message:
+                return True
+            if strip_leading_whitespace and not message.strip():
                 return True
             
-            # 将消息按行分割
-            lines = message.strip().split('\n')
+            # 将消息按行分割（欢迎横幅等需保留行首缩进时不要先 strip 整块消息）
+            lines = message.strip().split('\n') if strip_leading_whitespace else message.split('\n')
             if not lines:
                 return True
             
             # 逐行发送，确保光标位置正确
             for i, line in enumerate(lines):
-                if line.strip():  # 跳过空行
-                    # 确保行首没有前导空格
-                    clean_line = line.lstrip()
+                raw = line.rstrip('\r\n')
+                segment = raw.lstrip() if strip_leading_whitespace else raw
+                if segment.strip():  # 跳过空行
+                    clean_line = segment
                     if clean_line:
                         # 强制居左：在行首添加控制字符确保居左
                         if i == 0:  # 第一行特别处理
