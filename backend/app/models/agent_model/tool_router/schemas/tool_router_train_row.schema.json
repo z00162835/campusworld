@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://campusworld.local/schemas/tool_router_train_row.json",
+  "title": "ToolRouterTrainRow",
+  "description": "One JSONL record for offline router-head supervision (multi-label tool names).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["user_message", "gold_tool_names", "data_source"],
+  "properties": {
+    "example_id": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Stable id for joining gold rows with prediction JSONL during eval."
+    },
+    "user_message": {
+      "type": "string",
+      "maxLength": 16384
+    },
+    "snapshot_features": {
+      "description": "World snapshot summary text or structured blob.",
+      "oneOf": [
+        { "type": "string", "maxLength": 65536 },
+        { "type": "object" }
+      ]
+    },
+    "stm_snippet": {
+      "type": ["string", "null"],
+      "maxLength": 8192
+    },
+    "manifest_revision": {
+      "type": ["string", "null"],
+      "maxLength": 256
+    },
+    "lexicon_active_id": {
+      "type": ["string", "null"],
+      "maxLength": 256
+    },
+    "gold_tool_names": {
+      "type": "array",
+      "maxItems": 128,
+      "items": { "type": "string", "maxLength": 256 },
+      "description": "Gold multi-label tool/command names for this utterance."
+    },
+    "mandatory_subset": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "type": "string", "maxLength": 256 },
+      "description": "Subset of gold_tool_names treated as mandatory for recall checks."
+    },
+    "data_source": {
+      "type": "string",
+      "enum": ["synthetic", "human", "llm_generated"]
+    }
+  }
+}

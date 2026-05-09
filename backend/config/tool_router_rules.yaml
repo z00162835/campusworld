@@ -1,0 +1,171 @@
+# =============================================================================
+# Tool router — deterministic rule pack (YAML)
+# =============================================================================
+# Loader: app.game_engine.agent_runtime.tool_router.rule_hints.apply_rules
+#
+# 业界常见做法（与 Claude tool routing / agent guardrails 同类）：
+#
+# 1) 版本与变更审计
+#    -  bump ``version``（或 ``rule_pack_version``） whenever you ship rule changes.
+#    -  pair changes with offline eval (mandatory recall / false mandatory rate).
+#
+# 2) pattern 语义
+#    -  Python ``re.search(pattern, user_message, flags=re.UNICODE)`` — 不是全文匹配。
+#    -  推荐前缀 ``(?i)`` 做 ASCII 片段大小写不敏感；中文短语直接写字面量即可。
+#    -  避免过于宽泛的 pattern（例如单独的「帮助」）绑 mandatory，以免误伤 NLU。
+#
+# 3) 规则顺序
+#    -  ``mandatory_tools`` 在多命中时会并集去重；hint 按命中顺序追加。
+#    -  习惯上把「更具体、更高置信」的条目写在列表前部，便于人工阅读与评审。
+#
+# 4) mandatory_tools
+#    -  必须是注册命令主名（与 tool allowlist 交集内）；否则会与 F14/F08 闭环不一致。
+#    -  仅对「高置信」句式使用 mandatory（例如 #数字 id、明确的 whoami）。
+#
+# 5) hint
+#    -  给 Plan 侧路由/检索 query 用的自然语言提示，不等价于强制执行。
+#
+# 6) 可选字段
+#    -  ``id``：仅供文档与 CR 引用；加载器忽略未知键。
+#
+# --- 本包涉及的命令：注册主名 + aliases（与 CommandRegistry 一致；重复别名先注册者获胜并打日志）---
+# describe: examine, ex
+# find: @find, locate
+# help: h, ?
+# leave: ooc
+# look: l, lookat, examine   # examine 与 describe 冲突时保留 describe（图查询先于场景命令注册）
+# primer: manual
+# task: tasks
+# type: （无别名）
+# space, enter, whoami: （无别名）
+# stats: stat, system        # 未写入下列 rules，仅供对照
+# world: worlds              # 世界包管理；见 rules「world_pack_*」（需 admin.world.*）
+# =============================================================================
+
+version: 5
+rule_pack_version: "2026-05-06.world-admin"
+
+rules:
+  # --- High-precision mandatory (safe defaults) ---
+
+  - id: graph_numeric_id
+    pattern: '#\d{1,15}'
+    mandatory_tools:
+      - describe
+    hint: Utterance contains #… graph id; prefer describe with that token (aliases ex, examine); add -a/--all if full attributes and out-edges are needed.
+
+  - id: whoami_identity
+    pattern: '(?i)\bwhoami\b|\bwho\s+am\s+i\b'
+    mandatory_tools:
+      - whoami
+    hint: Identity / session question; use whoami for authoritative caller context.
+
+  - id: who_zh_identity
+    pattern: 我是谁|当前用户|登录用户|我的账号
+    mandatory_tools:
+      - whoami
+    hint: Chinese identity question; prefer whoami.
+
+  # --- Retrieval / navigation hints (non-mandatory; reduce wrong-tool pressure) ---
+
+  - id: room_awareness
+    pattern: 周围环境|当前房间|房里有什么|看一下四周|看看这里
+    hint: User asks for surroundings; prefer look when snapshot alone is insufficient.
+
+  - id: look_cli_echo
+    pattern: '(?i)(?:^|\s)(?:look|l|lookat)(?:\s|$)'
+    hint: Room/snapshot appearance; prefer look (aliases l, lookat). For a graph node by id/name use describe (ex, examine), not look.
+
+  - id: graph_search
+    pattern: '(?i)\bfind\b|@find\b|\blocate\b|查找节点|搜索节点|按名字找'
+    hint: Graph search / locate nodes; prefer find (aliases @find, locate) with flags (-t type_code, -n name, -des text, -loc room_id); shortcuts find #<id> and find *<account>; after picking a SPACE-capable id, use space -i <node_id> for the four-section rollup.
+
+  - id: find_type_filter_nl
+    pattern: 按类型.*查找|按类型.*节点|列举.*节点|列出.*节点|过滤.*类型|类型码|type_code
+    hint: Listing or filtering by graph kind; prefer find -t <type_code>. If type_code is unknown, run type (first 8) or type -a/--all for all active node types. Chain find → pick id → space -i when the user wants occupants/devices/relations, not only node metadata.
+
+  - id: type_registry_nl
+    pattern: 有哪些节点类型|节点类型列表|全部节点类型|合法的类型码|类型码有哪些|图上有哪些类型|都有哪些类型
+    hint: Authoritative node type catalog; prefer type (preview) or type -a/--all — primary name type has no short alias.
+
+  - id: type_registry_en
+    pattern: '(?i)\bnode\s+types?\b|\bgraph\s+type\s+codes?\b|\blist\s+(?:all\s+)?type\s+codes\b'
+    hint: Registry of type_code values; prefer type or type -a/--all before filling find -t.
+
+  - id: type_cli_flags
+    pattern: '(?i)(?:^|\s)type\s+(?:-a\b|--all\b)'
+    hint: User echoed type -a/--all; execute as written (no positional args on type).
+
+  - id: describe_full_attrs_nl
+    pattern: 全部属性|完整属性|每个属性|出边|外向边|所有边|describe\s+-a|ex\s+-a
+    hint: Full node record for agents; prefer describe … -a or --all (aliases ex, examine) to expand attributes and out_edges in CommandResult.data.
+
+  - id: describe_cli_echo
+    pattern: '(?i)(?:^|\s)(?:describe|examine)(?:\s|$)|(?:^|\s)ex\s+'
+    hint: Graph one-node inspection CLI; primary describe with aliases ex, examine — optional -a/--all per usage line.
+
+  - id: space_spatial_nl
+    pattern: 空间概况|空间摘要|空间四段|空间里有什么|空间里有哪些|在场人员|在场角色|空间设备|空间关系|楼层布局|楼宇空间|这栋楼|楼里有什么
+    hint: SPACE rollup (appearance, occupants, devices, relations); use space -t to list SPACE trait type_codes, or space -i <node_id> once you have a concrete graph id (often from find -t …).
+
+  - id: space_spatial_en
+    pattern: '(?i)\bspatial\b.*\brollup\b|occupants?\s+in\s+(?:the\s+)?(?:space|room)|space\s+devices|relations\s+for\s+(?:the\s+)?(?:space|room)'
+    hint: Spatial summary request; prefer space -i <node_id> for the four-section view, or space -t to discover SPACE-capable type_codes first.
+
+  - id: space_cli_flags
+    pattern: '(?i)(?:^|\s)space\s+(?:-t(?:\s|$)|-i\b)'
+    hint: User echoed space CLI flags; execute space -t or space -i <node_id> as written (do not mix -t and -i).
+
+  - id: task_doc_nl
+    pattern: '(?i)任务命令怎么用|任务子命令|任务语法|任务用法|\btask\b.*怎么用'
+    hint: Task family syntax / examples; prefer help task (or CMD_task primer) before invoking create/claim/assign/publish/complete or task pool workflows.
+
+  - id: task_workflow_nl
+    pattern: 创建任务|认领任务|分配任务|发布任务|完成任务|任务列表|我的任务|任务详情|任务池
+    hint: Task lifecycle maps to task (alias tasks) <create|list|show|claim|assign|publish|complete> or task pool …; confirm flags and permissions via help task — avoid guessing workflow fields.
+
+  - id: node_detail_nl
+    pattern: '(?i)节点详情|属性是什么|图节点|\bdescribe\b|\bexamine\b|\bex\b'
+    hint: Single-node graph inspection; prefer describe <node_id|#id|name> (aliases ex, examine); use -a/--all when the model needs full attrs/edges, not the default preview.
+
+  # --- Documentation & onboarding (informational; hint-only) ---
+
+  - id: command_usage_doc
+    pattern: '(?i)\bhelp\b|\bh\b|怎么用|如何使用|用法|语法|示例'
+    hint: Documentation / syntax / examples; prefer help (aliases h, ?) <cmd> or primer sections — do not treat as execute without explicit intent.
+
+  - id: system_primer
+    pattern: '(?i)\bprimer\b|\bmanual\b|系统导读|入门指南|ontology|世界观说明'
+    hint: CampusWorld primer / ontology; prefer primer (alias manual) <section> over loading huge context.
+
+  # --- World bridge (optional; tune per deployment) ---
+
+  - id: enter_world_nl
+    pattern: '(?i)\benter\s+[a-z0-9_-]+|进入世界|进\s*hicampus'
+    hint: World entry request; prefer enter <world_id> after snapshot confirms an entrance is relevant.
+
+  - id: leave_world_nl
+    pattern: '(?i)\bleave\b|离开世界|返回奇点|退出世界|\booc\b'
+    hint: Leave world / hub return; prefer leave (alias ooc) per product routing.
+
+  # --- World package admin (admin.world.*; hint-only — mutating subcommands need execution_gate / permissions) ---
+
+  - id: world_pack_admin_nl
+    pattern: 世界包管理|安装世界|卸载世界|重载世界|重装世界|世界列表|列出.*世界|已安装.*世界|校验世界|验证世界|修复世界|世界内容|世界桥|桥接.*世界
+    hint: Pack lifecycle / topology / bridge / content tooling; prefer world (alias worlds) <list|install|uninstall|reload|status|validate|repair|content|bridge> per get_usage — not the same as player enter <world_id>; caller must hold admin.world.read|manage|maintain or bridge permissions.
+
+  - id: world_pack_admin_en
+    pattern: '(?i)(?:^|\s)(?:world|worlds)\s+(?:list|install|uninstall|reload|status|validate|repair|content|bridge)\b|\binstall\s+world\s+package\b|\buninstall\s+world\b'
+    hint: Admin world package CLI echo or English phrasing; primary world (alias worlds). Confirm admin.world.read|manage|maintain and bridge read/manage as needed; world bridge supports [--dry-run] [--two-way] [--bridge-type portal|gate|transit] — see help world before mutating.
+
+# --- Copy-paste templates (keep commented until reviewed) ---
+#
+#  - id: admin_lexicon_example
+#    pattern: '(?i)\blexicon\b\s+-l'
+#    mandatory_tools: []
+#    hint: Lexicon admin workflow is CLI/SSH; not usually an LLM tool target — adjust if you expose lexicon to agents.
+#
+#  - id: execution_explicit_only
+#    pattern: '(确认执行|yes\s+do\s+it|请执行)'
+#    mandatory_tools: []
+#    hint: Possible execution confirmation — still require execution_gate / policy; do not rely on this rule alone.

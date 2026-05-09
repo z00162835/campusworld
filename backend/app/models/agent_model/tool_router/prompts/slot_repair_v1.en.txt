@@ -1,0 +1,1 @@
+Return one JSON object only, fixing syntax so it validates: keys target_hint (string|null), named_spans (array of {text,type}), entities (array of {normalized_text,entity_type}), mandatory_tools (array of strings). No prose outside the JSON.

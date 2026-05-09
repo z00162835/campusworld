@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://campusworld.local/schemas/tool_router_slot_output.json",
+  "title": "ToolRouterSlotOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target_hint", "named_spans", "entities", "mandatory_tools"],
+  "properties": {
+    "target_hint": {
+      "type": ["string", "null"],
+      "maxLength": 512,
+      "description": "Optional coarse routing hint text."
+    },
+    "named_spans": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "type"],
+        "properties": {
+          "text": { "type": "string", "maxLength": 256 },
+          "type": {
+            "type": "string",
+            "enum": ["location", "organization", "person", "command_ref", "other"]
+          }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["normalized_text", "entity_type"],
+        "properties": {
+          "normalized_text": { "type": "string", "maxLength": 256 },
+          "entity_type": {
+            "type": "string",
+            "enum": ["location", "organization", "person", "command_ref", "other"]
+          }
+        }
+      }
+    },
+    "mandatory_tools": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "type": "string", "maxLength": 128 }
+    }
+  }
+}
