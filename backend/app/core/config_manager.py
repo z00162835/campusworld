@@ -427,7 +427,7 @@ class ConfigManager:
 
         summary = []
         summary.append("Configuration Summary")
-        summary.append("=" * 50)
+        summary.append("=" * 60)
 
         # 应用信息
         app = self.get_app_config()
