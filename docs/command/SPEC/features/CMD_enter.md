@@ -43,4 +43,4 @@ enter
 
 ## Tests
 
-- `backend/tests/ssh/test_game_handler.py`；`enter` 相关游戏命令测。
+- `backend/tests/ssh/test_game_handler.py`；`enter` 相关命令测。

@@ -36,7 +36,7 @@
 
 ## Tests
 
-- `backend/tests/` 中 `look` 相关用例与 SSH 游戏路径（`grep -R "look" backend/tests` 可定位）。
+- `backend/tests/` 中 `look` 相关用例与 SSH 路径（`grep -R "look" backend/tests` 可定位）。
 
 ## Non-Goals / Roadmap
 

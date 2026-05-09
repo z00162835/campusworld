@@ -29,7 +29,7 @@
   - `validate` / `repair` / `content` → `admin.world.maintain`
 - **非 `_SUB_PERM` 动作**:
   - `bridge`：`add`/`remove` 需 `admin.world.bridge.manage`；`list`/`validate` 需 `admin.world.bridge.read`；否则 `WORLD_BRIDGE_*` 错误见源码。
-- **写副作用**：`install`/`uninstall`/`reload`/`content apply` 等会调用引擎/游戏管理器/覆盖逻辑；`list` 等为读。
+- **写副作用**：`install`/`uninstall`/`reload`/`content apply` 等会调用引擎/管理器/覆盖逻辑；`list` 等为读。
 - **用户可见错误示例**：`Permission denied for world {action}`（`error=WORLD_FORBIDDEN` 等，见 `execute` 与各 helper）。
 
 ## i18n status
