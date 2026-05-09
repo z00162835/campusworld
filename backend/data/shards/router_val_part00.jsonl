@@ -1,0 +1,2 @@
+{"example_id":"rt_va_001","user_message":"open my inventory","snapshot_features":"Market stall nearby.","stm_snippet":null,"manifest_revision":null,"lexicon_active_id":null,"gold_tool_names":["inventory"],"mandatory_subset":["inventory"],"data_source":"synthetic"}
+{"example_id":"rt_va_002","user_message":"walk west to the restroom","snapshot_features":"Transit core; signage west.","stm_snippet":null,"manifest_revision":"pkg-2026.01","lexicon_active_id":"4792711d80fa","gold_tool_names":["west","look"],"mandatory_subset":[],"data_source":"human"}

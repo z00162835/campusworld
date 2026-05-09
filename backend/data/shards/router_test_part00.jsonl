@@ -1,0 +1,2 @@
+{"example_id":"rt_te_001","user_message":"reload world hicampus","snapshot_features":"Privileged session banner present.","stm_snippet":null,"manifest_revision":"pkg-2026.01","lexicon_active_id":null,"gold_tool_names":["world"],"mandatory_subset":["world"],"data_source":"synthetic"}
+{"example_id":"rt_te_002","user_message":"describe this room briefly","snapshot_features":"Meeting room 302; chairs, projector.","stm_snippet":null,"manifest_revision":null,"lexicon_active_id":null,"gold_tool_names":["look"],"mandatory_subset":[],"data_source":"llm_generated"}

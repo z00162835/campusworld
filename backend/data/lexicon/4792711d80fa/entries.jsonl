@@ -1,0 +1,1308 @@
+{"id": 1941, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 2151, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 1765, "type_code": "npc_agent", "name": "AICO", "aliases": []}
+{"id": 1311, "type_code": "room", "name": "F1 办公楼 · 第2层 交通核 1", "aliases": []}
+{"id": 6, "type_code": "system_command_ability", "name": "help", "aliases": ["h", "?"]}
+{"id": 2, "type_code": "account", "name": "dev", "aliases": []}
+{"id": 2162, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1699, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 22, "type_code": "system_command_ability", "name": "southwest", "aliases": ["sw"]}
+{"id": 1313, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第2层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1312, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1314, "type_code": "network_access_point", "name": "F1 办公楼 · 第2层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1315, "type_code": "room", "name": "F1 办公楼 · 第3层 交通核 1", "aliases": []}
+{"id": 35, "type_code": "building", "name": "F1 Office Tower", "aliases": []}
+{"id": 25, "type_code": "system_command_ability", "name": "in", "aliases": []}
+{"id": 2153, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 2155, "type_code": "system_command_ability", "name": "task", "aliases": ["tasks"]}
+{"id": 1702, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 2154, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 1701, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1757, "type_code": "system_command_ability", "name": "aico", "aliases": []}
+{"id": 1758, "type_code": "system_command_ability", "name": "agent", "aliases": []}
+{"id": 2052, "type_code": "system_command_ability", "name": "who", "aliases": []}
+{"id": 2042, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 2158, "type_code": "npc_agent", "name": "f05_test_agent", "aliases": []}
+{"id": 14, "type_code": "system_command_ability", "name": "go", "aliases": ["walk"]}
+{"id": 17, "type_code": "system_command_ability", "name": "east", "aliases": ["e"]}
+{"id": 20, "type_code": "system_command_ability", "name": "northwest", "aliases": ["nw"]}
+{"id": 23, "type_code": "system_command_ability", "name": "up", "aliases": ["u"]}
+{"id": 2233, "type_code": "system_command_ability", "name": "lexicon", "aliases": []}
+{"id": 2159, "type_code": "npc_agent", "name": "f05_disabled", "aliases": []}
+{"id": 27, "type_code": "system_command_ability", "name": "notice", "aliases": ["notices"]}
+{"id": 28, "type_code": "system_command_ability", "name": "world", "aliases": ["worlds"]}
+{"id": 29, "type_code": "system_command_ability", "name": "create", "aliases": ["spawn", "build", "make"]}
+{"id": 1753, "type_code": "system_command_ability", "name": "agent_capabilities", "aliases": ["agent.capabilities"]}
+{"id": 2070, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 21, "type_code": "system_command_ability", "name": "southeast", "aliases": ["se"]}
+{"id": 24, "type_code": "system_command_ability", "name": "down", "aliases": ["d"]}
+{"id": 2058, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 2071, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 9, "type_code": "system_command_ability", "name": "quit", "aliases": ["exit", "q"]}
+{"id": 2163, "type_code": "task", "name": "完成教室清洁", "aliases": []}
+{"id": 2164, "type_code": "room", "name": "Singularity Room", "aliases": []}
+{"id": 1090, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 2059, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 7, "type_code": "system_command_ability", "name": "stats", "aliases": ["stat", "system"]}
+{"id": 1975, "type_code": "system_command_ability", "name": "find", "aliases": ["@find", "locate"]}
+{"id": 2165, "type_code": "npc_agent", "name": "ltm_semantic_test", "aliases": []}
+{"id": 1305, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 15, "type_code": "system_command_ability", "name": "north", "aliases": ["n"]}
+{"id": 16, "type_code": "system_command_ability", "name": "south", "aliases": ["s"]}
+{"id": 2166, "type_code": "npc_agent", "name": "test_sys_worker_agent", "aliases": []}
+{"id": 2086, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 41, "type_code": "building_floor", "name": "hicampus_f1_01f", "aliases": []}
+{"id": 2167, "type_code": "npc_agent", "name": "test_sys_worker_agent", "aliases": []}
+{"id": 42, "type_code": "building_floor", "name": "hicampus_f1_02f", "aliases": []}
+{"id": 43, "type_code": "building_floor", "name": "hicampus_f1_03f", "aliases": []}
+{"id": 44, "type_code": "building_floor", "name": "hicampus_f1_04f", "aliases": []}
+{"id": 45, "type_code": "building_floor", "name": "hicampus_f1_05f", "aliases": []}
+{"id": 46, "type_code": "building_floor", "name": "hicampus_f1_06f", "aliases": []}
+{"id": 50, "type_code": "building_floor", "name": "hicampus_f1_10f", "aliases": []}
+{"id": 51, "type_code": "building_floor", "name": "hicampus_f1_11f", "aliases": []}
+{"id": 52, "type_code": "building_floor", "name": "hicampus_f1_12f", "aliases": []}
+{"id": 53, "type_code": "building_floor", "name": "hicampus_f1_13f", "aliases": []}
+{"id": 1974, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 54, "type_code": "building_floor", "name": "hicampus_f1_14f", "aliases": []}
+{"id": 55, "type_code": "building_floor", "name": "hicampus_f1_15f", "aliases": []}
+{"id": 56, "type_code": "building_floor", "name": "hicampus_f1_16f", "aliases": []}
+{"id": 57, "type_code": "building_floor", "name": "hicampus_f1_17f", "aliases": []}
+{"id": 58, "type_code": "building_floor", "name": "hicampus_f1_18f", "aliases": []}
+{"id": 59, "type_code": "building_floor", "name": "hicampus_f1_19f", "aliases": []}
+{"id": 60, "type_code": "building_floor", "name": "hicampus_f1_20f", "aliases": []}
+{"id": 1647, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 2050, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 2169, "type_code": "npc_agent", "name": "test_sys_worker_agent", "aliases": []}
+{"id": 61, "type_code": "building_floor", "name": "hicampus_f1_21f", "aliases": []}
+{"id": 62, "type_code": "building_floor", "name": "hicampus_f1_22f", "aliases": []}
+{"id": 63, "type_code": "building_floor", "name": "hicampus_f1_23f", "aliases": []}
+{"id": 64, "type_code": "building_floor", "name": "hicampus_f2_01f", "aliases": []}
+{"id": 65, "type_code": "building_floor", "name": "hicampus_f2_02f", "aliases": []}
+{"id": 66, "type_code": "building_floor", "name": "hicampus_f2_03f", "aliases": []}
+{"id": 67, "type_code": "building_floor", "name": "hicampus_f3_01f", "aliases": []}
+{"id": 68, "type_code": "building_floor", "name": "hicampus_f3_02f", "aliases": []}
+{"id": 69, "type_code": "building_floor", "name": "hicampus_f3_03f", "aliases": []}
+{"id": 70, "type_code": "building_floor", "name": "hicampus_f3_04f", "aliases": []}
+{"id": 71, "type_code": "building_floor", "name": "hicampus_f3_05f", "aliases": []}
+{"id": 72, "type_code": "building_floor", "name": "hicampus_f3_06f", "aliases": []}
+{"id": 73, "type_code": "building_floor", "name": "hicampus_f4_01f", "aliases": []}
+{"id": 74, "type_code": "building_floor", "name": "hicampus_f4_02f", "aliases": []}
+{"id": 75, "type_code": "building_floor", "name": "hicampus_f4_03f", "aliases": []}
+{"id": 76, "type_code": "building_floor", "name": "hicampus_f4_04f", "aliases": []}
+{"id": 77, "type_code": "building_floor", "name": "hicampus_f4_05f", "aliases": []}
+{"id": 78, "type_code": "building_floor", "name": "hicampus_f4_06f", "aliases": []}
+{"id": 79, "type_code": "building_floor", "name": "hicampus_f4_07f", "aliases": []}
+{"id": 2090, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 80, "type_code": "building_floor", "name": "hicampus_f5_01f", "aliases": []}
+{"id": 81, "type_code": "building_floor", "name": "hicampus_f5_02f", "aliases": []}
+{"id": 82, "type_code": "building_floor", "name": "hicampus_f5_03f", "aliases": []}
+{"id": 83, "type_code": "building_floor", "name": "hicampus_f6_01f", "aliases": []}
+{"id": 84, "type_code": "building_floor", "name": "hicampus_f6_02f", "aliases": []}
+{"id": 85, "type_code": "building_floor", "name": "hicampus_f6_03f", "aliases": []}
+{"id": 86, "type_code": "building_floor", "name": "hicampus_f6_04f", "aliases": []}
+{"id": 87, "type_code": "building_floor", "name": "hicampus_f6_05f", "aliases": []}
+{"id": 88, "type_code": "building_floor", "name": "hicampus_f6_06f", "aliases": []}
+{"id": 89, "type_code": "building_floor", "name": "hicampus_f6_07f", "aliases": []}
+{"id": 90, "type_code": "building_floor", "name": "hicampus_f6_08f", "aliases": []}
+{"id": 91, "type_code": "building_floor", "name": "hicampus_f6_09f", "aliases": []}
+{"id": 92, "type_code": "room", "name": "HiCampus Bridge", "aliases": []}
+{"id": 93, "type_code": "room", "name": "F1 办公楼 · 首层 交通核 1", "aliases": []}
+{"id": 94, "type_code": "room", "name": "F1 办公楼 · 首层 配电间 1", "aliases": []}
+{"id": 95, "type_code": "room", "name": "F1 办公楼 · 首层 卫生间 1", "aliases": []}
+{"id": 96, "type_code": "room", "name": "HiCampus Gate", "aliases": []}
+{"id": 97, "type_code": "room", "name": "HiCampus Plaza", "aliases": []}
+{"id": 98, "type_code": "room", "name": "F1 办公楼 · 第2层 会议室 1", "aliases": []}
+{"id": 99, "type_code": "room", "name": "F1 办公楼 · 第2层 开放办公区 1", "aliases": []}
+{"id": 100, "type_code": "room", "name": "F1 办公楼 · 第2层 开放办公区 2", "aliases": []}
+{"id": 101, "type_code": "room", "name": "F1 办公楼 · 第2层 茶水间 1", "aliases": []}
+{"id": 102, "type_code": "room", "name": "F1 办公楼 · 第2层 卫生间 1", "aliases": []}
+{"id": 103, "type_code": "room", "name": "F1 办公楼 · 第3层 会议室 1", "aliases": []}
+{"id": 104, "type_code": "room", "name": "F1 办公楼 · 第3层 开放办公区 1", "aliases": []}
+{"id": 105, "type_code": "room", "name": "F1 办公楼 · 第3层 开放办公区 2", "aliases": []}
+{"id": 106, "type_code": "room", "name": "F1 办公楼 · 第3层 茶水间 1", "aliases": []}
+{"id": 107, "type_code": "room", "name": "F1 办公楼 · 第3层 卫生间 1", "aliases": []}
+{"id": 108, "type_code": "room", "name": "F1 办公楼 · 第4层 会议室 1", "aliases": []}
+{"id": 109, "type_code": "room", "name": "F1 办公楼 · 第4层 开放办公区 1", "aliases": []}
+{"id": 110, "type_code": "room", "name": "F1 办公楼 · 第4层 开放办公区 2", "aliases": []}
+{"id": 111, "type_code": "room", "name": "F1 办公楼 · 第4层 茶水间 1", "aliases": []}
+{"id": 112, "type_code": "room", "name": "F1 办公楼 · 第4层 卫生间 1", "aliases": []}
+{"id": 113, "type_code": "room", "name": "F1 办公楼 · 第5层 会议室 1", "aliases": []}
+{"id": 114, "type_code": "room", "name": "F1 办公楼 · 第5层 开放办公区 1", "aliases": []}
+{"id": 115, "type_code": "room", "name": "F1 办公楼 · 第5层 开放办公区 2", "aliases": []}
+{"id": 116, "type_code": "room", "name": "F1 办公楼 · 第5层 茶水间 1", "aliases": []}
+{"id": 117, "type_code": "room", "name": "F1 办公楼 · 第5层 卫生间 1", "aliases": []}
+{"id": 118, "type_code": "room", "name": "F1 办公楼 · 第6层 会议室 1", "aliases": []}
+{"id": 119, "type_code": "room", "name": "F1 办公楼 · 第6层 开放办公区 1", "aliases": []}
+{"id": 120, "type_code": "room", "name": "F1 办公楼 · 第6层 开放办公区 2", "aliases": []}
+{"id": 121, "type_code": "room", "name": "F1 办公楼 · 第6层 茶水间 1", "aliases": []}
+{"id": 122, "type_code": "room", "name": "F1 办公楼 · 第6层 卫生间 1", "aliases": []}
+{"id": 123, "type_code": "room", "name": "F1 办公楼 · 第7层 会议室 1", "aliases": []}
+{"id": 124, "type_code": "room", "name": "F1 办公楼 · 第7层 开放办公区 1", "aliases": []}
+{"id": 125, "type_code": "room", "name": "F1 办公楼 · 第7层 开放办公区 2", "aliases": []}
+{"id": 126, "type_code": "room", "name": "F1 办公楼 · 第7层 茶水间 1", "aliases": []}
+{"id": 127, "type_code": "room", "name": "F1 办公楼 · 第7层 卫生间 1", "aliases": []}
+{"id": 1751, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 128, "type_code": "room", "name": "F1 办公楼 · 第8层 会议室 1", "aliases": []}
+{"id": 129, "type_code": "room", "name": "F1 办公楼 · 第8层 开放办公区 1", "aliases": []}
+{"id": 130, "type_code": "room", "name": "F1 办公楼 · 第8层 开放办公区 2", "aliases": []}
+{"id": 131, "type_code": "room", "name": "F1 办公楼 · 第8层 茶水间 1", "aliases": []}
+{"id": 132, "type_code": "room", "name": "F1 办公楼 · 第8层 卫生间 1", "aliases": []}
+{"id": 133, "type_code": "room", "name": "F1 办公楼 · 第9层 会议室 1", "aliases": []}
+{"id": 1752, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 134, "type_code": "room", "name": "F1 办公楼 · 第9层 会议室 2", "aliases": []}
+{"id": 135, "type_code": "room", "name": "F1 办公楼 · 第9层 开放办公区 1", "aliases": []}
+{"id": 136, "type_code": "room", "name": "F1 办公楼 · 第9层 开放办公区 2", "aliases": []}
+{"id": 137, "type_code": "room", "name": "F1 办公楼 · 第9层 卫生间 1", "aliases": []}
+{"id": 138, "type_code": "room", "name": "F1 办公楼 · 第10层 会议室 1", "aliases": []}
+{"id": 139, "type_code": "room", "name": "F1 办公楼 · 第10层 会议室 2", "aliases": []}
+{"id": 140, "type_code": "room", "name": "F1 办公楼 · 第10层 开放办公区 1", "aliases": []}
+{"id": 141, "type_code": "room", "name": "F1 办公楼 · 第10层 开放办公区 2", "aliases": []}
+{"id": 142, "type_code": "room", "name": "F1 办公楼 · 第10层 卫生间 1", "aliases": []}
+{"id": 143, "type_code": "room", "name": "F1 办公楼 · 第11层 会议室 1", "aliases": []}
+{"id": 144, "type_code": "room", "name": "F1 办公楼 · 第11层 会议室 2", "aliases": []}
+{"id": 145, "type_code": "room", "name": "F1 办公楼 · 第11层 开放办公区 1", "aliases": []}
+{"id": 146, "type_code": "room", "name": "F1 办公楼 · 第11层 开放办公区 2", "aliases": []}
+{"id": 147, "type_code": "room", "name": "F1 办公楼 · 第11层 卫生间 1", "aliases": []}
+{"id": 148, "type_code": "room", "name": "F1 办公楼 · 第12层 会议室 1", "aliases": []}
+{"id": 149, "type_code": "room", "name": "F1 办公楼 · 第12层 会议室 2", "aliases": []}
+{"id": 150, "type_code": "room", "name": "F1 办公楼 · 第12层 开放办公区 1", "aliases": []}
+{"id": 151, "type_code": "room", "name": "F1 办公楼 · 第12层 开放办公区 2", "aliases": []}
+{"id": 152, "type_code": "room", "name": "F1 办公楼 · 第12层 卫生间 1", "aliases": []}
+{"id": 153, "type_code": "room", "name": "F1 办公楼 · 第13层 会议室 1", "aliases": []}
+{"id": 154, "type_code": "room", "name": "F1 办公楼 · 第13层 会议室 2", "aliases": []}
+{"id": 155, "type_code": "room", "name": "F1 办公楼 · 第13层 开放办公区 1", "aliases": []}
+{"id": 156, "type_code": "room", "name": "F1 办公楼 · 第13层 开放办公区 2", "aliases": []}
+{"id": 157, "type_code": "room", "name": "F1 办公楼 · 第13层 卫生间 1", "aliases": []}
+{"id": 158, "type_code": "room", "name": "F1 办公楼 · 第14层 会议室 1", "aliases": []}
+{"id": 159, "type_code": "room", "name": "F1 办公楼 · 第14层 会议室 2", "aliases": []}
+{"id": 160, "type_code": "room", "name": "F1 办公楼 · 第14层 开放办公区 1", "aliases": []}
+{"id": 161, "type_code": "room", "name": "F1 办公楼 · 第14层 开放办公区 2", "aliases": []}
+{"id": 162, "type_code": "room", "name": "F1 办公楼 · 第14层 卫生间 1", "aliases": []}
+{"id": 163, "type_code": "room", "name": "F1 办公楼 · 第15层 会议室 1", "aliases": []}
+{"id": 164, "type_code": "room", "name": "F1 办公楼 · 第15层 会议室 2", "aliases": []}
+{"id": 165, "type_code": "room", "name": "F1 办公楼 · 第15层 开放办公区 1", "aliases": []}
+{"id": 166, "type_code": "room", "name": "F1 办公楼 · 第15层 开放办公区 2", "aliases": []}
+{"id": 167, "type_code": "room", "name": "F1 办公楼 · 第15层 卫生间 1", "aliases": []}
+{"id": 168, "type_code": "room", "name": "F1 办公楼 · 第16层 会议室 1", "aliases": []}
+{"id": 169, "type_code": "room", "name": "F1 办公楼 · 第16层 会议室 2", "aliases": []}
+{"id": 170, "type_code": "room", "name": "F1 办公楼 · 第16层 开放办公区 1", "aliases": []}
+{"id": 171, "type_code": "room", "name": "F1 办公楼 · 第16层 开放办公区 2", "aliases": []}
+{"id": 172, "type_code": "room", "name": "F1 办公楼 · 第16层 卫生间 1", "aliases": []}
+{"id": 173, "type_code": "room", "name": "F1 办公楼 · 第17层 经理室 1", "aliases": []}
+{"id": 174, "type_code": "room", "name": "F1 办公楼 · 第17层 会议室 1", "aliases": []}
+{"id": 175, "type_code": "room", "name": "F1 办公楼 · 第17层 会议室 2", "aliases": []}
+{"id": 176, "type_code": "room", "name": "F1 办公楼 · 第17层 开放办公区 1", "aliases": []}
+{"id": 177, "type_code": "room", "name": "F1 办公楼 · 第17层 卫生间 1", "aliases": []}
+{"id": 178, "type_code": "room", "name": "F1 办公楼 · 第18层 经理室 1", "aliases": []}
+{"id": 179, "type_code": "room", "name": "F1 办公楼 · 第18层 会议室 1", "aliases": []}
+{"id": 180, "type_code": "room", "name": "F1 办公楼 · 第18层 会议室 2", "aliases": []}
+{"id": 1763, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 181, "type_code": "room", "name": "F1 办公楼 · 第18层 开放办公区 1", "aliases": []}
+{"id": 182, "type_code": "room", "name": "F1 办公楼 · 第18层 卫生间 1", "aliases": []}
+{"id": 183, "type_code": "room", "name": "F1 办公楼 · 第19层 经理室 1", "aliases": []}
+{"id": 184, "type_code": "room", "name": "F1 办公楼 · 第19层 会议室 1", "aliases": []}
+{"id": 185, "type_code": "room", "name": "F1 办公楼 · 第19层 会议室 2", "aliases": []}
+{"id": 186, "type_code": "room", "name": "F1 办公楼 · 第19层 开放办公区 1", "aliases": []}
+{"id": 187, "type_code": "room", "name": "F1 办公楼 · 第19层 卫生间 1", "aliases": []}
+{"id": 188, "type_code": "room", "name": "F1 办公楼 · 第20层 经理室 1", "aliases": []}
+{"id": 189, "type_code": "room", "name": "F1 办公楼 · 第20层 会议室 1", "aliases": []}
+{"id": 190, "type_code": "room", "name": "F1 办公楼 · 第20层 会议室 2", "aliases": []}
+{"id": 191, "type_code": "room", "name": "F1 办公楼 · 第20层 开放办公区 1", "aliases": []}
+{"id": 192, "type_code": "room", "name": "F1 办公楼 · 第20层 卫生间 1", "aliases": []}
+{"id": 193, "type_code": "room", "name": "F1 办公楼 · 第21层 经理室 1", "aliases": []}
+{"id": 194, "type_code": "room", "name": "F1 办公楼 · 第21层 经理室 2", "aliases": []}
+{"id": 195, "type_code": "room", "name": "F1 办公楼 · 第21层 会议室 1", "aliases": []}
+{"id": 196, "type_code": "room", "name": "F1 办公楼 · 第21层 会议室 2", "aliases": []}
+{"id": 197, "type_code": "room", "name": "F1 办公楼 · 第21层 开放办公区 1", "aliases": []}
+{"id": 198, "type_code": "room", "name": "F1 办公楼 · 第22层 经理室 1", "aliases": []}
+{"id": 31, "type_code": "account", "name": "campus", "aliases": []}
+{"id": 3, "type_code": "account", "name": "campus", "aliases": []}
+{"id": 199, "type_code": "room", "name": "F1 办公楼 · 第22层 经理室 2", "aliases": []}
+{"id": 200, "type_code": "room", "name": "F1 办公楼 · 第22层 会议室 1", "aliases": []}
+{"id": 201, "type_code": "room", "name": "F1 办公楼 · 第22层 会议室 2", "aliases": []}
+{"id": 202, "type_code": "room", "name": "F1 办公楼 · 第22层 开放办公区 1", "aliases": []}
+{"id": 203, "type_code": "room", "name": "F1 办公楼 · 第23层 经理室 1", "aliases": []}
+{"id": 204, "type_code": "room", "name": "F1 办公楼 · 第23层 经理室 2", "aliases": []}
+{"id": 205, "type_code": "room", "name": "F1 办公楼 · 第23层 会议室 1", "aliases": []}
+{"id": 206, "type_code": "room", "name": "F1 办公楼 · 第23层 会议室 2", "aliases": []}
+{"id": 1756, "type_code": "system_command_ability", "name": "agent_nlp", "aliases": []}
+{"id": 207, "type_code": "room", "name": "F1 办公楼 · 第23层 开放办公区 1", "aliases": []}
+{"id": 208, "type_code": "room", "name": "F2 餐饮中心 · 首层 就餐区 1", "aliases": []}
+{"id": 209, "type_code": "room", "name": "F2 餐饮中心 · 首层 就餐区 2", "aliases": []}
+{"id": 210, "type_code": "room", "name": "F2 餐饮中心 · 首层 备餐间 1", "aliases": []}
+{"id": 211, "type_code": "room", "name": "F2 餐饮中心 · 首层 卫生间 1", "aliases": []}
+{"id": 8, "type_code": "system_command_ability", "name": "version", "aliases": ["ver"]}
+{"id": 1937, "type_code": "system_command_ability", "name": "describe", "aliases": ["examine", "ex"]}
+{"id": 212, "type_code": "room", "name": "F2 餐饮中心 · 首层 库房 1", "aliases": []}
+{"id": 213, "type_code": "room", "name": "F2 餐饮中心 · 第2层 就餐区 1", "aliases": []}
+{"id": 214, "type_code": "room", "name": "F2 餐饮中心 · 第2层 就餐区 2", "aliases": []}
+{"id": 215, "type_code": "room", "name": "F2 餐饮中心 · 第2层 备餐间 1", "aliases": []}
+{"id": 216, "type_code": "room", "name": "F2 餐饮中心 · 第2层 卫生间 1", "aliases": []}
+{"id": 217, "type_code": "room", "name": "F2 餐饮中心 · 第2层 库房 1", "aliases": []}
+{"id": 218, "type_code": "room", "name": "F2 餐饮中心 · 第3层 就餐区 1", "aliases": []}
+{"id": 26, "type_code": "system_command_ability", "name": "out", "aliases": ["o"]}
+{"id": 219, "type_code": "room", "name": "F2 餐饮中心 · 第3层 就餐区 2", "aliases": []}
+{"id": 220, "type_code": "room", "name": "F2 餐饮中心 · 第3层 备餐间 1", "aliases": []}
+{"id": 221, "type_code": "room", "name": "F2 餐饮中心 · 第3层 卫生间 1", "aliases": []}
+{"id": 222, "type_code": "room", "name": "F2 餐饮中心 · 第3层 库房 1", "aliases": []}
+{"id": 223, "type_code": "room", "name": "F3 培训中心 · 首层 交通核 1", "aliases": []}
+{"id": 224, "type_code": "room", "name": "F3 培训中心 · 首层 教室 1", "aliases": []}
+{"id": 225, "type_code": "room", "name": "F3 培训中心 · 首层 教室 2", "aliases": []}
+{"id": 226, "type_code": "room", "name": "F3 培训中心 · 首层 开放办公区 1", "aliases": []}
+{"id": 227, "type_code": "room", "name": "F3 培训中心 · 首层 卫生间 1", "aliases": []}
+{"id": 228, "type_code": "room", "name": "F3 培训中心 · 第2层 交通核 1", "aliases": []}
+{"id": 229, "type_code": "room", "name": "F3 培训中心 · 第2层 教室 1", "aliases": []}
+{"id": 230, "type_code": "room", "name": "F3 培训中心 · 第2层 教室 2", "aliases": []}
+{"id": 1242, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 231, "type_code": "room", "name": "F3 培训中心 · 第2层 开放办公区 1", "aliases": []}
+{"id": 232, "type_code": "room", "name": "F3 培训中心 · 第2层 卫生间 1", "aliases": []}
+{"id": 233, "type_code": "room", "name": "F3 培训中心 · 第3层 教室 1", "aliases": []}
+{"id": 1931, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 234, "type_code": "room", "name": "F3 培训中心 · 第3层 教室 2", "aliases": []}
+{"id": 239, "type_code": "room", "name": "F3 培训中心 · 第4层 教室 2", "aliases": []}
+{"id": 243, "type_code": "room", "name": "F3 培训中心 · 第5层 教室 1", "aliases": []}
+{"id": 345, "type_code": "network_access_point", "name": "F1 办公楼 · 首层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 244, "type_code": "room", "name": "F3 培训中心 · 第5层 教室 2", "aliases": []}
+{"id": 1936, "type_code": "system_command_ability", "name": "graph_find", "aliases": ["find"]}
+{"id": 245, "type_code": "room", "name": "F3 培训中心 · 第5层 实验室 1", "aliases": []}
+{"id": 246, "type_code": "room", "name": "F3 培训中心 · 第5层 会议室 1", "aliases": []}
+{"id": 247, "type_code": "room", "name": "F3 培训中心 · 第5层 卫生间 1", "aliases": []}
+{"id": 1933, "type_code": "system_command_ability", "name": "graph_find", "aliases": ["find"]}
+{"id": 1245, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 1932, "type_code": "system_command_ability", "name": "primer", "aliases": ["manual"]}
+{"id": 2061, "type_code": "system_command_ability", "name": "type", "aliases": []}
+{"id": 1770, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 248, "type_code": "room", "name": "F3 培训中心 · 第6层 教室 1", "aliases": []}
+{"id": 249, "type_code": "room", "name": "F3 培训中心 · 第6层 教室 2", "aliases": []}
+{"id": 250, "type_code": "room", "name": "F3 培训中心 · 第6层 实验室 1", "aliases": []}
+{"id": 251, "type_code": "room", "name": "F3 培训中心 · 第6层 会议室 1", "aliases": []}
+{"id": 348, "type_code": "lighting_fixture", "name": "F1 办公楼 · 首层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 252, "type_code": "room", "name": "F3 培训中心 · 第6层 卫生间 1", "aliases": []}
+{"id": 253, "type_code": "room", "name": "F4 实验楼 · 首层 配电间 1", "aliases": []}
+{"id": 1058, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 254, "type_code": "room", "name": "F4 实验楼 · 首层 监控室 1", "aliases": []}
+{"id": 255, "type_code": "room", "name": "F4 实验楼 · 首层 实验准备室 1", "aliases": []}
+{"id": 256, "type_code": "room", "name": "F4 实验楼 · 首层 实验准备室 2", "aliases": []}
+{"id": 257, "type_code": "room", "name": "F4 实验楼 · 首层 库房 1", "aliases": []}
+{"id": 1061, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 1272, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 258, "type_code": "room", "name": "F4 实验楼 · 第2层 配电间 1", "aliases": []}
+{"id": 1031, "type_code": "system_command_ability", "name": "leave", "aliases": ["ooc"]}
+{"id": 1940, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 259, "type_code": "room", "name": "F4 实验楼 · 第2层 监控室 1", "aliases": []}
+{"id": 260, "type_code": "room", "name": "F4 实验楼 · 第2层 实验准备室 1", "aliases": []}
+{"id": 261, "type_code": "room", "name": "F4 实验楼 · 第2层 实验准备室 2", "aliases": []}
+{"id": 262, "type_code": "room", "name": "F4 实验楼 · 第2层 库房 1", "aliases": []}
+{"id": 1275, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 263, "type_code": "room", "name": "F4 实验楼 · 第3层 实验室 1", "aliases": []}
+{"id": 264, "type_code": "room", "name": "F4 实验楼 · 第3层 实验室 2", "aliases": []}
+{"id": 1088, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 265, "type_code": "room", "name": "F4 实验楼 · 第3层 实验室 3", "aliases": []}
+{"id": 266, "type_code": "room", "name": "F4 实验楼 · 第3层 实验准备室 1", "aliases": []}
+{"id": 267, "type_code": "room", "name": "F4 实验楼 · 第3层 卫生间 1", "aliases": []}
+{"id": 268, "type_code": "room", "name": "F4 实验楼 · 第4层 实验室 1", "aliases": []}
+{"id": 1091, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 269, "type_code": "room", "name": "F4 实验楼 · 第4层 实验室 2", "aliases": []}
+{"id": 1151, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1060, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 270, "type_code": "room", "name": "F4 实验楼 · 第4层 实验室 3", "aliases": []}
+{"id": 271, "type_code": "room", "name": "F4 实验楼 · 第4层 实验准备室 1", "aliases": []}
+{"id": 272, "type_code": "room", "name": "F4 实验楼 · 第4层 卫生间 1", "aliases": []}
+{"id": 273, "type_code": "room", "name": "F4 实验楼 · 第5层 实验室 1", "aliases": []}
+{"id": 11, "type_code": "system_command_ability", "name": "whoami", "aliases": []}
+{"id": 1303, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 274, "type_code": "room", "name": "F4 实验楼 · 第5层 实验室 2", "aliases": []}
+{"id": 275, "type_code": "room", "name": "F4 实验楼 · 第5层 实验室 3", "aliases": []}
+{"id": 276, "type_code": "room", "name": "F4 实验楼 · 第5层 实验准备室 1", "aliases": []}
+{"id": 277, "type_code": "room", "name": "F4 实验楼 · 第5层 卫生间 1", "aliases": []}
+{"id": 278, "type_code": "room", "name": "F4 实验楼 · 第6层 实验室 1", "aliases": []}
+{"id": 1306, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 279, "type_code": "room", "name": "F4 实验楼 · 第6层 实验室 2", "aliases": []}
+{"id": 1119, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 280, "type_code": "room", "name": "F4 实验楼 · 第6层 实验室 3", "aliases": []}
+{"id": 281, "type_code": "room", "name": "F4 实验楼 · 第6层 实验准备室 1", "aliases": []}
+{"id": 282, "type_code": "room", "name": "F4 实验楼 · 第6层 卫生间 1", "aliases": []}
+{"id": 283, "type_code": "room", "name": "F4 实验楼 · 第7层 实验室 1", "aliases": []}
+{"id": 1122, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 284, "type_code": "room", "name": "F4 实验楼 · 第7层 实验室 2", "aliases": []}
+{"id": 285, "type_code": "room", "name": "F4 实验楼 · 第7层 实验室 3", "aliases": []}
+{"id": 286, "type_code": "room", "name": "F4 实验楼 · 第7层 实验准备室 1", "aliases": []}
+{"id": 287, "type_code": "room", "name": "F4 实验楼 · 第7层 卫生间 1", "aliases": []}
+{"id": 288, "type_code": "room", "name": "F5 展厅 · 首层 音控室 1", "aliases": []}
+{"id": 289, "type_code": "room", "name": "F5 展厅 · 首层 展陈空间 1", "aliases": []}
+{"id": 290, "type_code": "room", "name": "F5 展厅 · 首层 展陈空间 2", "aliases": []}
+{"id": 1755, "type_code": "system_command_ability", "name": "agent_run", "aliases": []}
+{"id": 1149, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 291, "type_code": "room", "name": "F5 展厅 · 首层 会议室 1", "aliases": []}
+{"id": 292, "type_code": "room", "name": "F5 展厅 · 首层 卫生间 1", "aliases": []}
+{"id": 293, "type_code": "room", "name": "F5 展厅 · 第2层 音控室 1", "aliases": []}
+{"id": 294, "type_code": "room", "name": "F5 展厅 · 第2层 展陈空间 1", "aliases": []}
+{"id": 295, "type_code": "room", "name": "F5 展厅 · 第2层 展陈空间 2", "aliases": []}
+{"id": 1152, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 296, "type_code": "room", "name": "F5 展厅 · 第2层 会议室 1", "aliases": []}
+{"id": 297, "type_code": "room", "name": "F5 展厅 · 第2层 卫生间 1", "aliases": []}
+{"id": 298, "type_code": "room", "name": "F5 展厅 · 第3层 音控室 1", "aliases": []}
+{"id": 299, "type_code": "room", "name": "F5 展厅 · 第3层 展陈空间 1", "aliases": []}
+{"id": 300, "type_code": "room", "name": "F5 展厅 · 第3层 展陈空间 2", "aliases": []}
+{"id": 301, "type_code": "room", "name": "F5 展厅 · 第3层 会议室 1", "aliases": []}
+{"id": 302, "type_code": "room", "name": "F5 展厅 · 第3层 卫生间 1", "aliases": []}
+{"id": 1244, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 5, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1179, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 303, "type_code": "room", "name": "F6 公寓 · 首层 公寓单元 1", "aliases": []}
+{"id": 304, "type_code": "room", "name": "F6 公寓 · 首层 公寓单元 2", "aliases": []}
+{"id": 305, "type_code": "room", "name": "F6 公寓 · 首层 公共休闲区 1", "aliases": []}
+{"id": 306, "type_code": "room", "name": "F6 公寓 · 首层 卫生间 1", "aliases": []}
+{"id": 351, "type_code": "conference_seating", "name": "F1 办公楼 · 第2层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 1182, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 591, "type_code": "conference_seating", "name": "F1 办公楼 · 第19层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 307, "type_code": "room", "name": "F6 公寓 · 第2层 公寓单元 1", "aliases": []}
+{"id": 308, "type_code": "room", "name": "F6 公寓 · 第2层 公寓单元 2", "aliases": []}
+{"id": 309, "type_code": "room", "name": "F6 公寓 · 第2层 公共休闲区 1", "aliases": []}
+{"id": 592, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第19层 会议室 2 · 照明回路", "aliases": []}
+{"id": 593, "type_code": "network_access_point", "name": "F1 办公楼 · 第19层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 594, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第19层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 310, "type_code": "room", "name": "F6 公寓 · 第2层 卫生间 1", "aliases": []}
+{"id": 595, "type_code": "network_access_point", "name": "F1 办公楼 · 第19层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 596, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第19层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 597, "type_code": "network_access_point", "name": "F1 办公楼 · 第19层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 598, "type_code": "furniture", "name": "F1 办公楼 · 第20层 经理室 1 · 办公家具组", "aliases": []}
+{"id": 311, "type_code": "room", "name": "F6 公寓 · 第3层 公寓单元 1", "aliases": []}
+{"id": 312, "type_code": "room", "name": "F6 公寓 · 第3层 公寓单元 2", "aliases": []}
+{"id": 313, "type_code": "room", "name": "F6 公寓 · 第3层 公共休闲区 1", "aliases": []}
+{"id": 314, "type_code": "room", "name": "F6 公寓 · 第3层 卫生间 1", "aliases": []}
+{"id": 315, "type_code": "room", "name": "F6 公寓 · 第4层 公寓单元 1", "aliases": []}
+{"id": 316, "type_code": "room", "name": "F6 公寓 · 第4层 公寓单元 2", "aliases": []}
+{"id": 317, "type_code": "room", "name": "F6 公寓 · 第4层 公共休闲区 1", "aliases": []}
+{"id": 318, "type_code": "room", "name": "F6 公寓 · 第4层 卫生间 1", "aliases": []}
+{"id": 319, "type_code": "room", "name": "F6 公寓 · 第5层 公寓单元 1", "aliases": []}
+{"id": 320, "type_code": "room", "name": "F6 公寓 · 第5层 公寓单元 2", "aliases": []}
+{"id": 321, "type_code": "room", "name": "F6 公寓 · 第5层 公共休闲区 1", "aliases": []}
+{"id": 323, "type_code": "room", "name": "F6 公寓 · 第6层 公寓单元 1", "aliases": []}
+{"id": 359, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 茶水间 1 · 照明回路", "aliases": []}
+{"id": 18, "type_code": "system_command_ability", "name": "west", "aliases": ["w"]}
+{"id": 1211, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 324, "type_code": "room", "name": "F6 公寓 · 第6层 公寓单元 2", "aliases": []}
+{"id": 325, "type_code": "room", "name": "F6 公寓 · 第6层 公共休闲区 1", "aliases": []}
+{"id": 1214, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 326, "type_code": "room", "name": "F6 公寓 · 第6层 卫生间 1", "aliases": []}
+{"id": 327, "type_code": "room", "name": "F6 公寓 · 第7层 公寓单元 1", "aliases": []}
+{"id": 1754, "type_code": "system_command_ability", "name": "agent_tools", "aliases": ["agent.tools"]}
+{"id": 1213, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1583, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 328, "type_code": "room", "name": "F6 公寓 · 第7层 公寓单元 2", "aliases": []}
+{"id": 599, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第20层 经理室 1 · 照明回路", "aliases": []}
+{"id": 600, "type_code": "network_access_point", "name": "F1 办公楼 · 第20层 经理室 1 · 无线接入点", "aliases": []}
+{"id": 601, "type_code": "av_display", "name": "F1 办公楼 · 第20层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 329, "type_code": "room", "name": "F6 公寓 · 第7层 公共休闲区 1", "aliases": []}
+{"id": 331, "type_code": "room", "name": "F6 公寓 · 第8层 公寓单元 1", "aliases": []}
+{"id": 332, "type_code": "room", "name": "F6 公寓 · 第8层 公寓单元 2", "aliases": []}
+{"id": 333, "type_code": "room", "name": "F6 公寓 · 第8层 公共休闲区 1", "aliases": []}
+{"id": 334, "type_code": "room", "name": "F6 公寓 · 第8层 卫生间 1", "aliases": []}
+{"id": 1586, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 602, "type_code": "conference_seating", "name": "F1 办公楼 · 第20层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 335, "type_code": "room", "name": "F6 公寓 · 第9层 公寓单元 1", "aliases": []}
+{"id": 1585, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 336, "type_code": "room", "name": "F6 公寓 · 第9层 公寓单元 2", "aliases": []}
+{"id": 337, "type_code": "room", "name": "F6 公寓 · 第9层 公共休闲区 1", "aliases": []}
+{"id": 338, "type_code": "room", "name": "F6 公寓 · 第9层 卫生间 1", "aliases": []}
+{"id": 1316, "type_code": "room", "name": "F1 办公楼 · 第4层 交通核 1", "aliases": []}
+{"id": 1317, "type_code": "room", "name": "F1 办公楼 · 第5层 交通核 1", "aliases": []}
+{"id": 1318, "type_code": "room", "name": "F1 办公楼 · 第6层 交通核 1", "aliases": []}
+{"id": 1613, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 603, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第20层 会议室 1 · 照明回路", "aliases": []}
+{"id": 1319, "type_code": "room", "name": "F1 办公楼 · 第7层 交通核 1", "aliases": []}
+{"id": 1320, "type_code": "room", "name": "F1 办公楼 · 第8层 交通核 1", "aliases": []}
+{"id": 1321, "type_code": "room", "name": "F1 办公楼 · 第9层 交通核 1", "aliases": []}
+{"id": 1322, "type_code": "room", "name": "F1 办公楼 · 第10层 交通核 1", "aliases": []}
+{"id": 1616, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 835, "type_code": "furniture", "name": "F4 实验楼 · 第4层 实验准备室 1 · 实验台与储物", "aliases": []}
+{"id": 1323, "type_code": "room", "name": "F1 办公楼 · 第11层 交通核 1", "aliases": []}
+{"id": 1326, "type_code": "room", "name": "F1 办公楼 · 第14层 交通核 1", "aliases": []}
+{"id": 1327, "type_code": "room", "name": "F1 办公楼 · 第15层 交通核 1", "aliases": []}
+{"id": 604, "type_code": "network_access_point", "name": "F1 办公楼 · 第20层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 605, "type_code": "av_display", "name": "F1 办公楼 · 第20层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 606, "type_code": "conference_seating", "name": "F1 办公楼 · 第20层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 607, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第20层 会议室 2 · 照明回路", "aliases": []}
+{"id": 1328, "type_code": "room", "name": "F1 办公楼 · 第16层 交通核 1", "aliases": []}
+{"id": 608, "type_code": "network_access_point", "name": "F1 办公楼 · 第20层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 609, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第20层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 610, "type_code": "network_access_point", "name": "F1 办公楼 · 第20层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 849, "type_code": "furniture", "name": "F4 实验楼 · 第5层 实验准备室 1 · 实验台与储物", "aliases": []}
+{"id": 1329, "type_code": "room", "name": "F1 办公楼 · 第17层 交通核 1", "aliases": []}
+{"id": 1330, "type_code": "room", "name": "F1 办公楼 · 第18层 交通核 1", "aliases": []}
+{"id": 1332, "type_code": "room", "name": "F1 办公楼 · 第20层 交通核 1", "aliases": []}
+{"id": 1333, "type_code": "room", "name": "F1 办公楼 · 第21层 交通核 1", "aliases": []}
+{"id": 1334, "type_code": "room", "name": "F1 办公楼 · 第22层 交通核 1", "aliases": []}
+{"id": 1335, "type_code": "room", "name": "F1 办公楼 · 第23层 交通核 1", "aliases": []}
+{"id": 1336, "type_code": "room", "name": "F2 餐饮中心 · 首层 交通核 1", "aliases": []}
+{"id": 1337, "type_code": "room", "name": "F2 餐饮中心 · 第2层 交通核 1", "aliases": []}
+{"id": 1645, "type_code": "account", "name": "test_user_spawn", "aliases": []}
+{"id": 1338, "type_code": "room", "name": "F2 餐饮中心 · 第3层 交通核 1", "aliases": []}
+{"id": 1339, "type_code": "room", "name": "F3 培训中心 · 第3层 交通核 1", "aliases": []}
+{"id": 1648, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 1340, "type_code": "room", "name": "F3 培训中心 · 第4层 交通核 1", "aliases": []}
+{"id": 1341, "type_code": "room", "name": "F3 培训中心 · 第5层 交通核 1", "aliases": []}
+{"id": 611, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第20层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 1342, "type_code": "room", "name": "F3 培训中心 · 第6层 交通核 1", "aliases": []}
+{"id": 1343, "type_code": "room", "name": "F4 实验楼 · 首层 交通核 1", "aliases": []}
+{"id": 1344, "type_code": "room", "name": "F4 实验楼 · 第2层 交通核 1", "aliases": []}
+{"id": 612, "type_code": "network_access_point", "name": "F1 办公楼 · 第20层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 613, "type_code": "furniture", "name": "F1 办公楼 · 第21层 经理室 1 · 办公家具组", "aliases": []}
+{"id": 1345, "type_code": "room", "name": "F4 实验楼 · 第3层 交通核 1", "aliases": []}
+{"id": 1649, "type_code": "system_notice", "name": "Hello World!", "aliases": []}
+{"id": 614, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第21层 经理室 1 · 照明回路", "aliases": []}
+{"id": 615, "type_code": "network_access_point", "name": "F1 办公楼 · 第21层 经理室 1 · 无线接入点", "aliases": []}
+{"id": 616, "type_code": "furniture", "name": "F1 办公楼 · 第21层 经理室 2 · 办公家具组", "aliases": []}
+{"id": 617, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第21层 经理室 2 · 照明回路", "aliases": []}
+{"id": 1347, "type_code": "room", "name": "F4 实验楼 · 第5层 交通核 1", "aliases": []}
+{"id": 618, "type_code": "network_access_point", "name": "F1 办公楼 · 第21层 经理室 2 · 无线接入点", "aliases": []}
+{"id": 619, "type_code": "av_display", "name": "F1 办公楼 · 第21层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 620, "type_code": "conference_seating", "name": "F1 办公楼 · 第21层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 621, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第21层 会议室 1 · 照明回路", "aliases": []}
+{"id": 1348, "type_code": "room", "name": "F4 实验楼 · 第6层 交通核 1", "aliases": []}
+{"id": 1349, "type_code": "room", "name": "F4 实验楼 · 第7层 交通核 1", "aliases": []}
+{"id": 1350, "type_code": "room", "name": "F5 展厅 · 首层 交通核 1", "aliases": []}
+{"id": 1351, "type_code": "room", "name": "F5 展厅 · 第2层 交通核 1", "aliases": []}
+{"id": 622, "type_code": "network_access_point", "name": "F1 办公楼 · 第21层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 669, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 首层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 1352, "type_code": "room", "name": "F5 展厅 · 第3层 交通核 1", "aliases": []}
+{"id": 1353, "type_code": "room", "name": "F6 公寓 · 首层 交通核 1", "aliases": []}
+{"id": 623, "type_code": "av_display", "name": "F1 办公楼 · 第21层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 624, "type_code": "conference_seating", "name": "F1 办公楼 · 第21层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 625, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第21层 会议室 2 · 照明回路", "aliases": []}
+{"id": 626, "type_code": "network_access_point", "name": "F1 办公楼 · 第21层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 2232, "type_code": "npc_agent", "name": "f05_test_agent", "aliases": []}
+{"id": 1354, "type_code": "room", "name": "F6 公寓 · 第2层 交通核 1", "aliases": []}
+{"id": 627, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第21层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 628, "type_code": "network_access_point", "name": "F1 办公楼 · 第21层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 629, "type_code": "furniture", "name": "F1 办公楼 · 第22层 经理室 1 · 办公家具组", "aliases": []}
+{"id": 630, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第22层 经理室 1 · 照明回路", "aliases": []}
+{"id": 631, "type_code": "network_access_point", "name": "F1 办公楼 · 第22层 经理室 1 · 无线接入点", "aliases": []}
+{"id": 633, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第22层 经理室 2 · 照明回路", "aliases": []}
+{"id": 634, "type_code": "network_access_point", "name": "F1 办公楼 · 第22层 经理室 2 · 无线接入点", "aliases": []}
+{"id": 635, "type_code": "av_display", "name": "F1 办公楼 · 第22层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 36, "type_code": "building", "name": "F2 Canteen", "aliases": []}
+{"id": 37, "type_code": "building", "name": "F3 Training Center", "aliases": []}
+{"id": 38, "type_code": "building", "name": "F4 Lab", "aliases": []}
+{"id": 39, "type_code": "building", "name": "F5 Expo Hall", "aliases": []}
+{"id": 40, "type_code": "building", "name": "F6 Dormitory", "aliases": []}
+{"id": 19, "type_code": "system_command_ability", "name": "northeast", "aliases": ["ne"]}
+{"id": 47, "type_code": "building_floor", "name": "hicampus_f1_07f", "aliases": []}
+{"id": 48, "type_code": "building_floor", "name": "hicampus_f1_08f", "aliases": []}
+{"id": 49, "type_code": "building_floor", "name": "hicampus_f1_09f", "aliases": []}
+{"id": 30, "type_code": "system_command_ability", "name": "create_info", "aliases": ["cinfo", "model_info"]}
+{"id": 1184, "type_code": "world_entrance", "name": "hicampus", "aliases": []}
+{"id": 13, "type_code": "system_command_ability", "name": "enter", "aliases": []}
+{"id": 1274, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1615, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 2177, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1121, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 1181, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 235, "type_code": "room", "name": "F3 培训中心 · 第3层 实验室 1", "aliases": []}
+{"id": 236, "type_code": "room", "name": "F3 培训中心 · 第3层 会议室 1", "aliases": []}
+{"id": 237, "type_code": "room", "name": "F3 培训中心 · 第3层 卫生间 1", "aliases": []}
+{"id": 238, "type_code": "room", "name": "F3 培训中心 · 第4层 教室 1", "aliases": []}
+{"id": 1356, "type_code": "room", "name": "F6 公寓 · 第4层 交通核 1", "aliases": []}
+{"id": 1357, "type_code": "room", "name": "F6 公寓 · 第5层 交通核 1", "aliases": []}
+{"id": 1358, "type_code": "room", "name": "F6 公寓 · 第6层 交通核 1", "aliases": []}
+{"id": 1359, "type_code": "room", "name": "F6 公寓 · 第7层 交通核 1", "aliases": []}
+{"id": 1360, "type_code": "room", "name": "F6 公寓 · 第8层 交通核 1", "aliases": []}
+{"id": 1361, "type_code": "room", "name": "F6 公寓 · 第9层 交通核 1", "aliases": []}
+{"id": 1935, "type_code": "system_command_ability", "name": "primer", "aliases": ["manual"]}
+{"id": 10, "type_code": "system_command_ability", "name": "time", "aliases": ["date"]}
+{"id": 1934, "type_code": "system_command_ability", "name": "describe", "aliases": ["examine", "ex"]}
+{"id": 12, "type_code": "system_command_ability", "name": "look", "aliases": ["l", "lookat", "examine"]}
+{"id": 2147, "type_code": "system_command_ability", "name": "space", "aliases": []}
+{"id": 240, "type_code": "room", "name": "F3 培训中心 · 第4层 实验室 1", "aliases": []}
+{"id": 241, "type_code": "room", "name": "F3 培训中心 · 第4层 会议室 1", "aliases": []}
+{"id": 1, "type_code": "account", "name": "admin", "aliases": []}
+{"id": 242, "type_code": "room", "name": "F3 培训中心 · 第4层 卫生间 1", "aliases": []}
+{"id": 322, "type_code": "room", "name": "F6 公寓 · 第5层 卫生间 1", "aliases": []}
+{"id": 339, "type_code": "logical_zone", "name": "Gate Security Red Zone", "aliases": []}
+{"id": 330, "type_code": "room", "name": "F6 公寓 · 第7层 卫生间 1", "aliases": []}
+{"id": 343, "type_code": "lighting_fixture", "name": "F1 办公楼 · 首层 交通核 1 · 照明回路", "aliases": []}
+{"id": 344, "type_code": "lounge_furniture", "name": "F1 办公楼 · 首层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 346, "type_code": "lighting_fixture", "name": "F1 办公楼 · 首层 配电间 1 · 照明回路", "aliases": []}
+{"id": 347, "type_code": "network_access_point", "name": "F1 办公楼 · 首层 配电间 1 · 无线接入点", "aliases": []}
+{"id": 997, "type_code": "lounge_furniture", "name": "F6 公寓 · 第7层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 349, "type_code": "network_access_point", "name": "F1 办公楼 · 首层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 1324, "type_code": "room", "name": "F1 办公楼 · 第12层 交通核 1", "aliases": []}
+{"id": 1325, "type_code": "room", "name": "F1 办公楼 · 第13层 交通核 1", "aliases": []}
+{"id": 350, "type_code": "av_display", "name": "F1 办公楼 · 第2层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 352, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 会议室 1 · 照明回路", "aliases": []}
+{"id": 1331, "type_code": "room", "name": "F1 办公楼 · 第19层 交通核 1", "aliases": []}
+{"id": 353, "type_code": "network_access_point", "name": "F1 办公楼 · 第2层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 354, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 1346, "type_code": "room", "name": "F4 实验楼 · 第4层 交通核 1", "aliases": []}
+{"id": 1355, "type_code": "room", "name": "F6 公寓 · 第3层 交通核 1", "aliases": []}
+{"id": 1015, "type_code": "furniture", "name": "F6 公寓 · 第9层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 355, "type_code": "network_access_point", "name": "F1 办公楼 · 第2层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 356, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 357, "type_code": "network_access_point", "name": "F1 办公楼 · 第2层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 358, "type_code": "furniture", "name": "F1 办公楼 · 第2层 茶水间 1 · 吧台与高脚凳", "aliases": []}
+{"id": 360, "type_code": "network_access_point", "name": "F1 办公楼 · 第2层 茶水间 1 · 无线接入点", "aliases": []}
+{"id": 1362, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第3层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1363, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第3层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1500, "type_code": "lighting_fixture", "name": "F6 公寓 · 第9层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1501, "type_code": "lounge_furniture", "name": "F6 公寓 · 第9层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1502, "type_code": "network_access_point", "name": "F6 公寓 · 第9层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1364, "type_code": "network_access_point", "name": "F1 办公楼 · 第3层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1365, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第4层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1366, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第4层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1367, "type_code": "network_access_point", "name": "F1 办公楼 · 第4层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1368, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第5层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1369, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第5层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1370, "type_code": "network_access_point", "name": "F1 办公楼 · 第5层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1371, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第6层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1372, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第6层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1373, "type_code": "network_access_point", "name": "F1 办公楼 · 第6层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1374, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第7层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1375, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第7层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1376, "type_code": "network_access_point", "name": "F1 办公楼 · 第7层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1377, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第8层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1378, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第8层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 340, "type_code": "npc_agent", "name": "Security Agent", "aliases": []}
+{"id": 1379, "type_code": "network_access_point", "name": "F1 办公楼 · 第8层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1380, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第9层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1381, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第9层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1382, "type_code": "network_access_point", "name": "F1 办公楼 · 第9层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1383, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第10层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1384, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第10层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1385, "type_code": "network_access_point", "name": "F1 办公楼 · 第10层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1386, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第11层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1387, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第11层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1388, "type_code": "network_access_point", "name": "F1 办公楼 · 第11层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1389, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第12层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1390, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第12层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1391, "type_code": "network_access_point", "name": "F1 办公楼 · 第12层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1392, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第13层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1393, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第13层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1394, "type_code": "network_access_point", "name": "F1 办公楼 · 第13层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1395, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第14层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1396, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第14层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1397, "type_code": "network_access_point", "name": "F1 办公楼 · 第14层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1398, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第15层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1399, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第15层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1400, "type_code": "network_access_point", "name": "F1 办公楼 · 第15层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1401, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第16层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1402, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第16层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1403, "type_code": "network_access_point", "name": "F1 办公楼 · 第16层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1404, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第17层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1405, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第17层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1406, "type_code": "network_access_point", "name": "F1 办公楼 · 第17层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1407, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第18层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1408, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第18层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1409, "type_code": "network_access_point", "name": "F1 办公楼 · 第18层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1410, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第19层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1411, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第19层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1412, "type_code": "network_access_point", "name": "F1 办公楼 · 第19层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1413, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第20层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1414, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第20层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1415, "type_code": "network_access_point", "name": "F1 办公楼 · 第20层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1416, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第21层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1417, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第21层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1418, "type_code": "network_access_point", "name": "F1 办公楼 · 第21层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1419, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第22层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1420, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第22层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1421, "type_code": "network_access_point", "name": "F1 办公楼 · 第22层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1422, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第23层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1423, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第23层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1424, "type_code": "network_access_point", "name": "F1 办公楼 · 第23层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1425, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 首层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1426, "type_code": "lounge_furniture", "name": "F2 餐饮中心 · 首层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1427, "type_code": "network_access_point", "name": "F2 餐饮中心 · 首层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1428, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第2层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1429, "type_code": "lounge_furniture", "name": "F2 餐饮中心 · 第2层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 34, "type_code": "world", "name": "HiCampus", "aliases": []}
+{"id": 1430, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第2层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1431, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第3层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1432, "type_code": "lounge_furniture", "name": "F2 餐饮中心 · 第3层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1433, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第3层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1434, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第3层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1435, "type_code": "lounge_furniture", "name": "F3 培训中心 · 第3层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1436, "type_code": "network_access_point", "name": "F3 培训中心 · 第3层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1437, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第4层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1438, "type_code": "lounge_furniture", "name": "F3 培训中心 · 第4层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1439, "type_code": "network_access_point", "name": "F3 培训中心 · 第4层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1440, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第5层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1441, "type_code": "lounge_furniture", "name": "F3 培训中心 · 第5层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1442, "type_code": "network_access_point", "name": "F3 培训中心 · 第5层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1443, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第6层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1444, "type_code": "lounge_furniture", "name": "F3 培训中心 · 第6层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1445, "type_code": "network_access_point", "name": "F3 培训中心 · 第6层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1446, "type_code": "lighting_fixture", "name": "F4 实验楼 · 首层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1447, "type_code": "lounge_furniture", "name": "F4 实验楼 · 首层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1448, "type_code": "network_access_point", "name": "F4 实验楼 · 首层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1449, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第2层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1450, "type_code": "lounge_furniture", "name": "F4 实验楼 · 第2层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1451, "type_code": "network_access_point", "name": "F4 实验楼 · 第2层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1452, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第3层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1453, "type_code": "lounge_furniture", "name": "F4 实验楼 · 第3层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1454, "type_code": "network_access_point", "name": "F4 实验楼 · 第3层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1455, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第4层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1456, "type_code": "lounge_furniture", "name": "F4 实验楼 · 第4层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1457, "type_code": "network_access_point", "name": "F4 实验楼 · 第4层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1458, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第5层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1459, "type_code": "lounge_furniture", "name": "F4 实验楼 · 第5层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1460, "type_code": "network_access_point", "name": "F4 实验楼 · 第5层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1461, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第6层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1462, "type_code": "lounge_furniture", "name": "F4 实验楼 · 第6层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1463, "type_code": "network_access_point", "name": "F4 实验楼 · 第6层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1464, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第7层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1465, "type_code": "lounge_furniture", "name": "F4 实验楼 · 第7层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1466, "type_code": "network_access_point", "name": "F4 实验楼 · 第7层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1467, "type_code": "lighting_fixture", "name": "F5 展厅 · 首层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1468, "type_code": "lounge_furniture", "name": "F5 展厅 · 首层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1469, "type_code": "network_access_point", "name": "F5 展厅 · 首层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1470, "type_code": "lighting_fixture", "name": "F5 展厅 · 第2层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1471, "type_code": "lounge_furniture", "name": "F5 展厅 · 第2层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1472, "type_code": "network_access_point", "name": "F5 展厅 · 第2层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1473, "type_code": "lighting_fixture", "name": "F5 展厅 · 第3层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1474, "type_code": "lounge_furniture", "name": "F5 展厅 · 第3层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1475, "type_code": "network_access_point", "name": "F5 展厅 · 第3层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1476, "type_code": "lighting_fixture", "name": "F6 公寓 · 首层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1477, "type_code": "lounge_furniture", "name": "F6 公寓 · 首层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1478, "type_code": "network_access_point", "name": "F6 公寓 · 首层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1479, "type_code": "lighting_fixture", "name": "F6 公寓 · 第2层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1480, "type_code": "lounge_furniture", "name": "F6 公寓 · 第2层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1481, "type_code": "network_access_point", "name": "F6 公寓 · 第2层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1482, "type_code": "lighting_fixture", "name": "F6 公寓 · 第3层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1483, "type_code": "lounge_furniture", "name": "F6 公寓 · 第3层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1484, "type_code": "network_access_point", "name": "F6 公寓 · 第3层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1485, "type_code": "lighting_fixture", "name": "F6 公寓 · 第4层 交通核 1 · 照明回路", "aliases": []}
+{"id": 583, "type_code": "furniture", "name": "F1 办公楼 · 第19层 经理室 1 · 办公家具组", "aliases": []}
+{"id": 1486, "type_code": "lounge_furniture", "name": "F6 公寓 · 第4层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1487, "type_code": "network_access_point", "name": "F6 公寓 · 第4层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1488, "type_code": "lighting_fixture", "name": "F6 公寓 · 第5层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1489, "type_code": "lounge_furniture", "name": "F6 公寓 · 第5层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1490, "type_code": "network_access_point", "name": "F6 公寓 · 第5层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1491, "type_code": "lighting_fixture", "name": "F6 公寓 · 第6层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1492, "type_code": "lounge_furniture", "name": "F6 公寓 · 第6层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1493, "type_code": "network_access_point", "name": "F6 公寓 · 第6层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1494, "type_code": "lighting_fixture", "name": "F6 公寓 · 第7层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1495, "type_code": "lounge_furniture", "name": "F6 公寓 · 第7层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1496, "type_code": "network_access_point", "name": "F6 公寓 · 第7层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 1497, "type_code": "lighting_fixture", "name": "F6 公寓 · 第8层 交通核 1 · 照明回路", "aliases": []}
+{"id": 1498, "type_code": "lounge_furniture", "name": "F6 公寓 · 第8层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 1499, "type_code": "network_access_point", "name": "F6 公寓 · 第8层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 632, "type_code": "furniture", "name": "F1 办公楼 · 第22层 经理室 2 · 办公家具组", "aliases": []}
+{"id": 648, "type_code": "furniture", "name": "F1 办公楼 · 第23层 经理室 2 · 办公家具组", "aliases": []}
+{"id": 661, "type_code": "furniture", "name": "F2 餐饮中心 · 首层 就餐区 1 · 餐桌椅", "aliases": []}
+{"id": 664, "type_code": "furniture", "name": "F2 餐饮中心 · 首层 就餐区 2 · 餐桌椅", "aliases": []}
+{"id": 677, "type_code": "furniture", "name": "F2 餐饮中心 · 第2层 就餐区 2 · 餐桌椅", "aliases": []}
+{"id": 341, "type_code": "lighting_fixture", "name": "HiCampus Bridge · 照明回路", "aliases": []}
+{"id": 342, "type_code": "network_access_point", "name": "HiCampus Bridge · 无线接入点", "aliases": []}
+{"id": 361, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 362, "type_code": "network_access_point", "name": "F1 办公楼 · 第2层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 363, "type_code": "av_display", "name": "F1 办公楼 · 第3层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 364, "type_code": "conference_seating", "name": "F1 办公楼 · 第3层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 674, "type_code": "furniture", "name": "F2 餐饮中心 · 第2层 就餐区 1 · 餐桌椅", "aliases": []}
+{"id": 365, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第3层 会议室 1 · 照明回路", "aliases": []}
+{"id": 366, "type_code": "network_access_point", "name": "F1 办公楼 · 第3层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 367, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第3层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 368, "type_code": "network_access_point", "name": "F1 办公楼 · 第3层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 369, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第3层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 370, "type_code": "network_access_point", "name": "F1 办公楼 · 第3层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 371, "type_code": "furniture", "name": "F1 办公楼 · 第3层 茶水间 1 · 吧台与高脚凳", "aliases": []}
+{"id": 372, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第3层 茶水间 1 · 照明回路", "aliases": []}
+{"id": 373, "type_code": "network_access_point", "name": "F1 办公楼 · 第3层 茶水间 1 · 无线接入点", "aliases": []}
+{"id": 374, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第3层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 375, "type_code": "network_access_point", "name": "F1 办公楼 · 第3层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 376, "type_code": "av_display", "name": "F1 办公楼 · 第4层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 377, "type_code": "conference_seating", "name": "F1 办公楼 · 第4层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 378, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第4层 会议室 1 · 照明回路", "aliases": []}
+{"id": 636, "type_code": "conference_seating", "name": "F1 办公楼 · 第22层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 379, "type_code": "network_access_point", "name": "F1 办公楼 · 第4层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 380, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第4层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 381, "type_code": "network_access_point", "name": "F1 办公楼 · 第4层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 382, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第4层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 383, "type_code": "network_access_point", "name": "F1 办公楼 · 第4层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 384, "type_code": "furniture", "name": "F1 办公楼 · 第4层 茶水间 1 · 吧台与高脚凳", "aliases": []}
+{"id": 385, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第4层 茶水间 1 · 照明回路", "aliases": []}
+{"id": 386, "type_code": "network_access_point", "name": "F1 办公楼 · 第4层 茶水间 1 · 无线接入点", "aliases": []}
+{"id": 387, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第4层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 388, "type_code": "network_access_point", "name": "F1 办公楼 · 第4层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 389, "type_code": "av_display", "name": "F1 办公楼 · 第5层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 390, "type_code": "conference_seating", "name": "F1 办公楼 · 第5层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 391, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第5层 会议室 1 · 照明回路", "aliases": []}
+{"id": 392, "type_code": "network_access_point", "name": "F1 办公楼 · 第5层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 393, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第5层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 394, "type_code": "network_access_point", "name": "F1 办公楼 · 第5层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 395, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第5层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 396, "type_code": "network_access_point", "name": "F1 办公楼 · 第5层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 397, "type_code": "furniture", "name": "F1 办公楼 · 第5层 茶水间 1 · 吧台与高脚凳", "aliases": []}
+{"id": 398, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第5层 茶水间 1 · 照明回路", "aliases": []}
+{"id": 399, "type_code": "network_access_point", "name": "F1 办公楼 · 第5层 茶水间 1 · 无线接入点", "aliases": []}
+{"id": 400, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第5层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 697, "type_code": "furniture", "name": "F2 餐饮中心 · 第3层 库房 1 · 货架组", "aliases": []}
+{"id": 401, "type_code": "network_access_point", "name": "F1 办公楼 · 第5层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 402, "type_code": "av_display", "name": "F1 办公楼 · 第6层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 403, "type_code": "conference_seating", "name": "F1 办公楼 · 第6层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 404, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第6层 会议室 1 · 照明回路", "aliases": []}
+{"id": 405, "type_code": "network_access_point", "name": "F1 办公楼 · 第6层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 406, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第6层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 407, "type_code": "network_access_point", "name": "F1 办公楼 · 第6层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 408, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第6层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 409, "type_code": "network_access_point", "name": "F1 办公楼 · 第6层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 410, "type_code": "furniture", "name": "F1 办公楼 · 第6层 茶水间 1 · 吧台与高脚凳", "aliases": []}
+{"id": 411, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第6层 茶水间 1 · 照明回路", "aliases": []}
+{"id": 412, "type_code": "network_access_point", "name": "F1 办公楼 · 第6层 茶水间 1 · 无线接入点", "aliases": []}
+{"id": 413, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第6层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 414, "type_code": "network_access_point", "name": "F1 办公楼 · 第6层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 415, "type_code": "av_display", "name": "F1 办公楼 · 第7层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 416, "type_code": "conference_seating", "name": "F1 办公楼 · 第7层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 417, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第7层 会议室 1 · 照明回路", "aliases": []}
+{"id": 418, "type_code": "network_access_point", "name": "F1 办公楼 · 第7层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 419, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第7层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 420, "type_code": "network_access_point", "name": "F1 办公楼 · 第7层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 421, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第7层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 422, "type_code": "network_access_point", "name": "F1 办公楼 · 第7层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 423, "type_code": "furniture", "name": "F1 办公楼 · 第7层 茶水间 1 · 吧台与高脚凳", "aliases": []}
+{"id": 424, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第7层 茶水间 1 · 照明回路", "aliases": []}
+{"id": 425, "type_code": "network_access_point", "name": "F1 办公楼 · 第7层 茶水间 1 · 无线接入点", "aliases": []}
+{"id": 426, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第7层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 427, "type_code": "network_access_point", "name": "F1 办公楼 · 第7层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 428, "type_code": "av_display", "name": "F1 办公楼 · 第8层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 429, "type_code": "conference_seating", "name": "F1 办公楼 · 第8层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 430, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第8层 会议室 1 · 照明回路", "aliases": []}
+{"id": 431, "type_code": "network_access_point", "name": "F1 办公楼 · 第8层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 432, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第8层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 433, "type_code": "network_access_point", "name": "F1 办公楼 · 第8层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 434, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第8层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 435, "type_code": "network_access_point", "name": "F1 办公楼 · 第8层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 436, "type_code": "furniture", "name": "F1 办公楼 · 第8层 茶水间 1 · 吧台与高脚凳", "aliases": []}
+{"id": 437, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第8层 茶水间 1 · 照明回路", "aliases": []}
+{"id": 706, "type_code": "furniture", "name": "F3 培训中心 · 首层 教室 2 · 课桌椅组", "aliases": []}
+{"id": 438, "type_code": "network_access_point", "name": "F1 办公楼 · 第8层 茶水间 1 · 无线接入点", "aliases": []}
+{"id": 439, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第8层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 440, "type_code": "network_access_point", "name": "F1 办公楼 · 第8层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 441, "type_code": "av_display", "name": "F1 办公楼 · 第9层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 442, "type_code": "conference_seating", "name": "F1 办公楼 · 第9层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 443, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第9层 会议室 1 · 照明回路", "aliases": []}
+{"id": 444, "type_code": "network_access_point", "name": "F1 办公楼 · 第9层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 445, "type_code": "av_display", "name": "F1 办公楼 · 第9层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 446, "type_code": "conference_seating", "name": "F1 办公楼 · 第9层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 447, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第9层 会议室 2 · 照明回路", "aliases": []}
+{"id": 448, "type_code": "network_access_point", "name": "F1 办公楼 · 第9层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 719, "type_code": "furniture", "name": "F3 培训中心 · 第2层 教室 2 · 课桌椅组", "aliases": []}
+{"id": 449, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第9层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 450, "type_code": "network_access_point", "name": "F1 办公楼 · 第9层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 451, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第9层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 452, "type_code": "network_access_point", "name": "F1 办公楼 · 第9层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 453, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第9层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 454, "type_code": "network_access_point", "name": "F1 办公楼 · 第9层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 455, "type_code": "av_display", "name": "F1 办公楼 · 第10层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 456, "type_code": "conference_seating", "name": "F1 办公楼 · 第10层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 457, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第10层 会议室 1 · 照明回路", "aliases": []}
+{"id": 458, "type_code": "network_access_point", "name": "F1 办公楼 · 第10层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 459, "type_code": "av_display", "name": "F1 办公楼 · 第10层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 460, "type_code": "conference_seating", "name": "F1 办公楼 · 第10层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 461, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第10层 会议室 2 · 照明回路", "aliases": []}
+{"id": 462, "type_code": "network_access_point", "name": "F1 办公楼 · 第10层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 463, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第10层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 464, "type_code": "network_access_point", "name": "F1 办公楼 · 第10层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 465, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第10层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 466, "type_code": "network_access_point", "name": "F1 办公楼 · 第10层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 467, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第10层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 468, "type_code": "network_access_point", "name": "F1 办公楼 · 第10层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 469, "type_code": "av_display", "name": "F1 办公楼 · 第11层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 470, "type_code": "conference_seating", "name": "F1 办公楼 · 第11层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 471, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第11层 会议室 1 · 照明回路", "aliases": []}
+{"id": 741, "type_code": "furniture", "name": "F3 培训中心 · 第4层 教室 1 · 课桌椅组", "aliases": []}
+{"id": 472, "type_code": "network_access_point", "name": "F1 办公楼 · 第11层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 473, "type_code": "av_display", "name": "F1 办公楼 · 第11层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 474, "type_code": "conference_seating", "name": "F1 办公楼 · 第11层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 475, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第11层 会议室 2 · 照明回路", "aliases": []}
+{"id": 476, "type_code": "network_access_point", "name": "F1 办公楼 · 第11层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 477, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第11层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 478, "type_code": "network_access_point", "name": "F1 办公楼 · 第11层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 479, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第11层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 480, "type_code": "network_access_point", "name": "F1 办公楼 · 第11层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 481, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第11层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 482, "type_code": "network_access_point", "name": "F1 办公楼 · 第11层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 483, "type_code": "av_display", "name": "F1 办公楼 · 第12层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 484, "type_code": "conference_seating", "name": "F1 办公楼 · 第12层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 485, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第12层 会议室 1 · 照明回路", "aliases": []}
+{"id": 486, "type_code": "network_access_point", "name": "F1 办公楼 · 第12层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 487, "type_code": "av_display", "name": "F1 办公楼 · 第12层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 488, "type_code": "conference_seating", "name": "F1 办公楼 · 第12层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 489, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第12层 会议室 2 · 照明回路", "aliases": []}
+{"id": 490, "type_code": "network_access_point", "name": "F1 办公楼 · 第12层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 491, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第12层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 492, "type_code": "network_access_point", "name": "F1 办公楼 · 第12层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 493, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第12层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 494, "type_code": "network_access_point", "name": "F1 办公楼 · 第12层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 495, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第12层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 496, "type_code": "network_access_point", "name": "F1 办公楼 · 第12层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 497, "type_code": "av_display", "name": "F1 办公楼 · 第13层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 498, "type_code": "conference_seating", "name": "F1 办公楼 · 第13层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 499, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第13层 会议室 1 · 照明回路", "aliases": []}
+{"id": 756, "type_code": "furniture", "name": "F3 培训中心 · 第5层 教室 1 · 课桌椅组", "aliases": []}
+{"id": 500, "type_code": "network_access_point", "name": "F1 办公楼 · 第13层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 501, "type_code": "av_display", "name": "F1 办公楼 · 第13层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 502, "type_code": "conference_seating", "name": "F1 办公楼 · 第13层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 503, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第13层 会议室 2 · 照明回路", "aliases": []}
+{"id": 504, "type_code": "network_access_point", "name": "F1 办公楼 · 第13层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 505, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第13层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 506, "type_code": "network_access_point", "name": "F1 办公楼 · 第13层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 507, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第13层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 508, "type_code": "network_access_point", "name": "F1 办公楼 · 第13层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 509, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第13层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 510, "type_code": "network_access_point", "name": "F1 办公楼 · 第13层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 511, "type_code": "av_display", "name": "F1 办公楼 · 第14层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 512, "type_code": "conference_seating", "name": "F1 办公楼 · 第14层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 513, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第14层 会议室 1 · 照明回路", "aliases": []}
+{"id": 514, "type_code": "network_access_point", "name": "F1 办公楼 · 第14层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 515, "type_code": "av_display", "name": "F1 办公楼 · 第14层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 516, "type_code": "conference_seating", "name": "F1 办公楼 · 第14层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 517, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第14层 会议室 2 · 照明回路", "aliases": []}
+{"id": 518, "type_code": "network_access_point", "name": "F1 办公楼 · 第14层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 519, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第14层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 520, "type_code": "network_access_point", "name": "F1 办公楼 · 第14层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 521, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第14层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 522, "type_code": "network_access_point", "name": "F1 办公楼 · 第14层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 523, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第14层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 524, "type_code": "network_access_point", "name": "F1 办公楼 · 第14层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 525, "type_code": "av_display", "name": "F1 办公楼 · 第15层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 526, "type_code": "conference_seating", "name": "F1 办公楼 · 第15层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 527, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第15层 会议室 1 · 照明回路", "aliases": []}
+{"id": 528, "type_code": "network_access_point", "name": "F1 办公楼 · 第15层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 529, "type_code": "av_display", "name": "F1 办公楼 · 第15层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 530, "type_code": "conference_seating", "name": "F1 办公楼 · 第15层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 531, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第15层 会议室 2 · 照明回路", "aliases": []}
+{"id": 532, "type_code": "network_access_point", "name": "F1 办公楼 · 第15层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 533, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第15层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 534, "type_code": "network_access_point", "name": "F1 办公楼 · 第15层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 535, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第15层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 536, "type_code": "network_access_point", "name": "F1 办公楼 · 第15层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 537, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第15层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 538, "type_code": "network_access_point", "name": "F1 办公楼 · 第15层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 539, "type_code": "av_display", "name": "F1 办公楼 · 第16层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 540, "type_code": "conference_seating", "name": "F1 办公楼 · 第16层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 541, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第16层 会议室 1 · 照明回路", "aliases": []}
+{"id": 542, "type_code": "network_access_point", "name": "F1 办公楼 · 第16层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 543, "type_code": "av_display", "name": "F1 办公楼 · 第16层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 544, "type_code": "conference_seating", "name": "F1 办公楼 · 第16层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 545, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第16层 会议室 2 · 照明回路", "aliases": []}
+{"id": 546, "type_code": "network_access_point", "name": "F1 办公楼 · 第16层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 547, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第16层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 548, "type_code": "network_access_point", "name": "F1 办公楼 · 第16层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 549, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第16层 开放办公区 2 · 照明回路", "aliases": []}
+{"id": 550, "type_code": "network_access_point", "name": "F1 办公楼 · 第16层 开放办公区 2 · 无线接入点", "aliases": []}
+{"id": 551, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第16层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 552, "type_code": "network_access_point", "name": "F1 办公楼 · 第16层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 553, "type_code": "furniture", "name": "F1 办公楼 · 第17层 经理室 1 · 办公家具组", "aliases": []}
+{"id": 554, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第17层 经理室 1 · 照明回路", "aliases": []}
+{"id": 555, "type_code": "network_access_point", "name": "F1 办公楼 · 第17层 经理室 1 · 无线接入点", "aliases": []}
+{"id": 556, "type_code": "av_display", "name": "F1 办公楼 · 第17层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 557, "type_code": "conference_seating", "name": "F1 办公楼 · 第17层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 558, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第17层 会议室 1 · 照明回路", "aliases": []}
+{"id": 559, "type_code": "network_access_point", "name": "F1 办公楼 · 第17层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 762, "type_code": "furniture", "name": "F3 培训中心 · 第5层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 560, "type_code": "av_display", "name": "F1 办公楼 · 第17层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 561, "type_code": "conference_seating", "name": "F1 办公楼 · 第17层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 562, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第17层 会议室 2 · 照明回路", "aliases": []}
+{"id": 563, "type_code": "network_access_point", "name": "F1 办公楼 · 第17层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 564, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第17层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 565, "type_code": "network_access_point", "name": "F1 办公楼 · 第17层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 566, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第17层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 567, "type_code": "network_access_point", "name": "F1 办公楼 · 第17层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 568, "type_code": "furniture", "name": "F1 办公楼 · 第18层 经理室 1 · 办公家具组", "aliases": []}
+{"id": 569, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第18层 经理室 1 · 照明回路", "aliases": []}
+{"id": 570, "type_code": "network_access_point", "name": "F1 办公楼 · 第18层 经理室 1 · 无线接入点", "aliases": []}
+{"id": 571, "type_code": "av_display", "name": "F1 办公楼 · 第18层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 572, "type_code": "conference_seating", "name": "F1 办公楼 · 第18层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 573, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第18层 会议室 1 · 照明回路", "aliases": []}
+{"id": 574, "type_code": "network_access_point", "name": "F1 办公楼 · 第18层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 575, "type_code": "av_display", "name": "F1 办公楼 · 第18层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 576, "type_code": "conference_seating", "name": "F1 办公楼 · 第18层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 577, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第18层 会议室 2 · 照明回路", "aliases": []}
+{"id": 578, "type_code": "network_access_point", "name": "F1 办公楼 · 第18层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 579, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第18层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 580, "type_code": "network_access_point", "name": "F1 办公楼 · 第18层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 581, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第18层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 582, "type_code": "network_access_point", "name": "F1 办公楼 · 第18层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 584, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第19层 经理室 1 · 照明回路", "aliases": []}
+{"id": 585, "type_code": "network_access_point", "name": "F1 办公楼 · 第19层 经理室 1 · 无线接入点", "aliases": []}
+{"id": 637, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第22层 会议室 1 · 照明回路", "aliases": []}
+{"id": 586, "type_code": "av_display", "name": "F1 办公楼 · 第19层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 587, "type_code": "conference_seating", "name": "F1 办公楼 · 第19层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 774, "type_code": "furniture", "name": "F3 培训中心 · 第6层 教室 2 · 课桌椅组", "aliases": []}
+{"id": 777, "type_code": "furniture", "name": "F3 培训中心 · 第6层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 790, "type_code": "furniture", "name": "F4 实验楼 · 首层 实验准备室 1 · 实验台与储物", "aliases": []}
+{"id": 803, "type_code": "furniture", "name": "F4 实验楼 · 第2层 实验准备室 1 · 实验台与储物", "aliases": []}
+{"id": 588, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第19层 会议室 1 · 照明回路", "aliases": []}
+{"id": 589, "type_code": "network_access_point", "name": "F1 办公楼 · 第19层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 590, "type_code": "av_display", "name": "F1 办公楼 · 第19层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 638, "type_code": "network_access_point", "name": "F1 办公楼 · 第22层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 639, "type_code": "av_display", "name": "F1 办公楼 · 第22层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 640, "type_code": "conference_seating", "name": "F1 办公楼 · 第22层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 641, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第22层 会议室 2 · 照明回路", "aliases": []}
+{"id": 642, "type_code": "network_access_point", "name": "F1 办公楼 · 第22层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 643, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第22层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 644, "type_code": "network_access_point", "name": "F1 办公楼 · 第22层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 645, "type_code": "furniture", "name": "F1 办公楼 · 第23层 经理室 1 · 办公家具组", "aliases": []}
+{"id": 646, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第23层 经理室 1 · 照明回路", "aliases": []}
+{"id": 647, "type_code": "network_access_point", "name": "F1 办公楼 · 第23层 经理室 1 · 无线接入点", "aliases": []}
+{"id": 649, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第23层 经理室 2 · 照明回路", "aliases": []}
+{"id": 650, "type_code": "network_access_point", "name": "F1 办公楼 · 第23层 经理室 2 · 无线接入点", "aliases": []}
+{"id": 651, "type_code": "av_display", "name": "F1 办公楼 · 第23层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 652, "type_code": "conference_seating", "name": "F1 办公楼 · 第23层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 653, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第23层 会议室 1 · 照明回路", "aliases": []}
+{"id": 654, "type_code": "network_access_point", "name": "F1 办公楼 · 第23层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 655, "type_code": "av_display", "name": "F1 办公楼 · 第23层 会议室 2 · 会议大屏", "aliases": []}
+{"id": 656, "type_code": "conference_seating", "name": "F1 办公楼 · 第23层 会议室 2 · 会议座椅", "aliases": []}
+{"id": 657, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第23层 会议室 2 · 照明回路", "aliases": []}
+{"id": 658, "type_code": "network_access_point", "name": "F1 办公楼 · 第23层 会议室 2 · 无线接入点", "aliases": []}
+{"id": 659, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第23层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 660, "type_code": "network_access_point", "name": "F1 办公楼 · 第23层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 662, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 首层 就餐区 1 · 照明回路", "aliases": []}
+{"id": 663, "type_code": "network_access_point", "name": "F2 餐饮中心 · 首层 就餐区 1 · 无线接入点", "aliases": []}
+{"id": 665, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 首层 就餐区 2 · 照明回路", "aliases": []}
+{"id": 666, "type_code": "network_access_point", "name": "F2 餐饮中心 · 首层 就餐区 2 · 无线接入点", "aliases": []}
+{"id": 667, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 首层 备餐间 1 · 照明回路", "aliases": []}
+{"id": 668, "type_code": "network_access_point", "name": "F2 餐饮中心 · 首层 备餐间 1 · 无线接入点", "aliases": []}
+{"id": 670, "type_code": "network_access_point", "name": "F2 餐饮中心 · 首层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 671, "type_code": "furniture", "name": "F2 餐饮中心 · 首层 库房 1 · 货架组", "aliases": []}
+{"id": 672, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 首层 库房 1 · 照明回路", "aliases": []}
+{"id": 673, "type_code": "network_access_point", "name": "F2 餐饮中心 · 首层 库房 1 · 无线接入点", "aliases": []}
+{"id": 675, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第2层 就餐区 1 · 照明回路", "aliases": []}
+{"id": 676, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第2层 就餐区 1 · 无线接入点", "aliases": []}
+{"id": 678, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第2层 就餐区 2 · 照明回路", "aliases": []}
+{"id": 679, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第2层 就餐区 2 · 无线接入点", "aliases": []}
+{"id": 680, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第2层 备餐间 1 · 照明回路", "aliases": []}
+{"id": 681, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第2层 备餐间 1 · 无线接入点", "aliases": []}
+{"id": 682, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第2层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 684, "type_code": "furniture", "name": "F2 餐饮中心 · 第2层 库房 1 · 货架组", "aliases": []}
+{"id": 821, "type_code": "furniture", "name": "F4 实验楼 · 第3层 实验准备室 1 · 实验台与储物", "aliases": []}
+{"id": 685, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第2层 库房 1 · 照明回路", "aliases": []}
+{"id": 686, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第2层 库房 1 · 无线接入点", "aliases": []}
+{"id": 687, "type_code": "furniture", "name": "F2 餐饮中心 · 第3层 就餐区 1 · 餐桌椅", "aliases": []}
+{"id": 688, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第3层 就餐区 1 · 照明回路", "aliases": []}
+{"id": 689, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第3层 就餐区 1 · 无线接入点", "aliases": []}
+{"id": 690, "type_code": "furniture", "name": "F2 餐饮中心 · 第3层 就餐区 2 · 餐桌椅", "aliases": []}
+{"id": 691, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第3层 就餐区 2 · 照明回路", "aliases": []}
+{"id": 692, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第3层 就餐区 2 · 无线接入点", "aliases": []}
+{"id": 693, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第3层 备餐间 1 · 照明回路", "aliases": []}
+{"id": 694, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第3层 备餐间 1 · 无线接入点", "aliases": []}
+{"id": 695, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第3层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 696, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第3层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 698, "type_code": "lighting_fixture", "name": "F2 餐饮中心 · 第3层 库房 1 · 照明回路", "aliases": []}
+{"id": 699, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第3层 库房 1 · 无线接入点", "aliases": []}
+{"id": 700, "type_code": "lighting_fixture", "name": "F3 培训中心 · 首层 交通核 1 · 照明回路", "aliases": []}
+{"id": 701, "type_code": "lounge_furniture", "name": "F3 培训中心 · 首层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 702, "type_code": "network_access_point", "name": "F3 培训中心 · 首层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 703, "type_code": "furniture", "name": "F3 培训中心 · 首层 教室 1 · 课桌椅组", "aliases": []}
+{"id": 704, "type_code": "lighting_fixture", "name": "F3 培训中心 · 首层 教室 1 · 照明回路", "aliases": []}
+{"id": 705, "type_code": "network_access_point", "name": "F3 培训中心 · 首层 教室 1 · 无线接入点", "aliases": []}
+{"id": 707, "type_code": "lighting_fixture", "name": "F3 培训中心 · 首层 教室 2 · 照明回路", "aliases": []}
+{"id": 708, "type_code": "network_access_point", "name": "F3 培训中心 · 首层 教室 2 · 无线接入点", "aliases": []}
+{"id": 709, "type_code": "lighting_fixture", "name": "F3 培训中心 · 首层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 710, "type_code": "network_access_point", "name": "F3 培训中心 · 首层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 711, "type_code": "lighting_fixture", "name": "F3 培训中心 · 首层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 712, "type_code": "network_access_point", "name": "F3 培训中心 · 首层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 713, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第2层 交通核 1 · 照明回路", "aliases": []}
+{"id": 714, "type_code": "lounge_furniture", "name": "F3 培训中心 · 第2层 交通核 1 · 沙发与等候座", "aliases": []}
+{"id": 715, "type_code": "network_access_point", "name": "F3 培训中心 · 第2层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 716, "type_code": "furniture", "name": "F3 培训中心 · 第2层 教室 1 · 课桌椅组", "aliases": []}
+{"id": 717, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第2层 教室 1 · 照明回路", "aliases": []}
+{"id": 718, "type_code": "network_access_point", "name": "F3 培训中心 · 第2层 教室 1 · 无线接入点", "aliases": []}
+{"id": 720, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第2层 教室 2 · 照明回路", "aliases": []}
+{"id": 721, "type_code": "network_access_point", "name": "F3 培训中心 · 第2层 教室 2 · 无线接入点", "aliases": []}
+{"id": 722, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第2层 开放办公区 1 · 照明回路", "aliases": []}
+{"id": 723, "type_code": "network_access_point", "name": "F3 培训中心 · 第2层 开放办公区 1 · 无线接入点", "aliases": []}
+{"id": 724, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第2层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 725, "type_code": "network_access_point", "name": "F3 培训中心 · 第2层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 726, "type_code": "furniture", "name": "F3 培训中心 · 第3层 教室 1 · 课桌椅组", "aliases": []}
+{"id": 727, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第3层 教室 1 · 照明回路", "aliases": []}
+{"id": 728, "type_code": "network_access_point", "name": "F3 培训中心 · 第3层 教室 1 · 无线接入点", "aliases": []}
+{"id": 729, "type_code": "furniture", "name": "F3 培训中心 · 第3层 教室 2 · 课桌椅组", "aliases": []}
+{"id": 730, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第3层 教室 2 · 照明回路", "aliases": []}
+{"id": 731, "type_code": "network_access_point", "name": "F3 培训中心 · 第3层 教室 2 · 无线接入点", "aliases": []}
+{"id": 733, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第3层 实验室 1 · 照明回路", "aliases": []}
+{"id": 734, "type_code": "network_access_point", "name": "F3 培训中心 · 第3层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 735, "type_code": "av_display", "name": "F3 培训中心 · 第3层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 736, "type_code": "conference_seating", "name": "F3 培训中心 · 第3层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 737, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第3层 会议室 1 · 照明回路", "aliases": []}
+{"id": 738, "type_code": "network_access_point", "name": "F3 培训中心 · 第3层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 739, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第3层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 740, "type_code": "network_access_point", "name": "F3 培训中心 · 第3层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 742, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第4层 教室 1 · 照明回路", "aliases": []}
+{"id": 743, "type_code": "network_access_point", "name": "F3 培训中心 · 第4层 教室 1 · 无线接入点", "aliases": []}
+{"id": 745, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第4层 教室 2 · 照明回路", "aliases": []}
+{"id": 746, "type_code": "network_access_point", "name": "F3 培训中心 · 第4层 教室 2 · 无线接入点", "aliases": []}
+{"id": 748, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第4层 实验室 1 · 照明回路", "aliases": []}
+{"id": 749, "type_code": "network_access_point", "name": "F3 培训中心 · 第4层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 750, "type_code": "av_display", "name": "F3 培训中心 · 第4层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 751, "type_code": "conference_seating", "name": "F3 培训中心 · 第4层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 752, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第4层 会议室 1 · 照明回路", "aliases": []}
+{"id": 753, "type_code": "network_access_point", "name": "F3 培训中心 · 第4层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 754, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第4层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 755, "type_code": "network_access_point", "name": "F3 培训中心 · 第4层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 757, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第5层 教室 1 · 照明回路", "aliases": []}
+{"id": 758, "type_code": "network_access_point", "name": "F3 培训中心 · 第5层 教室 1 · 无线接入点", "aliases": []}
+{"id": 759, "type_code": "furniture", "name": "F3 培训中心 · 第5层 教室 2 · 课桌椅组", "aliases": []}
+{"id": 683, "type_code": "network_access_point", "name": "F2 餐饮中心 · 第2层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 760, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第5层 教室 2 · 照明回路", "aliases": []}
+{"id": 761, "type_code": "network_access_point", "name": "F3 培训中心 · 第5层 教室 2 · 无线接入点", "aliases": []}
+{"id": 732, "type_code": "furniture", "name": "F3 培训中心 · 第3层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 744, "type_code": "furniture", "name": "F3 培训中心 · 第4层 教室 2 · 课桌椅组", "aliases": []}
+{"id": 747, "type_code": "furniture", "name": "F3 培训中心 · 第4层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 863, "type_code": "furniture", "name": "F4 实验楼 · 第6层 实验准备室 1 · 实验台与储物", "aliases": []}
+{"id": 891, "type_code": "conference_seating", "name": "F5 展厅 · 首层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 905, "type_code": "conference_seating", "name": "F5 展厅 · 第2层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 919, "type_code": "conference_seating", "name": "F5 展厅 · 第3层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 924, "type_code": "furniture", "name": "F6 公寓 · 首层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 927, "type_code": "furniture", "name": "F6 公寓 · 首层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 935, "type_code": "furniture", "name": "F6 公寓 · 第2层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 960, "type_code": "furniture", "name": "F6 公寓 · 第4层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 968, "type_code": "furniture", "name": "F6 公寓 · 第5层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 993, "type_code": "furniture", "name": "F6 公寓 · 第7层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 1001, "type_code": "furniture", "name": "F6 公寓 · 第8层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 1023, "type_code": "access_terminal", "name": "Gate Access Terminal", "aliases": []}
+{"id": 1024, "type_code": "lighting_fixture", "name": "HiCampus Gate · 照明回路", "aliases": []}
+{"id": 1025, "type_code": "network_access_point", "name": "HiCampus Gate · 无线接入点", "aliases": []}
+{"id": 1026, "type_code": "lounge_furniture", "name": "Plaza Bench", "aliases": []}
+{"id": 763, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第5层 实验室 1 · 照明回路", "aliases": []}
+{"id": 764, "type_code": "network_access_point", "name": "F3 培训中心 · 第5层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 765, "type_code": "av_display", "name": "F3 培训中心 · 第5层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 766, "type_code": "conference_seating", "name": "F3 培训中心 · 第5层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 767, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第5层 会议室 1 · 照明回路", "aliases": []}
+{"id": 768, "type_code": "network_access_point", "name": "F3 培训中心 · 第5层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 769, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第5层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 770, "type_code": "network_access_point", "name": "F3 培训中心 · 第5层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 771, "type_code": "furniture", "name": "F3 培训中心 · 第6层 教室 1 · 课桌椅组", "aliases": []}
+{"id": 772, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第6层 教室 1 · 照明回路", "aliases": []}
+{"id": 773, "type_code": "network_access_point", "name": "F3 培训中心 · 第6层 教室 1 · 无线接入点", "aliases": []}
+{"id": 775, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第6层 教室 2 · 照明回路", "aliases": []}
+{"id": 776, "type_code": "network_access_point", "name": "F3 培训中心 · 第6层 教室 2 · 无线接入点", "aliases": []}
+{"id": 778, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第6层 实验室 1 · 照明回路", "aliases": []}
+{"id": 779, "type_code": "network_access_point", "name": "F3 培训中心 · 第6层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 780, "type_code": "av_display", "name": "F3 培训中心 · 第6层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 781, "type_code": "conference_seating", "name": "F3 培训中心 · 第6层 会议室 1 · 会议座椅", "aliases": []}
+{"id": 782, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第6层 会议室 1 · 照明回路", "aliases": []}
+{"id": 783, "type_code": "network_access_point", "name": "F3 培训中心 · 第6层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 784, "type_code": "lighting_fixture", "name": "F3 培训中心 · 第6层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 785, "type_code": "network_access_point", "name": "F3 培训中心 · 第6层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 786, "type_code": "lighting_fixture", "name": "F4 实验楼 · 首层 配电间 1 · 照明回路", "aliases": []}
+{"id": 787, "type_code": "network_access_point", "name": "F4 实验楼 · 首层 配电间 1 · 无线接入点", "aliases": []}
+{"id": 788, "type_code": "lighting_fixture", "name": "F4 实验楼 · 首层 监控室 1 · 照明回路", "aliases": []}
+{"id": 789, "type_code": "network_access_point", "name": "F4 实验楼 · 首层 监控室 1 · 无线接入点", "aliases": []}
+{"id": 791, "type_code": "lighting_fixture", "name": "F4 实验楼 · 首层 实验准备室 1 · 照明回路", "aliases": []}
+{"id": 792, "type_code": "network_access_point", "name": "F4 实验楼 · 首层 实验准备室 1 · 无线接入点", "aliases": []}
+{"id": 793, "type_code": "furniture", "name": "F4 实验楼 · 首层 实验准备室 2 · 实验台与储物", "aliases": []}
+{"id": 794, "type_code": "lighting_fixture", "name": "F4 实验楼 · 首层 实验准备室 2 · 照明回路", "aliases": []}
+{"id": 812, "type_code": "furniture", "name": "F4 实验楼 · 第3层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 795, "type_code": "network_access_point", "name": "F4 实验楼 · 首层 实验准备室 2 · 无线接入点", "aliases": []}
+{"id": 796, "type_code": "furniture", "name": "F4 实验楼 · 首层 库房 1 · 货架组", "aliases": []}
+{"id": 797, "type_code": "lighting_fixture", "name": "F4 实验楼 · 首层 库房 1 · 照明回路", "aliases": []}
+{"id": 798, "type_code": "network_access_point", "name": "F4 实验楼 · 首层 库房 1 · 无线接入点", "aliases": []}
+{"id": 799, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第2层 配电间 1 · 照明回路", "aliases": []}
+{"id": 800, "type_code": "network_access_point", "name": "F4 实验楼 · 第2层 配电间 1 · 无线接入点", "aliases": []}
+{"id": 801, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第2层 监控室 1 · 照明回路", "aliases": []}
+{"id": 802, "type_code": "network_access_point", "name": "F4 实验楼 · 第2层 监控室 1 · 无线接入点", "aliases": []}
+{"id": 804, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第2层 实验准备室 1 · 照明回路", "aliases": []}
+{"id": 805, "type_code": "network_access_point", "name": "F4 实验楼 · 第2层 实验准备室 1 · 无线接入点", "aliases": []}
+{"id": 806, "type_code": "furniture", "name": "F4 实验楼 · 第2层 实验准备室 2 · 实验台与储物", "aliases": []}
+{"id": 807, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第2层 实验准备室 2 · 照明回路", "aliases": []}
+{"id": 826, "type_code": "furniture", "name": "F4 实验楼 · 第4层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 808, "type_code": "network_access_point", "name": "F4 实验楼 · 第2层 实验准备室 2 · 无线接入点", "aliases": []}
+{"id": 809, "type_code": "furniture", "name": "F4 实验楼 · 第2层 库房 1 · 货架组", "aliases": []}
+{"id": 810, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第2层 库房 1 · 照明回路", "aliases": []}
+{"id": 811, "type_code": "network_access_point", "name": "F4 实验楼 · 第2层 库房 1 · 无线接入点", "aliases": []}
+{"id": 813, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第3层 实验室 1 · 照明回路", "aliases": []}
+{"id": 814, "type_code": "network_access_point", "name": "F4 实验楼 · 第3层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 815, "type_code": "furniture", "name": "F4 实验楼 · 第3层 实验室 2 · 实验台与储物", "aliases": []}
+{"id": 816, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第3层 实验室 2 · 照明回路", "aliases": []}
+{"id": 840, "type_code": "furniture", "name": "F4 实验楼 · 第5层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 817, "type_code": "network_access_point", "name": "F4 实验楼 · 第3层 实验室 2 · 无线接入点", "aliases": []}
+{"id": 818, "type_code": "furniture", "name": "F4 实验楼 · 第3层 实验室 3 · 实验台与储物", "aliases": []}
+{"id": 819, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第3层 实验室 3 · 照明回路", "aliases": []}
+{"id": 820, "type_code": "network_access_point", "name": "F4 实验楼 · 第3层 实验室 3 · 无线接入点", "aliases": []}
+{"id": 822, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第3层 实验准备室 1 · 照明回路", "aliases": []}
+{"id": 823, "type_code": "network_access_point", "name": "F4 实验楼 · 第3层 实验准备室 1 · 无线接入点", "aliases": []}
+{"id": 824, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第3层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 825, "type_code": "network_access_point", "name": "F4 实验楼 · 第3层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 827, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第4层 实验室 1 · 照明回路", "aliases": []}
+{"id": 828, "type_code": "network_access_point", "name": "F4 实验楼 · 第4层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 829, "type_code": "furniture", "name": "F4 实验楼 · 第4层 实验室 2 · 实验台与储物", "aliases": []}
+{"id": 830, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第4层 实验室 2 · 照明回路", "aliases": []}
+{"id": 854, "type_code": "furniture", "name": "F4 实验楼 · 第6层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 831, "type_code": "network_access_point", "name": "F4 实验楼 · 第4层 实验室 2 · 无线接入点", "aliases": []}
+{"id": 832, "type_code": "furniture", "name": "F4 实验楼 · 第4层 实验室 3 · 实验台与储物", "aliases": []}
+{"id": 833, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第4层 实验室 3 · 照明回路", "aliases": []}
+{"id": 834, "type_code": "network_access_point", "name": "F4 实验楼 · 第4层 实验室 3 · 无线接入点", "aliases": []}
+{"id": 836, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第4层 实验准备室 1 · 照明回路", "aliases": []}
+{"id": 837, "type_code": "network_access_point", "name": "F4 实验楼 · 第4层 实验准备室 1 · 无线接入点", "aliases": []}
+{"id": 838, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第4层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 839, "type_code": "network_access_point", "name": "F4 实验楼 · 第4层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 841, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第5层 实验室 1 · 照明回路", "aliases": []}
+{"id": 842, "type_code": "network_access_point", "name": "F4 实验楼 · 第5层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 843, "type_code": "furniture", "name": "F4 实验楼 · 第5层 实验室 2 · 实验台与储物", "aliases": []}
+{"id": 844, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第5层 实验室 2 · 照明回路", "aliases": []}
+{"id": 868, "type_code": "furniture", "name": "F4 实验楼 · 第7层 实验室 1 · 实验台与储物", "aliases": []}
+{"id": 845, "type_code": "network_access_point", "name": "F4 实验楼 · 第5层 实验室 2 · 无线接入点", "aliases": []}
+{"id": 846, "type_code": "furniture", "name": "F4 实验楼 · 第5层 实验室 3 · 实验台与储物", "aliases": []}
+{"id": 847, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第5层 实验室 3 · 照明回路", "aliases": []}
+{"id": 848, "type_code": "network_access_point", "name": "F4 实验楼 · 第5层 实验室 3 · 无线接入点", "aliases": []}
+{"id": 850, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第5层 实验准备室 1 · 照明回路", "aliases": []}
+{"id": 851, "type_code": "network_access_point", "name": "F4 实验楼 · 第5层 实验准备室 1 · 无线接入点", "aliases": []}
+{"id": 852, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第5层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 853, "type_code": "network_access_point", "name": "F4 实验楼 · 第5层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 855, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第6层 实验室 1 · 照明回路", "aliases": []}
+{"id": 856, "type_code": "network_access_point", "name": "F4 实验楼 · 第6层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 857, "type_code": "furniture", "name": "F4 实验楼 · 第6层 实验室 2 · 实验台与储物", "aliases": []}
+{"id": 858, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第6层 实验室 2 · 照明回路", "aliases": []}
+{"id": 877, "type_code": "furniture", "name": "F4 实验楼 · 第7层 实验准备室 1 · 实验台与储物", "aliases": []}
+{"id": 859, "type_code": "network_access_point", "name": "F4 实验楼 · 第6层 实验室 2 · 无线接入点", "aliases": []}
+{"id": 860, "type_code": "furniture", "name": "F4 实验楼 · 第6层 实验室 3 · 实验台与储物", "aliases": []}
+{"id": 861, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第6层 实验室 3 · 照明回路", "aliases": []}
+{"id": 862, "type_code": "network_access_point", "name": "F4 实验楼 · 第6层 实验室 3 · 无线接入点", "aliases": []}
+{"id": 864, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第6层 实验准备室 1 · 照明回路", "aliases": []}
+{"id": 865, "type_code": "network_access_point", "name": "F4 实验楼 · 第6层 实验准备室 1 · 无线接入点", "aliases": []}
+{"id": 866, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第6层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 867, "type_code": "network_access_point", "name": "F4 实验楼 · 第6层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 869, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第7层 实验室 1 · 照明回路", "aliases": []}
+{"id": 870, "type_code": "network_access_point", "name": "F4 实验楼 · 第7层 实验室 1 · 无线接入点", "aliases": []}
+{"id": 871, "type_code": "furniture", "name": "F4 实验楼 · 第7层 实验室 2 · 实验台与储物", "aliases": []}
+{"id": 872, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第7层 实验室 2 · 照明回路", "aliases": []}
+{"id": 912, "type_code": "furniture", "name": "F5 展厅 · 第3层 展陈空间 1 · 展陈家具", "aliases": []}
+{"id": 873, "type_code": "network_access_point", "name": "F4 实验楼 · 第7层 实验室 2 · 无线接入点", "aliases": []}
+{"id": 874, "type_code": "furniture", "name": "F4 实验楼 · 第7层 实验室 3 · 实验台与储物", "aliases": []}
+{"id": 875, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第7层 实验室 3 · 照明回路", "aliases": []}
+{"id": 876, "type_code": "network_access_point", "name": "F4 实验楼 · 第7层 实验室 3 · 无线接入点", "aliases": []}
+{"id": 878, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第7层 实验准备室 1 · 照明回路", "aliases": []}
+{"id": 879, "type_code": "network_access_point", "name": "F4 实验楼 · 第7层 实验准备室 1 · 无线接入点", "aliases": []}
+{"id": 880, "type_code": "lighting_fixture", "name": "F4 实验楼 · 第7层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 881, "type_code": "network_access_point", "name": "F4 实验楼 · 第7层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 882, "type_code": "lighting_fixture", "name": "F5 展厅 · 首层 音控室 1 · 照明回路", "aliases": []}
+{"id": 883, "type_code": "network_access_point", "name": "F5 展厅 · 首层 音控室 1 · 无线接入点", "aliases": []}
+{"id": 884, "type_code": "furniture", "name": "F5 展厅 · 首层 展陈空间 1 · 展陈家具", "aliases": []}
+{"id": 885, "type_code": "lighting_fixture", "name": "F5 展厅 · 首层 展陈空间 1 · 照明回路", "aliases": []}
+{"id": 949, "type_code": "furniture", "name": "F6 公寓 · 第3层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 886, "type_code": "network_access_point", "name": "F5 展厅 · 首层 展陈空间 1 · 无线接入点", "aliases": []}
+{"id": 887, "type_code": "furniture", "name": "F5 展厅 · 首层 展陈空间 2 · 展陈家具", "aliases": []}
+{"id": 888, "type_code": "lighting_fixture", "name": "F5 展厅 · 首层 展陈空间 2 · 照明回路", "aliases": []}
+{"id": 889, "type_code": "network_access_point", "name": "F5 展厅 · 首层 展陈空间 2 · 无线接入点", "aliases": []}
+{"id": 890, "type_code": "av_display", "name": "F5 展厅 · 首层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 892, "type_code": "lighting_fixture", "name": "F5 展厅 · 首层 会议室 1 · 照明回路", "aliases": []}
+{"id": 893, "type_code": "network_access_point", "name": "F5 展厅 · 首层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 894, "type_code": "lighting_fixture", "name": "F5 展厅 · 首层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 895, "type_code": "network_access_point", "name": "F5 展厅 · 首层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 896, "type_code": "lighting_fixture", "name": "F5 展厅 · 第2层 音控室 1 · 照明回路", "aliases": []}
+{"id": 897, "type_code": "network_access_point", "name": "F5 展厅 · 第2层 音控室 1 · 无线接入点", "aliases": []}
+{"id": 898, "type_code": "furniture", "name": "F5 展厅 · 第2层 展陈空间 1 · 展陈家具", "aliases": []}
+{"id": 899, "type_code": "lighting_fixture", "name": "F5 展厅 · 第2层 展陈空间 1 · 照明回路", "aliases": []}
+{"id": 900, "type_code": "network_access_point", "name": "F5 展厅 · 第2层 展陈空间 1 · 无线接入点", "aliases": []}
+{"id": 901, "type_code": "furniture", "name": "F5 展厅 · 第2层 展陈空间 2 · 展陈家具", "aliases": []}
+{"id": 902, "type_code": "lighting_fixture", "name": "F5 展厅 · 第2层 展陈空间 2 · 照明回路", "aliases": []}
+{"id": 903, "type_code": "network_access_point", "name": "F5 展厅 · 第2层 展陈空间 2 · 无线接入点", "aliases": []}
+{"id": 904, "type_code": "av_display", "name": "F5 展厅 · 第2层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 906, "type_code": "lighting_fixture", "name": "F5 展厅 · 第2层 会议室 1 · 照明回路", "aliases": []}
+{"id": 907, "type_code": "network_access_point", "name": "F5 展厅 · 第2层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 908, "type_code": "lighting_fixture", "name": "F5 展厅 · 第2层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 909, "type_code": "network_access_point", "name": "F5 展厅 · 第2层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 910, "type_code": "lighting_fixture", "name": "F5 展厅 · 第3层 音控室 1 · 照明回路", "aliases": []}
+{"id": 911, "type_code": "network_access_point", "name": "F5 展厅 · 第3层 音控室 1 · 无线接入点", "aliases": []}
+{"id": 913, "type_code": "lighting_fixture", "name": "F5 展厅 · 第3层 展陈空间 1 · 照明回路", "aliases": []}
+{"id": 914, "type_code": "network_access_point", "name": "F5 展厅 · 第3层 展陈空间 1 · 无线接入点", "aliases": []}
+{"id": 915, "type_code": "furniture", "name": "F5 展厅 · 第3层 展陈空间 2 · 展陈家具", "aliases": []}
+{"id": 916, "type_code": "lighting_fixture", "name": "F5 展厅 · 第3层 展陈空间 2 · 照明回路", "aliases": []}
+{"id": 917, "type_code": "network_access_point", "name": "F5 展厅 · 第3层 展陈空间 2 · 无线接入点", "aliases": []}
+{"id": 918, "type_code": "av_display", "name": "F5 展厅 · 第3层 会议室 1 · 会议大屏", "aliases": []}
+{"id": 920, "type_code": "lighting_fixture", "name": "F5 展厅 · 第3层 会议室 1 · 照明回路", "aliases": []}
+{"id": 921, "type_code": "network_access_point", "name": "F5 展厅 · 第3层 会议室 1 · 无线接入点", "aliases": []}
+{"id": 922, "type_code": "lighting_fixture", "name": "F5 展厅 · 第3层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 923, "type_code": "network_access_point", "name": "F5 展厅 · 第3层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 925, "type_code": "lighting_fixture", "name": "F6 公寓 · 首层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 926, "type_code": "network_access_point", "name": "F6 公寓 · 首层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 928, "type_code": "lighting_fixture", "name": "F6 公寓 · 首层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 929, "type_code": "network_access_point", "name": "F6 公寓 · 首层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 930, "type_code": "lighting_fixture", "name": "F6 公寓 · 首层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 931, "type_code": "lounge_furniture", "name": "F6 公寓 · 首层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 932, "type_code": "network_access_point", "name": "F6 公寓 · 首层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 933, "type_code": "lighting_fixture", "name": "F6 公寓 · 首层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 934, "type_code": "network_access_point", "name": "F6 公寓 · 首层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 936, "type_code": "lighting_fixture", "name": "F6 公寓 · 第2层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 937, "type_code": "network_access_point", "name": "F6 公寓 · 第2层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 938, "type_code": "furniture", "name": "F6 公寓 · 第2层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 939, "type_code": "lighting_fixture", "name": "F6 公寓 · 第2层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 940, "type_code": "network_access_point", "name": "F6 公寓 · 第2层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 941, "type_code": "lighting_fixture", "name": "F6 公寓 · 第2层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 942, "type_code": "lounge_furniture", "name": "F6 公寓 · 第2层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 943, "type_code": "network_access_point", "name": "F6 公寓 · 第2层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 944, "type_code": "lighting_fixture", "name": "F6 公寓 · 第2层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 945, "type_code": "network_access_point", "name": "F6 公寓 · 第2层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 946, "type_code": "furniture", "name": "F6 公寓 · 第3层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 947, "type_code": "lighting_fixture", "name": "F6 公寓 · 第3层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 948, "type_code": "network_access_point", "name": "F6 公寓 · 第3层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 950, "type_code": "lighting_fixture", "name": "F6 公寓 · 第3层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 951, "type_code": "network_access_point", "name": "F6 公寓 · 第3层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 952, "type_code": "lighting_fixture", "name": "F6 公寓 · 第3层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 953, "type_code": "lounge_furniture", "name": "F6 公寓 · 第3层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 954, "type_code": "network_access_point", "name": "F6 公寓 · 第3层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 955, "type_code": "lighting_fixture", "name": "F6 公寓 · 第3层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 956, "type_code": "network_access_point", "name": "F6 公寓 · 第3层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 957, "type_code": "furniture", "name": "F6 公寓 · 第4层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 958, "type_code": "lighting_fixture", "name": "F6 公寓 · 第4层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 959, "type_code": "network_access_point", "name": "F6 公寓 · 第4层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 961, "type_code": "lighting_fixture", "name": "F6 公寓 · 第4层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 962, "type_code": "network_access_point", "name": "F6 公寓 · 第4层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 963, "type_code": "lighting_fixture", "name": "F6 公寓 · 第4层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 964, "type_code": "lounge_furniture", "name": "F6 公寓 · 第4层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 965, "type_code": "network_access_point", "name": "F6 公寓 · 第4层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 966, "type_code": "lighting_fixture", "name": "F6 公寓 · 第4层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 967, "type_code": "network_access_point", "name": "F6 公寓 · 第4层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 969, "type_code": "lighting_fixture", "name": "F6 公寓 · 第5层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 970, "type_code": "network_access_point", "name": "F6 公寓 · 第5层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 971, "type_code": "furniture", "name": "F6 公寓 · 第5层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 972, "type_code": "lighting_fixture", "name": "F6 公寓 · 第5层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 973, "type_code": "network_access_point", "name": "F6 公寓 · 第5层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 974, "type_code": "lighting_fixture", "name": "F6 公寓 · 第5层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 975, "type_code": "lounge_furniture", "name": "F6 公寓 · 第5层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 976, "type_code": "network_access_point", "name": "F6 公寓 · 第5层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 977, "type_code": "lighting_fixture", "name": "F6 公寓 · 第5层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 978, "type_code": "network_access_point", "name": "F6 公寓 · 第5层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 979, "type_code": "furniture", "name": "F6 公寓 · 第6层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 980, "type_code": "lighting_fixture", "name": "F6 公寓 · 第6层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 981, "type_code": "network_access_point", "name": "F6 公寓 · 第6层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 982, "type_code": "furniture", "name": "F6 公寓 · 第6层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 983, "type_code": "lighting_fixture", "name": "F6 公寓 · 第6层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 984, "type_code": "network_access_point", "name": "F6 公寓 · 第6层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 985, "type_code": "lighting_fixture", "name": "F6 公寓 · 第6层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 986, "type_code": "lounge_furniture", "name": "F6 公寓 · 第6层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 987, "type_code": "network_access_point", "name": "F6 公寓 · 第6层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 988, "type_code": "lighting_fixture", "name": "F6 公寓 · 第6层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 989, "type_code": "network_access_point", "name": "F6 公寓 · 第6层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 990, "type_code": "furniture", "name": "F6 公寓 · 第7层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 991, "type_code": "lighting_fixture", "name": "F6 公寓 · 第7层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 992, "type_code": "network_access_point", "name": "F6 公寓 · 第7层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 994, "type_code": "lighting_fixture", "name": "F6 公寓 · 第7层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 995, "type_code": "network_access_point", "name": "F6 公寓 · 第7层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 996, "type_code": "lighting_fixture", "name": "F6 公寓 · 第7层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 998, "type_code": "network_access_point", "name": "F6 公寓 · 第7层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 999, "type_code": "lighting_fixture", "name": "F6 公寓 · 第7层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 1000, "type_code": "network_access_point", "name": "F6 公寓 · 第7层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 1002, "type_code": "lighting_fixture", "name": "F6 公寓 · 第8层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 1003, "type_code": "network_access_point", "name": "F6 公寓 · 第8层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 1004, "type_code": "furniture", "name": "F6 公寓 · 第8层 公寓单元 2 · 起居家具组", "aliases": []}
+{"id": 1005, "type_code": "lighting_fixture", "name": "F6 公寓 · 第8层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 1006, "type_code": "network_access_point", "name": "F6 公寓 · 第8层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 1007, "type_code": "lighting_fixture", "name": "F6 公寓 · 第8层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 1008, "type_code": "lounge_furniture", "name": "F6 公寓 · 第8层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 1009, "type_code": "network_access_point", "name": "F6 公寓 · 第8层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 1010, "type_code": "lighting_fixture", "name": "F6 公寓 · 第8层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 1011, "type_code": "network_access_point", "name": "F6 公寓 · 第8层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 1012, "type_code": "furniture", "name": "F6 公寓 · 第9层 公寓单元 1 · 起居家具组", "aliases": []}
+{"id": 1013, "type_code": "lighting_fixture", "name": "F6 公寓 · 第9层 公寓单元 1 · 照明回路", "aliases": []}
+{"id": 1014, "type_code": "network_access_point", "name": "F6 公寓 · 第9层 公寓单元 1 · 无线接入点", "aliases": []}
+{"id": 1016, "type_code": "lighting_fixture", "name": "F6 公寓 · 第9层 公寓单元 2 · 照明回路", "aliases": []}
+{"id": 1017, "type_code": "network_access_point", "name": "F6 公寓 · 第9层 公寓单元 2 · 无线接入点", "aliases": []}
+{"id": 1018, "type_code": "lighting_fixture", "name": "F6 公寓 · 第9层 公共休闲区 1 · 照明回路", "aliases": []}
+{"id": 1019, "type_code": "lounge_furniture", "name": "F6 公寓 · 第9层 公共休闲区 1 · 沙发与等候座", "aliases": []}
+{"id": 1020, "type_code": "network_access_point", "name": "F6 公寓 · 第9层 公共休闲区 1 · 无线接入点", "aliases": []}
+{"id": 1021, "type_code": "lighting_fixture", "name": "F6 公寓 · 第9层 卫生间 1 · 照明回路", "aliases": []}
+{"id": 1022, "type_code": "network_access_point", "name": "F6 公寓 · 第9层 卫生间 1 · 无线接入点", "aliases": []}
+{"id": 1027, "type_code": "lighting_fixture", "name": "HiCampus Plaza · 照明回路", "aliases": []}
+{"id": 1028, "type_code": "network_access_point", "name": "HiCampus Plaza · 无线接入点", "aliases": []}
