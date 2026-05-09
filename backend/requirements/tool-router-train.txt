@@ -1,0 +1,17 @@
+# Optional: tool_router slot / router-head LoRA training (not part of default CI install).
+#
+# Environment: install into the project-standard Conda env **campusworld**
+# (see repo CLAUDE.md / QUICKSTART). Example:
+#   conda activate campusworld
+#   cd backend
+#
+# Install PyTorch for your platform first: https://pytorch.org/get-started/locally/
+#
+# Example:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements/tool-router-train.txt
+
+transformers>=4.40.0
+peft>=0.11.0
+accelerate>=0.30.0
+datasets>=2.19.0

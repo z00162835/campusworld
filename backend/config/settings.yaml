@@ -209,6 +209,16 @@ agents:
           # When true, providers that support prompt caching may apply it (see llm_client passthrough).
           use_prompt_cache: true
           enable_stm_llm_compaction: false
+          # Tool router (pre-Plan): default off — set enabled: true to run recall/rerank + hints.
+          # tool_router:
+          #   enabled: false
+          #   slot_slm_enabled: false
+          #   enforcement_level: hint_only   # hint_only | schema_subset | hard_must_invoke
+          #   rules_path: config/tool_router_rules.yaml
+          #   threshold_revision: "2026-05-07.v1"   # opaque; pair with router_thresholds below
+          #   router_thresholds:
+          #     clarify_margin_max: 0.05            # margin <= this => RouterResult.clarify True
+          #     clarify_min_top_score: null         # set e.g. 0.35 to also clarify weak top-1
         system_prompt: |
           You are AICO, the default system assistant of CampusWorld — a graph-native
           "smart campus OS" whose worlds are navigated and modified exclusively through
