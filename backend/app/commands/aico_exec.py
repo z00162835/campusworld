@@ -6,6 +6,7 @@ import time
 import uuid as uuid_mod
 from typing import Any, Dict, List, Optional, Tuple
 
+from app.commands.argv_normalize import expand_aico_argv
 from app.commands.base import CommandContext, CommandResult
 from app.commands.npc_agent_nlp import assistant_nlp_command_result, run_npc_agent_nlp_tick
 from app.commands.npc_agent_resolve import resolve_npc_agent_by_handle
@@ -158,6 +159,7 @@ def execute_aico_command(context: CommandContext, args: List[str]) -> CommandRes
     """Single entry for `aico ...` and `@aico ...` argv (after handle stripped)."""
     if not args:
         return CommandResult.error_result("usage: " + AICO_USAGE_LINE)
+    args = expand_aico_argv(list(args))
     if not context.db_session:
         return CommandResult.error_result("database session required")
 

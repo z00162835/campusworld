@@ -55,6 +55,16 @@ from app.game_engine.agent_runtime.tool_calling import (
     tool_calls_to_invocation_plan,
     tool_results_turn_as_text_block,
 )
+from app.game_engine.agent_runtime.tool_router import (
+    format_tool_router_hint,
+    parse_tool_router_config,
+    run_tool_router,
+)
+from app.game_engine.agent_runtime.tool_router.mandatory_gap import (
+    format_mandatory_gap_user_notice,
+    mandatory_observation_gap,
+)
+from app.game_engine.agent_runtime.tool_router.router_result import EnforcementLevel
 from app.game_engine.agent_runtime.tool_gather import (
     ToolGatherBudgets,
     ToolGatherCounters,
@@ -145,6 +155,24 @@ def _tool_schema_allowlist_from_payload(payload: Dict[str, Any]) -> Optional[Lis
         return None
     out = [str(x).strip() for x in raw if str(x).strip()]
     return out or None
+
+
+def resolve_tool_schemas_for_pdca_phase(
+    all_schemas: Sequence[ToolSchema],
+    payload: Optional[Dict[str, Any]],
+    pdca_phase: str,
+) -> List[ToolSchema]:
+    """Apply F14 ``schema_subset`` allowlist only for Plan-phase tool calls.
+
+    §5: subset is emitted for the Plan LLM; Do / Check keep the full resolved surface
+    so execution and guardrails still see every allowed command on the node surface.
+    """
+    allow = _tool_schema_allowlist_from_payload(payload or {})
+    if not allow or pdca_phase != PDCAPhase.plan.value:
+        return list(all_schemas)
+    allowed_set = set(allow)
+    filtered = [s for s in all_schemas if getattr(s, "name", None) in allowed_set]
+    return filtered if filtered else list(all_schemas)
 
 
 def _resolve_npc_agent_empty_reply_message(cfg: AgentLlmServiceConfig) -> str:
@@ -343,14 +371,9 @@ class LlmPDCAFramework(ThinkingFramework):
             return replace(spec, extra=extra)
         return spec
 
-    def _effective_tool_schemas(self, ctx: FrameworkRunContext) -> List[ToolSchema]:
-        """Optional Plan-phase narrowing via ``payload.pdca_tool_schema_allowlist`` (native JSON paths)."""
-        allow = _tool_schema_allowlist_from_payload(ctx.payload or {})
-        if not allow:
-            return self._tool_schemas
-        allowed_set = set(allow)
-        filtered = [s for s in self._tool_schemas if getattr(s, "name", None) in allowed_set]
-        return filtered if filtered else self._tool_schemas
+    def _effective_tool_schemas(self, ctx: FrameworkRunContext, *, pdca_phase: str) -> List[ToolSchema]:
+        """Narrow tool schemas for Plan only when F14 ``schema_subset`` set allowlist on payload."""
+        return resolve_tool_schemas_for_pdca_phase(self._tool_schemas, ctx.payload, pdca_phase)
 
     # -------------------- low-level LLM invocation (text) --------------------
 
@@ -452,7 +475,7 @@ class LlmPDCAFramework(ThinkingFramework):
         channel = "text"
         text = ""
         calls: List[ToolCall] = []
-        phase_tools = self._effective_tool_schemas(ctx)
+        phase_tools = self._effective_tool_schemas(ctx, pdca_phase=phase)
         if supports_tools(self._llm) and phase_tools:
             try:
                 res: CompleteWithToolsResult = complete_with_tools(
@@ -738,6 +761,29 @@ class LlmPDCAFramework(ThinkingFramework):
                 "source": ic.source,
             }
 
+        ctx.payload.pop("tool_router_snapshot", None)
+        ctx.payload.pop("pdca_tool_schema_allowlist", None)
+        tr_cfg = parse_tool_router_config(dict(self._cfg.extra or {}))
+        stm_for_router = None
+        if ctx.recent_conversation is not None:
+            stm_for_router = (ctx.recent_conversation or "").strip() or None
+        rr = run_tool_router(
+            cfg=tr_cfg,
+            user_message=user_msg,
+            world_snapshot=world_snapshot,
+            stm_snippet=stm_for_router,
+            intent_hint=intent_hint,
+            tool_schemas=self._tool_schemas,
+            agent_extra=dict(self._cfg.extra or {}),
+        )
+        tool_router_hint_text = ""
+        if rr is not None:
+            trace.append({"step": "tool_router", **rr.to_trace_dict()})
+            ctx.payload["tool_router_snapshot"] = rr.to_payload_dict()
+            tool_router_hint_text = format_tool_router_hint(rr)
+            if rr.enforcement_level == EnforcementLevel.schema_subset:
+                ctx.payload["pdca_tool_schema_allowlist"] = rr.schema_allowlist_names()
+
         if ctx.recent_conversation is not None or ctx.retrieved_memory is not None:
             rc = (ctx.recent_conversation or "").strip()
             rm = (ctx.retrieved_memory or "").strip()
@@ -748,6 +794,7 @@ class LlmPDCAFramework(ThinkingFramework):
                 tool_manifest_text=tool_manifest_text,
                 intent_hint=intent_hint,
                 recent_conversation=rc if rc else None,
+                tool_router_hint=tool_router_hint_text or None,
             )
         else:
             plan_user = _assemble_plan_user(
@@ -756,14 +803,18 @@ class LlmPDCAFramework(ThinkingFramework):
                 world_snapshot=world_snapshot,
                 tool_manifest_text=tool_manifest_text,
                 intent_hint=intent_hint,
+                tool_router_hint=tool_router_hint_text or None,
             )
+
+        accumulated_plan_tool_results: List[ToolResult] = []
 
         # ---------------- PLAN ----------------
         self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
         plan_sys = _phase_system(base_system, PDCAPhase.plan.value, merged_phases)
-        plan_out, plan_tools_text, _plan_results, plan_entry = self._phase_react_loop(
+        plan_out, plan_tools_text, plan_tool_results, plan_entry = self._phase_react_loop(
             PDCAPhase.plan.value, plan_sys, plan_user, ctx, gather_counters, trace
         )
+        accumulated_plan_tool_results.extend(plan_tool_results)
         self._memory.update_run(run_id, PDCAPhase.plan.value, trace, "running")
         self._tick_hooks.on_after_phase(
             ThinkingPhaseId.plan,
@@ -833,6 +884,14 @@ class LlmPDCAFramework(ThinkingFramework):
             f"User message:\n{user_msg}\n\nDraft reply:\n{reply}"
             f"{plan_grounding_for_check}{tool_blocks_do}"
         )
+        snap = ctx.payload.get("tool_router_snapshot")
+        if isinstance(snap, dict) and snap.get("enforcement_level") == EnforcementLevel.hard_must_invoke.value:
+            mans = snap.get("mandatory_tool_names") or []
+            if mans:
+                check_user += (
+                    "\n\nRouting mandatory tools (verify ToolObservation covers each): "
+                    + ", ".join(str(x) for x in mans)
+                )
         check_sys = _phase_system_core(
             base_system, PDCAPhase.check.value, merged_phases, slim_followup
         )
@@ -884,9 +943,10 @@ class LlmPDCAFramework(ThinkingFramework):
             plan2_user = (
                 f"{plan_user}\n\nGuardrail note:\n{retry_hint}\nEmit a tool call plan now."
             )
-            plan2_out, plan2_tools_text, _pr2, plan2_entry = self._phase_react_loop(
+            plan2_out, plan2_tools_text, plan2_tool_results, plan2_entry = self._phase_react_loop(
                 PDCAPhase.plan.value, plan_sys, plan2_user, ctx, gather_counters, trace
             )
+            accumulated_plan_tool_results.extend(plan2_tool_results)
             if plan2_tools_text:
                 trace.append({"step": "plan_retry_tool_observations", "chars": len(plan2_tools_text)})
             do2_blocks = (
@@ -922,6 +982,38 @@ class LlmPDCAFramework(ThinkingFramework):
                 final_text = reply2
             if do2_tools_text:
                 trace.append({"step": "do_retry_tool_observations", "chars": len(do2_tools_text)})
+
+        mandatory_notice = ""
+        snap_gap = ctx.payload.get("tool_router_snapshot")
+        if isinstance(snap_gap, dict):
+            mans_gap = list(snap_gap.get("mandatory_tool_names") or [])
+            if mans_gap:
+                plan_trace_for_gap = [
+                    e
+                    for e in trace
+                    if isinstance(e, dict) and e.get("phase") == PDCAPhase.plan.value
+                ]
+                has_m_gap, gap_detail = mandatory_observation_gap(
+                    mans_gap,
+                    accumulated_plan_tool_results,
+                    plan_trace=plan_trace_for_gap,
+                )
+                if has_m_gap:
+                    mandatory_notice = format_mandatory_gap_user_notice(gap_detail)
+                    _LLM_PDCA_LOG.warning(
+                        "mandatory_fallback",
+                        extra={
+                            "mandatory_fallback_reason": ",".join(gap_detail.get("reason_codes") or []),
+                            "mandatory_missing": gap_detail.get("missing"),
+                            "mandatory_failed": gap_detail.get("failed"),
+                            "mandatory_permission_denied_tools": gap_detail.get("permission_denied_tools"),
+                            "mandatory_gather_budget_limited": gap_detail.get("gather_budget_limited"),
+                            "tool_router_threshold_revision": snap_gap.get("threshold_revision"),
+                            "tool_router_registry_revision": snap_gap.get("tool_registry_revision"),
+                        },
+                    )
+                    trace.append({"step": "mandatory_observation_gap", **gap_detail})
+                    ctx.payload["mandatory_observation_gap"] = gap_detail
 
         # ---------------- ACT ----------------
         self._tick_hooks.on_before_phase(ThinkingPhaseId.action, ctx)
@@ -964,6 +1056,10 @@ class LlmPDCAFramework(ThinkingFramework):
                     "user_message_len": len(user_msg),
                 }
             )
+
+        if mandatory_notice:
+            final_text = (final_text or "").rstrip() + mandatory_notice
+            act_entry["final_reply"] = final_text
 
         self._memory.finish_run(
             run_id,
@@ -1061,6 +1157,7 @@ def _assemble_plan_user(
     tool_manifest_text: str,
     intent_hint: Optional[Dict[str, Any]] = None,
     recent_conversation: Optional[str] = None,
+    tool_router_hint: Optional[str] = None,
 ) -> str:
     """Build the first Plan user turn.
 
@@ -1071,7 +1168,8 @@ def _assemble_plan_user(
     3. Intent hint when present (pre-classifier label, confidence, source).
     4. Recent conversation (STM) when provided.
     5. Retrieved memory (LTM or empty).
-    6. User message.
+    6. Tool router hint when provided.
+    7. User message.
     """
     segments: List[str] = []
     if tool_manifest_text:
@@ -1089,5 +1187,7 @@ def _assemble_plan_user(
     if recent_conversation:
         segments.append(f"Recent conversation:\n{recent_conversation}")
     segments.append(f"Retrieved memory (may be empty):\n{memory or '(none)'}")
+    if tool_router_hint:
+        segments.append(tool_router_hint)
     segments.append(f"User message:\n{user_msg}")
     return "\n\n".join(segments)

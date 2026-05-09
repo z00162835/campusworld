@@ -11,6 +11,7 @@ from .direction_command import build_direction_commands
 from .notice_command import NoticeCommand
 from .world_command import WorldCommand
 from .task import TASK_COMMANDS, TaskCommand
+from app.commands.lexicon_command import LEXICON_COMMAND
 
 # 场景命令列表
 GAME_COMMANDS = [
@@ -20,6 +21,7 @@ GAME_COMMANDS = [
     *build_direction_commands(),
     NoticeCommand(),
     WorldCommand(),
+    LEXICON_COMMAND,
     *TASK_COMMANDS,
 ]
 
