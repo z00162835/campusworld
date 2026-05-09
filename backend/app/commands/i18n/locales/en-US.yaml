@@ -49,6 +49,32 @@ commands:
     description: "Enter a world or follow an enter exit"
   leave:
     description: "Leave the current world and return to the Singularity Room"
+  lexicon:
+    description: "Build, list, delete, or activate graph-derived gazetteer snapshots for tool-router alignment."
+    usage:
+      block: |-
+        lexicon -b   — build a new snapshot from the graph database
+        lexicon -l   — list versions
+        lexicon -d <id> — delete a version (must not be active)
+        lexicon -a <id> — activate a version
+    error:
+      permission_denied: "Permission denied for lexicon management."
+      no_db_session: "No database session in context."
+      delete_active: "Cannot delete the active lexicon; activate another version first."
+      unknown_id: "Unknown lexicon id: {id}"
+    success:
+      build: "Lexicon built id={id} revision={revision} rows={rows}"
+      delete: "Deleted {id}"
+      activate: "Active lexicon set to {id}"
+      empty_versions: "(no lexicon versions)"
+    list:
+      yes: "yes"
+      no: "no"
+      header: "id\tactive\trev\tbuilt_at"
+      row: "{id}\tactive={active}\trev={rev}\tbuilt_at={built_at}"
+    usage_line:
+      delete: "lexicon -d <id>"
+      activate: "lexicon -a <id>"
   notice:
     description: "Manage system bulletins (publish/edit/archive/list)"
   world:

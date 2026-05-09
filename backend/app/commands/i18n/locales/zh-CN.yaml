@@ -49,6 +49,32 @@ commands:
     description: "进入指定世界或沿 enter 出口离开"
   leave:
     description: "离开当前世界，回到奇点屋"
+  lexicon:
+    description: "构建、列出、删除或激活基于图库的地名词表快照（供工具路由对齐）。"
+    usage:
+      block: |-
+        lexicon -b   — 从图数据库构建新快照
+        lexicon -l   — 列出版本
+        lexicon -d <id> — 删除指定版本（不能是当前激活版本）
+        lexicon -a <id> — 激活指定版本
+    error:
+      permission_denied: "无权管理词表（lexicon）。"
+      no_db_session: "当前上下文没有数据库会话。"
+      delete_active: "无法删除当前激活的词表版本；请先激活其他版本。"
+      unknown_id: "未知的词表版本 id：{id}"
+    success:
+      build: "词表已构建 id={id} revision={revision} 行数={rows}"
+      delete: "已删除 {id}"
+      activate: "已激活词表版本 {id}"
+      empty_versions: "（暂无词表版本）"
+    list:
+      yes: "是"
+      no: "否"
+      header: "标识\t激活\t修订\t构建时间"
+      row: "{id}\t激活={active}\t修订={rev}\t构建时间={built_at}"
+    usage_line:
+      delete: "lexicon -d <id>"
+      activate: "lexicon -a <id>"
   notice:
     description: "管理系统公告(publish/edit/archive/list)"
   world:

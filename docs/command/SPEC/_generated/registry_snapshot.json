@@ -1,6 +1,6 @@
 {
-  "git_commit": "6f6b9671ecbd6c8cba34892a494f433eb3af675c",
-  "generated_at_utc": "2026-04-27T01:39:14.405349+00:00",
+  "git_commit": "77efd8d40cb05d104e158ae60cf9477fdadda1a9",
+  "generated_at_utc": "2026-05-09T01:40:12.596996+00:00",
   "initialize_commands_ok": true,
   "command_count": 36,
   "commands": [
@@ -10,30 +10,6 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.agent_commands.AgentCommand",
-      "file": "backend/app/commands/agent_commands.py"
-    },
-    {
-      "name": "agent_capabilities",
-      "command_type": "SYSTEM",
-      "class_declared_aliases": [
-        "agent.capabilities"
-      ],
-      "registry_aliases": [
-        "agent.capabilities"
-      ],
-      "class": "app.commands.agent_commands.AgentCapabilitiesCommand",
-      "file": "backend/app/commands/agent_commands.py"
-    },
-    {
-      "name": "agent_tools",
-      "command_type": "SYSTEM",
-      "class_declared_aliases": [
-        "agent.tools"
-      ],
-      "registry_aliases": [
-        "agent.tools"
-      ],
-      "class": "app.commands.agent_commands.AgentToolsCommand",
       "file": "backend/app/commands/agent_commands.py"
     },
     {
@@ -179,6 +155,14 @@
       ],
       "class": "app.commands.game.leave_world_command.LeaveWorldCommand",
       "file": "backend/app/commands/game/leave_world_command.py"
+    },
+    {
+      "name": "lexicon",
+      "command_type": "ADMIN",
+      "class_declared_aliases": [],
+      "registry_aliases": [],
+      "class": "app.commands.lexicon_command.LexiconCommand",
+      "file": "backend/app/commands/lexicon_command.py"
     },
     {
       "name": "look",
@@ -338,6 +322,18 @@
       ],
       "class": "app.commands.system_commands.StatsCommand",
       "file": "backend/app/commands/system_commands.py"
+    },
+    {
+      "name": "task",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "tasks"
+      ],
+      "registry_aliases": [
+        "tasks"
+      ],
+      "class": "app.commands.game.task.task_command.TaskCommand",
+      "file": "backend/app/commands/game/task/task_command.py"
     },
     {
       "name": "time",
