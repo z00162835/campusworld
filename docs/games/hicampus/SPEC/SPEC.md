@@ -2,6 +2,18 @@
 
 > **Architecture Role**: 本模块是能力服务层中的独立虚拟世界内容包，提供 `HiCampus` 场景定义与初始化规范。它遵循 CampusWorld 的“系统入口与世界内容解耦”原则：系统入口固定在 `SingularityRoom`，世界由 `GameLoader` 发现并加载。
 
+## 路由索引（摘要）
+
+| 主题 | 路径 |
+|------|------|
+| 包代码与清单 | [`backend/app/games/hicampus/`](../../../../backend/app/games/hicampus/) |
+| 数据包校验与再生成 | [`backend/app/games/hicampus/package/README.md`](../../../../backend/app/games/hicampus/package/README.md) |
+| `world install` 等命令 | [`docs/command/SPEC/features/CMD_world.md`](../../../command/SPEC/features/CMD_world.md) |
+| 可插拔世界包架构约束 | [`docs/architecture/README.md`](../../../architecture/README.md) |
+| 安装步骤极简清单 | [`QUICKSTART.md`](../../../../QUICKSTART.md)、[`CLAUDE.md`](../../../../CLAUDE.md) |
+
+---
+
 ## Module Overview
 
 `games/hicampus/` 定义一个可安装的虚拟现实园区样例世界 `HiCampus`。  

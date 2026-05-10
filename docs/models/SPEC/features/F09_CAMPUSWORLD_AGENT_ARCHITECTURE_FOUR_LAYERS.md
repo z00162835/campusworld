@@ -2,11 +2,11 @@
 
 > **Architecture Role：** 定义 **`npc_agent` / Agent 运行时** 的全局 **四层架构**（L1–L4），作为 **特性 SPEC 与实现** 的 **单一引用锚点**；**不**替代各特性的细节契约（F02–F08）。**与** [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent` 类型与运行时）**并列**：F02 偏「类型与行为契约」，F09 偏「分层空间视图」。
 
-**文档状态：Draft**
+**文档状态：Active**（与实现对齐；细节仍以 F02/F03/F08 等为准。）
 
 **交叉引用：** [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)、[**F03**](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md)、[**F04**](F04_AT_AGENT_INTERACTION_PROTOCOL.md)、[**F05**](F05_AGENT_COMMAND_LIST_AND_STATUS.md)、[**F06**](F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)、[**F07**](F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)、[**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（Command-as-Tool、ToolGather、AICO 特化）。
 
-**与其它文档中「L1/L2」用语：** [**F11**](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 等处的 **授权分层**、HiCampus 校验 **L1–L5** 与本文 **Agent 四层（L1–L4）** **不同域**；同名仅为编号习惯，勿混读。
+**与其它文档中「L1/L2」用语：** 仓库内 [**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md) 当前指 **意图分类运行时**；若另有 Graph API「授权分层」类 SPEC，与本文 **Agent 四层（L1–L4）** 仍 **不同域**。HiCampus 数据校验 **L1–L5** 与本文编号亦 **不同域**；同名仅为习惯，勿混读。
 
 ---
 
@@ -79,7 +79,7 @@ flowchart TB
 
 | 层 | 主要特性 SPEC / 文档 | 边界说明 |
 |----|------------------------|----------|
-| **L1** | 数据模型 SPEC、[**F01**](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)、[**F11**](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 客体 | 图的 **类型与实例**；策略表达式作用的对象。 |
+| **L1** | [`docs/models/SPEC/SPEC.md`](../SPEC.md)、`trait_mask` / `NodeType` 种子（`backend/db/ontology/`）；[**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)（意图运行时；与 Graph API 授权分册若存在则并列引用） | 图的 **类型与实例**；策略表达式作用的对象。 |
 | **L2** | [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md) §4–§6、[**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) ToolGather、`ToolObservation` | **命令即工具**；F08 规定 **工具输出进上下文** 的契约。 |
 | **L3** | [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md) 思维模型、[**F03**](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md) PDCA+LLM、ADR-F03 | **PDCA** 为常见慢路径，非 L3 全部。 |
 | **L4** | [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) L4 补充、[**F06**](F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)（互补） | **经验 Skill**：可经命令或注入；**非** LTM 同义词。 |
