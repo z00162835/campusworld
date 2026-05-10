@@ -7,6 +7,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Header
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
@@ -52,6 +53,60 @@ def _is_secure_cookie() -> bool:
     return not debug
 
 
+def _clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        samesite="lax",
+        secure=_is_secure_cookie(),
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        samesite="lax",
+        secure=_is_secure_cookie(),
+    )
+
+
+def _refresh_unauthorized_response(detail: str) -> JSONResponse:
+    response = JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": detail},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    _clear_auth_cookies(response)
+    return response
+
+
+def _allowed_auth_origins() -> List[str]:
+    origins = get_setting("cors.allowed_origins", [])
+    return [origin.rstrip("/") for origin in origins if origin and origin != "*"]
+
+
+def _validate_auth_request_origin(request: Request) -> None:
+    allowed_origins = _allowed_auth_origins()
+    if not allowed_origins:
+        return
+
+    origin = request.headers.get("origin")
+    referer = request.headers.get("referer")
+    source = origin or referer
+    if not source:
+        return
+
+    normalized_source = source.rstrip("/")
+    if origin:
+        allowed = normalized_source in allowed_origins
+    else:
+        allowed = any(normalized_source == allowed or normalized_source.startswith(f"{allowed}/") for allowed in allowed_origins)
+
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid request origin",
+        )
+
+
 class ApiKeyIssueRequest(BaseModel):
     name: Optional[str] = Field(default=None, max_length=128)
     scopes: List[str] = Field(default_factory=list)
@@ -77,6 +132,8 @@ def register(
 ):
     """Register a new user (SQL legacy table; graph account required for CLI/WS)."""
     from app.core.auth_service import AuthService
+
+    _validate_auth_request_origin(request)
 
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(
@@ -163,6 +220,8 @@ def login(
     OAuth2 `username` field carries the campus account name, not necessarily an email.
     """
     from app.core.auth_service import AuthService
+
+    _validate_auth_request_origin(request)
 
     client_ip = request.client.host if request.client else "unknown"
     device = user_agent or f"ip:{client_ip}"
@@ -287,16 +346,14 @@ def refresh_token(
     """
     from app.core.auth_service import AuthService
 
+    _validate_auth_request_origin(request)
+
     # Support both body and cookie for refresh token
     if not refresh_token:
         refresh_token = request.cookies.get("refresh_token")
 
     if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        return _refresh_unauthorized_response("Refresh token required")
 
     device = user_agent or "unknown"
 
@@ -307,10 +364,8 @@ def refresh_token(
             "token_revoked": "Refresh token has been revoked",
             "token_reused": "Refresh token has already been used",
         }
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=error_messages.get(validation["error"], "Invalid refresh token"),
-            headers={"WWW-Authenticate": "Bearer"},
+        return _refresh_unauthorized_response(
+            error_messages.get(validation["error"], "Invalid refresh token")
         )
 
     # 执行轮换
@@ -329,10 +384,8 @@ def refresh_token(
             "account_inactive": "Account is inactive",
             "account_locked": "Account is locked",
         }
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=error_messages.get(result["error"], "Token rotation failed"),
-            headers={"WWW-Authenticate": "Bearer"},
+        return _refresh_unauthorized_response(
+            error_messages.get(result["error"], "Token rotation failed")
         )
 
     # Update cookies with new tokens
@@ -381,6 +434,8 @@ def logout(
     """
     from app.core.auth_service import AuthService
 
+    _validate_auth_request_origin(request)
+
     # Try to revoke refresh token if provided
     if refresh_token:
         validation = AuthService.validate_refresh_token(db, refresh_token)
@@ -388,8 +443,7 @@ def logout(
             AuthService.revoke_refresh_token(db, validation["user_id"], validation["jti"])
 
     # Clear cookies regardless of token revocation result
-    response.delete_cookie(key="access_token", httponly=True, samesite="lax", secure=_is_secure_cookie())
-    response.delete_cookie(key="refresh_token", httponly=True, samesite="lax", secure=_is_secure_cookie())
+    _clear_auth_cookies(response)
 
     return {"message": "Logged out successfully"}
 

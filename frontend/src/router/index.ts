@@ -107,15 +107,20 @@ const router = createRouter({
 })
 
 // Navigation guard - check authentication
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth !== false
+  let hasSession = authStore.isAuthenticated
 
-  if (requiresAuth && !authStore.isAuthenticated) {
+  if (!hasSession && requiresAuth) {
+    hasSession = await authStore.restoreSession()
+  }
+
+  if (requiresAuth && !hasSession) {
     // Store the attempted URL for redirecting after login
     const fullPath = to.fullPath !== '/login' ? `?redirect=${encodeURIComponent(to.fullPath)}` : ''
     next(`/login${fullPath}`)
-  } else if (to.path === '/login' && authStore.isAuthenticated) {
+  } else if (to.path === '/login' && hasSession) {
     // Already logged in, redirect to safe destination only
     const redirect = to.query.redirect as string | undefined
     const safeRedirect = isValidRedirect(redirect)

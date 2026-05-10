@@ -25,14 +25,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, nextTick } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useLogout } from '@/composables/useLogout'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { logout } = useLogout()
 
 onMounted(async () => {
   // Only fetch user if we have a token but no cached user
@@ -46,15 +48,8 @@ const handleClose = () => {
 }
 
 const handleLogout = async () => {
-  try {
-    await authStore.logout()
-    ElMessage.success('已退出登录')
-  } catch {
-    // Still navigate even if logout fails
-  } finally {
-    await nextTick()
-    router.push('/login')
-  }
+  await logout()
+  ElMessage.success('已退出登录')
 }
 </script>
 

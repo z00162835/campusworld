@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { jwtDecode } from 'jwt-decode'
 import { authApi } from '@/api/auth'
+import { tokenApi, type TokenResponse } from '@/api/token'
 import type { User, LoginRequest } from '@/types/auth'
 
 const TOKEN_EXPIRE_BUFFER_SECONDS = 60 // Refresh 1 minute before actual expiration
@@ -29,13 +30,7 @@ export function getRegisterErrorMessage(status: number): string {
   return REGISTER_ERROR_MESSAGES[status] || 'auth.errors.registerFailed'
 }
 
-// Helper to get token from cookie
-const getTokenFromCookie = (name: string): string | null => {
-  const match = document.cookie.match(new RegExp(`(${name})=([^;]+)`))
-  return match ? match[2] : null
-}
-
-// Helper to clear token cookie
+// Clears only readable fallback cookies. httpOnly auth cookies are cleared by the backend.
 const clearTokenCookie = (name: string) => {
   document.cookie = `${name}=; Max-Age=0; path=/`
 }
@@ -43,9 +38,10 @@ const clearTokenCookie = (name: string) => {
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(null)
-  const refreshToken = ref<string | null>(null)
   const tokenExpiresAt = ref<number | null>(null)
   const loading = ref(false)
+  const sessionRestoreChecked = ref(false)
+  let restorePromise: Promise<boolean> | null = null
 
   const isAuthenticated = computed(() => {
     if (!token.value) return false
@@ -67,14 +63,19 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Sync store state from cookies (called after external token updates like refresh)
-  const syncFromStorage = () => {
-    const storedToken = getTokenFromCookie('access_token')
-    const storedRefreshToken = getTokenFromCookie('refresh_token')
+  const setTokenData = (tokenData: TokenResponse) => {
+    token.value = tokenData.access_token
+    tokenExpiresAt.value = decodeTokenExp(tokenData.access_token)
+    sessionRestoreChecked.value = true
+  }
 
-    token.value = storedToken
-    refreshToken.value = storedRefreshToken
-    tokenExpiresAt.value = storedToken ? decodeTokenExp(storedToken) : null
+  const clearClientState = () => {
+    token.value = null
+    user.value = null
+    tokenExpiresAt.value = null
+    sessionRestoreChecked.value = true
+    clearTokenCookie('access_token')
+    clearTokenCookie('refresh_token')
   }
 
   // Fetch user profile from API
@@ -90,31 +91,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const login = async (credentials: LoginRequest) => {
+  const login = async (credentials: LoginRequest): Promise<{ success: boolean; status?: number }> => {
     loading.value = true
     try {
       const response = await authApi.login(credentials)
-      // Backend sets httpOnly cookie for API security, but we need the token
-      // in memory for frontend state. Use response body directly.
-      const tokenData = response.data
-      if (tokenData.access_token) {
-        token.value = tokenData.access_token
-        tokenExpiresAt.value = decodeTokenExp(tokenData.access_token)
-      }
-      if (tokenData.refresh_token) {
-        refreshToken.value = tokenData.refresh_token
-      }
+      setTokenData(response.data)
       // Fetch user profile after successful login
       await fetchUser()
-      return true
-    } catch {
-      return false
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, status: error.response?.status || 0 }
     } finally {
       loading.value = false
     }
   }
 
   const logout = async (): Promise<{ success: boolean; error?: string }> => {
+    clearClientState()
+
     // Wrap API call in timeout to prevent hanging
     const logoutPromise = authApi.logout()
     const timeoutPromise = new Promise<void>((resolve) => {
@@ -126,20 +120,38 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error: any) {
       // Log but don't block logout - client state should be cleared regardless
       console.warn('Logout API failed:', error?.message)
-    } finally {
-      token.value = null
-      user.value = null
-      refreshToken.value = null
-      tokenExpiresAt.value = null
-      clearTokenCookie('access_token')
-      clearTokenCookie('refresh_token')
     }
     return { success: true }
   }
 
+  const restoreSession = async (): Promise<boolean> => {
+    if (isAuthenticated.value) return true
+    if (sessionRestoreChecked.value) return false
+
+    if (restorePromise) return restorePromise
+
+    restorePromise = (async () => {
+      sessionRestoreChecked.value = true
+      try {
+        const tokenData = await tokenApi.refreshWithCookie()
+        setTokenData(tokenData)
+        await fetchUser()
+        return isAuthenticated.value
+      } catch {
+        clearClientState()
+        return false
+      } finally {
+        restorePromise = null
+      }
+    })()
+
+    return restorePromise
+  }
+
   // Initialize token from cookie on store creation
   const initTokenExpiration = () => {
-    syncFromStorage()
+    token.value = null
+    tokenExpiresAt.value = null
   }
 
   // Call on store creation
@@ -148,12 +160,13 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     token,
-    refreshToken,
     loading,
     isAuthenticated,
     login,
     logout,
-    syncFromStorage,
+    setTokenData,
+    clearClientState,
+    restoreSession,
     fetchUser,
     initTokenExpiration,
   }

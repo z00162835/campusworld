@@ -189,6 +189,31 @@ export const useSpacesStore = defineStore('spaces', () => {
     if (saved) viewMode.value = saved
   }
 
+  function reset() {
+    activeTab.value = 'world'
+    searchKeyword.value = ''
+    filters.value = {}
+    nodes.value = {
+      world: [],
+      building: [],
+      floor: [],
+      room: [],
+    }
+    totalCounts.value = {
+      world: 0,
+      building: 0,
+      floor: 0,
+      room: 0,
+    }
+    worlds.value = []
+    buildings.value = []
+    floors.value = []
+    loading.value = false
+    currentPage.value = 1
+    selectedNode.value = null
+    detailDrawerVisible.value = false
+  }
+
   return {
     // State
     activeTab,
@@ -226,5 +251,6 @@ export const useSpacesStore = defineStore('spaces', () => {
     fetchBuildings,
     fetchFloors,
     initViewMode,
+    reset,
   }
 })

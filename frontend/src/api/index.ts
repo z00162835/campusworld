@@ -18,6 +18,13 @@ const apiClient = axios.create({
 let isRefreshing = false
 let refreshPromise: Promise<string> | null = null
 
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
+
+const shouldSkipRefresh = (url?: string): boolean => {
+  if (!url) return false
+  return AUTH_ENDPOINTS.some(endpoint => url.includes(endpoint))
+}
+
 // Helper to get access token from authStore (memory)
 const getAccessToken = async (): Promise<string | null> => {
   try {
@@ -49,7 +56,7 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config
 
     // Handle 401 - attempt token refresh or redirect to login
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !shouldSkipRefresh(originalRequest.url)) {
       if (isRefreshing && refreshPromise) {
         // Already refreshing, wait for the refresh to complete
         return refreshPromise.then((token: string) => {
@@ -74,15 +81,16 @@ apiClient.interceptors.response.use(
             // Sync auth store with new tokens
             const { useAuthStore } = await import('@/stores/auth')
             const authStore = useAuthStore()
-            authStore.syncFromStorage()
+            authStore.setTokenData(data)
 
             return data.access_token
           }
           throw new Error('No access token in refresh response')
         } catch (refreshError) {
-          // Refresh failed, clear cookies and redirect to login
-          document.cookie = 'access_token=; Max-Age=0; path=/'
-          document.cookie = 'refresh_token=; Max-Age=0; path=/'
+          // Refresh failed, clear client state and redirect to login
+          const { useAuthStore } = await import('@/stores/auth')
+          const authStore = useAuthStore()
+          authStore.clearClientState()
           router.push('/login')
           throw refreshError
         } finally {

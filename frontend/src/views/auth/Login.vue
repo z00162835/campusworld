@@ -21,7 +21,7 @@ const SystemStatus = defineAsyncComponent(() =>
 )
 import CyberInput from '@/components/auth/CyberInput.vue'
 import CyberButton from '@/components/auth/CyberButton.vue'
-import { useAuthStore, getAuthErrorMessage } from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth'
 import { isValidRedirect } from '@/router'
 
 const { t } = useI18n()
@@ -93,29 +93,25 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    const success = await authStore.login(credentials)
+    const result = await authStore.login(credentials)
 
-    if (success) {
+    if (result.success) {
       // Mark boot sequence as shown for this session
       sessionStorage.setItem('boot_sequence_shown', 'true')
       // Redirect to safe destination only (validated redirect URL)
       const redirect = route.query.redirect as string | undefined
       const safeRedirect = isValidRedirect(redirect)
       router.push(safeRedirect || '/works')
+    } else {
+      credentials.password = ''
+      authError.value = result.status === 0
+        ? t('auth.errors.networkError')
+        : t('auth.errors.invalidCredentials')
     }
   } catch (error: any) {
     // Clear password on failure for security
     credentials.password = ''
-
-    // Get HTTP status code
-    const status = error.response?.status || 0
-
-    // Only show safe, pre-defined error messages - never expose raw server details
-    // This prevents information leakage about server internals
-    const i18nKey = getAuthErrorMessage(status)
-    authError.value = status === 0
-      ? t('auth.errors.networkError')
-      : t(i18nKey)
+    authError.value = t('auth.errors.invalidCredentials')
   } finally {
     loading.value = false
   }

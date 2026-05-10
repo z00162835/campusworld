@@ -64,3 +64,36 @@ def test_login_failure_401(auth_client):
         )
     assert r.status_code == 401
     assert r.json()["detail"] == "Invalid username or password"
+
+
+def test_refresh_unauthorized_response_clears_auth_cookies():
+    response = auth_module._refresh_unauthorized_response("Invalid refresh token")
+
+    set_cookie_headers = [
+        value.decode("latin-1")
+        for key, value in response.raw_headers
+        if key.lower() == b"set-cookie"
+    ]
+
+    assert response.status_code == 401
+    assert any(
+        header.startswith("access_token=") and "Max-Age=0" in header
+        for header in set_cookie_headers
+    )
+    assert any(
+        header.startswith("refresh_token=") and "Max-Age=0" in header
+        for header in set_cookie_headers
+    )
+
+
+def test_login_rejects_disallowed_origin(auth_client):
+    with patch.object(auth_module, "get_setting") as get_setting:
+        get_setting.return_value = ["http://localhost:5173"]
+        r = auth_client.post(
+            "/api/v1/auth/login",
+            data={"username": "alice", "password": "secret"},
+            headers={"Origin": "https://evil.example"},
+        )
+
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Invalid request origin"

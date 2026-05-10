@@ -36,10 +36,16 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const reset = () => {
+    profile.value = null
+    loading.value = false
+  }
+
   return {
     profile,
     loading,
     fetchProfile,
     updateProfile,
+    reset,
   }
 })

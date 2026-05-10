@@ -47,9 +47,11 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Setting } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { useLogout } from '@/composables/useLogout'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { logout } = useLogout()
 
 const isAuthenticated = computed(() => {
   return authStore.isAuthenticated
@@ -63,12 +65,11 @@ const handleRegister = () => {
   router.push('/register')
 }
 
-const handleCommand = (command: string) => {
+const handleCommand = async (command: string) => {
   if (command === 'profile') {
     router.push('/profile')
   } else if (command === 'logout') {
-    authStore.logout()
-    router.push('/')
+    await logout()
   }
 }
 </script>
