@@ -1,7 +1,7 @@
 # `space`
 
 > **Architecture Role**: 只读**空间信息查询**（**SYSTEM** 命令）。用户或 Agent 按图节点 `id` 拉取**空间**（`trait_class: SPACE` 之 `building` / `building_floor` / `room` 等）的**分段摘要**：与 `look` 对齐的**环境描述**（无房内对象列表）、**占用者**、**设备**、**下一层/联通**空间列表。  
-> **终端展示**：`CommandResult.message` 须为 **类 `look` 的多段纯文本**；**每一段**在节标题之下均须**按「对象/条目行」列表**罗列（**一行**一条可独立计数的内容；**段 2–4** 一图节点一行、**段 1** 须拆成多行不得整段无换行长文，见 **「对象行列表」**）**。**段 1** 为空间语义/出口等**对象行**；**段 2–4** 为**表格/对象行**并含 `id`。**禁止**以 **JSON 串或整块 JSON** 作成功主呈现；**机器负载**在 `CommandResult.data`（见下），与 [`protocols/CLAUDE.md`](../../../../backend/app/protocols/CLAUDE.md) 一致。  
+> **终端展示**：`CommandResult.message` 须为 **类 `look` 的多段纯文本**；**每一段**在节标题之下均须**按「对象/条目行」列表**罗列（**一行**一条可独立计数的内容；**段 2–4** 一图节点一行、**段 1** 须拆成多行不得整段无换行长文，见 **「对象行列表」**）**。**段 1** 为空间语义/出口等**对象行**；**段 2–4** 为**表格/对象行**并含 `id`。**禁止**以 **JSON 串或整块 JSON** 作成功主呈现；**机器负载**在 `CommandResult.data`（见下），与 [`protocols/SPEC`](../../../protocols/SPEC/SPEC.md) 一致。
 > 实现与注册表路径见下 **Metadata**；`export_command_registry_snapshot` 与 `verify_command_spec_files` 用于对账。
 
 ## 空间关联真源（Evennia 式 `location_id` 链）
@@ -75,7 +75,7 @@ space -i <node_id>
 
 **读可见性（F11）**：若与 `find` 一致，仅返回当前主体**允许读**的节点与关联行；在 [`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 未接入时，可注明退化为与 `find` 同级的「已认证会话可读」**技术债**。
 
-## `Message` 与 `Data`（见 [`protocols/CLAUDE.md`](../../../../backend/app/protocols/CLAUDE.md)）
+## `Message` 与 `Data`（见 [`protocols/SPEC`](../../../protocols/SPEC/SPEC.md)）
 
 ### 终端 `message`：类 `look` 的分段风格（**非 JSON 呈现**）
 

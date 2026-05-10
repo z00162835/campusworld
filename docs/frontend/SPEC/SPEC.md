@@ -30,7 +30,9 @@ frontend/
 │   ├── api/                    # API 服务层
 │   │   ├── index.ts           # Axios 实例 + 拦截器
 │   │   ├── auth.ts            # 认证 API
-│   │   └── accounts.ts        # 账户 API
+│   │   ├── token.ts           # token 刷新 API
+│   │   ├── accounts.ts        # 账户 API
+│   │   └── spaces.ts          # 空间图 API
 │   │
 │   ├── components/            # 组件
 │   │   ├── common/           # 通用组件
@@ -43,6 +45,7 @@ frontend/
 │   │
 │   ├── composables/           # 可复用组合函数
 │   │   ├── useAuth.ts        # 认证状态
+│   │   ├── useLogout.ts      # 统一退出流程
 │   │   ├── useLoading.ts     # 加载状态
 │   │   └── useNotification.ts # 通知
 │   │
@@ -57,6 +60,7 @@ frontend/
 │   ├── stores/               # Pinia 状态管理
 │   │   ├── auth.ts           # 认证状态
 │   │   ├── user.ts          # 用户状态
+│   │   ├── spaces.ts        # 空间浏览状态
 │   │   └── tabs.ts          # 标签页状态
 │   │
 │   ├── types/                # TypeScript 类型定义
@@ -105,8 +109,10 @@ frontend/
 
 Axios 实例配置了请求/响应拦截器：
 
-- **请求拦截器**：自动附加 JWT Bearer Token
-- **响应拦截器**：401 时清除 Token
+- **请求拦截器**：从 auth store 的内存态附加 JWT Bearer Token
+- **响应拦截器**：业务 API 401 时通过 httpOnly refresh cookie 刷新 access token 并重试
+- **Auth 端点**：`/auth/login`、`/auth/register`、`/auth/refresh`、`/auth/logout` 的 401 不触发 refresh 重试
+- **Token 存储**：refresh token 仅由后端 httpOnly cookie 管理；前端不写入 Pinia、`localStorage` 或 `sessionStorage`
 
 ```typescript
 // 使用示例
@@ -120,6 +126,7 @@ const response = await authApi.login({ username, password })
 
 - **auth store**：登录/登出、Token 管理、认证状态
 - **user store**：用户资料获取
+- **spaces store**：空间浏览与筛选状态
 - **tabs store**：多标签页状态
 
 ```typescript
@@ -134,6 +141,7 @@ if (authStore.isAuthenticated) { ... }
 封装通用逻辑：
 
 - **useAuth()**：认证状态快捷访问
+- **useLogout()**：统一退出，清理本地 stores 并立即跳转登录页
 - **useLoading()**：加载状态管理
 - **useNotification()**：ElMessage 包装
 
@@ -167,11 +175,11 @@ const { status, send, connect, disconnect } = useWebSocket()
 | Login | `/login` | 登录 | 否 |
 | Register | `/register` | 注册 | 否 |
 | Profile | `/profile` | 用户资料 | **是** |
-| Works | `/works` | 工作台 | 否 |
-| Spaces | `/spaces` | 空间浏览 | 否 |
-| Agents | `/agents` | Agent 管理 | 否 |
-| Discovery | `/discovery` | 发现 | 否 |
-| History | `/history` | 历史记录 | 否 |
+| Works | `/works` | 工作台 | **是** |
+| Spaces | `/spaces` | 空间浏览 | **是** |
+| Agents | `/agents` | Agent 管理 | **是** |
+| Discovery | `/discovery` | 发现 | **是** |
+| History | `/history` | 历史记录 | **是** |
 | NotFound | `/:pathMatch(.*)*` | 404 | 否 |
 
 ## 用户故事

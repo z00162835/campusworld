@@ -40,21 +40,20 @@
 - [x] 创建 `docs/testing/SPEC/TODO.md` (本文件)
 - [x] 创建 `docs/testing/SPEC/ACCEPTANCE.md`
 
-## CLAUDE.md 更新
+## Agent 指南更新
 
 ### 已完成
 
-- [x] 更新 `root CLAUDE.md` — 添加 Testing 小节
-- [x] 更新 `backend/CLAUDE.md` — pytest.ini / conftest 说明
-- [x] 更新 `frontend/CLAUDE.md` — vitest 说明
-- [x] 更新 `backend/app/core/CLAUDE.md` — fixtures 说明
+- [x] 更新根 `AGENTS.md` — 添加 Testing 验证矩阵
+- [x] 更新 `backend/AGENTS.md` — pytest / conftest / 数据库测试说明
+- [x] 更新 `frontend/AGENTS.md` — vitest 与 type-check 说明
 
 ## 验收检查清单
 
 - [x] `pytest` 在 backend/ 目录下无报错 (24 tests passed)
 - [x] `npm run test` 在 frontend/ 目录下无报错 (5 tests passed)
 - [x] 测试框架配置完整
-- [x] 所有 CLAUDE.md 包含测试相关内容
+- [x] Agent 指南包含测试相关内容
 - [x] `docs/testing/SPEC/SPEC.md` 完整覆盖测试规范
 
 ## 下一步

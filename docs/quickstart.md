@@ -138,5 +138,5 @@ python campusworld.py --log-level DEBUG
 ## 下一步
 
 - [配置系统](./configuration.md) — 了解 YAML 配置结构
-- [后端开发](../backend/CLAUDE.md) — 后端模块详细说明
+- [后端 Agent 指南](../backend/AGENTS.md) — 后端开发与验证约束
 - [look 命令使用](../backend/docs/look_command_usage.md) — 终端基础操作

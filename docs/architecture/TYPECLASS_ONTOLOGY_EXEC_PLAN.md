@@ -4,7 +4,7 @@
 
 ## 1. 必须遵守的架构约束
 
-下列约束与 [docs/architecture/README.md](README.md) 及根目录 `CLAUDE.md` 一致，**执行任务时不得违反**。
+下列约束与 [docs/architecture/README.md](README.md) 及根目录 [`AGENTS.md`](../../AGENTS.md) 一致，**执行任务时不得违反**。
 
 | 约束 ID | 要求 |
 |---------|------|

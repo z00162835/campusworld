@@ -40,7 +40,7 @@ asyncio_mode = auto
 
 ### 后端 Python / Conda 环境
 
-本地执行后端 `pytest` 时，应使用与项目依赖一致的 Python 环境。**仓库约定：后端开发与 pytest 以 Conda 环境 `campusworld` 为准**（见根目录 [`CLAUDE.md`](../../../CLAUDE.md)「Python 执行环境（Conda `campusworld`）」）。若未使用该环境，常见为 `ModuleNotFoundError` 或 pytest 未安装，**不代表被测代码必然有误**。
+本地执行后端 `pytest` 时，应使用与项目依赖一致的 Python 环境。**仓库约定：后端开发与 pytest 以 Conda 环境 `campusworld` 为准**（见根目录 [`AGENTS.md`](../../../AGENTS.md) 与 [`backend/AGENTS.md`](../../../backend/AGENTS.md)）。若未使用该环境，常见为 `ModuleNotFoundError` 或 pytest 未安装，**不代表被测代码必然有误**。
 
 若使用 Conda 且已创建环境 **`campusworld`**，推荐在运行测试前执行：
 

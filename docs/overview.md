@@ -77,5 +77,5 @@ Agent 服务层（AI 使能/Agent 交互）
 - [快速开始](./quickstart.md) — 环境搭建和启动
 - [系统架构](./architecture/README.md) — 详细技术架构说明
 - [配置系统](./configuration.md) — YAML 配置管理
-- [后端开发](../backend/CLAUDE.md) — 后端模块详细说明
-- [前端开发](../frontend/CLAUDE.md) — 前端模块详细说明
+- [后端 Agent 指南](../backend/AGENTS.md) — 后端开发与验证约束
+- [前端 Agent 指南](../frontend/AGENTS.md) — 前端开发与验证约束

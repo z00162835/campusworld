@@ -10,7 +10,7 @@
 | 数据包校验与再生成 | [`backend/app/games/hicampus/package/README.md`](../../../../backend/app/games/hicampus/package/README.md) |
 | `world install` 等命令 | [`docs/command/SPEC/features/CMD_world.md`](../../../command/SPEC/features/CMD_world.md) |
 | 可插拔世界包架构约束 | [`docs/architecture/README.md`](../../../architecture/README.md) |
-| 安装步骤极简清单 | [`QUICKSTART.md`](../../../../QUICKSTART.md)、[`CLAUDE.md`](../../../../CLAUDE.md) |
+| 安装步骤极简清单 | [`QUICKSTART.md`](../../../../QUICKSTART.md)、[`AGENTS.md`](../../../../AGENTS.md) |
 
 ---
 
@@ -57,7 +57,7 @@ flowchart TD
 
 - **房间与连边的真源**为 `data/rooms.yaml`、`data/relationships.yaml`（含 `connects_to` 的 `direction`）。其中**大量** `connects_to` 由 `app/games/hicampus/package/topology_connect_generate.py` 生成（带 `topology_auto`）；手工维护时勿覆盖脊线保留集，见该文件内 `PRESERVE_CONNECT_IDS`。
 - **改包后刷新命令顺序**（在 `backend/` 下）：见 [`app/games/hicampus/package/README.md`](../../../../backend/app/games/hicampus/package/README.md)（`spatial_generate` 可选 → `topology_connect_generate` → `entity_item_generate` 可选 → `entity_relationship_generate` → `world reload hicampus`）。
-- **安装与奇点屋进入**：`world install hicampus` → 奇点屋 `look` / `enter hicampus`；**图种子**由包内 `manifest.yaml` 的 `graph_seed` 控制，需 PostgreSQL，说明见仓库根 `CLAUDE.md`「安装 HiCampus 世界」。
+- **安装与奇点屋进入**：`world install hicampus` → 奇点屋 `look` / `enter hicampus`；**图种子**由包内 `manifest.yaml` 的 `graph_seed` 控制，需 PostgreSQL，说明见 [`QUICKSTART.md`](../../../../QUICKSTART.md) 与 [`backend/app/games/hicampus/AGENTS.md`](../../../../backend/app/games/hicampus/AGENTS.md)。
 - **特性分档**：入口与容错见 `SPEC/features/F05_WORLD_ENTRY_INTEGRATION.md`，图种子见 `F03_GRAPH_SEED_PIPELINE.md`。
 
 ## Evennia Reference Mapping

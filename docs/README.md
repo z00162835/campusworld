@@ -17,18 +17,12 @@ CampusWorld 是新一代智慧园区 OS 项目的技术文档中心。
 - [Demo Building 生成器](./backend/tests/README_demo_building.md) — 测试数据生成文档
 - [日志系统](../backend/app/core/log/README.md) — structlog 使用指南
 
-### 各模块上下文文档（英文，面向 AI 助手）
-- [后端全貌](../backend/CLAUDE.md)
-- [核心模块](../backend/app/core/CLAUDE.md)
-- [数据模型](../backend/app/models/CLAUDE.md)
-- [命令系统](../backend/app/commands/CLAUDE.md)
-- [SSH 服务器](../backend/app/ssh/CLAUDE.md)
-- [引擎](../backend/app/game_engine/CLAUDE.md)
-- [协议处理](../backend/app/protocols/CLAUDE.md)
-- [配置构建](../backend/config/CLAUDE.md)
-- [数据库模块](../backend/db/CLAUDE.md)
-- [前端全貌](../frontend/CLAUDE.md)
-- [项目全貌](../CLAUDE.md)
+### Agent 上下文文档
+- [项目 Agent 指南](../AGENTS.md)
+- [后端 Agent 指南](../backend/AGENTS.md)
+- [前端 Agent 指南](../frontend/AGENTS.md)
+- [文档治理 Agent 指南](./AGENTS.md)
+- [HiCampus Agent 指南](../backend/app/games/hicampus/AGENTS.md)
 
 ## 规划中的文档
 
@@ -50,5 +44,5 @@ CampusWorld 是新一代智慧园区 OS 项目的技术文档中心。
 ## 文档贡献
 
 - 参考根目录 [CONTRIBUTING.md](../CONTRIBUTING.md)
-- CLAUDE.md 系列文档使用英文，面向 AI 上下文补充
+- AGENTS.md 系列文档面向 AI 上下文补充，`CLAUDE.md` 仅作兼容入口
 - docs/ 目录文档使用中文，面向开发者阅读
