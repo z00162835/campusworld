@@ -4,9 +4,14 @@ Follow root `AGENTS.md` first. This file covers Vue frontend work.
 
 ## Source Of Truth
 
+- Logging terminology (shared with backend for product names): `../docs/glossary/TERMINOLOGY.md`
 - Frontend contract: `../docs/frontend/SPEC/SPEC.md`
 - Testing contract: `../docs/testing/SPEC/SPEC.md`
 - Runtime code: `src/`
+
+## Logging And Diagnostics
+
+- `console.log`, `console.info`, `console.warn`, `console.error`, and similar **developer-facing** output MUST use **English only** for fixed message strings. User-visible strings use i18n / UI copy rules, not this section.
 
 ## Architecture Rules
 

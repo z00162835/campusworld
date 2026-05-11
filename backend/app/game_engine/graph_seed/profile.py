@@ -1,9 +1,6 @@
 """World-specific mapping: declarative package type_code -> DB node_types / relationship filter."""
-
 from __future__ import annotations
-
 from typing import FrozenSet, Protocol
-
 
 class WorldGraphProfile(Protocol):
     """Maps package `type_code` strings to persisted `node_types.type_code` and filters edges."""

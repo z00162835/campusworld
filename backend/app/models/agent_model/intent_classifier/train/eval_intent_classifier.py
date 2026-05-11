@@ -3,82 +3,54 @@
 Run inside Conda ``campusworld`` with the same optional ML stack as training
 (see ``requirements/ml-intent-classifier.txt`` and ``train/README.md``).
 """
-
 from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-
 def _load_training_cfg(artifact_dir: Path) -> Dict[str, Any]:
-    cfg_path = artifact_dir / "training_config.json"
+    cfg_path = artifact_dir / 'training_config.json'
     if not cfg_path.is_file():
-        raise FileNotFoundError(f"missing {cfg_path}; pass --artifact-dir from a training run output")
-    return json.loads(cfg_path.read_text(encoding="utf-8"))
-
+        raise FileNotFoundError(f'missing {cfg_path}; pass --artifact-dir from a training run output')
+    return json.loads(cfg_path.read_text(encoding='utf-8'))
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Greedy decode evaluation for LoRA intent adapters")
-    parser.add_argument(
-        "--artifact-dir",
-        required=True,
-        help="Training output directory containing training_config.json and lora_adapter/",
-    )
-    parser.add_argument("--data", required=True, help="Labeled jsonl for scoring")
-    parser.add_argument("--max-new-tokens", type=int, default=96)
-    parser.add_argument(
-        "--system-prompt-file",
-        default=str(Path(__file__).resolve().parent.parent / "prompts" / "intent_classifier_system_prompt.txt"),
-        help="Must match training prompt file for comparable behavior",
-    )
+    parser = argparse.ArgumentParser(description='Greedy decode evaluation for LoRA intent adapters')
+    parser.add_argument('--artifact-dir', required=True, help='Training output directory containing training_config.json and lora_adapter/')
+    parser.add_argument('--data', required=True, help='Labeled jsonl for scoring')
+    parser.add_argument('--max-new-tokens', type=int, default=96)
+    parser.add_argument('--system-prompt-file', default=str(Path(__file__).resolve().parent.parent / 'prompts' / 'intent_classifier_system_prompt.txt'), help='Must match training prompt file for comparable behavior')
     args = parser.parse_args()
-
     import torch
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
-
     from app.models.agent_model.intent_classifier.runtime.inference import greedy_decode_intent_json
-    from app.models.agent_model.intent_classifier.train.dataset_builder import (
-        VALID_LABELS,
-        IntentTrainSample,
-        load_jsonl,
-    )
-
+    from app.models.agent_model.intent_classifier.train.dataset_builder import VALID_LABELS, IntentTrainSample, load_jsonl
     artifact_dir = Path(args.artifact_dir).resolve()
-    adapter_dir = artifact_dir / "lora_adapter"
+    adapter_dir = artifact_dir / 'lora_adapter'
     training_cfg = _load_training_cfg(artifact_dir)
-    base_model_id = str(training_cfg.get("base_model_id") or "").strip()
+    base_model_id = str(training_cfg.get('base_model_id') or '').strip()
     if not base_model_id:
-        raise ValueError("training_config.json missing base_model_id")
-
+        raise ValueError('training_config.json missing base_model_id')
     samples = load_jsonl(Path(args.data).resolve())
-    system_prompt = Path(args.system_prompt_file).resolve().read_text(encoding="utf-8")
-
+    system_prompt = Path(args.system_prompt_file).resolve().read_text(encoding='utf-8')
     tokenizer = AutoTokenizer.from_pretrained(str(adapter_dir), trust_remote_code=True)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-
     if torch.cuda.is_available():
-        device = torch.device("cuda")
+        device = torch.device('cuda')
         torch_dtype = torch.float16
-    elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
-        device = torch.device("mps")
+    elif getattr(torch.backends, 'mps', None) is not None and torch.backends.mps.is_available():
+        device = torch.device('mps')
         torch_dtype = torch.float16
     else:
-        device = torch.device("cpu")
+        device = torch.device('cpu')
         torch_dtype = torch.float32
-
-    base_model = AutoModelForCausalLM.from_pretrained(
-        base_model_id,
-        trust_remote_code=True,
-        torch_dtype=torch_dtype,
-    )
+    base_model = AutoModelForCausalLM.from_pretrained(base_model_id, trust_remote_code=True, torch_dtype=torch_dtype)
     model = PeftModel.from_pretrained(base_model, str(adapter_dir))
     model.to(device)
     model.eval()
-
     correct = 0
     parsed_ok = 0
     rows_total = len(samples)
@@ -86,44 +58,25 @@ def main() -> int:
     def score_sample(sample: IntentTrainSample) -> Tuple[bool, Dict[str, Any]]:
         obj: Dict[str, Any]
         try:
-            obj = greedy_decode_intent_json(
-                model=model,
-                tokenizer=tokenizer,
-                device=device,
-                system_prompt=system_prompt,
-                user_message=sample.text,
-                max_new_tokens=int(args.max_new_tokens),
-            )
+            obj = greedy_decode_intent_json(model=model, tokenizer=tokenizer, device=device, system_prompt=system_prompt, user_message=sample.text, max_new_tokens=int(args.max_new_tokens))
         except json.JSONDecodeError as exc:
-            return False, {"raw": "", "error": "json_decode", "detail": str(exc)}
+            return (False, {'raw': '', 'error': 'json_decode', 'detail': str(exc)})
         except Exception as exc:
-            return False, {"raw": "", "error": "inference", "detail": str(exc)}
-        intent = str(obj.get("intent") or "").strip()
+            return (False, {'raw': '', 'error': 'inference', 'detail': str(exc)})
+        intent = str(obj.get('intent') or '').strip()
         ok_label = intent == sample.label and intent in VALID_LABELS
-        return ok_label, {"parsed": obj, "raw": text}
-
+        return (ok_label, {'parsed': obj, 'raw': text})
     mismatches: List[Dict[str, Any]] = []
     for sample in samples:
-        ok, debug = score_sample(sample)
-        if "parsed" in debug:
+        (ok, debug) = score_sample(sample)
+        if 'parsed' in debug:
             parsed_ok += 1
         if ok:
             correct += 1
         else:
-            mismatches.append({"text": sample.text, "gold": sample.label, **debug})
-
-    report = {
-        "rows": rows_total,
-        "parsed_json_rate": parsed_ok / rows_total if rows_total else 0.0,
-        "intent_accuracy": correct / rows_total if rows_total else 0.0,
-        "artifact_dir": str(artifact_dir),
-        "adapter_dir": str(adapter_dir),
-        "base_model_id": base_model_id,
-        "mismatch_preview": mismatches[:5],
-    }
+            mismatches.append({'text': sample.text, 'gold': sample.label, **debug})
+    report = {'rows': rows_total, 'parsed_json_rate': parsed_ok / rows_total if rows_total else 0.0, 'intent_accuracy': correct / rows_total if rows_total else 0.0, 'artifact_dir': str(artifact_dir), 'adapter_dir': str(adapter_dir), 'base_model_id': base_model_id, 'mismatch_preview': mismatches[:5]}
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

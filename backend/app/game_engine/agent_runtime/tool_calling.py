@@ -26,84 +26,55 @@ Design:
 Mapping helpers bridge this module to ``tool_gather.ToolInvocationPlan`` and
 ``CommandResult`` without touching any provider-specific code.
 """
-
 from __future__ import annotations
-
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-
 def _args_only_schema() -> Dict[str, Any]:
     """JSON Schema for the default CampusWorld command input (``{args: [...]}``)."""
-    return {
-        "type": "object",
-        "properties": {
-            "args": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Positional arguments passed to the command, as strings.",
-            }
-        },
-        "required": [],
-        "additionalProperties": False,
-    }
-
+    return {'type': 'object', 'properties': {'args': {'type': 'array', 'items': {'type': 'string'}, 'description': 'Positional arguments passed to the command, as strings.'}}, 'required': [], 'additionalProperties': False}
 
 @dataclass(frozen=True)
 class ToolSchema:
     """Neutral description of one tool (command) that can be called."""
-
     name: str
     description: str
     input_schema: Dict[str, Any] = field(default_factory=_args_only_schema)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            "name": self.name,
-            "description": self.description,
-            "input_schema": dict(self.input_schema),
-        }
-
+        return {'name': self.name, 'description': self.description, 'input_schema': dict(self.input_schema)}
 
 @dataclass
 class ToolCall:
     """One tool invocation produced by the LLM or parsed from JSON output."""
-
     id: str
     name: str
     args: List[str] = field(default_factory=list)
 
     @classmethod
-    def new(cls, name: str, args: Optional[Sequence[str]] = None) -> "ToolCall":
-        return cls(id=f"call_{uuid.uuid4().hex[:12]}", name=str(name), args=list(args or []))
-
+    def new(cls, name: str, args: Optional[Sequence[str]]=None) -> 'ToolCall':
+        return cls(id=f'call_{uuid.uuid4().hex[:12]}', name=str(name), args=list(args or []))
 
 @dataclass
 class ToolResult:
     """Observation returned by executing a ``ToolCall``."""
-
     id: str
     name: str
     ok: bool
     text: str
     data: Optional[Dict[str, Any]] = None
 
-
 @dataclass
 class TextTurn:
     """Plain user/assistant text turn in the conversation history."""
-
-    role: str  # "user" or "assistant"
+    role: str
     text: str
-
 
 @dataclass
 class ToolResultsTurn:
     """Batch of tool observations returned to the model in one turn."""
-
     results: List[ToolResult] = field(default_factory=list)
-
 
 @dataclass
 class AssistantToolUseTurn:
@@ -117,14 +88,9 @@ class AssistantToolUseTurn:
     ``text`` is optional co-prose from the model; it may be empty when the
     model emitted only tool calls.
     """
-
     tool_calls: List[ToolCall] = field(default_factory=list)
-    text: str = ""
-
-
-# Union alias for readability in signatures.
+    text: str = ''
 ConversationTurn = Union[TextTurn, ToolResultsTurn, AssistantToolUseTurn]
-
 
 @dataclass
 class CompleteWithToolsResult:
@@ -136,14 +102,9 @@ class CompleteWithToolsResult:
     ``tool_calls`` is non-empty and at the literal strings ``tool_use`` or
     ``tool_calls`` for "do not also parse JSON" branching.
     """
-
-    text: str = ""
+    text: str = ''
     tool_calls: List[ToolCall] = field(default_factory=list)
-    finish_reason: str = "stop"
-
-
-# ---------- mapping helpers (framework / command layer bridge) ----------
-
+    finish_reason: str = 'stop'
 
 def tool_calls_to_invocation_plan(calls: Sequence[ToolCall]):
     """Turn neutral ``ToolCall`` list into the existing ``ToolInvocationPlan``.
@@ -152,28 +113,19 @@ def tool_calls_to_invocation_plan(calls: Sequence[ToolCall]):
     provider tool-use; this module is the only provider-neutral adapter.
     """
     from app.game_engine.agent_runtime.tool_gather import ToolInvocationPlan
-
     commands = [(c.name, list(c.args)) for c in calls]
     return ToolInvocationPlan(commands=commands)
 
-
-def command_result_to_tool_result(
-    call_id: str,
-    name: str,
-    result,
-    *,
-    max_text_chars: int = 4000,
-) -> ToolResult:
+def command_result_to_tool_result(call_id: str, name: str, result, *, max_text_chars: int=4000) -> ToolResult:
     """Shrink a ``CommandResult`` to a ``ToolResult`` envelope for the LLM."""
-    ok = bool(getattr(result, "success", False))
-    msg = str(getattr(result, "message", "") or "")
+    ok = bool(getattr(result, 'success', False))
+    msg = str(getattr(result, 'message', '') or '')
     if len(msg) > max_text_chars:
-        msg = msg[: max_text_chars - 3] + "..."
-    data = getattr(result, "data", None)
+        msg = msg[:max_text_chars - 3] + '...'
+    data = getattr(result, 'data', None)
     if not isinstance(data, dict):
         data = None
     return ToolResult(id=call_id, name=name, ok=ok, text=msg, data=data)
-
 
 def tool_schemas_from_surface(surface, command_registry) -> List[ToolSchema]:
     """Build ``ToolSchema`` list from a ``ResolvedToolSurface``.
@@ -188,22 +140,20 @@ def tool_schemas_from_surface(surface, command_registry) -> List[ToolSchema]:
         cmd = command_registry.get_command(name)
         if cmd is None:
             continue
-        desc = (getattr(cmd, "description", "") or "").strip() or cmd.get_help().strip()
+        desc = (getattr(cmd, 'description', '') or '').strip() or cmd.get_help().strip()
         if len(desc) > 400:
-            desc = desc[:397] + "..."
+            desc = desc[:397] + '...'
         schemas.append(ToolSchema(name=name, description=desc))
     return schemas
-
 
 def assistant_tool_use_turn_as_text_block(turn: AssistantToolUseTurn) -> str:
     """Serialise an ``AssistantToolUseTurn`` for the JSON / plain ``complete`` fallback."""
     lines: List[str] = []
-    if (turn.text or "").strip():
-        lines.append((turn.text or "").strip())
+    if (turn.text or '').strip():
+        lines.append((turn.text or '').strip())
     for c in turn.tool_calls:
-        lines.append(f"[tool_use id={c.id!r} name={c.name!r} args={c.args!r}]")
-    return "\n".join(lines) if lines else "(assistant tool_use)"
-
+        lines.append(f'[tool_use id={c.id!r} name={c.name!r} args={c.args!r}]')
+    return '\n'.join(lines) if lines else '(assistant tool_use)'
 
 def tool_results_turn_as_text_block(turn: ToolResultsTurn) -> str:
     """Serialise a ``ToolResultsTurn`` as the legacy ``Tool observations`` text block.
@@ -213,16 +163,16 @@ def tool_results_turn_as_text_block(turn: ToolResultsTurn) -> str:
     truth for observation formatting.
     """
     if not turn.results:
-        return ""
+        return ''
     lines: List[str] = []
-    for idx, r in enumerate(turn.results, start=1):
-        lines.append("--- tool_observation begin ---")
-        lines.append(f"[{idx}] command={r.name}")
-        lines.append(f"ok={r.ok}")
-        lines.append("message:")
-        lines.append(r.text or "")
+    for (idx, r) in enumerate(turn.results, start=1):
+        lines.append('--- tool_observation begin ---')
+        lines.append(f'[{idx}] command={r.name}')
+        lines.append(f'ok={r.ok}')
+        lines.append('message:')
+        lines.append(r.text or '')
         if r.data:
-            flat = ", ".join(f"{k}={r.data[k]!r}" for k in sorted(r.data.keys()))
-            lines.append(f"data: {flat}")
-        lines.append("--- tool_observation end ---")
-    return "\n".join(lines)
+            flat = ', '.join((f'{k}={r.data[k]!r}' for k in sorted(r.data.keys())))
+            lines.append(f'data: {flat}')
+        lines.append('--- tool_observation end ---')
+    return '\n'.join(lines)

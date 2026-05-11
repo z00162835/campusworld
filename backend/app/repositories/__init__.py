@@ -8,16 +8,12 @@ Repository层 - 数据访问抽象
 2. 内部调用 graph.py 中已定义的ORM类方法
 3. 返回业务友好的数据结构
 """
-
 from contextlib import contextmanager
 from typing import Optional, List, Dict, Any, Union
 from uuid import UUID
-
 from sqlalchemy.orm import Session
-
 from app.core.database import db_session_context
 from app.models.graph import Node, Relationship, NodeType, RelationshipType
-
 
 class NodeRepository:
     """
@@ -31,7 +27,7 @@ class NodeRepository:
         nodes = repo.get_by_type("user")
     """
 
-    def __init__(self, session: Optional[Session] = None):
+    def __init__(self, session: Optional[Session]=None):
         """
         初始化仓库
 
@@ -73,46 +69,27 @@ class NodeRepository:
         with self._session_scope() as session:
             return Node.get_by_type(session, type_code)
 
-    def get_active_nodes(
-        self,
-        type_code: str = None,
-        trait_class: str = None,
-        required_any_mask: int = 0,
-        required_all_mask: int = 0,
-    ) -> List[Node]:
+    def get_active_nodes(self, type_code: str=None, trait_class: str=None, required_any_mask: int=0, required_all_mask: int=0) -> List[Node]:
         """获取活跃节点；trait 过滤语义与 ``Node.get_active_nodes`` 一致（mask=0 不过滤）。"""
         with self._session_scope() as session:
-            return Node.get_active_nodes(
-                session,
-                type_code,
-                trait_class=trait_class,
-                required_any_mask=required_any_mask,
-                required_all_mask=required_all_mask,
-            )
+            return Node.get_active_nodes(session, type_code, trait_class=trait_class, required_any_mask=required_any_mask, required_all_mask=required_all_mask)
 
-    def search_by_attribute(self, key: str, value: Any, type_code: str = None) -> List[Node]:
+    def search_by_attribute(self, key: str, value: Any, type_code: str=None) -> List[Node]:
         """根据属性搜索节点"""
         with self._session_scope() as session:
             return Node.search_by_attribute(session, key, value, type_code)
 
-    def search_by_tag(self, tag: str, type_code: str = None) -> List[Node]:
+    def search_by_tag(self, tag: str, type_code: str=None) -> List[Node]:
         """根据标签搜索节点"""
         with self._session_scope() as session:
             return Node.search_by_tag(session, tag, type_code)
 
-    def get_paginated(
-        self,
-        page: int = 1,
-        page_size: int = 20,
-        type_code: str = None,
-        is_active: bool = True,
-        **filters
-    ) -> Dict[str, Any]:
+    def get_paginated(self, page: int=1, page_size: int=20, type_code: str=None, is_active: bool=True, **filters) -> Dict[str, Any]:
         """分页获取节点"""
         with self._session_scope() as session:
             return Node.get_paginated(session, page, page_size, type_code, is_active, **filters)
 
-    def get_related_nodes(self, node_id: int, relationship_type: str = None) -> List[Node]:
+    def get_related_nodes(self, node_id: int, relationship_type: str=None) -> List[Node]:
         """获取相关节点"""
         with self._session_scope() as session:
             return Node.get_related_nodes(session, node_id, relationship_type)
@@ -130,24 +107,10 @@ class NodeRepository:
             创建的节点对象
         """
         with self._session_scope() as session:
-            # 获取类型ID
             node_type = session.query(NodeType).filter(NodeType.type_code == type_code).first()
             if not node_type:
-                raise ValueError(f"未找到节点类型: {type_code}")
-
-            node = Node(
-                type_id=node_type.id,
-                type_code=type_code,
-                name=name,
-                description=kwargs.get('description'),
-                is_active=kwargs.get('is_active', True),
-                is_public=kwargs.get('is_public', True),
-                access_level=kwargs.get('access_level', 'normal'),
-                attributes=kwargs.get('attributes', {}),
-                tags=kwargs.get('tags', []),
-                location_id=kwargs.get('location_id'),
-                home_id=kwargs.get('home_id'),
-            )
+                raise ValueError(f'未找到节点类型: {type_code}')
+            node = Node(type_id=node_type.id, type_code=type_code, name=name, description=kwargs.get('description'), is_active=kwargs.get('is_active', True), is_public=kwargs.get('is_public', True), access_level=kwargs.get('access_level', 'normal'), attributes=kwargs.get('attributes', {}), tags=kwargs.get('tags', []), location_id=kwargs.get('location_id'), home_id=kwargs.get('home_id'))
             session.add(node)
             if self._owns_session():
                 session.commit()
@@ -162,11 +125,9 @@ class NodeRepository:
             node = session.query(Node).filter(Node.id == node_id).first()
             if not node:
                 return None
-
-            for key, value in kwargs.items():
+            for (key, value) in kwargs.items():
                 if hasattr(node, key):
                     setattr(node, key, value)
-
             if self._owns_session():
                 session.commit()
             else:
@@ -200,7 +161,6 @@ class NodeRepository:
                 session.flush()
             return True
 
-
 class RelationshipRepository:
     """
     图关系数据访问仓库
@@ -223,23 +183,17 @@ class RelationshipRepository:
         with db_session_context() as session:
             return Relationship.get_by_type(session, type_code)
 
-    def get_by_source(self, source_id: int, type_code: str = None) -> List[Relationship]:
+    def get_by_source(self, source_id: int, type_code: str=None) -> List[Relationship]:
         """获取源节点的所有关系"""
         with db_session_context() as session:
             return Relationship.get_by_source(session, source_id, type_code)
 
-    def get_by_target(self, target_id: int, type_code: str = None) -> List[Relationship]:
+    def get_by_target(self, target_id: int, type_code: str=None) -> List[Relationship]:
         """获取目标节点的所有关系"""
         with db_session_context() as session:
             return Relationship.get_by_target(session, target_id, type_code)
 
-    def create(
-        self,
-        type_code: str,
-        source_id: int,
-        target_id: int,
-        **kwargs
-    ) -> Relationship:
+    def create(self, type_code: str, source_id: int, target_id: int, **kwargs) -> Relationship:
         """
         创建新关系
 
@@ -253,24 +207,10 @@ class RelationshipRepository:
             创建的关系对象
         """
         with db_session_context() as session:
-            rel_type = session.query(RelationshipType).filter(
-                RelationshipType.type_code == type_code
-            ).first()
+            rel_type = session.query(RelationshipType).filter(RelationshipType.type_code == type_code).first()
             if not rel_type:
-                raise ValueError(f"未找到关系类型: {type_code}")
-
-            rel = Relationship(
-                type_id=rel_type.id,
-                type_code=type_code,
-                source_id=source_id,
-                target_id=target_id,
-                source_role=kwargs.get('source_role'),
-                target_role=kwargs.get('target_role'),
-                weight=kwargs.get('weight', 1),
-                attributes=kwargs.get('attributes', {}),
-                tags=kwargs.get('tags', []),
-                is_active=kwargs.get('is_active', True),
-            )
+                raise ValueError(f'未找到关系类型: {type_code}')
+            rel = Relationship(type_id=rel_type.id, type_code=type_code, source_id=source_id, target_id=target_id, source_role=kwargs.get('source_role'), target_role=kwargs.get('target_role'), weight=kwargs.get('weight', 1), attributes=kwargs.get('attributes', {}), tags=kwargs.get('tags', []), is_active=kwargs.get('is_active', True))
             session.add(rel)
             session.commit()
             session.refresh(rel)
@@ -285,7 +225,6 @@ class RelationshipRepository:
             rel.is_active = False
             session.commit()
             return True
-
 
 class NodeTypeRepository:
     """节点类型数据访问仓库"""
@@ -305,7 +244,6 @@ class NodeTypeRepository:
         with db_session_context() as session:
             return session.query(NodeType).filter(NodeType.status == 0).all()
 
-
 class RelationshipTypeRepository:
     """关系类型数据访问仓库"""
 
@@ -324,22 +262,17 @@ class RelationshipTypeRepository:
         with db_session_context() as session:
             return session.query(RelationshipType).filter(RelationshipType.status == 0).all()
 
-
-# Repository工厂函数
 def get_node_repository() -> NodeRepository:
     """获取NodeRepository实例"""
     return NodeRepository()
-
 
 def get_relationship_repository() -> RelationshipRepository:
     """获取RelationshipRepository实例"""
     return RelationshipRepository()
 
-
 def get_node_type_repository() -> NodeTypeRepository:
     """获取NodeTypeRepository实例"""
     return NodeTypeRepository()
-
 
 def get_relationship_type_repository() -> RelationshipTypeRepository:
     """获取RelationshipTypeRepository实例"""

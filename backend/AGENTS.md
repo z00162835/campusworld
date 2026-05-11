@@ -4,6 +4,7 @@ Follow root `AGENTS.md` first. This file covers backend-specific execution rules
 
 ## Source Of Truth
 
+- Logging terminology (English log strings): `../docs/glossary/TERMINOLOGY.md`
 - Architecture: `../docs/architecture/README.md`
 - Models: `../docs/models/SPEC/SPEC.md`
 - Commands: `../docs/command/SPEC/SPEC.md`
@@ -21,6 +22,7 @@ Follow root `AGENTS.md` first. This file covers backend-specific execution rules
 
 ## Non-Negotiables
 
+- Logs are **English-only** for message text (`logger.*`, `logging`, `structlog`). Use `docs/glossary/TERMINOLOGY.md`; do not add new Chinese in log templates.
 - Prefer graph nodes and relationships for domain facts.
 - Keep command authorization through `CommandPolicyEvaluator` / registry paths.
 - Do not reintroduce world navigation fallbacks that bypass `account.location_id`.

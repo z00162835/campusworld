@@ -1,51 +1,31 @@
 """
 Graph seed pipeline: PackageSnapshotV2 -> nodes + relationships (idempotent).
 """
-
 from __future__ import annotations
-
 import time
 import uuid as uuidlib
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Set, Tuple, Union
-
 from sqlalchemy.orm import Session
-
 from app.game_engine.graph_seed.errors import GraphSeedError
 from app.game_engine.graph_seed.ids import node_uuid
 from app.game_engine.graph_seed.profile import WorldGraphProfile
 from app.game_engine.runtime_store import WorldErrorCode
 from app.models.graph import Node, NodeType, Relationship, RelationshipType
-
-# node_types.type_code: entities that may be placed inside a room (Evennia: obj.location = room).
-_LOCATABLE_IN_ROOM_TYPES = frozenset(
-    {
-        "npc_agent",
-        "access_terminal",
-        "world_object",
-        "furniture",
-        "network_access_point",
-        "av_display",
-        "lighting_fixture",
-        "conference_seating",
-        "lounge_furniture",
-    }
-)
-
+_LOCATABLE_IN_ROOM_TYPES = frozenset({'npc_agent', 'access_terminal', 'world_object', 'furniture', 'network_access_point', 'av_display', 'lighting_fixture', 'conference_seating', 'lounge_furniture'})
 
 def _sync_location_from_located_in(session: Session, source: Node, target: Node) -> None:
     """
     Scheme A: treat package ``located_in`` as the authority for room membership.
     Set SQL ``nodes.location_id`` so commands that query contents by location_id (e.g. look) work.
     """
-    if str(target.type_code or "") != "room":
+    if str(target.type_code or '') != 'room':
         return
-    if str(source.type_code or "") not in _LOCATABLE_IN_ROOM_TYPES:
+    if str(source.type_code or '') not in _LOCATABLE_IN_ROOM_TYPES:
         return
     if source.location_id != target.id:
         source.location_id = target.id
         session.flush()
-
 
 @dataclass
 class _NodeSpec:
@@ -55,97 +35,44 @@ class _NodeSpec:
     attributes: Dict[str, Any]
     tags: List[Any]
 
-
 def _snapshot_as_dict(snapshot: Any) -> Dict[str, Any]:
-    if hasattr(snapshot, "world") and hasattr(snapshot, "spatial"):
-        return {
-            "world": snapshot.world,
-            "spatial": snapshot.spatial,
-            "entities": snapshot.entities,
-            "relationships": snapshot.relationships,
-            "meta": getattr(snapshot, "meta", {}) or {},
-        }
+    if hasattr(snapshot, 'world') and hasattr(snapshot, 'spatial'):
+        return {'world': snapshot.world, 'spatial': snapshot.spatial, 'entities': snapshot.entities, 'relationships': snapshot.relationships, 'meta': getattr(snapshot, 'meta', {}) or {}}
     if isinstance(snapshot, dict):
         return snapshot
-    raise GraphSeedError(WorldErrorCode.WORLD_DATA_INVALID.value, "snapshot must be PackageSnapshotV2 or dict")
-
+    raise GraphSeedError(WorldErrorCode.WORLD_DATA_INVALID.value, 'snapshot must be PackageSnapshotV2 or dict')
 
 def _build_specs(world_id: str, snap: Mapping[str, Any], profile: WorldGraphProfile) -> List[_NodeSpec]:
     specs: List[_NodeSpec] = []
-    world = snap.get("world") or {}
-    wid = str(world.get("id") or "")
+    world = snap.get('world') or {}
+    wid = str(world.get('id') or '')
     if not wid:
-        raise GraphSeedError(
-            WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value, "snapshot.world.id is required"
-        )
-    specs.append(
-        _NodeSpec(
-            logical_id=wid,
-            package_type_code=str(world.get("type_code") or "world"),
-            name=str(world.get("display_name") or wid)[:255],
-            attributes={k: v for k, v in world.items() if k not in ("id", "type_code", "display_name", "tags")},
-            tags=list(world.get("tags") or []),
-        )
-    )
-
-    spatial = snap.get("spatial") or {}
-    for b in spatial.get("buildings") or []:
-        if not isinstance(b, dict) or not b.get("id"):
+        raise GraphSeedError(WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value, 'snapshot.world.id is required')
+    specs.append(_NodeSpec(logical_id=wid, package_type_code=str(world.get('type_code') or 'world'), name=str(world.get('display_name') or wid)[:255], attributes={k: v for (k, v) in world.items() if k not in ('id', 'type_code', 'display_name', 'tags')}, tags=list(world.get('tags') or [])))
+    spatial = snap.get('spatial') or {}
+    for b in spatial.get('buildings') or []:
+        if not isinstance(b, dict) or not b.get('id'):
             continue
-        bid = str(b["id"])
-        specs.append(
-            _NodeSpec(
-                logical_id=bid,
-                package_type_code=str(b.get("type_code") or "building"),
-                name=str(b.get("display_name") or bid)[:255],
-                attributes={k: v for k, v in b.items() if k not in ("id", "type_code", "display_name", "tags")},
-                tags=list(b.get("tags") or []),
-            )
-        )
-    for f in spatial.get("floors") or []:
-        if not isinstance(f, dict) or not f.get("id"):
+        bid = str(b['id'])
+        specs.append(_NodeSpec(logical_id=bid, package_type_code=str(b.get('type_code') or 'building'), name=str(b.get('display_name') or bid)[:255], attributes={k: v for (k, v) in b.items() if k not in ('id', 'type_code', 'display_name', 'tags')}, tags=list(b.get('tags') or [])))
+    for f in spatial.get('floors') or []:
+        if not isinstance(f, dict) or not f.get('id'):
             continue
-        fid = str(f["id"])
-        specs.append(
-            _NodeSpec(
-                logical_id=fid,
-                package_type_code=str(f.get("type_code") or "building_floor"),
-                name=fid[:255],
-                attributes={k: v for k, v in f.items() if k not in ("id", "type_code", "display_name", "tags")},
-                tags=list(f.get("tags") or []),
-            )
-        )
-    for r in spatial.get("rooms") or []:
-        if not isinstance(r, dict) or not r.get("id"):
+        fid = str(f['id'])
+        specs.append(_NodeSpec(logical_id=fid, package_type_code=str(f.get('type_code') or 'building_floor'), name=fid[:255], attributes={k: v for (k, v) in f.items() if k not in ('id', 'type_code', 'display_name', 'tags')}, tags=list(f.get('tags') or [])))
+    for r in spatial.get('rooms') or []:
+        if not isinstance(r, dict) or not r.get('id'):
             continue
-        rid = str(r["id"])
-        specs.append(
-            _NodeSpec(
-                logical_id=rid,
-                package_type_code=str(r.get("type_code") or "room"),
-                name=str(r.get("display_name") or rid)[:255],
-                attributes={k: v for k, v in r.items() if k not in ("id", "type_code", "display_name", "tags")},
-                tags=list(r.get("tags") or []),
-            )
-        )
-
-    entities = snap.get("entities") or {}
-    for bucket in ("zones", "npcs", "items"):
+        rid = str(r['id'])
+        specs.append(_NodeSpec(logical_id=rid, package_type_code=str(r.get('type_code') or 'room'), name=str(r.get('display_name') or rid)[:255], attributes={k: v for (k, v) in r.items() if k not in ('id', 'type_code', 'display_name', 'tags')}, tags=list(r.get('tags') or [])))
+    entities = snap.get('entities') or {}
+    for bucket in ('zones', 'npcs', 'items'):
         for row in entities.get(bucket) or []:
-            if not isinstance(row, dict) or not row.get("id"):
+            if not isinstance(row, dict) or not row.get('id'):
                 continue
-            eid = str(row["id"])
-            specs.append(
-                _NodeSpec(
-                    logical_id=eid,
-                    package_type_code=str(row.get("type_code") or ""),
-                    name=str(row.get("display_name") or eid)[:255],
-                    attributes=_entity_row_flat_attributes(row),
-                    tags=list(row.get("tags") or []),
-                )
-            )
+            eid = str(row['id'])
+            specs.append(_NodeSpec(logical_id=eid, package_type_code=str(row.get('type_code') or ''), name=str(row.get('display_name') or eid)[:255], attributes=_entity_row_flat_attributes(row), tags=list(row.get('tags') or [])))
     return specs
-
 
 def _entity_row_flat_attributes(row: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -154,79 +81,51 @@ def _entity_row_flat_attributes(row: Dict[str, Any]) -> Dict[str, Any]:
     YAML entities keep device/item fields under ``attributes:``; without merging,
     keys like ``room_list_name`` stay nested and look/typeclasses never see them.
     """
-    skip = frozenset({"id", "type_code", "display_name", "tags", "world_id"})
+    skip = frozenset({'id', 'type_code', 'display_name', 'tags', 'world_id'})
     top: Dict[str, Any] = {}
-    for k, v in row.items():
-        if k in skip or k == "attributes":
+    for (k, v) in row.items():
+        if k in skip or k == 'attributes':
             continue
         top[k] = v
-    nested = row.get("attributes")
+    nested = row.get('attributes')
     if isinstance(nested, dict):
         return {**top, **nested}
     return top
-
 
 def _load_node_type_map(session: Session) -> Dict[str, NodeType]:
     rows = session.query(NodeType).all()
     return {r.type_code: r for r in rows}
 
-
 def _load_rel_type_map(session: Session) -> Dict[str, RelationshipType]:
     rows = session.query(RelationshipType).all()
     return {r.type_code: r for r in rows}
 
-
-def _validate_trait_ready_for_seed(
-    profile: WorldGraphProfile,
-    nt_map: Dict[str, NodeType],
-    rt_map: Dict[str, RelationshipType],
-) -> None:
+def _validate_trait_ready_for_seed(profile: WorldGraphProfile, nt_map: Dict[str, NodeType], rt_map: Dict[str, RelationshipType]) -> None:
     missing: List[str] = []
     for pkg_type in _PACKAGE_TYPES_FROM_PROFILE(profile):
         db_type = profile.map_node_type(pkg_type)
         nt = nt_map.get(db_type)
         if not nt:
-            missing.append(f"node:{db_type}:missing")
+            missing.append(f'node:{db_type}:missing')
             continue
-        if str(getattr(nt, "trait_class", "") or "").upper() == "UNKNOWN":
-            missing.append(f"node:{db_type}:trait_class")
-        if int(getattr(nt, "trait_mask", 0) or 0) < 0:
-            missing.append(f"node:{db_type}:trait_mask")
+        if str(getattr(nt, 'trait_class', '') or '').upper() == 'UNKNOWN':
+            missing.append(f'node:{db_type}:trait_class')
+        if int(getattr(nt, 'trait_mask', 0) or 0) < 0:
+            missing.append(f'node:{db_type}:trait_mask')
     for rel_code in sorted(profile.allowed_relationship_type_codes):
         rt = rt_map.get(rel_code)
         if not rt:
-            missing.append(f"relationship:{rel_code}:missing")
+            missing.append(f'relationship:{rel_code}:missing')
             continue
-        if str(getattr(rt, "trait_class", "") or "").upper() == "UNKNOWN":
-            missing.append(f"relationship:{rel_code}:trait_class")
-        if int(getattr(rt, "trait_mask", 0) or 0) < 0:
-            missing.append(f"relationship:{rel_code}:trait_mask")
+        if str(getattr(rt, 'trait_class', '') or '').upper() == 'UNKNOWN':
+            missing.append(f'relationship:{rel_code}:trait_class')
+        if int(getattr(rt, 'trait_mask', 0) or 0) < 0:
+            missing.append(f'relationship:{rel_code}:trait_mask')
     if missing:
-        raise GraphSeedError(
-            WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value,
-            f"trait profile missing for graph seed: {missing}",
-        )
-
+        raise GraphSeedError(WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value, f'trait profile missing for graph seed: {missing}')
 
 def _PACKAGE_TYPES_FROM_PROFILE(profile: WorldGraphProfile) -> Set[str]:
-    # Minimal extraction from the known hicampus profile mapping function by probing known package buckets.
-    # Kept generic enough for profile implementations that expose static mapping.
-    candidates = {
-        "world",
-        "building",
-        "building_floor",
-        "room",
-        "npc_agent",
-        "access_terminal",
-        "world_object",
-        "furniture",
-        "network_access_point",
-        "av_display",
-        "lighting_fixture",
-        "conference_seating",
-        "lounge_furniture",
-        "logical_zone",
-    }
+    candidates = {'world', 'building', 'building_floor', 'room', 'npc_agent', 'access_terminal', 'world_object', 'furniture', 'network_access_point', 'av_display', 'lighting_fixture', 'conference_seating', 'lounge_furniture', 'logical_zone'}
     out: Set[str] = set()
     for c in candidates:
         try:
@@ -236,29 +135,16 @@ def _PACKAGE_TYPES_FROM_PROFILE(profile: WorldGraphProfile) -> Set[str]:
             continue
     return out
 
-
-def _upsert_node(
-    session: Session,
-    world_id: str,
-    spec: _NodeSpec,
-    profile: WorldGraphProfile,
-    nt_map: Dict[str, NodeType],
-) -> Tuple[Node, str]:
+def _upsert_node(session: Session, world_id: str, spec: _NodeSpec, profile: WorldGraphProfile, nt_map: Dict[str, NodeType]) -> Tuple[Node, str]:
     db_type = profile.map_node_type(spec.package_type_code)
-
     nt = nt_map.get(db_type)
     if not nt:
-        raise GraphSeedError(
-            WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value,
-            f"node_types row missing for type_code={db_type}",
-        )
-
+        raise GraphSeedError(WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value, f'node_types row missing for type_code={db_type}')
     nuuid = node_uuid(world_id, spec.logical_id)
     existing = session.query(Node).filter(Node.uuid == nuuid).first()
     merged_attrs = dict(spec.attributes)
-    merged_attrs["world_id"] = world_id
-    merged_attrs["package_node_id"] = spec.logical_id
-
+    merged_attrs['world_id'] = world_id
+    merged_attrs['package_node_id'] = spec.logical_id
     if existing:
         existing.name = spec.name
         existing.attributes = {**(existing.attributes or {}), **merged_attrs}
@@ -267,83 +153,30 @@ def _upsert_node(
         existing.type_code = db_type
         existing.trait_class = nt.trait_class
         existing.trait_mask = nt.trait_mask
-        return existing, "skipped"
-
-    node = Node(
-        uuid=nuuid,
-        type_id=nt.id,
-        type_code=db_type,
-        name=spec.name,
-        description=None,
-        is_active=True,
-        is_public=True,
-        access_level="normal",
-        trait_class=nt.trait_class,
-        trait_mask=nt.trait_mask,
-        attributes=merged_attrs,
-        tags=spec.tags,
-    )
+        return (existing, 'skipped')
+    node = Node(uuid=nuuid, type_id=nt.id, type_code=db_type, name=spec.name, description=None, is_active=True, is_public=True, access_level='normal', trait_class=nt.trait_class, trait_mask=nt.trait_mask, attributes=merged_attrs, tags=spec.tags)
     session.add(node)
     session.flush()
-    return node, "created"
+    return (node, 'created')
 
-
-def _ensure_relationship(
-    session: Session,
-    rt_map: Dict[str, RelationshipType],
-    source: Node,
-    target: Node,
-    type_code: str,
-    attributes: Optional[Dict[str, Any]] = None,
-) -> str:
+def _ensure_relationship(session: Session, rt_map: Dict[str, RelationshipType], source: Node, target: Node, type_code: str, attributes: Optional[Dict[str, Any]]=None) -> str:
     rt = rt_map.get(type_code)
     if not rt:
-        raise GraphSeedError(
-            WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value,
-            f"relationship_types row missing for type_code={type_code}",
-        )
-    exists = (
-        session.query(Relationship)
-        .filter(
-            Relationship.source_id == source.id,
-            Relationship.target_id == target.id,
-            Relationship.type_code == type_code,
-            Relationship.is_active.is_(True),
-        )
-        .first()
-    )
+        raise GraphSeedError(WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value, f'relationship_types row missing for type_code={type_code}')
+    exists = session.query(Relationship).filter(Relationship.source_id == source.id, Relationship.target_id == target.id, Relationship.type_code == type_code, Relationship.is_active.is_(True)).first()
     if exists:
-        return "skipped"
-    rel = Relationship(
-        uuid=uuidlib.uuid4(),
-        type_id=rt.id,
-        type_code=type_code,
-        source_id=source.id,
-        target_id=target.id,
-        is_active=True,
-        attributes=attributes or {},
-        trait_class=rt.trait_class,
-        trait_mask=rt.trait_mask,
-        tags=[],
-    )
+        return 'skipped'
+    rel = Relationship(uuid=uuidlib.uuid4(), type_id=rt.id, type_code=type_code, source_id=source.id, target_id=target.id, is_active=True, attributes=attributes or {}, trait_class=rt.trait_class, trait_mask=rt.trait_mask, tags=[])
     session.add(rel)
     session.flush()
-    return "created"
+    return 'created'
 
-
-def _effective_strict_relationships(
-    profile: WorldGraphProfile, strict_relationships: Optional[bool]
-) -> bool:
+def _effective_strict_relationships(profile: WorldGraphProfile, strict_relationships: Optional[bool]) -> bool:
     if strict_relationships is not None:
         return strict_relationships
-    return bool(getattr(profile, "strict_relationships", False))
+    return bool(getattr(profile, 'strict_relationships', False))
 
-
-def _sync_space_hierarchy_location_ids(
-    session: Session,
-    id_to_node: Dict[str, Node],
-    world_id: str,
-) -> None:
+def _sync_space_hierarchy_location_ids(session: Session, id_to_node: Dict[str, Node], world_id: str) -> None:
     """
     Set ``Node.location_id`` for SPACE types so child.parent forms a single chain:
     world (optional) ← building ← building_floor ← room.
@@ -351,26 +184,25 @@ def _sync_space_hierarchy_location_ids(
     Source of truth: package spatial fields on merged ``attributes`` (``world_id``,
     ``building_id``, ``floor_id``) and ``id_to_node`` logical id keys.
     """
-    for _logical_id, node in id_to_node.items():
-        tc = str(node.type_code or "")
+    for (_logical_id, node) in id_to_node.items():
+        tc = str(node.type_code or '')
         attrs = dict(node.attributes or {})
-        if tc == "building":
-            wid = str(attrs.get("world_id") or world_id).strip()
+        if tc == 'building':
+            wid = str(attrs.get('world_id') or world_id).strip()
             parent = id_to_node.get(wid)
             if parent is not None and int(node.location_id or 0) != int(parent.id):
                 node.location_id = int(parent.id)
-        elif tc == "building_floor":
-            bid = str(attrs.get("building_id") or "").strip()
+        elif tc == 'building_floor':
+            bid = str(attrs.get('building_id') or '').strip()
             parent = id_to_node.get(bid)
             if parent is not None and int(node.location_id or 0) != int(parent.id):
                 node.location_id = int(parent.id)
-        elif tc == "room":
-            fid = str(attrs.get("floor_id") or "").strip()
+        elif tc == 'room':
+            fid = str(attrs.get('floor_id') or '').strip()
             parent = id_to_node.get(fid)
             if parent is not None and int(node.location_id or 0) != int(parent.id):
                 node.location_id = int(parent.id)
     session.flush()
-
 
 def _prune_world_topology_auto_connects(session: Session, world_node_ids: Set[int]) -> int:
     """
@@ -381,20 +213,11 @@ def _prune_world_topology_auto_connects(session: Session, world_node_ids: Set[in
     """
     if not world_node_ids:
         return 0
-    rows = (
-        session.query(Relationship)
-        .filter(
-            Relationship.type_code == "connects_to",
-            Relationship.is_active.is_(True),
-            Relationship.source_id.in_(world_node_ids),
-            Relationship.target_id.in_(world_node_ids),
-        )
-        .all()
-    )
+    rows = session.query(Relationship).filter(Relationship.type_code == 'connects_to', Relationship.is_active.is_(True), Relationship.source_id.in_(world_node_ids), Relationship.target_id.in_(world_node_ids)).all()
     removed = 0
     for rel in rows:
         attrs = dict(rel.attributes or {})
-        if attrs.get("topology_auto") is True:
+        if attrs.get('topology_auto') is True:
             rel.is_active = False
             session.add(rel)
             removed += 1
@@ -402,15 +225,7 @@ def _prune_world_topology_auto_connects(session: Session, world_node_ids: Set[in
         session.flush()
     return removed
 
-
-def run_graph_seed(
-    session: Session,
-    world_id: str,
-    snapshot: Any,
-    profile: WorldGraphProfile,
-    *,
-    strict_relationships: Optional[bool] = None,
-) -> Dict[str, Any]:
+def run_graph_seed(session: Session, world_id: str, snapshot: Any, profile: WorldGraphProfile, *, strict_relationships: Optional[bool]=None) -> Dict[str, Any]:
     """
     Execute idempotent seed inside an open SQLAlchemy session (caller commits).
 
@@ -424,33 +239,25 @@ def run_graph_seed(
     t0 = time.perf_counter()
     snap = _snapshot_as_dict(snapshot)
     if str(world_id) != str(profile.world_package_id):
-        raise GraphSeedError(
-            WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value,
-            f"world_id {world_id!r} does not match profile.world_package_id {profile.world_package_id!r}",
-        )
-
+        raise GraphSeedError(WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value, f'world_id {world_id!r} does not match profile.world_package_id {profile.world_package_id!r}')
     nt_map = _load_node_type_map(session)
     rt_map = _load_rel_type_map(session)
     _validate_trait_ready_for_seed(profile, nt_map, rt_map)
     allowed_rels = profile.allowed_relationship_type_codes
-
     specs = _build_specs(world_id, snap, profile)
     id_to_node: Dict[str, Node] = {}
     nodes_created = 0
     nodes_skipped = 0
-
     for spec in specs:
-        node, status = _upsert_node(session, world_id, spec, profile, nt_map)
+        (node, status) = _upsert_node(session, world_id, spec, profile, nt_map)
         id_to_node[spec.logical_id] = node
-        if status == "created":
+        if status == 'created':
             nodes_created += 1
         else:
             nodes_skipped += 1
-
-    world_node_ids: Set[int] = {int(n.id) for n in id_to_node.values() if getattr(n, "id", None) is not None}
+    world_node_ids: Set[int] = {int(n.id) for n in id_to_node.values() if getattr(n, 'id', None) is not None}
     pruned_topology_auto = _prune_world_topology_auto_connects(session, world_node_ids)
-
-    rels: List[Dict[str, Any]] = list(snap.get("relationships") or [])
+    rels: List[Dict[str, Any]] = list(snap.get('relationships') or [])
     connects_pairs: Set[Tuple[str, str]] = set()
     rels_created = 0
     rels_skipped = 0
@@ -458,79 +265,49 @@ def run_graph_seed(
     ign_by_type: Dict[str, int] = {}
     ign_sample: List[Dict[str, str]] = []
     _IGN_SAMPLE_MAX = 10
-
     for rel in rels:
         if not isinstance(rel, dict):
             continue
-        rtc = str(rel.get("rel_type_code") or "")
+        rtc = str(rel.get('rel_type_code') or '')
         if not rtc:
             continue
         if rtc not in allowed_rels:
             if strict:
-                raise GraphSeedError(
-                    WorldErrorCode.GRAPH_SEED_RELATIONSHIP_UNSUPPORTED.value,
-                    f"relationship type not allowed by graph profile (strict): "
-                    f"id={rel.get('id')!r} rel_type_code={rtc!r}",
-                )
+                raise GraphSeedError(WorldErrorCode.GRAPH_SEED_RELATIONSHIP_UNSUPPORTED.value, f"relationship type not allowed by graph profile (strict): id={rel.get('id')!r} rel_type_code={rtc!r}")
             ign_by_type[rtc] = ign_by_type.get(rtc, 0) + 1
             if len(ign_sample) < _IGN_SAMPLE_MAX:
-                ign_sample.append(
-                    {
-                        "id": str(rel.get("id") or ""),
-                        "rel_type_code": rtc,
-                    }
-                )
+                ign_sample.append({'id': str(rel.get('id') or ''), 'rel_type_code': rtc})
             continue
-        src_id = str(rel.get("source_id") or "")
-        tgt_id = str(rel.get("target_id") or "")
+        src_id = str(rel.get('source_id') or '')
+        tgt_id = str(rel.get('target_id') or '')
         src_n = id_to_node.get(src_id)
         tgt_n = id_to_node.get(tgt_id)
         if not src_n or not tgt_n:
-            raise GraphSeedError(
-                WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value,
-                f"relationship endpoints not loaded: {rel.get('id')} {src_id}->{tgt_id}",
-            )
-        sw = str((src_n.attributes or {}).get("world_id") or "")
-        tw = str((tgt_n.attributes or {}).get("world_id") or "")
-        if sw and tw and sw != tw:
-            raise GraphSeedError(
-                WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value,
-                f"relationship crosses world boundary in snapshot (disallowed; use admin bridge): "
-                f"id={rel.get('id')!r} {sw!r}->{tw!r}",
-            )
-        if rtc == "connects_to":
+            raise GraphSeedError(WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value, f"relationship endpoints not loaded: {rel.get('id')} {src_id}->{tgt_id}")
+        sw = str((src_n.attributes or {}).get('world_id') or '')
+        tw = str((tgt_n.attributes or {}).get('world_id') or '')
+        if sw and tw and (sw != tw):
+            raise GraphSeedError(WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value, f"relationship crosses world boundary in snapshot (disallowed; use admin bridge): id={rel.get('id')!r} {sw!r}->{tw!r}")
+        if rtc == 'connects_to':
             connects_pairs.add((src_id, tgt_id))
-        st = _ensure_relationship(
-            session,
-            rt_map,
-            src_n,
-            tgt_n,
-            rtc,
-            dict(rel.get("attributes") or {}),
-        )
-        if rtc == "located_in":
+        st = _ensure_relationship(session, rt_map, src_n, tgt_n, rtc, dict(rel.get('attributes') or {}))
+        if rtc == 'located_in':
             _sync_location_from_located_in(session, src_n, tgt_n)
-        if st == "created":
+        if st == 'created':
             rels_created += 1
         else:
             rels_skipped += 1
-
-    # Evennia-style: single-parent location_id chain for SPACE hierarchy (building → floor → room).
-    # Avoids using connects_to to model containment. Uses spatial attributes already merged on nodes.
     _sync_space_hierarchy_location_ids(session, id_to_node, world_id)
-
-    # Bidirectional connects_to: add reverse when only one directed edge declared
-    for a, b in list(connects_pairs):
+    for (a, b) in list(connects_pairs):
         if (b, a) not in connects_pairs:
             na = id_to_node.get(a)
             nb = id_to_node.get(b)
             if na and nb:
-                st = _ensure_relationship(session, rt_map, nb, na, "connects_to", {})
-                if st == "created":
+                st = _ensure_relationship(session, rt_map, nb, na, 'connects_to', {})
+                if st == 'created':
                     rels_created += 1
                 else:
                     rels_skipped += 1
-
     duration_ms = int((time.perf_counter() - t0) * 1000)
     ign_total = sum(ign_by_type.values())
     node_trait_distribution: Dict[str, int] = {}
@@ -538,30 +315,8 @@ def run_graph_seed(
     for n in id_to_node.values():
         key = f"{str(n.trait_class or 'UNKNOWN')}:{int(n.trait_mask or 0)}"
         node_trait_distribution[key] = node_trait_distribution.get(key, 0) + 1
-    rel_rows = (
-        session.query(Relationship)
-        .filter(Relationship.source_id.in_(world_node_ids), Relationship.target_id.in_(world_node_ids))
-        .all()
-    )
+    rel_rows = session.query(Relationship).filter(Relationship.source_id.in_(world_node_ids), Relationship.target_id.in_(world_node_ids)).all()
     for rel in rel_rows:
         key = f"{str(rel.trait_class or 'UNKNOWN')}:{int(rel.trait_mask or 0)}"
         rel_trait_distribution[key] = rel_trait_distribution.get(key, 0) + 1
-    return {
-        "ok": True,
-        "error_code": None,
-        "message": "graph seed completed",
-        "details": {
-            "nodes_upserted": nodes_created,
-            "nodes_skipped": nodes_skipped,
-            "relationships_created": rels_created,
-            "relationships_skipped": rels_skipped,
-            "relationships_ignored_count": ign_total,
-            "relationships_ignored_by_type": dict(sorted(ign_by_type.items())),
-            "relationships_ignored_sample": ign_sample,
-            "relationships_pruned_topology_auto": pruned_topology_auto,
-            "strict_relationships": strict,
-            "duration_ms": duration_ms,
-            "node_trait_distribution": dict(sorted(node_trait_distribution.items())),
-            "relationship_trait_distribution": dict(sorted(rel_trait_distribution.items())),
-        },
-    }
+    return {'ok': True, 'error_code': None, 'message': 'graph seed completed', 'details': {'nodes_upserted': nodes_created, 'nodes_skipped': nodes_skipped, 'relationships_created': rels_created, 'relationships_skipped': rels_skipped, 'relationships_ignored_count': ign_total, 'relationships_ignored_by_type': dict(sorted(ign_by_type.items())), 'relationships_ignored_sample': ign_sample, 'relationships_pruned_topology_auto': pruned_topology_auto, 'strict_relationships': strict, 'duration_ms': duration_ms, 'node_trait_distribution': dict(sorted(node_trait_distribution.items())), 'relationship_trait_distribution': dict(sorted(rel_trait_distribution.items()))}}

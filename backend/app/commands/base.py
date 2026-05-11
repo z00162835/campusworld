@@ -2,7 +2,6 @@
 抽象命令基类
 基于单一职责原则，命令与协议无关
 """
-
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
@@ -11,10 +10,9 @@ from app.core.log import get_logger, LoggerNames
 
 class CommandType(Enum):
     """命令类型枚举"""
-    SYSTEM = "system"
-    GAME = "game"
-    ADMIN = "admin"
-
+    SYSTEM = 'system'
+    GAME = 'game'
+    ADMIN = 'admin'
 
 @dataclass
 class CommandContext:
@@ -29,11 +27,8 @@ class CommandContext:
     metadata: Optional[Dict[str, Any]] = None
     db_session: Optional[Any] = None
     roles: List[str] = field(default_factory=list)
-    #: F13: opt-in NDJSON stream (SSH); default False per product decision P7.
     supports_aico_stream: bool = False
-    #: Callable taking one NDJSON line (no trailing newline required).
     stream_emit: Optional[Any] = None
-    #: F13: native SSH ``aico -i`` human progress (plain text only); MUST NOT be JSON. Unused when ``supports_aico_stream``.
     aico_progress_emit: Optional[Any] = None
 
     def get_caller(self):
@@ -43,17 +38,16 @@ class CommandContext:
             elif hasattr(self.session, '_load_user_object'):
                 self.caller = self.session._load_user_object()
         return self.caller
-    
+
     def has_permission(self, permission: str) -> bool:
         """检查是否有指定权限"""
         return permission in self.permissions
-    
-    def get_game_state(self, key: str, default: Any = None) -> Any:
+
+    def get_game_state(self, key: str, default: Any=None) -> Any:
         """获取场景状态"""
         if not self.game_state:
             return default
         return self.game_state.get(key, default)
-
 
 @dataclass
 class CommandResult:
@@ -64,97 +58,66 @@ class CommandResult:
     error: Optional[str] = None
     command_type: Optional[CommandType] = None
     should_exit: bool = False
-    #: When True, interactive shells (e.g. SSH) should show a usage line without an "Error:" prefix.
     is_usage: bool = False
 
     @classmethod
-    def success_result(cls, message: str, data: Optional[Dict[str, Any]] = None, 
-                      command_type: Optional[CommandType] = None) -> 'CommandResult':
+    def success_result(cls, message: str, data: Optional[Dict[str, Any]]=None, command_type: Optional[CommandType]=None) -> 'CommandResult':
         return cls(success=True, message=message, data=data, command_type=command_type)
 
     @classmethod
-    def usage_result(
-        cls,
-        message: str,
-        data: Optional[Dict[str, Any]] = None,
-        command_type: Optional[CommandType] = None,
-    ) -> 'CommandResult':
-        return cls(
-            success=False,
-            message=message,
-            data=data,
-            error="usage",
-            command_type=command_type,
-            is_usage=True,
-        )
-    
-    @classmethod
-    def error_result(
-        cls,
-        message: str,
-        error: Optional[str] = None,
-        command_type: Optional[CommandType] = None,
-        *,
-        is_usage: bool = False,
-    ) -> 'CommandResult':
-        if is_usage and (error is None or error == ""):
-            error = "usage"
-        return cls(
-            success=False,
-            message=message,
-            error=error,
-            command_type=command_type,
-            is_usage=is_usage,
-        )
+    def usage_result(cls, message: str, data: Optional[Dict[str, Any]]=None, command_type: Optional[CommandType]=None) -> 'CommandResult':
+        return cls(success=False, message=message, data=data, error='usage', command_type=command_type, is_usage=True)
 
+    @classmethod
+    def error_result(cls, message: str, error: Optional[str]=None, command_type: Optional[CommandType]=None, *, is_usage: bool=False) -> 'CommandResult':
+        if is_usage and (error is None or error == ''):
+            error = 'usage'
+        return cls(success=False, message=message, error=error, command_type=command_type, is_usage=is_usage)
 
 class BaseCommand(ABC):
     """抽象命令基类 - 协议无关"""
-    
-    def __init__(self, name: str, description: str = "", aliases: List[str] = None,
-                 command_type: CommandType = CommandType.SYSTEM):
+
+    def __init__(self, name: str, description: str='', aliases: List[str]=None, command_type: CommandType=CommandType.SYSTEM):
         self.name = name
         self.description = description
         self.aliases = aliases or []
         self.command_type = command_type
         self.logger = get_logger(LoggerNames.COMMAND)
-    
+
     @abstractmethod
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         """执行命令 - 子类必须实现"""
         pass
-    
+
     def validate_args(self, args: List[str]) -> bool:
         """验证参数 - 子类可重写"""
         return True
-    
+
     def get_help(self) -> str:
         """获取帮助信息"""
-        return f"{self.name}: {self.description}"
-    
+        return f'{self.name}: {self.description}'
+
     def get_usage(self) -> str:
         """获取使用说明"""
-        return f"{self.name} [options]"
-    
+        return f'{self.name} [options]'
+
     def get_localized_description(self, locale: str) -> str:
         """One-line description: centralized YAML in ``i18n/locales/`` first, then legacy table, then ``description``."""
         from app.commands.i18n.command_resource import get_localized_string_from_resource
         from app.commands.i18n.locale_text import FALLBACK_CHAIN, pick_i18n, normalize_locale
-
         loc = normalize_locale(locale)
-        from_resource = get_localized_string_from_resource(self.name, "description", loc)
+        from_resource = get_localized_string_from_resource(self.name, 'description', loc)
         if from_resource:
             return from_resource
-        i18n = getattr(self, "description_i18n", None)
+        i18n = getattr(self, 'description_i18n', None)
         if isinstance(i18n, dict) and i18n:
             return pick_i18n(i18n, loc, fallbacks=FALLBACK_CHAIN, legacy_default=self.description).value
         return self.description
 
     def get_localized_usage(self, locale: str) -> str:
         from app.commands.i18n.locale_text import FALLBACK_CHAIN, pick_i18n, normalize_locale
-
         loc = normalize_locale(locale)
-        i18n = getattr(self, "usage_i18n", None)
+        i18n = getattr(self, 'usage_i18n', None)
         if isinstance(i18n, dict) and i18n:
             return pick_i18n(i18n, loc, fallbacks=FALLBACK_CHAIN, legacy_default=self.get_usage()).value
         return self.get_usage()
@@ -162,60 +125,47 @@ class BaseCommand(ABC):
     def get_detailed_help(self) -> str:
         """Default detailed help (``zh-CN`` shell); prefer :meth:`get_detailed_help_for_locale` when a locale is known."""
         from app.commands.i18n.locale_text import DEFAULT_LOCALE
-
         return self.get_detailed_help_for_locale(DEFAULT_LOCALE)
 
     def get_detailed_help_for_locale(self, locale: str) -> str:
         from app.commands.i18n.locale_text import help_shell_for_locale, normalize_locale
-
         loc = normalize_locale(locale)
         shell = help_shell_for_locale(loc)
-        title = shell["title_detail"].format(name=self.name)
-        sep = "=" * max(8, len(title))
-        help_text = f"""
-{title}
-{sep}
-{shell["line_description"].format(text=self.get_localized_description(loc))}
-{shell["line_type"].format(text=self.command_type.value)}
-{shell["line_usage"].format(text=self.get_localized_usage(loc))}
-"""
+        title = shell['title_detail'].format(name=self.name)
+        sep = '=' * max(8, len(title))
+        help_text = f"\n{title}\n{sep}\n{shell['line_description'].format(text=self.get_localized_description(loc))}\n{shell['line_type'].format(text=self.command_type.value)}\n{shell['line_usage'].format(text=self.get_localized_usage(loc))}\n"
         if self.aliases:
-            help_text += shell["line_aliases"].format(items=", ".join(self.aliases)) + "\n"
+            help_text += shell['line_aliases'].format(items=', '.join(self.aliases)) + '\n'
         help_text += self._get_specific_help()
         return help_text.strip()
-    
+
     def _get_specific_help(self) -> str:
         """获取特定帮助信息 - 子类可重写"""
-        return ""
-
+        return ''
 
 class SystemCommand(BaseCommand):
     """系统命令基类"""
-    
-    def __init__(self, name: str, description: str = "", aliases: List[str] = None):
-        super().__init__(name, description, aliases, CommandType.SYSTEM)
 
+    def __init__(self, name: str, description: str='', aliases: List[str]=None):
+        super().__init__(name, description, aliases, CommandType.SYSTEM)
 
 class GameCommand(BaseCommand):
     """场景命令基类"""
-    
-    def __init__(self, name: str, description: str = "", aliases: List[str] = None,
-                 game_name: str = ""):
+
+    def __init__(self, name: str, description: str='', aliases: List[str]=None, game_name: str=''):
         super().__init__(name, description, aliases, CommandType.GAME)
         self.game_name = game_name
-    
+
     def is_game_running(self, context: CommandContext) -> bool:
         """检查场景是否运行"""
         return context.get_game_state('is_running', False)
-    
+
     def get_game_info(self, context: CommandContext) -> Dict[str, Any]:
         """获取场景信息"""
         return context.get_game_state('game_info', {})
 
-
 class AdminCommand(BaseCommand):
     """管理员命令基类"""
-    
-    def __init__(self, name: str, description: str = "", aliases: List[str] = None):
-        super().__init__(name, description, aliases, CommandType.ADMIN)
 
+    def __init__(self, name: str, description: str='', aliases: List[str]=None):
+        super().__init__(name, description, aliases, CommandType.ADMIN)

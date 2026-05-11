@@ -2,7 +2,6 @@
 配置管理器
 负责加载和管理YAML配置文件，支持环境变量覆盖和配置继承
 """
-
 import os
 import sys
 from pathlib import Path
@@ -11,8 +10,6 @@ from copy import deepcopy
 import json
 from app.core.log import get_logger
 from app.core.paths import get_config_dir
-
-# 检查并导入yaml模块
 try:
     import yaml
     YAML_AVAILABLE = True
@@ -25,59 +22,50 @@ class ConfigLoader:
     def __init__(self, config_dir: Path, env: str):
         self.config_dir = config_dir
         self.env = env
-        self.logger = get_logger("campusworld.config_loader")
-    
+        self.logger = get_logger('campusworld.config_loader')
+
     def load_base_config(self) -> Dict[str, Any]:
         """加载基础配置"""
-        return self._load_yaml_file("settings.yaml") or {}
-    
+        return self._load_yaml_file('settings.yaml') or {}
+
     def load_env_config(self) -> Dict[str, Any]:
         """加载环境配置"""
-        env_file_names = [
-            f"settings.{self.env}.yaml",
-            f"settings.{self.env[:3]}.yaml"
-        ]
-        
+        env_file_names = [f'settings.{self.env}.yaml', f'settings.{self.env[:3]}.yaml']
         for env_file_name in env_file_names:
             env_config = self._load_yaml_file(env_file_name)
             if env_config:
                 return env_config
-        
         return {}
-    
+
     def _load_yaml_file(self, filename: str) -> Optional[Dict[str, Any]]:
         """加载YAML文件"""
         file_path = self.config_dir / filename
-        
         if not file_path.exists():
             return None
-        
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = yaml.safe_load(f)
                 return content if content is not None else {}
         except yaml.YAMLError as e:
-            self.logger.error(f"YAML syntax error in {filename}: {e}")
+            self.logger.error(f'YAML syntax error in {filename}: {e}')
             return None
         except Exception as e:
-            self.logger.error(f"Failed to read config file {filename}: {e}")
+            self.logger.error(f'Failed to read config file {filename}: {e}')
             return None
-    
+
     def _merge_config(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """合并配置（深度合并）"""
         result = deepcopy(base)
-        
-        for key, value in override.items():
+        for (key, value) in override.items():
             if key in result and isinstance(result[key], dict) and isinstance(value, dict):
                 result[key] = self._merge_config(result[key], value)
             else:
                 result[key] = value
-        
         return result
 
 class ConfigManager:
     """配置管理器"""
-    
+
     def __init__(self):
         """
         初始化配置管理器
@@ -86,392 +74,307 @@ class ConfigManager:
             config_dir: 配置文件目录
             env: 环境名称 (dev, test, prod)
         """
-        # 检查依赖是否可用
         if not YAML_AVAILABLE:
-            raise ImportError("PyYAML 模块未安装")
-            # 自动检测配置文件目
-
+            raise ImportError('PyYAML 模块未安装')
         self.config_dir = get_config_dir()
-
-        self.env = os.getenv("ENVIRONMENT", "development")
-        self.logger = get_logger("campusworld.config_manager")
+        self.env = os.getenv('ENVIRONMENT', 'development')
+        self.logger = get_logger('campusworld.config_manager')
         self._config_cache = {}
-
-        # 关键：先赋值全局实例，防止循环调用导致递归
         global _config_manager_instance
         _config_manager_instance = self
-
         self._load_config()
 
     def _load_config(self):
         """加载配置文件"""
         try:
             loader = ConfigLoader(self.config_dir, self.env)
-
-            # 加载基础配置
             base_config = loader.load_base_config()
             if not base_config:
-                raise RuntimeError(f"基础配置文件不存在: {self.config_dir}/settings.yaml")
-
-            # 加载环境配置
+                raise RuntimeError(f'基础配置文件不存在: {self.config_dir}/settings.yaml')
             env_config = loader.load_env_config()
-
-            # 合并配置
             self._config_cache = loader._merge_config(base_config, env_config)
-
-            # 应用环境变量覆盖
             self._apply_env_overrides()
-
-            self.logger.info(f"配置加载成功，环境: {self.env}")
-
+            self.logger.info(f'Configuration loaded successfully, environment: {self.env}')
             try:
                 from app.game_engine.agent_runtime.agent_llm_config import refresh_aico_system_llm_config
-
                 refresh_aico_system_llm_config()
             except Exception as e:
-                self.logger.warning("refresh_aico_system_llm_config failed (non-fatal): %s", e)
-
+                self.logger.warning('refresh_aico_system_llm_config failed (non-fatal): %s', e)
             try:
                 from app.core.log.aico_observability import configure_aico_observability_logging
-
                 configure_aico_observability_logging(self)
             except Exception as e:
-                self.logger.warning("configure_aico_observability_logging failed (non-fatal): %s", e)
-
+                self.logger.warning('configure_aico_observability_logging failed (non-fatal): %s', e)
         except Exception as e:
-            self.logger.error(f"配置加载失败: {e}")
-            raise RuntimeError(f"配置加载失败: {e}")
+            self.logger.error(f'Failed to load configuration: {e}')
+            raise RuntimeError(f'配置加载失败: {e}')
 
     def _apply_env_overrides(self):
         """应用环境变量覆盖"""
         try:
-            for key_path, value in self._get_env_configs():
+            for (key_path, value) in self._get_env_configs():
                 self._set_nested_value(self._config_cache, key_path, value)
         except Exception as e:
-            self.logger.warning(f"Environment variable override failed: {e}")
-    
+            self.logger.warning(f'Environment variable override failed: {e}')
+
     def _get_env_configs(self) -> list:
         """获取环境变量配置"""
         env_configs = []
-        
-        for key, value in os.environ.items():
-            if key.startswith("CAMPUSWORLD_"):
-                # 转换 CAMPUSWORLD_DATABASE_HOST -> database.host
-                config_path = key.replace("CAMPUSWORLD_", "").lower().replace("_", ".")
-                env_configs.append((config_path.split("."), value))
-        
+        for (key, value) in os.environ.items():
+            if key.startswith('CAMPUSWORLD_'):
+                config_path = key.replace('CAMPUSWORLD_', '').lower().replace('_', '.')
+                env_configs.append((config_path.split('.'), value))
         return env_configs
-    
+
     def _set_nested_value(self, config: Dict[str, Any], path: list, value: Any):
         """设置嵌套配置值"""
         current = config
-        
         for key in path[:-1]:
             if key not in current:
                 current[key] = {}
             current = current[key]
-        
-        # 尝试转换值类型
         current[path[-1]] = self._convert_value(value)
-    
+
     def _convert_value(self, value: str) -> Union[str, int, float, bool]:
         """转换环境变量值类型"""
-        # 布尔值
         if value.lower() in ('true', 'false'):
             return value.lower() == 'true'
-        
-        # 整数
         try:
             return int(value)
         except ValueError:
             pass
-        
-        # 浮点数
         try:
             return float(value)
         except ValueError:
             pass
-        
-        # 字符串
         return value
 
-    
     def validate(self) -> bool:
         """验证配置"""
         try:
-            # 首先检查配置是否已加载
             if not self._config_cache:
-                print("[FAIL] Config not loaded")
+                print('[FAIL] Config not loaded')
                 return False
-            
-            # 检查必要的配置键
             required_keys = ['app', 'database', 'security']
             missing_keys = []
-            
             for key in required_keys:
                 if not self.get(key):
                     missing_keys.append(key)
-            
             if missing_keys:
                 self.logger.warning(f"Missing required config keys: {', '.join(missing_keys)}")
                 return False
-
-            # 检查数据库配置
             db_config = self.get('database')
             if db_config:
                 required_db_keys = ['host', 'port', 'name']
                 for key in required_db_keys:
                     if not db_config.get(key):
-                        self.logger.warning(f"Database config missing key: {key}")
+                        self.logger.warning(f'Database config missing key: {key}')
                         return False
-
-            # 检查安全配置
             security_config = self.get('security')
             if security_config:
                 if not security_config.get('secret_key') or security_config.get('secret_key') == 'your-secret-key-here-change-in-production':
                     if self.env == 'production':
-                        self.logger.error("Production environment must set security key")
+                        self.logger.error('Production environment must set security key')
                         return False
                     else:
-                        self.logger.warning("Development environment using default security key")
-
-            self.logger.info("Config validation passed")
+                        self.logger.warning('Development environment using default security key')
+            self.logger.info('Config validation passed')
             return True
-            
         except Exception as e:
-            self.logger.error(f"Config validation failed: {e}")
+            self.logger.error(f'Config validation failed: {e}')
             return False
 
-
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any=None) -> Any:
         """获取配置值"""
         try:
             keys = key.split('.')
             value = self._config_cache
-            
             for k in keys:
                 if isinstance(value, dict) and k in value:
                     value = value[k]
                 else:
                     return default
-            
             return value
         except Exception as e:
-            self.logger.error(f"获取配置失败: {e}")
+            self.logger.error(f'Failed to get configuration: {e}')
             return default
-    
-    def get_nested(self, *keys: str, default: Any = None) -> Any:
+
+    def get_nested(self, *keys: str, default: Any=None) -> Any:
         """获取嵌套配置值"""
         try:
             value = self._config_cache
-            
             for key in keys:
                 if isinstance(value, dict) and key in value:
                     value = value[key]
                 else:
                     return default
-            
             return value
         except Exception as e:
-            self.logger.warning(f"Failed to get nested config: {e}")
+            self.logger.warning(f'Failed to get nested config: {e}')
             return default
-    
+
     def set(self, key: str, value: Any):
         """设置配置值"""
         keys = key.split('.')
         config = self._config_cache
-        
-        # 导航到父级
         for k in keys[:-1]:
             if k not in config:
                 config[k] = {}
             config = config[k]
-        
-        # 设置值
         config[keys[-1]] = value
-    
+
     def has(self, key: str) -> bool:
         """检查配置键是否存在"""
         try:
             keys = key.split('.')
             value = self._config_cache
-            
             for k in keys:
                 if isinstance(value, dict) and k in value:
                     value = value[k]
                 else:
                     return False
-            
             return True
         except Exception:
             return False
-    
+
     def get_all(self) -> Dict[str, Any]:
         """获取所有配置"""
         return deepcopy(self._config_cache)
-    
+
     def reload(self) -> bool:
         """重新加载配置"""
         try:
-            self._config_cache = {}  # 清空现有配置
-            self._load_config()  # 重新加载
+            self._config_cache = {}
+            self._load_config()
             return True
         except Exception as e:
-            self.logger.error(f"配置重载失败: {e}")
+            self.logger.error(f'Failed to reload configuration: {e}')
             return False
-    
-    def export(self, format: str = "yaml", file_path: Optional[str] = None) -> str:
+
+    def export(self, format: str='yaml', file_path: Optional[str]=None) -> str:
         """导出配置"""
-        if format.lower() == "yaml":
+        if format.lower() == 'yaml':
             content = yaml.dump(self._config_cache, default_flow_style=False, allow_unicode=True)
-        elif format.lower() == "json":
+        elif format.lower() == 'json':
             content = json.dumps(self._config_cache, indent=2, ensure_ascii=False)
         else:
-            raise ValueError(f"Unsupported format: {format}")
-        
+            raise ValueError(f'Unsupported format: {format}')
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
-        
         return content
-    
+
     def get_database_url(self) -> str:
         """获取数据库连接URL"""
         db_config = self.get('database')
         if not db_config:
-            raise ValueError("Database configuration not found")
-        
+            raise ValueError('Database configuration not found')
         engine = db_config.get('engine', 'postgresql')
         host = db_config.get('host', 'localhost')
         port = db_config.get('port', 5432)
         name = db_config.get('name', 'campusworld')
         user = db_config.get('user', '')
         password = db_config.get('password', '')
-        
         if user and password:
-            return f"{engine}://{user}:{password}@{host}:{port}/{name}"
+            return f'{engine}://{user}:{password}@{host}:{port}/{name}'
         else:
-            return f"{engine}://{host}:{port}/{name}"
-    
+            return f'{engine}://{host}:{port}/{name}'
+
     def get_redis_url(self) -> str:
         """获取Redis连接URL"""
         redis_config = self.get('redis')
         if not redis_config:
-            raise ValueError("Redis configuration not found")
-        
+            raise ValueError('Redis configuration not found')
         host = redis_config.get('host', 'localhost')
         port = redis_config.get('port', 6379)
         db = redis_config.get('db', 0)
         password = redis_config.get('password', '')
-        
         if password:
-            return f"redis://:{password}@{host}:{port}/{db}"
+            return f'redis://:{password}@{host}:{port}/{db}'
         else:
-            return f"redis://{host}:{port}/{db}"
-    
+            return f'redis://{host}:{port}/{db}'
+
     def get_ssh_config(self) -> Dict[str, Any]:
         """获取SSH配置"""
-        return self._config_cache.get("ssh", {})
-    
+        return self._config_cache.get('ssh', {})
+
     def get_security_config(self) -> Dict[str, Any]:
         """获取安全配置"""
-        return self._config_cache.get("security", {})
-    
+        return self._config_cache.get('security', {})
+
     def get_monitoring_config(self) -> Dict[str, Any]:
         """获取监控配置"""
-        return self._config_cache.get("monitoring", {})
-    
+        return self._config_cache.get('monitoring', {})
+
     def get_app_config(self) -> Dict[str, Any]:
         """获取应用配置"""
-        return self._config_cache.get("app", {})
-    
+        return self._config_cache.get('app', {})
+
     def get_server_config(self) -> Dict[str, Any]:
         """获取服务器配置"""
-        return self._config_cache.get("server", {})
-    
+        return self._config_cache.get('server', {})
+
     def get_api_config(self) -> Dict[str, Any]:
         """获取API配置"""
-        return self._config_cache.get("api", {})
-    
+        return self._config_cache.get('api', {})
+
     def get_logging_config(self) -> Dict[str, Any]:
         """获取日志配置"""
-        return self._config_cache.get("logging", {})
-    
+        return self._config_cache.get('logging', {})
+
     def get_cache_config(self) -> Dict[str, Any]:
         """获取缓存配置"""
-        return self._config_cache.get("cache", {})
-    
+        return self._config_cache.get('cache', {})
+
     def get_environment(self) -> str:
         """获取当前环境"""
         return self.env
-    
+
     def is_development(self) -> bool:
         """是否为开发环境"""
-        return self.env == "development"
-    
+        return self.env == 'development'
+
     def is_production(self) -> bool:
         """是否为生产环境"""
-        return self.env == "production"
-    
+        return self.env == 'production'
+
     def is_testing(self) -> bool:
         """是否为测试环境"""
-        return self.env == "testing"
-    
+        return self.env == 'testing'
+
     def get_feature_flag(self, feature: str) -> bool:
         """获取特性开关状态"""
-        return self.get(f"app.features.{feature}", False)
-    
+        return self.get(f'app.features.{feature}', False)
+
     def get_config_summary(self) -> str:
         """获取配置摘要"""
         from app.version import get_version
-
         summary = []
-        summary.append("Configuration Summary")
-        summary.append("=" * 60)
-
-        # 应用信息
+        summary.append('Configuration Summary')
+        summary.append('=' * 60)
         app = self.get_app_config()
         summary.append(f"Application: {app.get('name', 'Unknown')} v{get_version()}")
         summary.append(f"Environment: {app.get('environment', 'Unknown')}")
         summary.append(f"Debug: {app.get('debug', False)}")
-        
-        # 服务器信息
         server = self.get_server_config()
         summary.append(f"Server: {server.get('host', 'Unknown')}:{server.get('port', 'Unknown')}")
         summary.append(f"Workers: {server.get('workers', 1)}")
-        
-        # 数据库信息
         db_url = self.get_database_url()
-        summary.append(f"Database: {db_url.split('@')[-1] if '@' in db_url else db_url}")
-        
-        # Redis信息
+        summary.append(f"Database: {(db_url.split('@')[-1] if '@' in db_url else db_url)}")
         redis_url = self.get_redis_url()
-        summary.append(f"Redis: {redis_url.split('@')[-1] if '@' in redis_url else redis_url}")
-        
-        # SSH信息
+        summary.append(f"Redis: {(redis_url.split('@')[-1] if '@' in redis_url else redis_url)}")
         ssh = self.get_ssh_config()
         summary.append(f"SSH: {ssh.get('host', 'Unknown')}:{ssh.get('port', 'Unknown')}")
-        
-        return "\n".join(summary)
+        return '\n'.join(summary)
 
     def is_loaded(self) -> bool:
         """检查配置是否已加载"""
         return bool(self._config_cache)
-    
+
     def get_config_status(self) -> Dict[str, Any]:
         """获取配置状态"""
-        return {
-            'loaded': self.is_loaded(),
-            'environment': self.env,
-            'config_dir': str(self.config_dir),
-            'config_keys': list(self._config_cache.keys()) if self._config_cache else []
-        }
-
-
-# 全局配置管理器实例（延迟初始化）
+        return {'loaded': self.is_loaded(), 'environment': self.env, 'config_dir': str(self.config_dir), 'config_keys': list(self._config_cache.keys()) if self._config_cache else []}
 _config_manager_instance = None
-
-# 便捷函数
 
 def get_config() -> ConfigManager:
     """获取配置管理器实例"""
@@ -480,19 +383,16 @@ def get_config() -> ConfigManager:
         try:
             _config_manager_instance = ConfigManager()
         except Exception as e:
-            raise RuntimeError(f"无法创建配置管理器: {e}")
+            raise RuntimeError(f'无法创建配置管理器: {e}')
     return _config_manager_instance
 
-
-def get_setting(key: str, default: Any = None) -> Any:
+def get_setting(key: str, default: Any=None) -> Any:
     """获取配置值的便捷函数"""
     return get_config().get(key, default)
 
-
-def get_nested_setting(*keys: str, default: Any = None) -> Any:
+def get_nested_setting(*keys: str, default: Any=None) -> Any:
     """获取嵌套配置值"""
     return get_config().get_nested(*keys, default)
-
 
 def reload_config() -> bool:
     """重新加载配置"""
@@ -501,25 +401,15 @@ def reload_config() -> bool:
 def get_config_summary() -> str:
     """获取配置摘要"""
     return get_config().get_config_summary()
-
-
-# 如果直接运行此文件，进行测试
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
-        print("Running config manager test...")
-        
-        # 创建配置管理器实例
+        print('Running config manager test...')
         cm = ConfigManager()
-        
-        # 打印配置摘要
         print(cm.get_config_summary())
-        
-        # 验证配置
         if cm.validate():
-            print("[OK] Config manager test passed")
+            print('[OK] Config manager test passed')
         else:
-            print("[WARN] Config manager test completed with warnings")
-
+            print('[WARN] Config manager test completed with warnings')
     except Exception as e:
-        print(f"[FAIL] Config manager test failed: {e}")
+        print(f'[FAIL] Config manager test failed: {e}')
         sys.exit(1)

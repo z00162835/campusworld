@@ -2,19 +2,18 @@
 SSH会话管理模块
 管理用户SSH连接会话，包括状态跟踪和清理
 """
-
 import time
 import threading
 import logging
 from typing import Dict, Optional, Any, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
-
 from app.core.database import db_session_context
 from app.models.graph import Node
 from app.models.user import User
 from app.core.log import get_logger, LoggerNames
 logger = get_logger(LoggerNames.SSH)
+
 @dataclass
 class SSHSession:
     """SSH会话信息"""
@@ -22,70 +21,47 @@ class SSHSession:
     username: str
     user_id: int
     user_attrs: Dict[str, Any]
-
-    # 会话状态
     connected_at: datetime = field(default_factory=datetime.now)
     last_activity: datetime = field(default_factory=datetime.now)
     is_active: bool = True
-    is_closing: bool = False  # 标记正在关闭
-
-    # 用户信息
+    is_closing: bool = False
     roles: List[str] = field(default_factory=list)
     permissions: List[str] = field(default_factory=list)
-    access_level: str = "normal"
+    access_level: str = 'normal'
     _user_object: Optional[Any] = field(default=None, init=False, repr=False)
-
-    # 控制台信息
     terminal_size: Optional[tuple] = None
     command_history: List[str] = field(default_factory=list)
     output_buffer: List[str] = field(default_factory=list)
-    # 命令间短暂状态（如 look 多匹配编号消歧、默认对话线程 UUID 锚点）；不写入 DB
     command_ephemeral: Dict[str, Any] = field(default_factory=dict)
-    #: SSH 嵌套 REPL（如 `aico -i`）；由具体驱动实现 read/eval，console 只负责 I/O 委托
     nested_repl: Optional[Any] = field(default=None, init=False, repr=False)
-
-    # SSH channel 引用（用于强制关闭）
     channel: Optional[Any] = field(default=None, init=False, repr=False)
-    
+
     def __post_init__(self):
         """初始化后处理"""
-        # 从用户属性中提取信息
-        self.roles = list(self.user_attrs.get("roles") or [])
-        raw_p = self.user_attrs.get("permissions")
+        self.roles = list(self.user_attrs.get('roles') or [])
+        raw_p = self.user_attrs.get('permissions')
         if isinstance(raw_p, list):
             self.permissions = [str(x) for x in raw_p]
         elif raw_p is not None and str(raw_p).strip():
             self.permissions = [str(raw_p).strip()]
         else:
             self.permissions = []
-        self.access_level = str(self.user_attrs.get("access_level") or "normal")
-
-        # Emergency fallback only: normal path is attributes.permissions.
-        # Keep command path alive for legacy accounts while surfacing data drift.
+        self.access_level = str(self.user_attrs.get('access_level') or 'normal')
         if not self.permissions:
             al = self.access_level.lower()
-            if al in ("admin", "developer", "dev", "development"):
-                self.permissions = ["admin.*"]
-            elif al in ("normal", "user", "campus"):
-                self.permissions = ["player"]
-            logger.warning(
-                "ssh_session_permission_fallback",
-                extra={
-                    "username": self.username,
-                    "user_id": self.user_id,
-                    "access_level": self.access_level,
-                    "fallback_permissions": list(self.permissions),
-                },
-            )
-    
+            if al in ('admin', 'developer', 'dev', 'development'):
+                self.permissions = ['admin.*']
+            elif al in ('normal', 'user', 'campus'):
+                self.permissions = ['player']
+            logger.warning('ssh_session_permission_fallback', extra={'username': self.username, 'user_id': self.user_id, 'access_level': self.access_level, 'fallback_permissions': list(self.permissions)})
+
     def update_activity(self):
         """更新最后活动时间"""
         self.last_activity = datetime.now()
-    
+
     def add_command(self, command: str):
         """添加命令到历史记录"""
         self.command_history.append(command)
-        # 限制历史记录长度
         if len(self.command_history) > 100:
             self.command_history = self.command_history[-100:]
         self.update_activity()
@@ -98,42 +74,29 @@ class SSHSession:
     def clear_output(self):
         """清空输出缓冲。"""
         self.output_buffer.clear()
-    
+
     def get_session_info(self) -> Dict[str, Any]:
         """获取会话信息摘要"""
-        return {
-            "session_id": self.session_id,
-            "username": self.username,
-            "user_id": self.user_id,
-            "connected_at": self.connected_at.isoformat(),
-            "last_activity": self.last_activity.isoformat(),
-            "duration": str(datetime.now() - self.connected_at),
-            "roles": self.roles,
-            "access_level": self.access_level,
-            "command_count": len(self.command_history)
-        }
-    
-    def is_expired(self, timeout_minutes: int = 30) -> bool:
+        return {'session_id': self.session_id, 'username': self.username, 'user_id': self.user_id, 'connected_at': self.connected_at.isoformat(), 'last_activity': self.last_activity.isoformat(), 'duration': str(datetime.now() - self.connected_at), 'roles': self.roles, 'access_level': self.access_level, 'command_count': len(self.command_history)}
+
+    def is_expired(self, timeout_minutes: int=30) -> bool:
         """检查会话是否过期"""
         if not self.is_active:
             return True
-        
         timeout = timedelta(minutes=timeout_minutes)
         return datetime.now() - self.last_activity > timeout
-    
+
     def cleanup(self):
         """清理会话资源"""
         self.is_active = False
         self.is_closing = True
         self.nested_repl = None
-        # 关闭SSH channel
         self._close_channel()
-        # 保存会话状态到数据库
         self._save_session_state()
 
     def _close_channel(self):
         """关闭SSH channel"""
-        if self.channel and not self.channel.closed:
+        if self.channel and (not self.channel.closed):
             try:
                 self.channel.close()
             except Exception:
@@ -143,50 +106,35 @@ class SSHSession:
     def set_channel(self, channel):
         """设置SSH channel引用"""
         self.channel = channel
-    
+
     def _save_session_state(self):
         """保存会话状态到数据库"""
         try:
             with db_session_context() as session:
-                # 查找用户节点
-                user_node = session.query(Node).filter(
-                    Node.id == self.user_id,
-                    Node.type_code == 'account',
-                    Node.is_active == True
-                ).first()
-                
+                user_node = session.query(Node).filter(Node.id == self.user_id, Node.type_code == 'account', Node.is_active == True).first()
                 if user_node:
-                    # 更新会话状态
                     attrs = user_node.attributes
-                    attrs["last_session_info"] = {
-                        "session_id": self.session_id,
-                        "last_activity": self.last_activity.isoformat(),
-                        "command_count": len(self.command_history),
-                        "terminal_size": self.terminal_size
-                    }
+                    attrs['last_session_info'] = {'session_id': self.session_id, 'last_activity': self.last_activity.isoformat(), 'command_count': len(self.command_history), 'terminal_size': self.terminal_size}
                     user_node.attributes = attrs
                     session.commit()
-                    
         except Exception as e:
-            logger.error(f"Failed to save session state: {e}")
-    
+            logger.error(f'Failed to save session state: {e}')
+
     def restore_from_state(self, session_state: Dict[str, Any]):
         """从保存的状态恢复会话"""
         if session_state:
-            # 恢复终端大小
-            if "terminal_size" in session_state:
-                self.terminal_size = session_state["terminal_size"]
-            
-            # 恢复命令历史（限制数量）
-            if "command_count" in session_state:
-                # 这里可以从数据库加载历史命令
+            if 'terminal_size' in session_state:
+                self.terminal_size = session_state['terminal_size']
+            if 'command_count' in session_state:
                 pass
+
     @property
     def user_object(self) -> Optional[Any]:
         """获取用户对象"""
         if self._user_object is None:
             self._user_object = self._load_user_object()
         return self._user_object
+
     def _load_user_object(self) -> Optional[Any]:
         """从图库加载账号到内存（单向 hydrate，不写新 ``nodes`` 行）。
 
@@ -195,38 +143,31 @@ class SSHSession:
         """
         try:
             from app.models.graph_sync import GraphSynchronizer
-
             with db_session_context() as session:
-                user_node = session.query(Node).filter(
-                    Node.id == self.user_id,
-                    Node.type_code == "account",
-                    Node.is_active == True,
-                ).first()
+                user_node = session.query(Node).filter(Node.id == self.user_id, Node.type_code == 'account', Node.is_active == True).first()
                 if not user_node:
                     return None
                 return GraphSynchronizer().sync_node_to_object(user_node, User)
         except Exception as e:
-            logger.error(f"Failed to load user object: {e}")
+            logger.error(f'Failed to load user object: {e}')
             return None
 
 class SessionManager:
     """会话管理器"""
-    
+
     def __init__(self):
         self.sessions: Dict[str, SSHSession] = {}
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
-        
-        # 启动清理线程
         self.cleanup_thread = threading.Thread(target=self._cleanup_worker, daemon=True)
         self.cleanup_thread.start()
-    
+
     def add_session(self, session: SSHSession):
         """添加新会话"""
         with self.lock:
             self.sessions[session.session_id] = session
-            self.logger.info(f"Session added: {session.session_id} for user {session.username}")
-    
+            self.logger.info(f'Session added: {session.session_id} for user {session.username}')
+
     def remove_session(self, session_id: str):
         """移除会话"""
         sess_obj = None
@@ -236,40 +177,33 @@ class SessionManager:
         if sess_obj is None:
             return
         try:
-            from app.game_engine.agent_runtime.conversation_stm_service import (
-                release_daemon_possession_for_transport_session_if_configured,
-            )
-
+            from app.game_engine.agent_runtime.conversation_stm_service import release_daemon_possession_for_transport_session_if_configured
             with db_session_context() as db:
                 release_daemon_possession_for_transport_session_if_configured(db, session_id)
                 db.commit()
         except Exception as e:
-            self.logger.warning(
-                "daemon_possession_transport_release_failed session_id=%s error=%s",
-                session_id,
-                e,
-            )
+            self.logger.warning('daemon_possession_transport_release_failed session_id=%s error=%s', session_id, e)
         try:
             sess_obj.cleanup()
         except Exception as e:
-            self.logger.warning("session.cleanup failed session_id=%s error=%s", session_id, e)
-        self.logger.info(f"Session removed: {session_id}")
-    
+            self.logger.warning('session.cleanup failed session_id=%s error=%s', session_id, e)
+        self.logger.info(f'Session removed: {session_id}')
+
     def get_session(self, session_id: str) -> Optional[SSHSession]:
         """获取指定会话"""
         with self.lock:
             return self.sessions.get(session_id)
-    
+
     def get_user_sessions(self, username: str) -> List[SSHSession]:
         """获取指定用户的所有会话"""
         with self.lock:
             return [s for s in self.sessions.values() if s.username == username]
-    
+
     def get_active_sessions(self) -> List[SSHSession]:
         """获取所有活跃会话"""
         with self.lock:
             return [s for s in self.sessions.values() if s.is_active]
-    
+
     def get_session_count(self) -> int:
         """获取当前会话数量"""
         with self.lock:
@@ -279,64 +213,46 @@ class SessionManager:
         """返回当前管理的所有会话（含非活跃）。"""
         with self.lock:
             return list(self.sessions.values())
-    
+
     def get_user_session_count(self, username: str) -> int:
         """获取指定用户的会话数量"""
         with self.lock:
             return len([s for s in self.sessions.values() if s.username == username])
-    
+
     def update_session_activity(self, session_id: str):
         """更新会话活动时间"""
         with self.lock:
             if session_id in self.sessions:
                 self.sessions[session_id].update_activity()
-    
+
     def add_command_to_session(self, session_id: str, command: str):
         """向指定会话添加命令"""
         with self.lock:
             if session_id in self.sessions:
                 self.sessions[session_id].add_command(command)
-    
+
     def get_session_stats(self) -> Dict[str, Any]:
         """获取会话统计信息"""
         with self.lock:
             active_sessions = [s for s in self.sessions.values() if s.is_active]
             total_sessions = len(self.sessions)
-            
-            # 按用户统计
             user_stats = {}
             for session in active_sessions:
                 if session.username not in user_stats:
-                    user_stats[session.username] = {
-                        "session_count": 0,
-                        "total_commands": 0,
-                        "roles": session.roles,
-                        "access_level": session.access_level
-                    }
-                user_stats[session.username]["session_count"] += 1
-                user_stats[session.username]["total_commands"] += len(session.command_history)
-            
-            return {
-                "total_sessions": total_sessions,
-                "active_sessions": len(active_sessions),
-                "user_stats": user_stats,
-                "timestamp": datetime.now().isoformat()
-            }
-    
-    def cleanup_expired_sessions(self, timeout_minutes: int = 30):
+                    user_stats[session.username] = {'session_count': 0, 'total_commands': 0, 'roles': session.roles, 'access_level': session.access_level}
+                user_stats[session.username]['session_count'] += 1
+                user_stats[session.username]['total_commands'] += len(session.command_history)
+            return {'total_sessions': total_sessions, 'active_sessions': len(active_sessions), 'user_stats': user_stats, 'timestamp': datetime.now().isoformat()}
+
+    def cleanup_expired_sessions(self, timeout_minutes: int=30):
         """清理过期会话"""
         with self.lock:
-            expired_sessions = [
-                session_id
-                for session_id, session in self.sessions.items()
-                if session.is_expired(timeout_minutes)
-            ]
-        # remove_session 会再次获取 lock，不得在持有 lock 时调用（非可重入锁会死锁）
+            expired_sessions = [session_id for (session_id, session) in self.sessions.items() if session.is_expired(timeout_minutes)]
         for session_id in expired_sessions:
             self.remove_session(session_id)
         if expired_sessions:
-            self.logger.info(f"Cleaned up {len(expired_sessions)} expired sessions")
-    
+            self.logger.info(f'Cleaned up {len(expired_sessions)} expired sessions')
+
     def cleanup_all(self):
         """清理所有会话"""
         with self.lock:
@@ -345,25 +261,18 @@ class SessionManager:
             self.sessions.clear()
         for sid in ids:
             try:
-                from app.game_engine.agent_runtime.conversation_stm_service import (
-                    release_daemon_possession_for_transport_session_if_configured,
-                )
-
+                from app.game_engine.agent_runtime.conversation_stm_service import release_daemon_possession_for_transport_session_if_configured
                 with db_session_context() as db:
                     release_daemon_possession_for_transport_session_if_configured(db, sid)
                     db.commit()
             except Exception as e:
-                self.logger.warning(
-                    "daemon_possession_transport_release_failed session_id=%s error=%s",
-                    sid,
-                    e,
-                )
+                self.logger.warning('daemon_possession_transport_release_failed session_id=%s error=%s', sid, e)
         for session in sessions:
             try:
                 session.cleanup()
             except Exception as e:
-                self.logger.warning("session.cleanup failed error=%s", e)
-        self.logger.info("All sessions cleaned up")
+                self.logger.warning('session.cleanup failed error=%s', e)
+        self.logger.info('All sessions cleaned up')
 
     def force_close_all(self):
         """强制关闭所有会话（参照 Evennia shutdown）"""
@@ -373,124 +282,75 @@ class SessionManager:
             self.sessions.clear()
         for sid in ids:
             try:
-                from app.game_engine.agent_runtime.conversation_stm_service import (
-                    release_daemon_possession_for_transport_session_if_configured,
-                )
-
+                from app.game_engine.agent_runtime.conversation_stm_service import release_daemon_possession_for_transport_session_if_configured
                 with db_session_context() as db:
                     release_daemon_possession_for_transport_session_if_configured(db, sid)
                     db.commit()
             except Exception as e:
-                self.logger.warning(
-                    "daemon_possession_transport_release_failed session_id=%s error=%s",
-                    sid,
-                    e,
-                )
+                self.logger.warning('daemon_possession_transport_release_failed session_id=%s error=%s', sid, e)
         for session in sessions:
             session.is_closing = True
             session._close_channel()
             session.is_active = False
-        self.logger.warning("All sessions force closed")
-    
+        self.logger.warning('All sessions force closed')
+
     def _cleanup_worker(self):
         """清理工作线程"""
         while True:
             try:
-                time.sleep(300)  # 每5分钟检查一次
+                time.sleep(300)
                 self.cleanup_expired_sessions()
             except Exception as e:
-                self.logger.error(f"Cleanup worker error: {e}")
-    
+                self.logger.error(f'Cleanup worker error: {e}')
+
     def save_session_logs(self):
         """保存会话日志到数据库"""
         try:
-            # 这里可以实现会话日志的持久化存储；当前仅记录日志（无需占用 DB 连接）
             for session_obj in self.sessions.values():
                 if session_obj.is_active:
-                    self.logger.info(f"Active session: {session_obj.get_session_info()}")
+                    self.logger.info(f'Active session: {session_obj.get_session_info()}')
         except Exception as e:
-            self.logger.error(f"Failed to save session logs: {e}")
-
+            self.logger.error(f'Failed to save session logs: {e}')
 
 class SessionMonitor:
     """会话监控器"""
-    
+
     def __init__(self, session_manager: SessionManager):
         self.session_manager = session_manager
         self.logger = logging.getLogger(__name__)
-    
+
     def get_connection_summary(self) -> Dict[str, Any]:
         """获取连接摘要"""
         stats = self.session_manager.get_session_stats()
-        
-        # 添加连接趋势信息
         active_sessions = self.session_manager.get_active_sessions()
         if active_sessions:
-            avg_session_duration = sum(
-                (datetime.now() - s.connected_at).total_seconds() 
-                for s in active_sessions
-            ) / len(active_sessions)
-            
-            stats["avg_session_duration_seconds"] = avg_session_duration
-            stats["avg_commands_per_session"] = sum(
-                len(s.command_history) for s in active_sessions
-            ) / len(active_sessions)
-        
+            avg_session_duration = sum(((datetime.now() - s.connected_at).total_seconds() for s in active_sessions)) / len(active_sessions)
+            stats['avg_session_duration_seconds'] = avg_session_duration
+            stats['avg_commands_per_session'] = sum((len(s.command_history) for s in active_sessions)) / len(active_sessions)
         return stats
-    
+
     def check_security_issues(self) -> List[Dict[str, Any]]:
         """检查安全相关问题"""
         issues = []
         active_sessions = self.session_manager.get_active_sessions()
-        
         for session in active_sessions:
-            # 检查长时间空闲的会话
-            if session.is_expired(10):  # 10分钟无活动
-                issues.append({
-                    "type": "idle_session",
-                    "session_id": session.session_id,
-                    "username": session.username,
-                    "idle_time": str(datetime.now() - session.last_activity),
-                    "severity": "warning"
-                })
-            
-            # 检查异常命令模式
+            if session.is_expired(10):
+                issues.append({'type': 'idle_session', 'session_id': session.session_id, 'username': session.username, 'idle_time': str(datetime.now() - session.last_activity), 'severity': 'warning'})
             if len(session.command_history) > 50:
-                issues.append({
-                    "type": "high_command_volume",
-                    "session_id": session.session_id,
-                    "username": session.username,
-                    "command_count": len(session.command_history),
-                    "severity": "info"
-                })
-        
+                issues.append({'type': 'high_command_volume', 'session_id': session.session_id, 'username': session.username, 'command_count': len(session.command_history), 'severity': 'info'})
         return issues
-    
+
     def generate_report(self) -> str:
         """生成监控报告"""
         summary = self.get_connection_summary()
         issues = self.check_security_issues()
-        
-        report = f"""
-=== CampusWorld SSH Session Report ===
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Session Statistics:
-- Total Sessions: {summary['total_sessions']}
-- Active Sessions: {summary['active_sessions']}
-- Users Connected: {len(summary['user_stats'])}
-
-User Details:
-"""
-        
-        for username, user_info in summary['user_stats'].items():
+        report = f"\n=== CampusWorld SSH Session Report ===\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\nSession Statistics:\n- Total Sessions: {summary['total_sessions']}\n- Active Sessions: {summary['active_sessions']}\n- Users Connected: {len(summary['user_stats'])}\n\nUser Details:\n"
+        for (username, user_info) in summary['user_stats'].items():
             report += f"- {username}: {user_info['session_count']} sessions, {user_info['total_commands']} commands\n"
-        
         if issues:
-            report += "\nSecurity Issues:\n"
+            report += '\nSecurity Issues:\n'
             for issue in issues:
                 report += f"- {issue['type']}: {issue['username']} ({issue['severity']})\n"
         else:
-            report += "\nNo security issues detected.\n"
-        
+            report += '\nNo security issues detected.\n'
         return report

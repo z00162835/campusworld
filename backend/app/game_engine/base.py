@@ -12,32 +12,22 @@ from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime
 import asyncio
 from pathlib import Path
-from app.core.log import (
-    get_logger, 
-    LoggerNames,
-)
-
+from app.core.log import get_logger, LoggerNames
 
 class GameEngine(ABC):
     """场景引擎基类 - 参考Evennia框架设计"""
-    
-    def __init__(self, name: str, version: str = "1.0.0"):
+
+    def __init__(self, name: str, version: str='1.0.0'):
         self.name = name
         self.version = version
         self.logger = get_logger(LoggerNames.GAME)
-        
-        # 引擎状态
         self.is_running = False
         self.start_time = None
         self.games: Dict[str, 'BaseGame'] = {}
-
-        # 核心系统 - 延迟初始化
         self._object_manager = None
         self._command_manager = None
         self._script_manager = None
         self._hook_manager = None
-
-        # 关键里程碑由启动成功/失败状态体现，中间过程不输出日志
 
     @property
     def object_manager(self):
@@ -62,227 +52,190 @@ class GameEngine(ABC):
         if self._hook_manager is None:
             self._hook_manager = HookManager(self)
         return self._hook_manager
-    
+
     def start(self) -> bool:
         """启动场景引擎"""
         try:
             if self.is_running:
-                self.logger.warning("场景引擎已在运行中")
+                self.logger.warning('World Engine already running')
                 return True
-            
             self.start_time = datetime.now()
             self.is_running = True
-            
-            # 启动核心系统
             self.object_manager.start()
             self.command_manager.start()
             self.script_manager.start()
             self.hook_manager.start()
-            
-            self.logger.info(f"场景引擎 '{self.name}' 启动成功，启动时间: {self.start_time}")
+            self.logger.info(f"World Engine '{self.name}' started successfully, startup time: {self.start_time}")
             return True
-            
         except Exception as e:
-            self.logger.error(f"场景引擎启动失败: {e}")
+            self.logger.error(f'Failed to start World Engine: {e}')
             return False
-    
+
     def stop(self) -> bool:
         """停止场景引擎"""
         try:
             if not self.is_running:
-                self.logger.warning("场景引擎未在运行")
+                self.logger.warning('World Engine not running')
                 return True
-            
-            # 停止所有场景
-            for game_name, game in self.games.items():
+            for (game_name, game) in self.games.items():
                 try:
                     game.stop()
-                    self.logger.info(f"场景 '{game_name}' 已停止")
+                    self.logger.info(f"world '{game_name}' stopped")
                 except Exception as e:
-                    self.logger.error(f"停止场景 '{game_name}' 失败: {e}")
-            
-            # 停止核心系统
+                    self.logger.error(f"Stop world '{game_name}' failed: {e}")
             self.object_manager.stop()
             self.command_manager.stop()
             self.script_manager.stop()
             self.hook_manager.stop()
-            
             self.is_running = False
             runtime = datetime.now() - self.start_time if self.start_time else None
-            
-            self.logger.info(f"场景引擎 '{self.name}' 已停止，运行时间: {runtime}")
+            self.logger.info(f"World Engine '{self.name}' stopped, uptime: {runtime}")
             return True
-            
         except Exception as e:
-            self.logger.error(f"场景引擎停止失败: {e}")
+            self.logger.error(f'Failed to stop World Engine: {e}')
             return False
-    
+
     def register_game(self, game: 'BaseGame') -> bool:
         """注册场景到引擎"""
         try:
             if game.name in self.games:
-                self.logger.warning(f"场景 '{game.name}' 已存在，将被覆盖")
-
+                self.logger.warning(f"world '{game.name}' already exists and will be overwritten")
             self.games[game.name] = game
             game.engine = self
-            # 注册成功静默，由 list_games() 查询
             return True
-
         except Exception as e:
-            self.logger.error(f"注册场景 '{game.name}' 失败: {e}")
+            self.logger.error(f"Register world '{game.name}' failed: {e}")
             return False
 
     def unregister_game(self, game_name: str) -> bool:
         """从引擎注销场景"""
         try:
             if game_name not in self.games:
-                self.logger.warning(f"场景 '{game_name}' 不存在")
+                self.logger.warning(f"world '{game_name}' does not exist")
                 return True
-
             game = self.games.pop(game_name)
             game.engine = None
-
             return True
-
         except Exception as e:
-            self.logger.error(f"注销场景 '{game_name}' 失败: {e}")
+            self.logger.error(f"Unregister world '{game_name}' failed: {e}")
             return False
-    
+
     def get_game(self, game_name: str) -> Optional['BaseGame']:
         """获取指定场景"""
         return self.games.get(game_name)
-    
+
     def list_games(self) -> List[str]:
         """列出所有已注册的场景"""
         return list(self.games.keys())
-    
+
     def get_status(self) -> Dict[str, Any]:
         """获取引擎状态"""
-        return {
-            "name": self.name,
-            "version": self.version,
-            "is_running": self.is_running,
-            "start_time": self.start_time.isoformat() if self.start_time else None,
-            "games_count": len(self.games),
-            "games": list(self.games.keys()),
-        }
-
+        return {'name': self.name, 'version': self.version, 'is_running': self.is_running, 'start_time': self.start_time.isoformat() if self.start_time else None, 'games_count': len(self.games), 'games': list(self.games.keys())}
 
 class ObjectManager:
     """对象管理器 - 管理场景中的所有对象"""
-    
+
     def __init__(self, engine: GameEngine):
         self.engine = engine
         self.logger = get_logger(LoggerNames.GAME)
         self.objects: Dict[str, Any] = {}
         self.is_running = False
-    
+
     def start(self):
         """启动对象管理器"""
         self.is_running = True
-        # 启动静默，状态通过 get_status() 查询
 
     def stop(self):
         """停止对象管理器"""
         self.is_running = False
-        # 停止静默
-    
+
     def register_object(self, obj_id: str, obj: Any) -> bool:
         """注册对象"""
         try:
             self.objects[obj_id] = obj
-            self.logger.debug(f"对象 '{obj_id}' 注册成功")
+            self.logger.debug(f"object '{obj_id}' registered successfully")
             return True
         except Exception as e:
-            self.logger.error(f"注册对象 '{obj_id}' 失败: {e}")
+            self.logger.error(f"Register object '{obj_id}' failed: {e}")
             return False
-    
+
     def get_object(self, obj_id: str) -> Optional[Any]:
         """获取对象"""
         return self.objects.get(obj_id)
 
-
 class CommandManager:
     """命令管理器 - 管理场景命令系统"""
-    
+
     def __init__(self, engine: GameEngine):
         self.engine = engine
         self.logger = get_logger(LoggerNames.GAME)
         self.commands: Dict[str, Any] = {}
         self.is_running = False
-    
+
     def start(self):
         """启动命令管理器"""
         self.is_running = True
-        # 启动静默
 
     def stop(self):
         """停止命令管理器"""
         self.is_running = False
-        # 停止静默
-    
+
     def register_command(self, cmd_name: str, cmd_handler: Any) -> bool:
         """注册命令"""
         try:
             self.commands[cmd_name] = cmd_handler
-            self.logger.debug(f"命令 '{cmd_name}' 注册成功")
+            self.logger.debug(f"command '{cmd_name}' registered successfully")
             return True
         except Exception as e:
-            self.logger.error(f"注册命令 '{cmd_name}' 失败: {e}")
+            self.logger.error(f"Register command '{cmd_name}' failed: {e}")
             return False
-
 
 class ScriptManager:
     """脚本管理器 - 管理场景脚本和定时任务"""
-    
+
     def __init__(self, engine: GameEngine):
         self.engine = engine
         self.logger = get_logger(LoggerNames.GAME)
         self.scripts: Dict[str, Any] = {}
         self.is_running = False
-    
+
     def start(self):
         """启动脚本管理器"""
         self.is_running = True
-        # 启动静默
 
     def stop(self):
         """停止脚本管理器"""
         self.is_running = False
-        # 停止静默
-
 
 class HookManager:
     """钩子管理器 - 管理事件钩子系统"""
-    
+
     def __init__(self, engine: GameEngine):
         self.engine = engine
         self.logger = get_logger(LoggerNames.GAME)
         self.hooks: Dict[str, List[Callable]] = {}
         self.is_running = False
-    
+
     def start(self):
         """启动钩子管理器"""
         self.is_running = True
-        # 启动静默
 
     def stop(self):
         """停止钩子管理器"""
         self.is_running = False
-        # 停止静默
-    
+
     def register_hook(self, event_name: str, callback: Callable) -> bool:
         """注册事件钩子"""
         try:
             if event_name not in self.hooks:
                 self.hooks[event_name] = []
             self.hooks[event_name].append(callback)
-            self.logger.debug(f"钩子 '{event_name}' 注册成功")
+            self.logger.debug(f"hook '{event_name}' registered successfully")
             return True
         except Exception as e:
-            self.logger.error(f"注册钩子 '{event_name}' 失败: {e}")
+            self.logger.error(f"Register hook '{event_name}' failed: {e}")
             return False
-    
+
     def trigger_hook(self, event_name: str, *args, **kwargs) -> List[Any]:
         """触发事件钩子"""
         results = []
@@ -292,75 +245,61 @@ class HookManager:
                     result = callback(*args, **kwargs)
                     results.append(result)
                 except Exception as e:
-                    self.logger.error(f"执行钩子 '{event_name}' 失败: {e}")
+                    self.logger.error(f"Execute hook '{event_name}' failed: {e}")
         return results
-
 
 class BaseGame(ABC):
     """场景基类 - 所有场景必须继承此类"""
-    
-    def __init__(self, name: str, version: str = "1.0.0"):
+
+    def __init__(self, name: str, version: str='1.0.0'):
         self.name = name
         self.version = version
         self.description = getattr(self, 'description', '')
         self.author = getattr(self, 'author', '')
-        
-        # 场景状态
         self.is_running = False
         self.start_time = None
         self.engine = None
-
-        # 日志
         self.logger = get_logger(LoggerNames.GAME)
-        # 初始化静默，由 start() 成功状态体现
-    
+
     @abstractmethod
     def start(self) -> bool:
         """启动场景"""
         pass
-    
+
     @abstractmethod
     def stop(self) -> bool:
         """停止场景"""
         pass
-    
+
     @abstractmethod
     def get_commands(self) -> Dict[str, Any]:
         """获取场景命令列表"""
         pass
-    
+
     def get_objects(self) -> Dict[str, Any]:
         """获取场景对象列表 - 可选实现"""
         return {}
-    
+
     def get_hooks(self) -> Dict[str, Callable]:
         """获取场景事件钩子 - 可选实现"""
         return {}
-    
+
     def execute_command(self, command: str, *args, **kwargs) -> Any:
         """执行场景命令 - 可选实现"""
         if hasattr(self, 'command_handler'):
             return self.command_handler.execute(command, *args, **kwargs)
         return None
-    
-    def get_help(self, command: str = None) -> Optional[str]:
+
+    def get_help(self, command: str=None) -> Optional[str]:
         """获取场景帮助信息 - 可选实现"""
         if command:
             return f"命令 '{command}' 的帮助信息"
         return f"场景 '{self.name}' 的帮助信息"
-    
+
     def get_player_count(self) -> int:
         """获取玩家数量 - 可选实现"""
         return 0
-    
+
     def get_status(self) -> Dict[str, Any]:
         """获取场景状态"""
-        return {
-            "name": self.name,
-            "version": self.version,
-            "description": self.description,
-            "author": self.author,
-            "is_running": self.is_running,
-            "start_time": self.start_time.isoformat() if self.start_time else None,
-            "player_count": self.get_player_count()
-        }
+        return {'name': self.name, 'version': self.version, 'description': self.description, 'author': self.author, 'is_running': self.is_running, 'start_time': self.start_time.isoformat() if self.start_time else None, 'player_count': self.get_player_count()}

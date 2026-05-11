@@ -5,6 +5,7 @@ CampusWorld is a world-semantic Campus OS: graph nodes model people, places, dev
 ## Source Of Truth
 
 - Project overview: `README.md`, `QUICKSTART.md`
+- Logging & bilingual terms (normative for log strings): `docs/glossary/TERMINOLOGY.md`
 - Architecture: `docs/architecture/README.md`
 - Models and Agent runtime: `docs/models/SPEC/SPEC.md`
 - Command system: `docs/command/SPEC/SPEC.md`
@@ -33,6 +34,11 @@ CampusWorld is a world-semantic Campus OS: graph nodes model people, places, dev
 - Login failure text is intentionally generic, except network failure.
 - Logout must clear local stores immediately and route with `replace('/login')`; backend logout must not block UI exit.
 - Backend auth state-changing endpoints must keep short-term CSRF protection via Origin/Referer validation until a stronger token scheme is adopted.
+
+## Logging Language
+
+- **Backend:** Application and library logs (`logging`, `structlog`, `self.logger`, `logging.getLogger(...)`, etc.) MUST use **English only** for human-readable message templates. Follow `docs/glossary/TERMINOLOGY.md` for product terms (e.g. 园区世界 → **CampusWorld**). Variable substitutions may contain arbitrary user/content data.
+- **Frontend:** `console.log` / `console.info` / `console.warn` / `console.error` and other developer-facing diagnostic output MUST use **English only**. End-user UI copy stays governed by i18n and product rules, not this section.
 
 ## Working Rules
 

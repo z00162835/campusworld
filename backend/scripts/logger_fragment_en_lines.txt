@@ -1,0 +1,453 @@
+Access level check failed: caller has no check_access_level method
+Permission check failed: caller has no check_permission method
+ModelManager import failed, using empty model list: 
+' missing callable get_game_instance
+Role check failed: caller has no check_role method
+' has no execute_command method
+Invalid or missing user_id, unable to resolve location: 
+Connection rate limiter initialized: max_conn=
+' has no get_commands method
+' has no get_objects method
+CampusWorld system startup failed: 
+Failed to stop CampusWorld system: 
+ Attempted operation requiring one of the following permissions: 
+Failed to get or create bulletin board node type: 
+' has no get_hooks method
+inventory command execution failed: 
+Error closing SSH server socket
+Access level check failed: unable to resolve caller
+Failed to convert Node to Object: 
+Error closing client socket: 
+Failed to get relation type by type code: 
+Failed to get node type by type code: 
+Failed to get relation type by type name: 
+Failed to get node type by type name: 
+Failed to spawn user to home: 
+Failed to spawn user to singularity room: 
+Failed to read manifest: 
+SSH server socket closed
+CampusWorld started successfully, startup time: 
+Interrupt received, stopping SSH server
+Permission check failed: unable to resolve caller
+Error cleaning up SSH console resources: 
+Node config missing name field, skipping
+Node config missing type field, skipping
+Failed to get or create room type: 
+Role check failed: unable to resolve caller
+Failed to set home to singularity room: 
+Channel state check failed, cannot send output
+Failed to initialize HTTP server: 
+World unavailable, falling back to singularity room: 
+Failed to get room info from graph data: 
+Failed to get user location from graph data: 
+CampusWorld stopped, uptime: 
+Database session exception, rolling back transaction: 
+Database operation failed, rolling back transaction: 
+Failed to get node by UUID: 
+Failed to get node by type code: 
+Failed to get active nodes by type: 
+Root node does not exist, creating...
+Error cleaning up SSH connection resources: 
+' started successfully, startup time: 
+HTTP protocol handler initialized
+Failed to initialize SSH server: 
+SSH connection rejected by rate limiter
+SSH channel write test failed: 
+SSH channel state check failed: 
+stats command execution failed: 
+Failed to get state from World Engine: 
+Error closing SSH transport: 
+Failed to send newline after command output: 
+Error handling SSH client connection
+Failed to sync object to graph database: 
+Failed to initialize builder command system: 
+Unable to ensure root node exists for user 
+Unable to get bulletin board node type ID
+No class found for node type: 
+Failed to check whether user is in singularity room: 
+Failed to ensure bulletin board singleton: 
+Bulletin board singleton created successfully: 
+Failed to get root node user list: 
+Failed to get root node statistics: 
+Error setting SSH console session
+Connection refused (rate limit exceeded)
+' stopped, uptime: 
+Look command execution failed: 
+SSH protocol handler initialized
+Failed to start SSH server: 
+SSH configuration: host=
+drop command execution failed: 
+help command execution failed: 
+look command execution failed: 
+move command execution failed: 
+take command execution failed: 
+Error closing SSH channel: 
+Initializing builder command system...
+Failed to merge CmdSet: 
+Failed to sync graph node to object: 
+Failed to sync object to graph node: 
+Failed to sync user world position: 
+Starting SSH server convenience entry
+CampusWorld command system started successfully
+CampusWorld object system started successfully
+CampusWorld script system started successfully
+Unable to get room type ID
+Failed to update user activity time: 
+Failed to get node by name: 
+Failed to find nodes by attributes: 
+Failed to find nodes by labels: 
+Failed to get nodes by type: 
+Failed to check location access permission: 
+Cleaning duplicate root node: ID=
+Login failed - IP locked
+Auto-load complete, successfully loaded 
+Failed to get current location info: 
+Failed to get all relation types: 
+Failed to get state for all worlds: 
+Failed to get all node types: 
+Account locked after repeated failed logins
+Failed to find objects by attributes: 
+Failed to find objects by labels: 
+Failed to initialize configuration manager: 
+Failed to verify root node uniqueness: 
+ root node(s), data inconsistent
+SSH server main program started
+SSH server runtime error
+SSH channel transport not available
+SSH channel state check passed
+Failed to create database engine: 
+Failed to create custom role: 
+Failed to initialize content engine: 
+Failed to initialize command system: 
+Failed to initialize CampusWorld: 
+CampusWorld command system stopped
+CampusWorld object system stopped
+CampusWorld script system stopped
+Failed to initialize worlds: 
+Builder command system initialization complete
+All CmdSets cleared
+Failed to initialize database tables: 
+Database connectivity check failed: 
+Unable to get username from transport layer
+Unable to get root node for user 
+No matching SSH session found
+Failed to find existing root node: 
+Root node not unique: found 
+Model discovery complete, found 
+User spawn failed: 
+Failed to ensure root node exists: 
+Failed to get database info: 
+Failed to get database configuration: 
+Failed to get root node info: 
+Failed to get node type class: 
+Authentication failed - wrong password
+Connection refused (IP locked)
+Configuration loaded successfully, environment: 
+ execution failed, elapsed: 
+' available commands failed: 
+' command registration complete: 
+' already exists and will be overwritten
+' already exists, skipping add
+' help info failed: 
+' no commands to register
+' no objects to register
+' no hooks to register
+' triggered successfully, returned 
+IP removed from whitelist: 
+IP added to whitelist: 
+SSH server started successfully
+dependent node(s), cannot delete
+Keeping root node: ID=
+Failed to stop content engine: 
+Failed to create session factory: 
+Failed to create relation type: 
+Failed to create singularity room: 
+Failed to create node type: 
+Failed to initialize root node: 
+Failed to delete relation type: 
+Failed to delete node type: 
+Failed to load type cache: 
+Failed to start SSH server
+Failed to start content engine: 
+Failed to stop CampusWorld: 
+Failed to start CampusWorld: 
+Failed to stop World Engine: 
+Failed to start World Engine: 
+Singularity room created successfully: 
+Stopping SSH server
+Performance monitoring - function 
+Failed to batch update attributes: 
+Error accepting SSH connection
+Failed to display multiple matches: 
+Failed to update relation type: 
+Failed to update node labels: 
+Failed to update node type: 
+Failed to build room description: 
+Failed to build item description: 
+Error during model discovery
+Error cleaning up SSH session
+Information log from custom configuration
+Debug log from custom configuration
+Failed to get relation type: 
+Failed to get other users: 
+Failed to get sync statistics: 
+Failed to get object relations: 
+Failed to get current room: 
+Failed to get room state: 
+Failed to get all attributes: 
+Failed to get item info: 
+Failed to get item attributes: 
+Failed to get item state: 
+Failed to get user location: 
+Failed to get statistics: 
+Sample critical error log
+ login entry routing complete
+API request failed: 
+API request succeeded: 
+CmdSet cleared
+IP lock cleared: 
+SSH command execution: 
+SSH server initialization
+SSH server stopped
+SSH thread pool shut down
+SSH authentication failed: 
+Relation type does not exist: 
+Relation type already exists: 
+Failed to initialize content: 
+Failed to delete root node: 
+Deleting existing root node: 
+Failed to initialize command system
+CampusWorld initialized successfully
+World Engine already running
+World interface initialization complete
+Failed to send newline: 
+Console run error
+Failed to send prompt: 
+Database session exception: 
+Database operation failed: 
+Database tables initialized successfully
+Database connectivity check succeeded
+Invalid command type: 
+Unable to ensure root node exists
+User node not found: 
+Node type not found: 
+Root node created successfully: 
+Root node deleted successfully
+Failed to check root node: 
+Error cleaning up session: 
+User node does not exist: 
+Node type does not exist: 
+Node type already exists: 
+Failed to get root node: 
+Non-blocking read error: 
+ spawn failed
+ Attempted operation requires 
+' joined world successfully
+' command failed: 
+' object failed: 
+' already has command '
+' action: 
+' state failed: 
+' left world successfully
+' hook failed: 
+SSH session cleaned up
+SSH session set
+SSH server stop
+SSH server start
+SSH channel closed
+Failed to stop content engine
+Failed to start content engine
+Content engine not initialized
+Failed to list content: 
+Failed to create relation: 
+Create world instance '
+Failed to create object: 
+Created custom role 
+Failed to create node: 
+Failed to delete relation: 
+Failed to delete node: 
+Failed to join campus: 
+Load world module '
+Failed to load model class 
+Failed to dynamically import class 
+Command name must not be empty
+World Engine not running
+Failed to echo character: 
+Batch sync graph nodes 
+Accepting new SSH connection
+Failed to search objects: 
+Failed to search items: 
+Failed to update relation: 
+Failed to update node: 
+Failed to inspect room: 
+Failed to inspect item: 
+Failed to execute query: 
+Root node already exists: 
+Failed to check labels: 
+Failed to add labels: 
+Thread cleanup error
+Failed to leave world: 
+Failed to leave campus: 
+Failed to move user: 
+Failed to remove relation: 
+Failed to remove attribute: 
+Failed to remove labels: 
+Auto-load world '
+Failed to get relation: 
+Failed to get attributes: 
+Failed to get labels: 
+Failed to get configuration: 
+Error during authentication: 
+Authentication exception: 
+Setting SSH console
+Failed to set attributes: 
+Failed to set labels: 
+Insufficient access level: 
+Input handling error
+Failed to send output: 
+Sample info log
+Sample warning log
+Sample debug log
+Sample error log
+Failed to enter world: 
+Failed to load configuration: 
+Configuration loaded successfully:
+
+Failed to reload configuration: 
+Reload content '
+ completed connections
+ execution failed: 
+ execution time: 
+' command unregistered
+' moved to '
+API request: 
+SSH session: 
+SSH log message
+SSH login succeeded
+SSH authentication attempt
+SSH authentication timed out
+SSH connection ended
+Main loop error: 
+Session cleaned up: 
+Relation does not exist: 
+Content engine does not exist
+Content engine already exists
+Write failed: 
+Write exception: 
+World already running
+Batch sync objects 
+Database operation: 
+Database log message
+Unable to get root node
+Failed to create root node
+User has no password hash
+s, error: 
+ worlds: 
+ Attempted execute 
+ error while: 
+ add permission 
+ remove permission 
+-level operation
+ missing permission 
+ role operation
+' join world
+' command '
+' failed: 
+' executed successfully
+' registered 
+' registration failed
+' registered successfully
+' unregistered 
+' unregistered successfully
+' leave world
+, error: 
+SSH command 
+Stop world '
+Load content '
+Dynamically import class 
+Unload content '
+Command execution: 
+Command execution error
+World command '
+World initialized
+World Engine '
+World log message
+World not running
+World module '
+Security event: 
+Security log message
+Audit event: 
+Audit log message
+Application log message
+Builder command '
+Execute content '
+Execute command '
+Execute world '
+Execute hook '
+Database operation 
+New SSH connection
+Show system status
+Insufficient permission: 
+Root node does not exist
+Register command '
+Register world '
+Register object '
+Register hook '
+Unregister command '
+Unregister world '
+Add command '
+Add user '
+Move user '
+Remove user '
+System event: 
+System command '
+Get content '
+Get world '
+Insufficient role: 
+Trigger event '
+Calling function: 
+ root nodes
+ failed: 
+ executed successfully
+' does not exist
+' from '
+' stopped
+' already exists
+' not registered
+Sync object 
+Search path 
+User does not exist
+Account suspended
+Account disabled
+Account locked
+Reset object 
+, permission: 
+ commands
+ objects
+ models
+ results
+ hooks
+' using
+ for role 
+Event '
+ from role 
+Location '
+Alias '
+command '
+Response: 
+world '
+object '
+Performance: 
+Root node has 
+Detected 
+Cleaned up 
+user '
+Login failed
+Login succeeded
+Authentication succeeded
+Request: 
+hook '
+Error: 
+Function 
+User 
+s

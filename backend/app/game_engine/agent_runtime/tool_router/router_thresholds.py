@@ -1,9 +1,6 @@
 """F14 router ambiguity thresholds (versioned via ``ToolRouterConfig.threshold_revision``)."""
-
 from __future__ import annotations
-
 from app.game_engine.agent_runtime.tool_router.tool_router_config import ToolRouterConfig
-
 
 def router_should_clarify(top_score: float, margin: float, cfg: ToolRouterConfig) -> bool:
     """Return True when routing should signal clarification (low margin or weak top score).
@@ -17,7 +14,6 @@ def router_should_clarify(top_score: float, margin: float, cfg: ToolRouterConfig
     if min_top is not None and float(top_score) < float(min_top):
         return True
     return False
-
 
 def router_confidence_heuristic(top_score: float, margin: float) -> float:
     """Scalar hint for Plan injection (legacy-compatible shape)."""

@@ -14,36 +14,32 @@
     def my_function():
         pass
 """
-
 import logging
 import sys
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 import os
-
-# 全局日志管理器实例
 _logging_manager: Optional['object'] = None
 
-# 预定义的日志器名称常量
 class LoggerNames:
     """预定义的日志器名称"""
-    ROOT = "root"
-    APP = "app"
-    SSH = "app.ssh"
-    GAME = "app.games"
-    DATABASE = "app.database"
-    API = "app.api"
-    AUTH = "app.auth"
-    CORE = "app.core"
-    UTILS = "app.utils"
-    TESTS = "tests"
-    PERFORMANCE = "performance"
-    AUDIT = "audit"
-    SECURITY = "security"
-    COMMAND = "command"
-    PROTOCOL = "protocol"
-    SESSION = "session"
-    AICO_AGENT = "app.agent.aico"
+    ROOT = 'root'
+    APP = 'app'
+    SSH = 'app.ssh'
+    GAME = 'app.games'
+    DATABASE = 'app.database'
+    API = 'app.api'
+    AUTH = 'app.auth'
+    CORE = 'app.core'
+    UTILS = 'app.utils'
+    TESTS = 'tests'
+    PERFORMANCE = 'performance'
+    AUDIT = 'audit'
+    SECURITY = 'security'
+    COMMAND = 'command'
+    PROTOCOL = 'protocol'
+    SESSION = 'session'
+    AICO_AGENT = 'app.agent.aico'
 
 def get_logging_manager() -> object:
     """
@@ -54,14 +50,11 @@ def get_logging_manager() -> object:
     """
     global _logging_manager
     if _logging_manager is None:
-        # 延迟导入，避免循环依赖
         from .manager import LoggingManager
-        
-        # 不导入ConfigManager，直接使用默认配置
         _logging_manager = LoggingManager()
     return _logging_manager
 
-def get_logger(name: str, level: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str, level: Optional[str]=None) -> logging.Logger:
     """
     获取日志器（延迟加载）
     
@@ -74,19 +67,11 @@ def get_logger(name: str, level: Optional[str] = None) -> logging.Logger:
     """
     manager = get_logging_manager()
     logger = manager.get_logger(name)
-    
     if level:
         logger.setLevel(getattr(logging, level.upper()))
-    
     return logger
 
-def setup_logging(
-    level: str = "INFO",
-    format_str: Optional[str] = None,
-    file_path: Optional[str] = None,
-    console_output: bool = True,
-    file_output: bool = False
-) -> object:
+def setup_logging(level: str='INFO', format_str: Optional[str]=None, file_path: Optional[str]=None, console_output: bool=True, file_output: bool=False) -> object:
     """
     设置日志系统（延迟加载）
     
@@ -114,12 +99,10 @@ def create_logging_middleware(module_name: str) -> object:
     Returns:
         LoggingMiddleware: 日志中间件实例
     """
-    # 延迟导入
     from .middleware import LoggingMiddleware
     logger = get_logger(module_name)
     return LoggingMiddleware(logger)
 
-# 便捷的日志器获取函数
 def get_app_logger() -> logging.Logger:
     """获取应用日志器"""
     return get_logger(LoggerNames.APP)
@@ -144,7 +127,6 @@ def get_security_logger() -> logging.Logger:
     """获取安全日志器"""
     return get_logger(LoggerNames.SECURITY)
 
-# 延迟导入的装饰器函数
 def log_function_call(func):
     """函数调用日志装饰器（延迟加载）"""
     from .decorators import log_function_call as _log_function_call
@@ -165,120 +147,64 @@ def log_database_operation(func):
     from .decorators import log_database_operation as _log_database_operation
     return _log_database_operation(func)
 
-
-# 延迟导入的上下文管理
 def get_logging_context():
     """获取全局日志上下文"""
     from .context import get_logging_context as _get_logging_context
     return _get_logging_context()
-
 
 def set_logging_context(**kwargs):
     """设置全局日志上下文"""
     from .context import set_logging_context as _set_logging_context
     return _set_logging_context(**kwargs)
 
-
 def get_logging_context_data():
     """获取全局日志上下文数据"""
     from .context import get_logging_context_data as _get_logging_context_data
     return _get_logging_context_data()
-
 
 def clear_logging_context():
     """清空全局日志上下文"""
     from .context import clear_logging_context as _clear_logging_context
     return _clear_logging_context()
 
-
 def with_logging_context(**kwargs):
     """日志上下文装饰器"""
     from .context import with_logging_context as _with_logging_context
     return _with_logging_context(**kwargs)
 
-# 延迟导入的格式化器
 class JSONFormatter:
     """JSON格式化器（延迟加载）"""
+
     def __new__(cls, *args, **kwargs):
         from .formatters import JSONFormatter as _JSONFormatter
         return _JSONFormatter(*args, **kwargs)
 
 class ColoredFormatter:
     """彩色格式化器（延迟加载）"""
+
     def __new__(cls, *args, **kwargs):
         from .formatters import ColoredFormatter as _ColoredFormatter
         return _ColoredFormatter(*args, **kwargs)
 
-
 class LoggingContext:
     """日志上下文（延迟加载）"""
+
     def __new__(cls, *args, **kwargs):
         from .context import LoggingContext as _LoggingContext
         return _LoggingContext(*args, **kwargs)
 
-
 class LoggingContextManager:
     """日志上下文管理器（延迟加载）"""
+
     def __new__(cls, *args, **kwargs):
         from .context import LoggingContextManager as _LoggingContextManager
         return _LoggingContextManager(*args, **kwargs)
+__all__ = ['LoggingManager', 'LoggingMiddleware', 'log_function_call', 'log_execution_time', 'log_ssh_command', 'log_database_operation', 'JSONFormatter', 'ColoredFormatter', 'LoggingContext', 'LoggingContextManager', 'get_logging_context', 'set_logging_context', 'get_logging_context_data', 'clear_logging_context', 'with_logging_context', 'LoggerNames', 'get_logging_manager', 'get_logger', 'setup_logging', 'create_logging_middleware', 'get_app_logger', 'get_ssh_logger', 'get_game_logger', 'get_database_logger', 'get_audit_logger', 'get_security_logger']
 
-# 导出所有公共接口
-__all__ = [
-    # 核心类
-    'LoggingManager',
-    'LoggingMiddleware',
-
-    # 装饰器
-    'log_function_call',
-    'log_execution_time',
-    'log_ssh_command',
-    'log_database_operation',
-
-    # 格式化器
-    'JSONFormatter',
-    'ColoredFormatter',
-
-    # 上下文管理
-    'LoggingContext',
-    'LoggingContextManager',
-    'get_logging_context',
-    'set_logging_context',
-    'get_logging_context_data',
-    'clear_logging_context',
-    'with_logging_context',
-
-    # 常量
-    'LoggerNames',
-
-    # 核心函数
-    'get_logging_manager',
-    'get_logger',
-    'setup_logging',
-    'create_logging_middleware',
-
-    # 便捷日志器获取函数
-    'get_app_logger',
-    'get_ssh_logger',
-    'get_game_logger',
-    'get_database_logger',
-    'get_audit_logger',
-    'get_security_logger'
-]
-
-# 模块初始化
 def _init_module():
     """模块初始化"""
     try:
-        # 不在这里调用setup_logging，避免循环导入
         pass
     except Exception:
-        # 如果配置失败，使用默认配置
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-
-# 执行模块初始化
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 _init_module()
-

@@ -1,17 +1,12 @@
 """Narrow I/O surface for nested REPL drivers over SSHConsole (no agent semantics)."""
-
 from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any, Dict, Optional
-
 if TYPE_CHECKING:
     from app.ssh.console import SSHConsole
 
-
 class SshReplIo:
     """Delegates PTY/channel helpers; keeps nested drivers free of SSHConsole subclasses."""
-
-    __slots__ = ("_console",)
+    __slots__ = ('_console',)
 
     def __init__(self, console: SSHConsole):
         self._console = console
@@ -68,19 +63,10 @@ class SshReplIo:
         game_state = self.get_game_state()
         context_metadata: Dict[str, Any] = {}
         if c.session_manager is not None:
-            context_metadata["session_manager"] = c.session_manager
+            context_metadata['session_manager'] = c.session_manager
         if c.game_handler is not None:
-            context_metadata["game_handler"] = c.game_handler
-        result = c.ssh_handler.handle_interactive_command(
-            user_id=user_id,
-            username=username,
-            session_id=session_id,
-            permissions=permissions,
-            command_line=cmd_line,
-            session=sess,
-            game_state=game_state,
-            metadata=context_metadata or None,
-        )
+            context_metadata['game_handler'] = c.game_handler
+        result = c.ssh_handler.handle_interactive_command(user_id=user_id, username=username, session_id=session_id, permissions=permissions, command_line=cmd_line, session=sess, game_state=game_state, metadata=context_metadata or None)
         if result:
             c._safe_send_output(result)
         c._send_command_output_newline()

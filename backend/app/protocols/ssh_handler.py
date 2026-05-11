@@ -2,7 +2,6 @@
 SSH协议处理器
 处理SSH特定的命令执行和交互逻辑
 """
-
 import os
 import time
 from typing import List, Dict, Any, Optional
@@ -13,36 +12,34 @@ from app.commands.base import CommandContext, CommandResult
 from app.commands.shell_words import split_command_line
 from app.core.database import db_session_context
 
-
 class SSHHandler(ProtocolHandler):
     """SSH协议处理器"""
-    
+
     def __init__(self):
         super().__init__()
-        self.logger.info("SSH协议处理器已初始化")
+        self.logger.info('SSH protocol handler initialized')
 
     def _attach_aico_stream_context(self, context: CommandContext, session: Optional[Any]) -> None:
         """F13: opt-in NDJSON side channel via session ephemeral or SSH_AICO_STREAM env."""
         stream_on = False
         if session is not None:
-            ep = getattr(session, "command_ephemeral", None)
-            if isinstance(ep, dict) and ep.get("supports_aico_stream"):
+            ep = getattr(session, 'command_ephemeral', None)
+            if isinstance(ep, dict) and ep.get('supports_aico_stream'):
                 stream_on = True
-        if not stream_on and os.environ.get("SSH_AICO_STREAM", "").strip().lower() in ("1", "true", "yes"):
+        if not stream_on and os.environ.get('SSH_AICO_STREAM', '').strip().lower() in ('1', 'true', 'yes'):
             stream_on = True
         if not stream_on:
             return
         context.supports_aico_stream = True
-        ch = getattr(session, "channel", None) if session is not None else None
+        ch = getattr(session, 'channel', None) if session is not None else None
         if ch is None:
             return
 
         def _emit(line: str) -> None:
             try:
-                ch.send((line + "\n").encode("utf-8"))
+                ch.send((line + '\n').encode('utf-8'))
             except Exception:
                 pass
-
         context.stream_emit = _emit
 
     def _attach_aico_repl_human_progress(self, context: CommandContext, session: Optional[Any]) -> None:
@@ -50,139 +47,116 @@ class SSHHandler(ProtocolHandler):
         F13 §17.7: plain-text processing hint for ``aico -i`` on native SSH — not NDJSON.
         Suppressed when ``supports_aico_stream`` (thin client / debug pipe owns the wire).
         """
-        if getattr(context, "supports_aico_stream", False):
+        if getattr(context, 'supports_aico_stream', False):
             return
         if session is None:
             return
-        nr = getattr(session, "nested_repl", None)
+        nr = getattr(session, 'nested_repl', None)
         if nr is None:
             return
-        bind = getattr(nr, "binds_aico_progress_emit", None)
+        bind = getattr(nr, 'binds_aico_progress_emit', None)
         if not callable(bind) or not bind():
             return
-        ch = getattr(session, "channel", None)
+        ch = getattr(session, 'channel', None)
         if ch is None:
             return
 
         def _emit(text: str) -> None:
             try:
-                ch.send(text.encode("utf-8"))
+                ch.send(text.encode('utf-8'))
             except Exception:
                 pass
-
         context.aico_progress_emit = _emit
 
-    def handle_interactive_command(self, user_id: str, username: str, session_id: str, 
-                                 permissions: List[str], command_line: str,
-                                 session: Optional[Any] = None,
-                                 game_state: Optional[Dict[str, Any]] = None,
-                                 metadata: Optional[Dict[str, Any]] = None) -> str:
+    def handle_interactive_command(self, user_id: str, username: str, session_id: str, permissions: List[str], command_line: str, session: Optional[Any]=None, game_state: Optional[Dict[str, Any]]=None, metadata: Optional[Dict[str, Any]]=None) -> str:
         """处理SSH交互式命令"""
         try:
             if not command_line.strip():
-                return ""
-            
+                return ''
             with db_session_context() as db_session:
-                context = self.create_context(
-                    user_id,
-                    username,
-                    session_id,
-                    permissions,
-                    session,
-                    game_state,
-                    db_session=db_session,
-                    metadata=metadata,
-                )
+                context = self.create_context(user_id, username, session_id, permissions, session, game_state, db_session=db_session, metadata=metadata)
                 self._attach_aico_stream_context(context, session)
                 self._attach_aico_repl_human_progress(context, session)
                 at_res = try_dispatch_at_line(command_line, context)
                 if at_res is not None:
                     return self._format_command_result(at_res)
-
-                # 解析命令（支持引号包裹含空格的参数，与常见 MUD/Evennia shell 一致）
                 parts = split_command_line(command_line)
                 command_name = parts[0].lower()
                 args = parts[1:] if len(parts) > 1 else []
-
                 command = command_registry.get_command(command_name)
                 if not command:
                     return self._format_command_not_found(command_name)
-
                 decision = command_registry.authorize_command(command, context)
                 if not decision.allowed:
                     return self._format_permission_denied(command_name)
-
                 result = command.execute(context, args)
-
                 return self._format_command_result(result)
-            
         except Exception:
-            self.logger.exception("命令执行错误")
+            self.logger.exception('Command execution error')
             return self._format_unexpected_error()
-    
-    def get_prompt(self, username: str, game_state: Optional[Dict[str, Any]] = None) -> str:
+
+    def get_prompt(self, username: str, game_state: Optional[Dict[str, Any]]=None) -> str:
         """获取SSH提示符"""
         timestamp = time.strftime('%H:%M:%S')
         if game_state and game_state.get('current_game'):
             game_name = game_state['current_game']
-            return f"[{username}@{timestamp}] {game_name}> "
+            return f'[{username}@{timestamp}] {game_name}> '
         else:
-            return f"[{username}@{timestamp}] campusworld> "
-    
-    
+            return f'[{username}@{timestamp}] campusworld> '
+
     def _format_command_not_found(self, command_name: str) -> str:
         """格式化命令未找到消息"""
         return f"Command '{command_name}' was not found. Type 'help' for available commands.\n"
-    
+
     def _format_permission_denied(self, command_name: str) -> str:
         """格式化权限拒绝消息"""
         return f"Permission denied for command '{command_name}'.\n"
-    
+
     def _usage_like_result(self, result: CommandResult) -> bool:
         """True when the result is a usage / bad-invocation hint, not a runtime failure."""
         if result.success:
             return False
-        if getattr(result, "is_usage", False):
+        if getattr(result, 'is_usage', False):
             return True
-        err = (getattr(result, "error", None) or "").strip().lower()
-        if err in ("usage", "usage_error"):
+        err = (getattr(result, 'error', None) or '').strip().lower()
+        if err in ('usage', 'usage_error'):
             return True
-        msg = (result.message or "").lstrip()
+        msg = (result.message or '').lstrip()
         mlow = msg.lower()
-        if mlow.startswith("usage:") or mlow.startswith("usage :"):
+        if mlow.startswith('usage:') or mlow.startswith('usage :'):
             return True
-        if msg.startswith("用法:") or msg.startswith("用法："):
+        if msg.startswith('用法:') or msg.startswith('用法：'):
             return True
         return False
 
     def _format_usage_message(self, result: CommandResult) -> str:
         """Single-line or multi-line usage text; no leading "Error:"."""
-        msg = (result.message or "").strip()
+        msg = (result.message or '').strip()
         mlow = msg.lower()
-        if mlow.startswith("usage:") or mlow.startswith("usage :"):
-            return msg + "\n"
-        if msg.startswith("用法:") or msg.startswith("用法："):
-            return msg + "\n"
-        return f"usage: {msg}\n"
+        if mlow.startswith('usage:') or mlow.startswith('usage :'):
+            return msg + '\n'
+        if msg.startswith('用法:') or msg.startswith('用法：'):
+            return msg + '\n'
+        return f'usage: {msg}\n'
 
     def _format_command_result(self, result: CommandResult) -> str:
         """格式化命令结果"""
         if result.success:
             data = result.data or {}
-            if data.get("aico_stream_used"):
-                return "[stream complete]\n"
-            return result.message + "\n"
+            if data.get('aico_stream_used'):
+                return '[stream complete]\n'
+            return result.message + '\n'
         if self._usage_like_result(result):
             return self._format_usage_message(result)
         data = result.data or {}
-        if data.get("aico_stream_used"):
-            return "[stream complete]\n" + f"Error: {result.message}\n"
-        return f"Error: {result.message}\n"
-    
+        if data.get('aico_stream_used'):
+            return '[stream complete]\n' + f'Error: {result.message}\n'
+        return f'Error: {result.message}\n'
+
     def _format_error(self, error: str) -> str:
         """格式化错误消息（已弃用对终端直出内部异常串；保留供显式需要时调用）。"""
-        return f"System Error: {error}\n"
+        return f'System Error: {error}\n'
 
     def _format_unexpected_error(self) -> str:
         """未分类异常：不向用户暴露实现细节。"""
-        return "System Error: An unexpected error occurred.\n"
+        return 'System Error: An unexpected error occurred.\n'

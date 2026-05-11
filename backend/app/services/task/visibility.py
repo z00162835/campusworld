@@ -16,35 +16,13 @@ visibility predicate at read time. This is **not** a silent deny: callers
 hitting these visibility kinds receive
 ``commands.task.error.visibility_unsupported``.
 """
-
 from __future__ import annotations
-
 from typing import FrozenSet
-
-
-PHASE_B_SUPPORTED_VISIBILITIES: FrozenSet[str] = frozenset(
-    {"private", "explicit", "pool_open"}
-)
-
-
-PHASE_B_DEFERRED_VISIBILITIES: FrozenSet[str] = frozenset(
-    {"role_scope", "world_scope"}
-)
-
-
-ALL_VISIBILITIES: FrozenSet[str] = (
-    PHASE_B_SUPPORTED_VISIBILITIES | PHASE_B_DEFERRED_VISIBILITIES
-)
-
+PHASE_B_SUPPORTED_VISIBILITIES: FrozenSet[str] = frozenset({'private', 'explicit', 'pool_open'})
+PHASE_B_DEFERRED_VISIBILITIES: FrozenSet[str] = frozenset({'role_scope', 'world_scope'})
+ALL_VISIBILITIES: FrozenSet[str] = PHASE_B_SUPPORTED_VISIBILITIES | PHASE_B_DEFERRED_VISIBILITIES
 
 def is_phase_b_supported(visibility: str) -> bool:
     """Return ``True`` iff ``visibility`` is enabled in Phase B."""
     return visibility in PHASE_B_SUPPORTED_VISIBILITIES
-
-
-__all__ = [
-    "PHASE_B_SUPPORTED_VISIBILITIES",
-    "PHASE_B_DEFERRED_VISIBILITIES",
-    "ALL_VISIBILITIES",
-    "is_phase_b_supported",
-]
+__all__ = ['PHASE_B_SUPPORTED_VISIBILITIES', 'PHASE_B_DEFERRED_VISIBILITIES', 'ALL_VISIBILITIES', 'is_phase_b_supported']

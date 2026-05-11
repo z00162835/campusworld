@@ -1,23 +1,14 @@
 """
 Topology validate/repair service for world graph data.
 """
-
 from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 import uuid as uuidlib
-
 from sqlalchemy import or_
-
 from app.core.database import db_session_context
-from app.game_engine.subgraph_boundary import (
-    is_authorized_cross_world_bridge,
-    node_world_id,
-    relationship_endpoints_span_worlds,
-)
+from app.game_engine.subgraph_boundary import is_authorized_cross_world_bridge, node_world_id, relationship_endpoints_span_worlds
 from app.models.graph import Node, Relationship, RelationshipType
-
 
 @dataclass
 class TopologyIssue:
@@ -26,110 +17,67 @@ class TopologyIssue:
     details: Dict[str, Any]
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"code": self.code, "message": self.message, "details": dict(self.details)}
-
+        return {'code': self.code, 'message': self.message, 'details': dict(self.details)}
 
 class WorldTopologyService:
     """Validate and repair world topology consistency."""
-
-    _DEFAULT_PROFILE: Dict[str, Any] = {"required_core_rooms": []}
-    _HICAMPUS_PROFILE: Dict[str, Any] = {
-        "required_core_rooms": ["hicampus_gate", "hicampus_bridge", "hicampus_plaza"]
-    }
+    _DEFAULT_PROFILE: Dict[str, Any] = {'required_core_rooms': []}
+    _HICAMPUS_PROFILE: Dict[str, Any] = {'required_core_rooms': ['hicampus_gate', 'hicampus_bridge', 'hicampus_plaza']}
 
     def _get_profile(self, world_id: str) -> Dict[str, Any]:
-        wid = str(world_id or "").strip().lower()
-        if wid == "hicampus":
+        wid = str(world_id or '').strip().lower()
+        if wid == 'hicampus':
             return dict(self._HICAMPUS_PROFILE)
         return dict(self._DEFAULT_PROFILE)
 
     def validate_topology(self, world_id: str) -> Dict[str, Any]:
         issues = self._collect_issues(world_id)
-        return {
-            "world_id": world_id,
-            "ok": len(issues) == 0,
-            "issues": [x.to_dict() for x in issues],
-            "issue_count": len(issues),
-        }
+        return {'world_id': world_id, 'ok': len(issues) == 0, 'issues': [x.to_dict() for x in issues], 'issue_count': len(issues)}
 
-    def repair_topology(self, world_id: str, *, dry_run: bool = True, force: bool = False) -> Dict[str, Any]:
+    def repair_topology(self, world_id: str, *, dry_run: bool=True, force: bool=False) -> Dict[str, Any]:
         issues = self._collect_issues(world_id)
         planned = self._build_repair_actions(issues)
         applied = []
         skipped = []
         if dry_run:
-            return {
-                "world_id": world_id,
-                "dry_run": True,
-                "force": force,
-                "issues": [x.to_dict() for x in issues],
-                "issues_count": len(issues),
-                "planned_actions": planned,
-                "applied_actions": [],
-                "skipped_actions": [],
-                "ok": len(planned) == 0,
-            }
-
+            return {'world_id': world_id, 'dry_run': True, 'force': force, 'issues': [x.to_dict() for x in issues], 'issues_count': len(issues), 'planned_actions': planned, 'applied_actions': [], 'skipped_actions': [], 'ok': len(planned) == 0}
         for action in planned:
-            if action.get("action") == "create_reverse_connects_to":
+            if action.get('action') == 'create_reverse_connects_to':
                 if not force:
-                    skipped.append({**action, "reason": "force_required"})
+                    skipped.append({**action, 'reason': 'force_required'})
                     continue
                 result = self._apply_create_reverse_connects_to(action)
-                if result.get("applied"):
+                if result.get('applied'):
                     applied.append(action)
                 else:
-                    skipped.append({**action, "reason": result.get("reason", "not_applied")})
-            elif action.get("action") == "disable_unauthorized_cross_world_link":
+                    skipped.append({**action, 'reason': result.get('reason', 'not_applied')})
+            elif action.get('action') == 'disable_unauthorized_cross_world_link':
                 if not force:
-                    skipped.append({**action, "reason": "force_required"})
+                    skipped.append({**action, 'reason': 'force_required'})
                     continue
                 result = self._apply_disable_unauthorized_cross_world_link(action)
-                if result.get("applied"):
+                if result.get('applied'):
                     applied.append(action)
                 else:
-                    skipped.append({**action, "reason": result.get("reason", "not_applied")})
+                    skipped.append({**action, 'reason': result.get('reason', 'not_applied')})
             else:
-                skipped.append({**action, "reason": "unsupported_action"})
-
-        return {
-            "world_id": world_id,
-            "dry_run": False,
-            "force": force,
-            "issues": [x.to_dict() for x in issues],
-            "issues_count": len(issues),
-            "planned_actions": planned,
-            "applied_actions": applied,
-            "skipped_actions": skipped,
-            "ok": (len(issues) == 0) or (len(planned) > 0 and len(skipped) == 0),
-        }
+                skipped.append({**action, 'reason': 'unsupported_action'})
+        return {'world_id': world_id, 'dry_run': False, 'force': force, 'issues': [x.to_dict() for x in issues], 'issues_count': len(issues), 'planned_actions': planned, 'applied_actions': applied, 'skipped_actions': skipped, 'ok': len(issues) == 0 or (len(planned) > 0 and len(skipped) == 0)}
 
     def _collect_cross_world_boundary_issues(self, world_id: str) -> List[TopologyIssue]:
         issues: List[TopologyIssue] = []
         with db_session_context() as session:
-            w_nodes = (
-                session.query(Node)
-                .filter(Node.attributes["world_id"].astext == str(world_id), Node.is_active == True)  # noqa: E712
-                .all()
-            )
+            w_nodes = session.query(Node).filter(Node.attributes['world_id'].astext == str(world_id), Node.is_active == True).all()
             wids = {int(n.id) for n in w_nodes}
             if not wids:
                 return []
-            rels = (
-                session.query(Relationship)
-                .filter(
-                    or_(Relationship.source_id.in_(wids), Relationship.target_id.in_(wids)),
-                    Relationship.is_active == True,  # noqa: E712
-                )
-                .all()
-            )
+            rels = session.query(Relationship).filter(or_(Relationship.source_id.in_(wids), Relationship.target_id.in_(wids)), Relationship.is_active == True).all()
             need_ids = set()
             for r in rels:
                 need_ids.add(int(r.source_id))
                 need_ids.add(int(r.target_id))
             endpoints = session.query(Node).filter(Node.id.in_(need_ids)).all()
             id2node = {int(n.id): n for n in endpoints}
-
         for r in rels:
             sn = id2node.get(int(r.source_id))
             tn = id2node.get(int(r.target_id))
@@ -139,112 +87,54 @@ class WorldTopologyService:
                 continue
             if is_authorized_cross_world_bridge(r):
                 continue
-            issues.append(
-                TopologyIssue(
-                    code="UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP",
-                    message="cross-world relationship without authorized bridge",
-                    details={
-                        "relationship_id": int(r.id),
-                        "source_id": int(r.source_id),
-                        "target_id": int(r.target_id),
-                        "source_world": node_world_id(sn),
-                        "target_world": node_world_id(tn),
-                        "world_id": str(world_id),
-                    },
-                )
-            )
+            issues.append(TopologyIssue(code='UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP', message='cross-world relationship without authorized bridge', details={'relationship_id': int(r.id), 'source_id': int(r.source_id), 'target_id': int(r.target_id), 'source_world': node_world_id(sn), 'target_world': node_world_id(tn), 'world_id': str(world_id)}))
         return issues
 
     def _collect_issues(self, world_id: str) -> List[TopologyIssue]:
         profile = self._get_profile(world_id)
-        required_core_rooms = {
-            str(x) for x in profile.get("required_core_rooms", []) if str(x).strip()
-        }
+        required_core_rooms = {str(x) for x in profile.get('required_core_rooms', []) if str(x).strip()}
         with db_session_context() as session:
-            nodes = (
-                session.query(Node)
-                .filter(Node.attributes["world_id"].astext == str(world_id), Node.is_active == True)  # noqa: E712
-                .all()
-            )
-            world_node_ids = (
-                session.query(Node.id)
-                .filter(Node.attributes["world_id"].astext == str(world_id), Node.is_active == True)  # noqa: E712
-                .subquery()
-            )
-            rels = (
-                session.query(Relationship)
-                .filter(
-                    Relationship.source_id.in_(world_node_ids),
-                    Relationship.target_id.in_(world_node_ids),
-                    Relationship.is_active == True,  # noqa: E712
-                )
-                .all()
-            )
-
+            nodes = session.query(Node).filter(Node.attributes['world_id'].astext == str(world_id), Node.is_active == True).all()
+            world_node_ids = session.query(Node.id).filter(Node.attributes['world_id'].astext == str(world_id), Node.is_active == True).subquery()
+            rels = session.query(Relationship).filter(Relationship.source_id.in_(world_node_ids), Relationship.target_id.in_(world_node_ids), Relationship.is_active == True).all()
         issues: List[TopologyIssue] = []
         by_pkg_id: Dict[str, Node] = {}
         for n in nodes:
-            pkg = str((n.attributes or {}).get("package_node_id") or "")
+            pkg = str((n.attributes or {}).get('package_node_id') or '')
             if pkg:
                 by_pkg_id[pkg] = n
-
         for need in required_core_rooms:
             if need not in by_pkg_id:
-                issues.append(
-                    TopologyIssue(
-                        code="CORE_NODE_MISSING",
-                        message=f"core room missing: {need}",
-                        details={"required_node": need, "world_id": world_id},
-                    )
-                )
-
+                issues.append(TopologyIssue(code='CORE_NODE_MISSING', message=f'core room missing: {need}', details={'required_node': need, 'world_id': world_id}))
         pair_set: Set[Tuple[int, int]] = set()
         for r in rels:
-            if r.type_code == "connects_to":
+            if r.type_code == 'connects_to':
                 pair_set.add((int(r.source_id), int(r.target_id)))
-        for src, tgt in sorted(pair_set):
+        for (src, tgt) in sorted(pair_set):
             if (tgt, src) not in pair_set:
-                issues.append(
-                    TopologyIssue(
-                        code="CONNECTS_TO_REVERSE_MISSING",
-                        message="reverse connects_to edge missing",
-                        details={"source_id": src, "target_id": tgt, "world_id": world_id},
-                    )
-                )
-
+                issues.append(TopologyIssue(code='CONNECTS_TO_REVERSE_MISSING', message='reverse connects_to edge missing', details={'source_id': src, 'target_id': tgt, 'world_id': world_id}))
         building_by_pkg: Dict[str, Node] = {}
         floors_per_building: Dict[str, int] = {}
         for n in nodes:
-            tc = str(n.type_code or "")
+            tc = str(n.type_code or '')
             attrs = n.attributes or {}
-            pkg = str(attrs.get("package_node_id") or "")
-            if tc == "building" and pkg:
+            pkg = str(attrs.get('package_node_id') or '')
+            if tc == 'building' and pkg:
                 building_by_pkg[pkg] = n
-            if tc == "building_floor":
-                bid = str(attrs.get("building_id") or "")
+            if tc == 'building_floor':
+                bid = str(attrs.get('building_id') or '')
                 if bid:
                     floors_per_building[bid] = floors_per_building.get(bid, 0) + 1
-        for b_pkg, b_node in building_by_pkg.items():
+        for (b_pkg, b_node) in building_by_pkg.items():
             attrs = b_node.attributes or {}
-            expected = attrs.get("floors_total")
+            expected = attrs.get('floors_total')
             try:
                 exp = int(expected)
             except (TypeError, ValueError):
                 continue
             actual = int(floors_per_building.get(b_pkg, 0))
             if actual != exp:
-                issues.append(
-                    TopologyIssue(
-                        code="FLOOR_COUNT_MISMATCH",
-                        message=f"building floor count mismatch: {b_pkg}",
-                        details={
-                            "building_id": b_pkg,
-                            "expected_floors_total": exp,
-                            "actual_floor_nodes": actual,
-                            "world_id": world_id,
-                        },
-                    )
-                )
+                issues.append(TopologyIssue(code='FLOOR_COUNT_MISMATCH', message=f'building floor count mismatch: {b_pkg}', details={'building_id': b_pkg, 'expected_floors_total': exp, 'actual_floor_nodes': actual, 'world_id': world_id}))
         issues.extend(self._collect_cross_world_boundary_issues(world_id))
         issues.extend(self._collect_account_session_issues(world_id))
         return issues
@@ -256,125 +146,60 @@ class WorldTopologyService:
         if not wid:
             return []
         with db_session_context() as session:
-            accounts = (
-                session.query(Node)
-                .filter(Node.type_code == "account", Node.is_active == True)  # noqa: E712
-                .all()
-            )
+            accounts = session.query(Node).filter(Node.type_code == 'account', Node.is_active == True).all()
             for acc in accounts:
                 attrs = dict(acc.attributes or {})
-                aw = str(attrs.get("active_world") or "").strip().lower()
+                aw = str(attrs.get('active_world') or '').strip().lower()
                 if aw != wid:
                     continue
-                loc_pkg = str(attrs.get("world_location") or "").strip().lower()
+                loc_pkg = str(attrs.get('world_location') or '').strip().lower()
                 if not loc_pkg:
                     continue
-                room = (
-                    session.query(Node)
-                    .filter(
-                        Node.type_code == "room",
-                        Node.attributes["package_node_id"].astext == loc_pkg,
-                        Node.is_active == True,  # noqa: E712
-                    )
-                    .first()
-                )
+                room = session.query(Node).filter(Node.type_code == 'room', Node.attributes['package_node_id'].astext == loc_pkg, Node.is_active == True).first()
                 if not room:
-                    issues.append(
-                        TopologyIssue(
-                            code="SESSION_WORLD_LOCATION_ROOM_MISSING",
-                            message=f"world_location room not found: {loc_pkg}",
-                            details={
-                                "account_id": int(acc.id),
-                                "world_id": wid,
-                                "world_location": loc_pkg,
-                            },
-                        )
-                    )
+                    issues.append(TopologyIssue(code='SESSION_WORLD_LOCATION_ROOM_MISSING', message=f'world_location room not found: {loc_pkg}', details={'account_id': int(acc.id), 'world_id': wid, 'world_location': loc_pkg}))
                     continue
                 rw = node_world_id(room)
                 if rw and rw != aw:
-                    issues.append(
-                        TopologyIssue(
-                            code="SESSION_ACTIVE_WORLD_LOCATION_MISMATCH",
-                            message="account world_location room belongs to a different world than active_world",
-                            details={
-                                "account_id": int(acc.id),
-                                "active_world": aw,
-                                "room_world_id": rw,
-                                "world_location": loc_pkg,
-                            },
-                        )
-                    )
+                    issues.append(TopologyIssue(code='SESSION_ACTIVE_WORLD_LOCATION_MISMATCH', message='account world_location room belongs to a different world than active_world', details={'account_id': int(acc.id), 'active_world': aw, 'room_world_id': rw, 'world_location': loc_pkg}))
         return issues
 
     def _build_repair_actions(self, issues: List[TopologyIssue]) -> List[Dict[str, Any]]:
         actions: List[Dict[str, Any]] = []
         for issue in issues:
-            if issue.code == "CONNECTS_TO_REVERSE_MISSING":
-                actions.append(
-                    {
-                        "action": "create_reverse_connects_to",
-                        "source_id": issue.details.get("source_id"),
-                        "target_id": issue.details.get("target_id"),
-                    }
-                )
-            elif issue.code == "UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP":
-                actions.append(
-                    {
-                        "action": "disable_unauthorized_cross_world_link",
-                        "relationship_id": issue.details.get("relationship_id"),
-                    }
-                )
+            if issue.code == 'CONNECTS_TO_REVERSE_MISSING':
+                actions.append({'action': 'create_reverse_connects_to', 'source_id': issue.details.get('source_id'), 'target_id': issue.details.get('target_id')})
+            elif issue.code == 'UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP':
+                actions.append({'action': 'disable_unauthorized_cross_world_link', 'relationship_id': issue.details.get('relationship_id')})
         return actions
 
     def _apply_create_reverse_connects_to(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        src = int(action["source_id"])
-        tgt = int(action["target_id"])
+        src = int(action['source_id'])
+        tgt = int(action['target_id'])
         with db_session_context() as session:
-            rt = session.query(RelationshipType).filter(RelationshipType.type_code == "connects_to").first()
+            rt = session.query(RelationshipType).filter(RelationshipType.type_code == 'connects_to').first()
             if not rt:
-                return {"applied": False, "reason": "relationship_type_missing"}
-            exists = (
-                session.query(Relationship)
-                .filter(
-                    Relationship.source_id == tgt,
-                    Relationship.target_id == src,
-                    Relationship.type_code == "connects_to",
-                    Relationship.is_active == True,  # noqa: E712
-                )
-                .first()
-            )
+                return {'applied': False, 'reason': 'relationship_type_missing'}
+            exists = session.query(Relationship).filter(Relationship.source_id == tgt, Relationship.target_id == src, Relationship.type_code == 'connects_to', Relationship.is_active == True).first()
             if exists:
-                return {"applied": False, "reason": "already_exists"}
-            rel = Relationship(
-                uuid=uuidlib.uuid4(),
-                type_id=rt.id,
-                type_code="connects_to",
-                source_id=tgt,
-                target_id=src,
-                is_active=True,
-                attributes={},
-                tags=[],
-            )
+                return {'applied': False, 'reason': 'already_exists'}
+            rel = Relationship(uuid=uuidlib.uuid4(), type_id=rt.id, type_code='connects_to', source_id=tgt, target_id=src, is_active=True, attributes={}, tags=[])
             session.add(rel)
             session.commit()
-        return {"applied": True}
+        return {'applied': True}
 
     def _apply_disable_unauthorized_cross_world_link(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        rid = action.get("relationship_id")
+        rid = action.get('relationship_id')
         if rid is None:
-            return {"applied": False, "reason": "missing_relationship_id"}
+            return {'applied': False, 'reason': 'missing_relationship_id'}
         with db_session_context() as session:
             rel = session.query(Relationship).filter(Relationship.id == int(rid)).first()
             if not rel:
-                return {"applied": False, "reason": "not_found"}
+                return {'applied': False, 'reason': 'not_found'}
             if is_authorized_cross_world_bridge(rel):
-                return {"applied": False, "reason": "authorized_bridge_skip"}
+                return {'applied': False, 'reason': 'authorized_bridge_skip'}
             rel.is_active = False
             session.add(rel)
             session.commit()
-        return {"applied": True}
-
-
+        return {'applied': True}
 world_topology_service = WorldTopologyService()
-

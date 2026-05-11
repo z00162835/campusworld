@@ -1,40 +1,33 @@
 """
 Authentication schemas
 """
-
 from pydantic import BaseModel, EmailStr, Field
-
 
 class UserBase(BaseModel):
     """Base user schema"""
     email: EmailStr
     username: str
 
-
 class UserCreate(UserBase):
     """User creation schema"""
     password: str = Field(..., min_length=8, max_length=256)
     full_name: str = None
-
 
 class UserLogin(BaseModel):
     """User login schema"""
     email: EmailStr
     password: str
 
-
 class Token(BaseModel):
     """Token response schema"""
     access_token: str
-    token_type: str = "bearer"
-    expires_in: int  # seconds
-    idle_expires_in: int = 1800  # seconds
-
+    token_type: str = 'bearer'
+    expires_in: int
+    idle_expires_in: int = 1800
 
 class RegisterResponse(BaseModel):
     """Registration response schema"""
     message: str
-
 
 class TokenData(BaseModel):
     """Token data schema"""

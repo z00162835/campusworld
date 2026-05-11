@@ -6,12 +6,9 @@
 - 支持运行时注册新模型
 - 无需硬编码模型列表
 """
-
 from typing import Dict, List, Any, Optional
 from app.core.log import get_logger, LoggerNames
-
 logger = get_logger(LoggerNames.COMMAND)
-
 
 class ModelDiscoverer:
     """
@@ -34,46 +31,26 @@ class ModelDiscoverer:
         """
         if self._discovered:
             return self._discovered_models
-
         try:
-            # 从 ModelManager 获取已注册的模型类型
             from app.models.model_manager import model_manager
-
-            # 获取所有节点类型
             node_types = model_manager.get_all_node_types()
-
             for node_type in node_types:
                 type_code = node_type.type_code
-
-                # 跳过抽象类型
-                if node_type.status != 0:  # 只加载活跃状态(status=0)的类型
+                if node_type.status != 0:
                     continue
-
                 try:
-                    # 动态获取模型类
                     model_class = model_manager._get_node_type_class(type_code)
                     if model_class:
-                        self._discovered_models[type_code] = {
-                            'class': model_class,
-                            'type_name': node_type.type_name,
-                            'typeclass': node_type.typeclass,
-                            'description': node_type.description,
-                            'schema': node_type.schema_definition,
-                        }
+                        self._discovered_models[type_code] = {'class': model_class, 'type_name': node_type.type_name, 'typeclass': node_type.typeclass, 'description': node_type.description, 'schema': node_type.schema_definition}
                 except Exception as e:
-                    logger.warning(f"加载模型类失败 {type_code}: {e}")
-
+                    logger.warning(f'Failed to load model class {type_code}: {e}')
             self._discovered = True
-            logger.info(f"模型发现完成，共发现 {len(self._discovered_models)} 个模型")
-
+            logger.info(f'Model discovery complete, found {len(self._discovered_models)} models')
         except ImportError as e:
-            logger.warning(f"ModelManager 导入失败，使用空模型列表: {e}")
-            self._discovered = True  # 标记为已探索，避免重复尝试
-
+            logger.warning(f'ModelManager import failed, using empty model list: {e}')
+            self._discovered = True
         except Exception as e:
-            logger.error(f"模型发现过程出错: {e}")
-            # 不标记为已探索，允许重试
-
+            logger.error(f'Error during model discovery{e}')
         return self._discovered_models
 
     def get_model(self, model_name: str) -> Optional[Any]:
@@ -100,7 +77,4 @@ class ModelDiscoverer:
         self._discovered = False
         self._discovered_models = {}
         return self.discover_models()
-
-
-# 全局模型发现器实例
 model_discoverer = ModelDiscoverer()

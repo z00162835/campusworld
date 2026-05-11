@@ -1,66 +1,47 @@
 """Dispatch `@<handle> <payload>` to npc_agent NLP tick (shared engine with `aico`)."""
-
 from __future__ import annotations
-
 from typing import Optional
-
 from app.commands.base import CommandContext, CommandResult
 from app.commands.npc_agent_resolve import resolve_npc_agent_by_handle
 from app.commands.npc_agent_nlp import assistant_nlp_command_result, run_npc_agent_nlp_tick
 from app.commands.registry import command_registry
 from app.commands.shell_words import split_command_line
 
-
 def try_dispatch_at_line(command_line: str, context: CommandContext) -> Optional[CommandResult]:
     """
     If line starts with `@`, parse handle and payload and run LLM+PDCA tick for that service_id.
     Returns None if the line is not an @-agent line (caller continues normal command routing).
     """
-    line = (command_line or "").strip()
-    if not line.startswith("@"):
+    line = (command_line or '').strip()
+    if not line.startswith('@'):
         return None
     rest = line[1:].strip()
     if not rest:
-        return CommandResult.error_result(
-            "usage: @<handle> <message>. Type 'help' for available commands."
-        )
+        return CommandResult.error_result("usage: @<handle> <message>. Type 'help' for available commands.")
     parts = split_command_line(rest)
     handle = parts[0].lower()
     payload_parts = parts[1:] if len(parts) > 1 else []
-
     if not payload_parts:
-        return CommandResult.error_result(
-            "usage: @<handle> <message or flags>. Examples: @aico hello ; @aico -l ; @aico -his <uuid>"
-        )
-
-    ref = command_registry.get_command("aico")
+        return CommandResult.error_result('usage: @<handle> <message or flags>. Examples: @aico hello ; @aico -l ; @aico -his <uuid>')
+    ref = command_registry.get_command('aico')
     if ref:
         decision = command_registry.authorize_command(ref, context)
         if not decision.allowed:
-            return CommandResult.error_result(
-                "Permission denied for @ agent. Type 'help' for available commands."
-            )
-
+            return CommandResult.error_result("Permission denied for @ agent. Type 'help' for available commands.")
     if not context.db_session:
-        return CommandResult.error_result(
-            "database session required. Type 'help' for available commands."
-        )
-
-    node, rerr = resolve_npc_agent_by_handle(context.db_session, handle)
+        return CommandResult.error_result("database session required. Type 'help' for available commands.")
+    (node, rerr) = resolve_npc_agent_by_handle(context.db_session, handle)
     if rerr:
         return CommandResult.error_result(rerr)
     attrs = node.attributes or {}
-    if str(attrs.get("decision_mode", "")).lower() != "llm":
-        return CommandResult.error_result("@ agent requires decision_mode=llm on the agent node")
-
-    sid_key = str((node.attributes or {}).get("service_id") or handle).strip().lower()
-    if sid_key == "aico" or handle == "aico":
+    if str(attrs.get('decision_mode', '')).lower() != 'llm':
+        return CommandResult.error_result('@ agent requires decision_mode=llm on the agent node')
+    sid_key = str((node.attributes or {}).get('service_id') or handle).strip().lower()
+    if sid_key == 'aico' or handle == 'aico':
         from app.commands.aico_exec import execute_aico_command
-
         return execute_aico_command(context, payload_parts)
-
-    message = " ".join(payload_parts).strip()
+    message = ' '.join(payload_parts).strip()
     res = run_npc_agent_nlp_tick(context.db_session, node, context, message)
     context.db_session.commit()
-    sid = str((node.attributes or {}).get("service_id") or handle)
+    sid = str((node.attributes or {}).get('service_id') or handle)
     return assistant_nlp_command_result(handle, res, service_id=sid, context=context)

@@ -7,7 +7,6 @@
 2. 每次写入后立即 flush，保证日志不丢失
 3. 支持日志轮转
 """
-
 import logging
 import logging.handlers
 import os
@@ -18,7 +17,6 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 from queue import Queue
 from app.core.paths import get_logs_dir, get_project_root
-
 
 class FlushingRotatingFileHandler(logging.handlers.RotatingFileHandler):
     """
@@ -33,7 +31,6 @@ class FlushingRotatingFileHandler(logging.handlers.RotatingFileHandler):
         super().emit(record)
         self.flush()
 
-
 class FlushingTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
     """
     支持时间轮转的文件处理器，每次 emit 后立即刷新
@@ -47,7 +44,6 @@ class FlushingTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler
         super().emit(record)
         self.flush()
 
-
 class FlushingStreamHandler(logging.StreamHandler):
     """
     控制台处理器，每次 emit 后立即刷新
@@ -60,16 +56,13 @@ class FlushingStreamHandler(logging.StreamHandler):
         super().emit(record)
         self.flush()
 
-
 class ISOFormatter(logging.Formatter):
     """支持 ISO 8601 时间格式的格式化器"""
 
     def format(self, record):
-        # 创建格式化时间
         dt = datetime.fromtimestamp(record.created)
         record.asctimeiso = dt.isoformat() + 'Z'
         return super().format(record)
-
 
 class LoggingManager:
     """
@@ -80,7 +73,6 @@ class LoggingManager:
     - 单一 QueueListener 线程顺序处理所有记录
     - 解决了多线程环境下日志顺序错乱的问题
     """
-
     _instance: Optional['LoggingManager'] = None
     _lock = threading.Lock()
 
@@ -104,7 +96,6 @@ class LoggingManager:
         if getattr(self, '_initialized', False):
             return
         self._initialized = True
-
         self.config_manager = config_manager
         self._configured_loggers = set()
         self._loggers: Dict[str, logging.Logger] = {}
@@ -128,81 +119,47 @@ class LoggingManager:
             List[logging.Handler]: 处理器列表
         """
         handlers: List[logging.Handler] = []
-
-        # 日志格式
         log_format = '%(asctimeiso)s | %(levelname)-8s | %(name)s | %(message)s'
         formatter = ISOFormatter(log_format)
-
-        # 控制台处理器
         console_handler = FlushingStreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
         handlers.append(console_handler)
-
-        # 文件处理器（支持轮转）
         logs_dir = get_logs_dir(self.config_manager)
-        log_file = logs_dir / "campusworld.log"
+        log_file = logs_dir / 'campusworld.log'
         logs_dir.mkdir(parents=True, exist_ok=True)
-
-        file_handler = FlushingRotatingFileHandler(
-            log_file,
-            maxBytes=10 * 1024 * 1024,  # 10MB
-            backupCount=5,
-            encoding='utf-8'
-        )
+        file_handler = FlushingRotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding='utf-8')
         file_handler.setFormatter(formatter)
         handlers.append(file_handler)
-
         return handlers
 
     def _setup_from_config(self):
         """从配置文件设置日志"""
         try:
             log_config = self.config_manager.get('logging', {})
-
-            # 获取日志级别
             level = getattr(logging, log_config.get('level', 'INFO').upper())
-
-            # 获取日志格式
             format_str = log_config.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             date_format = log_config.get('date_format', '%Y-%m-%d %H:%M:%S')
-
-            # 创建格式化器
             formatter = logging.Formatter(format_str, date_format)
-
-            # 清除现有处理器
             root_logger = logging.getLogger()
             for handler in root_logger.handlers[:]:
                 root_logger.removeHandler(handler)
-
             handlers: List[logging.Handler] = []
-
-            # 控制台输出
             if log_config.get('console_output', True):
                 console_handler = FlushingStreamHandler(sys.stdout)
                 console_handler.setFormatter(formatter)
                 handlers.append(console_handler)
-
-            # 文件输出
             if log_config.get('file_output', False):
                 file_name = log_config.get('file_name', 'campusworld.log')
                 logs_dir = get_logs_dir(self.config_manager)
                 full_log_path = logs_dir / file_name
-
                 file_handler = self._create_file_handler(full_log_path, formatter, log_config)
                 if file_handler:
                     handlers.append(file_handler)
-
-            # 设置队列处理器和监听器
             self._setup_queue_logging(handlers)
-
-            # 设置根日志级别
             root_logger.setLevel(level)
-
-            # 设置特定模块的日志级别
             self._setup_module_log_levels(log_config)
-
         except Exception as e:
-            print(f"从配置设置日志失败: {e}")
+            print(f'从配置设置日志失败: {e}')
             self._setup_default()
 
     def _setup_default(self):
@@ -214,33 +171,19 @@ class LoggingManager:
         3. 每次写入后立即刷新
         """
         logs_dir = get_logs_dir(self.config_manager)
-        log_file = logs_dir / "campusworld.log"
+        log_file = logs_dir / 'campusworld.log'
         logs_dir.mkdir(parents=True, exist_ok=True)
-
         log_format = '%(asctimeiso)s | %(levelname)-8s | %(name)s | %(message)s'
         formatter = ISOFormatter(log_format)
-
         handlers: List[logging.Handler] = []
-
-        # 控制台输出
         console_handler = FlushingStreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
         handlers.append(console_handler)
-
-        # 文件输出（支持轮转）
-        file_handler = FlushingRotatingFileHandler(
-            log_file,
-            maxBytes=10 * 1024 * 1024,  # 10MB
-            backupCount=5,
-            encoding='utf-8'
-        )
+        file_handler = FlushingRotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding='utf-8')
         file_handler.setFormatter(formatter)
         handlers.append(file_handler)
-
-        # 设置队列处理器和监听器
         self._setup_queue_logging(handlers)
-
-        logger = logging.getLogger("campusworld.logging")
+        logger = logging.getLogger('campusworld.logging')
 
     def _setup_queue_logging(self, handlers: List[logging.Handler]):
         """
@@ -248,101 +191,51 @@ class LoggingManager:
         Args:
             handlers: 要注册的处理器列表
         """
-        # 清除现有处理器
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
-
-        # 创建队列（无界队列）
         queue: Queue = Queue(-1)
-
-        # 创建队列处理器
         self._queue_handler = logging.handlers.QueueHandler(queue)
-
-        # 添加队列处理器到根日志器
         root_logger.addHandler(self._queue_handler)
-        root_logger.setLevel(logging.DEBUG)  # 让所有日志通过队列
-
-        # 启动队列监听器（在独立线程中顺序处理）
+        root_logger.setLevel(logging.DEBUG)
         self._handlers = handlers
-        self._queue_listener = logging.handlers.QueueListener(
-            queue,
-            *handlers,
-            respect_handler_level=True
-        )
+        self._queue_listener = logging.handlers.QueueListener(queue, *handlers, respect_handler_level=True)
         self._queue_listener.start()
 
     def _create_file_handler(self, file_path: Path, formatter: logging.Formatter, log_config: Dict[str, Any]) -> Optional[logging.Handler]:
         """创建文件处理器"""
         try:
-            # 创建日志目录
             file_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # 检查是否使用时间轮转
-            rotate_type = log_config.get('rotate_type', 'size')  # 'size' or 'time'
-
+            rotate_type = log_config.get('rotate_type', 'size')
             if rotate_type == 'time':
-                # 时间轮转
                 when = log_config.get('when', 'midnight')
                 interval = log_config.get('interval', 1)
                 backup_count = log_config.get('backup_count', 7)
-
-                file_handler = FlushingTimedRotatingFileHandler(
-                    file_path,
-                    when=when,
-                    interval=interval,
-                    backupCount=backup_count,
-                    encoding='utf-8'
-                )
+                file_handler = FlushingTimedRotatingFileHandler(file_path, when=when, interval=interval, backupCount=backup_count, encoding='utf-8')
             else:
-                # 大小轮转（默认）
                 max_size = self._parse_size(log_config.get('max_file_size', '10MB'))
                 backup_count = log_config.get('backup_count', 5)
-
-                file_handler = FlushingRotatingFileHandler(
-                    file_path,
-                    maxBytes=max_size,
-                    backupCount=backup_count,
-                    encoding='utf-8'
-                )
-
+                file_handler = FlushingRotatingFileHandler(file_path, maxBytes=max_size, backupCount=backup_count, encoding='utf-8')
             file_handler.setFormatter(formatter)
             return file_handler
-
         except Exception as e:
-            print(f"创建文件处理器失败: {e}")
+            print(f'创建文件处理器失败: {e}')
             return None
 
     def _setup_module_log_levels(self, log_config: Dict[str, Any]):
         """设置特定模块的日志级别"""
         module_levels = log_config.get('module_levels', {})
-
-        # 默认模块级别
-        default_module_levels = {
-            'paramiko': 'WARNING',
-            'asyncio': 'WARNING',
-            'urllib3': 'WARNING',
-            'requests': 'WARNING',
-            'sqlalchemy': 'WARNING',
-            'passlib': 'WARNING',
-            'passlib.utils': 'WARNING',
-            'passlib.utils.compat': 'WARNING',
-            'passlib.registry': 'WARNING',
-        }
-
-        # 合并配置
+        default_module_levels = {'paramiko': 'WARNING', 'asyncio': 'WARNING', 'urllib3': 'WARNING', 'requests': 'WARNING', 'sqlalchemy': 'WARNING', 'passlib': 'WARNING', 'passlib.utils': 'WARNING', 'passlib.utils.compat': 'WARNING', 'passlib.registry': 'WARNING'}
         all_module_levels = {**default_module_levels, **module_levels}
-
-        for module, level in all_module_levels.items():
+        for (module, level) in all_module_levels.items():
             try:
                 logging.getLogger(module).setLevel(getattr(logging, level.upper()))
             except (ValueError, AttributeError):
-                print(f"无效的日志级别: {module}={level}")
+                print(f'无效的日志级别: {module}={level}')
 
     def _parse_size(self, size_str: str) -> int:
         """解析文件大小字符串"""
         size_str = size_str.upper().strip()
-
         if size_str.endswith('KB'):
             return int(size_str[:-2]) * 1024
         elif size_str.endswith('MB'):
@@ -353,7 +246,7 @@ class LoggingManager:
             try:
                 return int(size_str)
             except ValueError:
-                return 10 * 1024 * 1024  # 默认10MB
+                return 10 * 1024 * 1024
 
     def get_logger(self, name: str) -> logging.Logger:
         """
@@ -368,10 +261,9 @@ class LoggingManager:
         if name not in self._loggers:
             self._loggers[name] = logging.getLogger(name)
             self._configured_loggers.add(name)
-
         return self._loggers[name]
 
-    def setup_module_logging(self, module_name: str, level: str = "INFO") -> logging.Logger:
+    def setup_module_logging(self, module_name: str, level: str='INFO') -> logging.Logger:
         """
         为特定模块设置日志
 
@@ -386,14 +278,7 @@ class LoggingManager:
         logger.setLevel(getattr(logging, level.upper()))
         return logger
 
-    def setup_custom(
-        self,
-        level: str = "INFO",
-        format_str: Optional[str] = None,
-        file_path: Optional[str] = None,
-        console_output: bool = True,
-        file_output: bool = False
-    ):
+    def setup_custom(self, level: str='INFO', format_str: Optional[str]=None, file_path: Optional[str]=None, console_output: bool=True, file_output: bool=False):
         """
         设置自定义日志配置
 
@@ -405,41 +290,27 @@ class LoggingManager:
             file_output: 是否输出到文件
         """
         log_level = getattr(logging, level.upper())
-
         if format_str is None:
             format_str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
         formatter = logging.Formatter(format_str)
-
-        # 清除现有处理器
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
-
         handlers: List[logging.Handler] = []
-
-        # 控制台输出
         if console_output:
             console_handler = FlushingStreamHandler(sys.stdout)
             console_handler.setFormatter(formatter)
             handlers.append(console_handler)
-
-        # 文件输出
         if file_output and file_path:
             try:
                 log_dir = Path(file_path).parent
                 log_dir.mkdir(parents=True, exist_ok=True)
-
                 file_handler = FlushingRotatingFileHandler(file_path, encoding='utf-8')
                 file_handler.setFormatter(formatter)
                 handlers.append(file_handler)
-
             except Exception as e:
-                print(f"设置文件输出失败: {e}")
-
-        # 设置队列日志
+                print(f'设置文件输出失败: {e}')
         self._setup_queue_logging(handlers)
-
         root_logger.setLevel(log_level)
 
     def stop_listener(self):
@@ -467,39 +338,14 @@ class LoggingManager:
             Dict[str, Any]: 日志系统状态信息
         """
         root_logger = logging.getLogger()
-
         logs_dir = get_logs_dir(self.config_manager)
-
         log_config = {}
         if self.config_manager:
             log_config = self.config_manager.get('logging', {})
-
         file_name = log_config.get('file_name', 'campusworld.log')
         full_log_path = logs_dir / file_name
-
-        return {
-            'level': logging.getLevelName(root_logger.level),
-            'handlers_count': len(root_logger.handlers),
-            'configured_loggers': list(self._configured_loggers),
-            'project_root': str(get_project_root(self.config_manager)),
-            'logs_dir': str(logs_dir),
-            'file_name': file_name,
-            'full_log_path': str(full_log_path),
-            'queue_listener_running': self._queue_listener is not None,
-            'handlers': [
-                {
-                    'type': type(handler).__name__,
-                    'level': logging.getLevelName(handler.level),
-                    'formatter': type(handler.formatter).__name__ if handler.formatter else None
-                }
-                for handler in root_logger.handlers
-            ]
-        }
-
-
-# 全局日志管理器实例获取函数
+        return {'level': logging.getLevelName(root_logger.level), 'handlers_count': len(root_logger.handlers), 'configured_loggers': list(self._configured_loggers), 'project_root': str(get_project_root(self.config_manager)), 'logs_dir': str(logs_dir), 'file_name': file_name, 'full_log_path': str(full_log_path), 'queue_listener_running': self._queue_listener is not None, 'handlers': [{'type': type(handler).__name__, 'level': logging.getLevelName(handler.level), 'formatter': type(handler.formatter).__name__ if handler.formatter else None} for handler in root_logger.handlers]}
 _logging_manager_instance: Optional[LoggingManager] = None
-
 
 def get_logging_manager() -> LoggingManager:
     """
@@ -513,9 +359,7 @@ def get_logging_manager() -> LoggingManager:
         _logging_manager_instance = LoggingManager()
     return _logging_manager_instance
 
-
-# 保持向后兼容
-def get_logger(name: str, level: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str, level: Optional[str]=None) -> logging.Logger:
     """
     获取日志器（向后兼容）
 

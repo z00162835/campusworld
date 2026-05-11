@@ -1,16 +1,14 @@
 from __future__ import annotations
-
 from datetime import datetime
 from typing import Any, Dict
-
 from app.game_engine.base import BaseGame
 
-
 class Game(BaseGame):
+
     def __init__(self):
-        super().__init__(name="hicampus", version="1.0.0")
-        self.description = "HiCampus high-tech R&D and office park world package"
-        self.author = "CampusWorld OS Team"
+        super().__init__(name='hicampus', version='1.0.0')
+        self.description = 'HiCampus high-tech R&D and office park world package'
+        self.author = 'CampusWorld OS Team'
         self._initialized = False
 
     def start(self) -> bool:
@@ -35,12 +33,4 @@ class Game(BaseGame):
         return True
 
     def get_game_info(self) -> Dict[str, Any]:
-        return {
-            "name": self.name,
-            "version": self.version,
-            "description": self.description,
-            "author": self.author,
-            "is_initialized": self._initialized,
-            "is_running": self.is_running,
-        }
-
+        return {'name': self.name, 'version': self.version, 'description': self.description, 'author': self.author, 'is_initialized': self._initialized, 'is_running': self.is_running}

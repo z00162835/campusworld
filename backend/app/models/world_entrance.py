@@ -3,9 +3,7 @@ Evennia-style world exit: a Node in the singularity room whose description is th
 
 type_code ``world_entrance`` — distinct from graph-seeded ``world`` metadata nodes.
 """
-
 from .base import DefaultObject
-
 
 class WorldEntrance(DefaultObject):
     """
@@ -18,6 +16,5 @@ class WorldEntrance(DefaultObject):
     """
 
     def __init__(self, name: str, **kwargs):
-        self._node_type = "world_entrance"
+        self._node_type = 'world_entrance'
         super().__init__(name=name, **kwargs)
-

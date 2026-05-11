@@ -2,10 +2,8 @@
 Authentication endpoints
 包含注册、登录、刷新令牌、登出等功能
 """
-
 from typing import Optional, List
 from datetime import datetime, timedelta
-
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Header
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm
@@ -14,14 +12,9 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-
 from app.core.database import get_db
 from app.core.config_manager import get_setting
-from app.core.security import (
-    get_password_hash,
-    _get_refresh_token_expire_days,
-    build_api_key_record,
-)
+from app.core.security import get_password_hash, _get_refresh_token_expire_days, build_api_key_record
 from app.core.auth_service import AuthService
 from app.models.user import User
 from app.models.graph import Node, NodeType
@@ -30,16 +23,10 @@ from app.schemas.auth import Token, UserCreate, RegisterResponse
 from app.schemas.account import RefreshTokenResponse
 from app.ssh.game_handler import game_handler
 from app.api.v1.dependencies import bearer_scheme, get_current_http_user, AuthenticatedUser
-
 router = APIRouter()
-
-# Rate limiter for auth endpoints - use client IP as key
 limiter = Limiter(key_func=get_remote_address)
-
-# Login rate limiting constants
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
-
 
 def _is_secure_cookie() -> bool:
     """Determine if cookies should have Secure flag.
@@ -51,289 +38,143 @@ def _is_secure_cookie() -> bool:
     debug = get_setting('app.debug', False)
     return not debug
 
-
 def _refresh_cookie_name() -> str:
     if _is_secure_cookie():
-        return "__Host-refresh_token"
-    return "refresh_token"
-
+        return '__Host-refresh_token'
+    return 'refresh_token'
 
 def _refresh_cookie_max_age_seconds() -> int:
     return _get_refresh_token_expire_days() * 24 * 60 * 60
 
-
 def _get_session_idle_timeout_seconds() -> int:
-    return int(get_setting("security.session_idle_timeout_minutes", 30)) * 60
-
+    return int(get_setting('security.session_idle_timeout_minutes', 30)) * 60
 
 def _set_no_store(response: Response) -> None:
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["Pragma"] = "no-cache"
-
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Pragma'] = 'no-cache'
 
 def _set_session_termination_headers(response: Response) -> None:
     _set_no_store(response)
-    response.headers["Clear-Site-Data"] = '"cache", "storage"'
-
+    response.headers['Clear-Site-Data'] = '"cache", "storage"'
 
 def _clear_auth_cookies(response: Response) -> None:
-    response.delete_cookie(
-        key="access_token",
-        httponly=True,
-        samesite="lax",
-        secure=_is_secure_cookie(),
-        path="/",
-    )
-    for cookie_name in ("refresh_token", "__Host-refresh_token"):
-        response.delete_cookie(
-            key=cookie_name,
-            httponly=True,
-            samesite="lax",
-            secure=_is_secure_cookie(),
-            path="/",
-        )
-
+    response.delete_cookie(key='access_token', httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
+    for cookie_name in ('refresh_token', '__Host-refresh_token'):
+        response.delete_cookie(key=cookie_name, httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
 
 def _refresh_unauthorized_response(detail: str) -> JSONResponse:
-    response = JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content={"detail": detail},
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    response = JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': detail}, headers={'WWW-Authenticate': 'Bearer'})
     _clear_auth_cookies(response)
     _set_session_termination_headers(response)
     return response
 
-
 def _get_refresh_token_from_request(request: Request) -> Optional[str]:
-    return (
-        request.cookies.get("__Host-refresh_token")
-        or request.cookies.get("refresh_token")
-    )
-
+    return request.cookies.get('__Host-refresh_token') or request.cookies.get('refresh_token')
 
 def _validate_auth_ajax_header(x_requested_with: Optional[str]) -> None:
-    if x_requested_with != "XMLHttpRequest":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Missing required auth request header",
-        )
-
+    if x_requested_with != 'XMLHttpRequest':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Missing required auth request header')
 
 def _allowed_auth_origins() -> List[str]:
-    origins = get_setting("cors.allowed_origins", [])
-    return [origin.rstrip("/") for origin in origins if origin and origin != "*"]
-
+    origins = get_setting('cors.allowed_origins', [])
+    return [origin.rstrip('/') for origin in origins if origin and origin != '*']
 
 def _validate_auth_request_origin(request: Request) -> None:
     allowed_origins = _allowed_auth_origins()
     if not allowed_origins:
         return
-
-    origin = request.headers.get("origin")
-    referer = request.headers.get("referer")
+    origin = request.headers.get('origin')
+    referer = request.headers.get('referer')
     source = origin or referer
     if not source:
         return
-
-    normalized_source = source.rstrip("/")
+    normalized_source = source.rstrip('/')
     if origin:
         allowed = normalized_source in allowed_origins
     else:
-        allowed = any(normalized_source == allowed or normalized_source.startswith(f"{allowed}/") for allowed in allowed_origins)
-
+        allowed = any((normalized_source == allowed or normalized_source.startswith(f'{allowed}/') for allowed in allowed_origins))
     if not allowed:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid request origin",
-        )
-
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid request origin')
 
 class ApiKeyIssueRequest(BaseModel):
     name: Optional[str] = Field(default=None, max_length=128)
     scopes: List[str] = Field(default_factory=list)
     expires_in_days: Optional[int] = Field(default=None, ge=1, le=365)
 
-
 def _get_api_key_ttl_days() -> int:
-    return int(get_setting("security.api_key_ttl_days", 90))
+    return int(get_setting('security.api_key_ttl_days', 90))
 
-
-@router.post("/register", response_model=RegisterResponse)
-@limiter.limit("5/minute")  # Rate limit: 5 registrations per minute per IP
-def register(
-    request: Request,
-    response: Response,
-    user_data: UserCreate,
-    db: Session = Depends(get_db),
-):
+@router.post('/register', response_model=RegisterResponse)
+@limiter.limit('5/minute')
+def register(request: Request, response: Response, user_data: UserCreate, db: Session=Depends(get_db)):
     """Register a new user (SQL legacy table; graph account required for CLI/WS)."""
     _validate_auth_request_origin(request)
-
     if db.query(User).filter(User.email == user_data.email).first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Email already registered')
     hashed_password = get_password_hash(user_data.password)
-    # 禁止构造时写图；图账号行由下方单次 Node 写入（与 accounts API 单写语义一致）
-    user = User(
-        email=user_data.email,
-        username=user_data.username,
-        hashed_password=hashed_password,
-        disable_auto_sync=True,
-    )
-
+    user = User(email=user_data.email, username=user_data.username, hashed_password=hashed_password, disable_auto_sync=True)
     db.add(user)
     db.commit()
     db.refresh(user)
-
-    account_node = db.query(Node).filter(
-        Node.type_code == "account",
-        Node.name == user_data.username,
-    ).first()
-
+    account_node = db.query(Node).filter(Node.type_code == 'account', Node.name == user_data.username).first()
     if not account_node:
-        account_type = db.query(NodeType).filter(NodeType.type_code == "account").first()
+        account_type = db.query(NodeType).filter(NodeType.type_code == 'account').first()
         if account_type:
-            account_node = Node(
-                uuid=user.get_node_uuid(),
-                type_id=account_type.id,
-                type_code="account",
-                name=user_data.username,
-                description=f"用户账号: {user_data.username}",
-                is_active=True,
-                is_public=False,
-                access_level=user.get_node_access_level(),
-                attributes=user._node_attributes,
-                tags=user._node_tags,
-            )
+            account_node = Node(uuid=user.get_node_uuid(), type_id=account_type.id, type_code='account', name=user_data.username, description=f'用户账号: {user_data.username}', is_active=True, is_public=False, access_level=user.get_node_access_level(), attributes=user._node_attributes, tags=user._node_tags)
             db.add(account_node)
             db.commit()
             db.refresh(account_node)
-
     _set_no_store(response)
-    return {"message": "Registered successfully"}
+    return {'message': 'Registered successfully'}
 
-
-@router.post("/login", response_model=Token)
-@limiter.limit("10/minute")  # Rate limit: 10 login attempts per minute per IP
-def login(
-    request: Request,
-    response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
-    user_agent: Optional[str] = Header(None),
-):
+@router.post('/login', response_model=Token)
+@limiter.limit('10/minute')
+def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm=Depends(), db: Session=Depends(get_db), user_agent: Optional[str]=Header(None)):
     """
     Login with the same graph account credentials as SSH (`Node.name` / account name).
     OAuth2 `username` field carries the campus account name, not necessarily an email.
     """
     _validate_auth_request_origin(request)
-
-    client_ip = request.client.host if request.client else "unknown"
-    device = user_agent or f"ip:{client_ip}"
-
-    # Find account for login attempt tracking
-    account = db.query(Node).filter(
-        Node.type_code == "account",
-        Node.name == form_data.username
-    ).first()
-
+    client_ip = request.client.host if request.client else 'unknown'
+    device = user_agent or f'ip:{client_ip}'
+    account = db.query(Node).filter(Node.type_code == 'account', Node.name == form_data.username).first()
     if account:
-        # Check if account is locked
-        is_locked = account.attributes.get("is_locked", False)
+        is_locked = account.attributes.get('is_locked', False)
         if is_locked:
-            locked_at = account.attributes.get("locked_at")
-            locked_reason = account.attributes.get("lock_reason", "Account is locked")
-            raise HTTPException(
-                status_code=status.HTTP_423_LOCKED,
-                detail=locked_reason,
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-    result = game_handler.authenticate_user(
-        username=form_data.username,
-        password=form_data.password,
-        client_ip=client_ip,
-    )
-    if not result.get("success"):
-        # Track failed login attempts
+            locked_at = account.attributes.get('locked_at')
+            locked_reason = account.attributes.get('lock_reason', 'Account is locked')
+            raise HTTPException(status_code=status.HTTP_423_LOCKED, detail=locked_reason, headers={'WWW-Authenticate': 'Bearer'})
+    result = game_handler.authenticate_user(username=form_data.username, password=form_data.password, client_ip=client_ip)
+    if not result.get('success'):
         if account:
-            failed_attempts = account.attributes.get("failed_login_attempts", 0) + 1
-            account.attributes["failed_login_attempts"] = failed_attempts
-
+            failed_attempts = account.attributes.get('failed_login_attempts', 0) + 1
+            account.attributes['failed_login_attempts'] = failed_attempts
             if failed_attempts >= MAX_LOGIN_ATTEMPTS:
-                account.attributes["is_locked"] = True
-                account.attributes["lock_reason"] = "Too many failed login attempts"
-                account.attributes["locked_at"] = datetime.now().isoformat()
+                account.attributes['is_locked'] = True
+                account.attributes['lock_reason'] = 'Too many failed login attempts'
+                account.attributes['locked_at'] = datetime.now().isoformat()
                 db.commit()
-                raise HTTPException(
-                    status_code=status.HTTP_423_LOCKED,
-                    detail="Account locked due to too many failed login attempts",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-
+                raise HTTPException(status_code=status.HTTP_423_LOCKED, detail='Account locked due to too many failed login attempts', headers={'WWW-Authenticate': 'Bearer'})
         db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user_id = result["user_id"]
-    username = result["username"]
-
-    # Reset failed login attempts on successful login
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid username or password', headers={'WWW-Authenticate': 'Bearer'})
+    user_id = result['user_id']
+    username = result['username']
     if account:
-        account.attributes["failed_login_attempts"] = 0
-        account.attributes.pop("is_locked", None)
-        account.attributes.pop("lock_reason", None)
-        account.attributes.pop("locked_at", None)
-
-    # 清理过期 token
+        account.attributes['failed_login_attempts'] = 0
+        account.attributes.pop('is_locked', None)
+        account.attributes.pop('lock_reason', None)
+        account.attributes.pop('locked_at', None)
     AuthService.cleanup_expired_tokens(db, user_id)
-
-    tokens = AuthService.issue_tokens(
-        db=db,
-        user_id=user_id,
-        username=username,
-        device=device,
-    )
-
-    access_token = tokens["access_token"]
+    tokens = AuthService.issue_tokens(db=db, user_id=user_id, username=username, device=device)
+    access_token = tokens['access_token']
     _set_no_store(response)
-
-    if tokens.get("refresh_token"):
-        response.set_cookie(
-            key=_refresh_cookie_name(),
-            value=tokens["refresh_token"],
-            max_age=tokens.get("refresh_max_age", _refresh_cookie_max_age_seconds()),
-            httponly=True,
-            samesite="lax",
-            secure=_is_secure_cookie(),
-            path="/",
-        )
-
+    if tokens.get('refresh_token'):
+        response.set_cookie(key=_refresh_cookie_name(), value=tokens['refresh_token'], max_age=tokens.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
     db.commit()
+    return {'access_token': access_token, 'token_type': 'bearer', 'expires_in': tokens['expires_in'], 'idle_expires_in': tokens['idle_expires_in']}
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "expires_in": tokens["expires_in"],
-        "idle_expires_in": tokens["idle_expires_in"],
-    }
-
-
-@router.post("/refresh", response_model=RefreshTokenResponse)
-def refresh_token(
-    request: Request,
-    response: Response,
-    db: Session = Depends(get_db),
-    user_agent: Optional[str] = Header(None),
-    x_requested_with: Optional[str] = Header(None, alias="X-Requested-With"),
-):
+@router.post('/refresh', response_model=RefreshTokenResponse)
+def refresh_token(request: Request, response: Response, db: Session=Depends(get_db), user_agent: Optional[str]=Header(None), x_requested_with: Optional[str]=Header(None, alias='X-Requested-With')):
     """
     使用 refresh token 换取新的 access token 和 refresh token（带轮换）。
 
@@ -345,75 +186,25 @@ def refresh_token(
     _validate_auth_request_origin(request)
     _validate_auth_ajax_header(x_requested_with)
     _set_no_store(response)
-
     refresh_token = _get_refresh_token_from_request(request)
-
     if not refresh_token:
-        return _refresh_unauthorized_response("Refresh token required")
-
-    device = user_agent or "unknown"
-
-    # 验证 refresh token（HTTP 场景不需要 expected_user_id）
+        return _refresh_unauthorized_response('Refresh token required')
+    device = user_agent or 'unknown'
     validation = AuthService.validate_refresh_token(db, refresh_token)
-    if not validation["valid"]:
-        error_messages = {
-            "token_revoked": "Refresh token has been revoked",
-            "token_reused": "Refresh token has already been used",
-            "token_expired": "Refresh token has expired",
-            "idle_timeout": "Session idle timeout",
-        }
-        return _refresh_unauthorized_response(
-            error_messages.get(validation["error"], "Invalid refresh token")
-        )
+    if not validation['valid']:
+        error_messages = {'token_revoked': 'Refresh token has been revoked', 'token_reused': 'Refresh token has already been used', 'token_expired': 'Refresh token has expired', 'idle_timeout': 'Session idle timeout'}
+        return _refresh_unauthorized_response(error_messages.get(validation['error'], 'Invalid refresh token'))
+    result = AuthService.rotate_refresh_token(db=db, user_id=validation['user_id'], old_jti=validation['jti'], old_family_id=validation['family_id'], device=device, expected_access_token=None)
+    if 'error' in result:
+        error_messages = {'user_not_found': 'User not found', 'account_inactive': 'Account is inactive', 'account_locked': 'Account is locked'}
+        return _refresh_unauthorized_response(error_messages.get(result['error'], 'Token rotation failed'))
+    access_token = result['access_token']
+    if result.get('refresh_token'):
+        response.set_cookie(key=_refresh_cookie_name(), value=result['refresh_token'], max_age=result.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
+    return {'access_token': access_token, 'token_type': 'bearer', 'expires_in': result['expires_in'], 'idle_expires_in': result.get('idle_expires_in', validation.get('idle_expires_in'))}
 
-    # 执行轮换
-    result = AuthService.rotate_refresh_token(
-        db=db,
-        user_id=validation["user_id"],
-        old_jti=validation["jti"],
-        old_family_id=validation["family_id"],
-        device=device,
-        expected_access_token=None,  # HTTP 场景不需要绑定验证
-    )
-
-    if "error" in result:
-        error_messages = {
-            "user_not_found": "User not found",
-            "account_inactive": "Account is inactive",
-            "account_locked": "Account is locked",
-        }
-        return _refresh_unauthorized_response(
-            error_messages.get(result["error"], "Token rotation failed")
-        )
-
-    access_token = result["access_token"]
-
-    if result.get("refresh_token"):
-        response.set_cookie(
-            key=_refresh_cookie_name(),
-            value=result["refresh_token"],
-            max_age=result.get("refresh_max_age", _refresh_cookie_max_age_seconds()),
-            httponly=True,
-            samesite="lax",
-            secure=_is_secure_cookie(),
-            path="/",
-        )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "expires_in": result["expires_in"],
-        "idle_expires_in": result.get("idle_expires_in", validation.get("idle_expires_in")),
-    }
-
-
-@router.post("/logout")
-def logout(
-    request: Request,
-    response: Response,
-    db: Session = Depends(get_db),
-    x_requested_with: Optional[str] = Header(None, alias="X-Requested-With"),
-):
+@router.post('/logout')
+def logout(request: Request, response: Response, db: Session=Depends(get_db), x_requested_with: Optional[str]=Header(None, alias='X-Requested-With')):
     """
     撤销当前的 refresh token 并清除 cookies。
 
@@ -421,166 +212,68 @@ def logout(
     """
     _validate_auth_request_origin(request)
     _validate_auth_ajax_header(x_requested_with)
-
     refresh_token = _get_refresh_token_from_request(request)
     if refresh_token:
         validation = AuthService.validate_refresh_token(db, refresh_token)
-        if validation["valid"]:
-            AuthService.revoke_refresh_token(db, validation["user_id"], validation["jti"])
-
-    # Clear cookies regardless of token revocation result
+        if validation['valid']:
+            AuthService.revoke_refresh_token(db, validation['user_id'], validation['jti'])
     _clear_auth_cookies(response)
     _set_session_termination_headers(response)
+    return {'message': 'Logged out successfully'}
 
-    return {"message": "Logged out successfully"}
-
-
-@router.post("/activity")
-async def record_activity(
-    request: Request,
-    response: Response,
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-    x_requested_with: Optional[str] = Header(None, alias="X-Requested-With"),
-):
+@router.post('/activity')
+async def record_activity(request: Request, response: Response, credentials: Optional[HTTPAuthorizationCredentials]=Depends(bearer_scheme), x_requested_with: Optional[str]=Header(None, alias='X-Requested-With')):
     _validate_auth_request_origin(request)
     _validate_auth_ajax_header(x_requested_with)
     _set_no_store(response)
     current_user = await get_current_http_user(credentials)
-    return {
-        "message": "Activity recorded",
-        "idle_expires_in": _get_session_idle_timeout_seconds(),
-        "user_id": current_user.user_id,
-    }
+    return {'message': 'Activity recorded', 'idle_expires_in': _get_session_idle_timeout_seconds(), 'user_id': current_user.user_id}
 
-
-@router.post("/logout-all")
-def logout_all(
-    current_user: AuthenticatedUser = Depends(get_current_http_user),
-    db: Session = Depends(get_db),
-):
+@router.post('/logout-all')
+def logout_all(current_user: AuthenticatedUser=Depends(get_current_http_user), db: Session=Depends(get_db)):
     """
     撤销当前用户的所有 refresh tokens（所有设备）。
 
     用于用户在所有设备上登出。
     """
     from app.core.auth_service import AuthService
-
     AuthService.revoke_all_user_tokens(db, int(current_user.user_id))
-    return {"message": "Logged out from all devices successfully"}
+    return {'message': 'Logged out from all devices successfully'}
 
-
-@router.get("/api-key")
-def list_api_keys(
-    current_user: AuthenticatedUser = Depends(get_current_http_user),
-    db: Session = Depends(get_db),
-):
+@router.get('/api-key')
+def list_api_keys(current_user: AuthenticatedUser=Depends(get_current_http_user), db: Session=Depends(get_db)):
     """查询当前账号 API key 元数据（不返回明文 key）。"""
-    rows = (
-        db.query(ApiKey)
-        .filter(ApiKey.owner_account_id == int(current_user.user_id))
-        .order_by(ApiKey.created_at.desc())
-        .all()
-    )
-    return {
-        "items": [
-            {
-                "kid": row.kid,
-                "name": row.name,
-                "algorithm": row.algorithm,
-                "iterations": row.iterations,
-                "revoked": row.revoked,
-                "created_at": row.created_at.isoformat() if row.created_at else None,
-                "expires_at": row.expires_at.isoformat() if row.expires_at else None,
-                "last_used_at": row.last_used_at.isoformat() if row.last_used_at else None,
-            }
-            for row in rows
-        ]
-    }
+    rows = db.query(ApiKey).filter(ApiKey.owner_account_id == int(current_user.user_id)).order_by(ApiKey.created_at.desc()).all()
+    return {'items': [{'kid': row.kid, 'name': row.name, 'algorithm': row.algorithm, 'iterations': row.iterations, 'revoked': row.revoked, 'created_at': row.created_at.isoformat() if row.created_at else None, 'expires_at': row.expires_at.isoformat() if row.expires_at else None, 'last_used_at': row.last_used_at.isoformat() if row.last_used_at else None} for row in rows]}
 
-
-@router.post("/api-key")
-def issue_api_key(
-    payload: ApiKeyIssueRequest,
-    current_user: AuthenticatedUser = Depends(get_current_http_user),
-    db: Session = Depends(get_db),
-):
+@router.post('/api-key')
+def issue_api_key(payload: ApiKeyIssueRequest, current_user: AuthenticatedUser=Depends(get_current_http_user), db: Session=Depends(get_db)):
     """签发新 API key（明文仅返回一次）。"""
-    account = db.query(Node).filter(
-        Node.id == int(current_user.user_id),
-        Node.type_code == "account",
-    ).first()
+    account = db.query(Node).filter(Node.id == int(current_user.user_id), Node.type_code == 'account').first()
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Account node not found",
-        )
-
-    raw_key, kid, salt, iterations, key_hash = build_api_key_record()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Account node not found')
+    (raw_key, kid, salt, iterations, key_hash) = build_api_key_record()
     ttl_days = payload.expires_in_days or _get_api_key_ttl_days()
     expires_at = datetime.utcnow() + timedelta(days=ttl_days)
-    row = ApiKey(
-        kid=kid,
-        owner_account_id=account.id,
-        key_hash=key_hash,
-        salt=salt,
-        algorithm="pbkdf2_sha256",
-        iterations=iterations,
-        name=payload.name,
-        scopes=payload.scopes,
-        expires_at=expires_at,
-        revoked=False,
-    )
+    row = ApiKey(kid=kid, owner_account_id=account.id, key_hash=key_hash, salt=salt, algorithm='pbkdf2_sha256', iterations=iterations, name=payload.name, scopes=payload.scopes, expires_at=expires_at, revoked=False)
     db.add(row)
     db.commit()
     db.refresh(row)
+    return {'api_key': raw_key, 'kid': row.kid, 'expires_at': row.expires_at.isoformat() if row.expires_at else None, 'created_at': row.created_at.isoformat() if row.created_at else datetime.utcnow().isoformat()}
 
-    return {
-        "api_key": raw_key,
-        "kid": row.kid,
-        "expires_at": row.expires_at.isoformat() if row.expires_at else None,
-        "created_at": row.created_at.isoformat() if row.created_at else datetime.utcnow().isoformat(),
-    }
-
-
-@router.post("/api-key/rotate")
-def rotate_api_key(
-    payload: ApiKeyIssueRequest,
-    current_user: AuthenticatedUser = Depends(get_current_http_user),
-    db: Session = Depends(get_db),
-):
+@router.post('/api-key/rotate')
+def rotate_api_key(payload: ApiKeyIssueRequest, current_user: AuthenticatedUser=Depends(get_current_http_user), db: Session=Depends(get_db)):
     """轮换当前账号有效 key：吊销旧 key 并签发新 key。"""
-    active_rows = (
-        db.query(ApiKey)
-        .filter(ApiKey.owner_account_id == int(current_user.user_id), ApiKey.revoked == False)
-        .all()
-    )
+    active_rows = db.query(ApiKey).filter(ApiKey.owner_account_id == int(current_user.user_id), ApiKey.revoked == False).all()
     now = datetime.utcnow()
     for row in active_rows:
         row.revoked = True
         row.revoked_at = now
-
-    raw_key, kid, salt, iterations, key_hash = build_api_key_record()
+    (raw_key, kid, salt, iterations, key_hash) = build_api_key_record()
     ttl_days = payload.expires_in_days or _get_api_key_ttl_days()
     expires_at = datetime.utcnow() + timedelta(days=ttl_days)
-    new_row = ApiKey(
-        kid=kid,
-        owner_account_id=int(current_user.user_id),
-        key_hash=key_hash,
-        salt=salt,
-        algorithm="pbkdf2_sha256",
-        iterations=iterations,
-        name=payload.name,
-        scopes=payload.scopes,
-        expires_at=expires_at,
-        revoked=False,
-    )
+    new_row = ApiKey(kid=kid, owner_account_id=int(current_user.user_id), key_hash=key_hash, salt=salt, algorithm='pbkdf2_sha256', iterations=iterations, name=payload.name, scopes=payload.scopes, expires_at=expires_at, revoked=False)
     db.add(new_row)
     db.commit()
     db.refresh(new_row)
-    return {
-        "api_key": raw_key,
-        "kid": new_row.kid,
-        "expires_at": new_row.expires_at.isoformat() if new_row.expires_at else None,
-        "created_at": new_row.created_at.isoformat() if new_row.created_at else datetime.utcnow().isoformat(),
-        "rotated_count": len(active_rows),
-    }
+    return {'api_key': raw_key, 'kid': new_row.kid, 'expires_at': new_row.expires_at.isoformat() if new_row.expires_at else None, 'created_at': new_row.created_at.isoformat() if new_row.created_at else datetime.utcnow().isoformat(), 'rotated_count': len(active_rows)}

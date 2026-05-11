@@ -15,70 +15,47 @@ Evennia 侧对象外观多由 ``return_appearance``/脚本拼装；此处用本�
 可选在属性上设 ``x_look: omit`` 跳过展示。根对象可用 JSON Schema 标准字段 ``description``
 作为 examine 开头段（如设备总述）。
 """
-
 from __future__ import annotations
-
 from typing import Any, Collection, List, Mapping, Optional, Set
-
-_DEFAULT_SKIP_KEYS: frozenset[str] = frozenset(
-    {
-        "item_kind",
-        "device_role",
-        "entity_kind",
-        "location_ref",
-        "tags",
-        "package_node_id",
-    }
-)
-
+_DEFAULT_SKIP_KEYS: frozenset[str] = frozenset({'item_kind', 'device_role', 'entity_kind', 'location_ref', 'tags', 'package_node_id'})
 
 def _is_empty_for_look(value: Any) -> bool:
     if value is None:
         return True
-    if isinstance(value, str) and not value.strip():
+    if isinstance(value, str) and (not value.strip()):
         return True
     if isinstance(value, (list, dict)) and len(value) == 0:
         return True
     return False
 
-
 def format_schema_scalar_value(value: Any) -> str:
     if isinstance(value, bool):
-        return "是" if value else "否"
+        return '是' if value else '否'
     if isinstance(value, float) and value.is_integer():
         return str(int(value))
     if isinstance(value, (int, float, str)):
         return str(value).strip()
     if isinstance(value, list):
         inner = [format_schema_scalar_value(x) for x in value if not _is_empty_for_look(x)]
-        return ", ".join(inner)
+        return ', '.join(inner)
     if isinstance(value, dict):
         return str(value)
     return str(value)
 
-
 def _property_label(key: str, spec: Mapping[str, Any]) -> str:
-    t = spec.get("title")
+    t = spec.get('title')
     if isinstance(t, str) and t.strip():
         return t.strip()
     return key
 
-
-def _lines_from_properties(
-    properties: Mapping[str, Any],
-    data: Mapping[str, Any],
-    *,
-    skip_keys: Set[str],
-    parent_label: str = "",
-    nested_sep: str = " · ",
-) -> List[str]:
+def _lines_from_properties(properties: Mapping[str, Any], data: Mapping[str, Any], *, skip_keys: Set[str], parent_label: str='', nested_sep: str=' · ') -> List[str]:
     lines: List[str] = []
     if not isinstance(data, Mapping):
         return lines
-    for key, spec in properties.items():
+    for (key, spec) in properties.items():
         if not isinstance(spec, Mapping):
             continue
-        if key in skip_keys or spec.get("x_look") == "omit":
+        if key in skip_keys or spec.get('x_look') == 'omit':
             continue
         if key not in data:
             continue
@@ -86,59 +63,32 @@ def _lines_from_properties(
         if _is_empty_for_look(val):
             continue
         base = _property_label(key, spec)
-        label = f"{parent_label}{nested_sep}{base}" if parent_label else base
-
-        sub_props = spec.get("properties")
-        if spec.get("type") == "object" and isinstance(sub_props, Mapping) and isinstance(val, Mapping):
-            lines.extend(
-                _lines_from_properties(
-                    sub_props,
-                    val,
-                    skip_keys=skip_keys,
-                    parent_label=label,
-                    nested_sep=nested_sep,
-                )
-            )
+        label = f'{parent_label}{nested_sep}{base}' if parent_label else base
+        sub_props = spec.get('properties')
+        if spec.get('type') == 'object' and isinstance(sub_props, Mapping) and isinstance(val, Mapping):
+            lines.extend(_lines_from_properties(sub_props, val, skip_keys=skip_keys, parent_label=label, nested_sep=nested_sep))
             continue
-
-        lines.append(f"{label}：{format_schema_scalar_value(val)}")
+        lines.append(f'{label}：{format_schema_scalar_value(val)}')
     return lines
 
-
-def format_attributes_from_schema_definition(
-    attributes: Mapping[str, Any],
-    schema_definition: Mapping[str, Any],
-    *,
-    skip_keys: Optional[Collection[str]] = None,
-    include_root_description: bool = True,
-    nested_separator: str = " · ",
-) -> str:
+def format_attributes_from_schema_definition(attributes: Mapping[str, Any], schema_definition: Mapping[str, Any], *, skip_keys: Optional[Collection[str]]=None, include_root_description: bool=True, nested_separator: str=' · ') -> str:
     """
     Emit one line per declared property (and nested property) that has a non-empty value.
 
     Root ``schema_definition.description`` (if non-empty str) is prepended as its own paragraph.
     """
-    props = schema_definition.get("properties")
+    props = schema_definition.get('properties')
     if not isinstance(props, Mapping):
-        return ""
-
+        return ''
     sk: Set[str] = set(_DEFAULT_SKIP_KEYS)
     if skip_keys:
         sk.update(skip_keys)
-
-    body_lines = _lines_from_properties(
-        props,
-        attributes,
-        skip_keys=sk,
-        parent_label="",
-        nested_sep=nested_separator,
-    )
-    body = "\n".join(body_lines)
-
+    body_lines = _lines_from_properties(props, attributes, skip_keys=sk, parent_label='', nested_sep=nested_separator)
+    body = '\n'.join(body_lines)
     if include_root_description:
-        lead = schema_definition.get("description")
+        lead = schema_definition.get('description')
         if isinstance(lead, str) and lead.strip():
             if body:
-                return f"{lead.strip()}\n\n{body}"
+                return f'{lead.strip()}\n\n{body}'
             return lead.strip()
     return body

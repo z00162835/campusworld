@@ -1,27 +1,17 @@
 """ToolGather: execute ToolInvocation plans and format ToolObservation blocks (F08)."""
-
 from __future__ import annotations
-
 import json
 import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, FrozenSet, List, Optional, Tuple
-
 from app.commands.base import CommandContext, CommandResult
 from app.game_engine.agent_runtime.tooling import ToolExecutor
-
-# Keys allowed to appear in ToolObservation from CommandResult.data (F08 §8).
-DEFAULT_TOOL_OBSERVATION_DATA_KEYS: FrozenSet[str] = frozenset(
-    {"ok", "phase", "handle", "service_id"}
-)
-
+DEFAULT_TOOL_OBSERVATION_DATA_KEYS: FrozenSet[str] = frozenset({'ok', 'phase', 'handle', 'service_id'})
 
 @dataclass
 class ToolInvocationPlan:
     """0..N command invocations produced by a phase selector or parsed LLM output."""
-
     commands: List[Tuple[str, List[str]]] = field(default_factory=list)
-
 
 @dataclass
 class ToolGatherBudgets:
@@ -32,59 +22,48 @@ class ToolGatherBudgets:
     without extra configuration. Override via
     ``agents.llm.by_service_id.<svc>.extra.tool_gather_max_rounds_per_phase``.
     """
-
     max_commands_per_tick: int = 16
     max_chars_observations_per_tick: int = 12000
     max_commands_per_phase: int = 8
     max_tool_rounds_per_phase: int = 3
-
 
 @dataclass
 class ToolGatherCounters:
     commands_run: int = 0
     observation_chars: int = 0
 
-
 def tool_gather_budgets_from_agent_extra(extra: Optional[Dict[str, Any]]) -> ToolGatherBudgets:
     """Build budgets from ``agents.llm`` YAML ``extra`` (optional keys)."""
     ex = extra or {}
-    return ToolGatherBudgets(
-        max_commands_per_tick=int(ex.get("tool_gather_max_commands_tick", 16)),
-        max_chars_observations_per_tick=int(ex.get("tool_gather_max_chars_tick", 12000)),
-        max_commands_per_phase=int(ex.get("tool_gather_max_commands_phase", 8)),
-        max_tool_rounds_per_phase=int(ex.get("tool_gather_max_rounds_per_phase", 3)),
-    )
-
+    return ToolGatherBudgets(max_commands_per_tick=int(ex.get('tool_gather_max_commands_tick', 16)), max_chars_observations_per_tick=int(ex.get('tool_gather_max_chars_tick', 12000)), max_commands_per_phase=int(ex.get('tool_gather_max_commands_phase', 8)), max_tool_rounds_per_phase=int(ex.get('tool_gather_max_rounds_per_phase', 3)))
 
 def parse_tool_invocation_plan_from_text(text: str) -> ToolInvocationPlan:
     """
-    Extract first JSON object with a \"commands\" array from LLM output (F08 §7).
-    Each item: {\"name\": \"cmd\", \"args\": [...]}.
+    Extract first JSON object with a "commands" array from LLM output (F08 §7).
+    Each item: {"name": "cmd", "args": [...]}.
     """
-    if not (text or "").strip():
+    if not (text or '').strip():
         return ToolInvocationPlan()
-    # Prefer fenced ```json blocks
-    fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", text, re.IGNORECASE)
+    fence = re.search('```(?:json)?\\s*([\\s\\S]*?)```', text, re.IGNORECASE)
     candidate = fence.group(1).strip() if fence else text.strip()
     obj = _try_parse_json_object(candidate)
     if obj is None:
-        # Scan for outermost {...} containing "commands"
-        m = re.search(r"\{[\s\S]*\"commands\"[\s\S]*\}", text)
+        m = re.search('\\{[\\s\\S]*\\"commands\\"[\\s\\S]*\\}', text)
         if m:
             obj = _try_parse_json_object(m.group(0))
     if obj is None or not isinstance(obj, dict):
         return ToolInvocationPlan()
-    raw = obj.get("commands")
+    raw = obj.get('commands')
     if not isinstance(raw, list):
         return ToolInvocationPlan()
     out: List[Tuple[str, List[str]]] = []
     for item in raw:
         if not isinstance(item, dict):
             continue
-        name = str(item.get("name") or "").strip().lower()
+        name = str(item.get('name') or '').strip().lower()
         if not name:
             continue
-        args_raw = item.get("args")
+        args_raw = item.get('args')
         args: List[str]
         if args_raw is None:
             args = []
@@ -95,7 +74,6 @@ def parse_tool_invocation_plan_from_text(text: str) -> ToolInvocationPlan:
         out.append((name, args))
     return ToolInvocationPlan(commands=out)
 
-
 def _try_parse_json_object(s: str) -> Optional[Dict[str, Any]]:
     try:
         v = json.loads(s)
@@ -103,47 +81,30 @@ def _try_parse_json_object(s: str) -> Optional[Dict[str, Any]]:
     except json.JSONDecodeError:
         return None
 
-
 def _format_data_subset(data: Optional[Dict[str, Any]], allowed_keys: FrozenSet[str]) -> str:
     if not data or not allowed_keys:
-        return ""
+        return ''
     parts: List[str] = []
     for k in sorted(data.keys()):
         if k in allowed_keys:
-            parts.append(f"{k}={data[k]!r}")
+            parts.append(f'{k}={data[k]!r}')
     if not parts:
-        return ""
-    return "data: " + ", ".join(parts)
+        return ''
+    return 'data: ' + ', '.join(parts)
 
-
-def format_tool_observation_block(
-    index: int,
-    command_name: str,
-    args: List[str],
-    result: CommandResult,
-    *,
-    data_keys: Optional[FrozenSet[str]] = None,
-    max_message_chars: int = 4000,
-) -> str:
+def format_tool_observation_block(index: int, command_name: str, args: List[str], result: CommandResult, *, data_keys: Optional[FrozenSet[str]]=None, max_message_chars: int=4000) -> str:
     """F08 appendix A style single observation."""
     keys = data_keys if data_keys is not None else DEFAULT_TOOL_OBSERVATION_DATA_KEYS
     ok = result.success
-    msg = str(result.message or "")
+    msg = str(result.message or '')
     if len(msg) > max_message_chars:
-        msg = msg[: max_message_chars - 3] + "..."
+        msg = msg[:max_message_chars - 3] + '...'
     extra = _format_data_subset(result.data if isinstance(result.data, dict) else None, keys)
-    lines = [
-        f"--- tool_observation begin ---",
-        f"[{index}] command={command_name} args={args!r}",
-        f"ok={ok}",
-        "message:",
-        msg,
-    ]
+    lines = [f'--- tool_observation begin ---', f'[{index}] command={command_name} args={args!r}', f'ok={ok}', 'message:', msg]
     if extra:
         lines.append(extra)
-    lines.append("--- tool_observation end ---")
-    return "\n".join(lines)
-
+    lines.append('--- tool_observation end ---')
+    return '\n'.join(lines)
 
 def format_gathered_observations_for_end_user(gathered_text: str) -> str:
     """Turn F08 ``format_tool_observation_block`` concat into concise text for humans.
@@ -153,62 +114,51 @@ def format_gathered_observations_for_end_user(gathered_text: str) -> str:
     framing. Returns empty string when no recognized blocks are present so callers
     can fall back to the raw string (legacy free-text observations).
     """
-    if not (gathered_text or "").strip():
-        return ""
+    if not (gathered_text or '').strip():
+        return ''
     bullets: List[str] = []
-    for segment in gathered_text.split("--- tool_observation begin ---"):
-        if "--- tool_observation end ---" not in segment:
+    for segment in gathered_text.split('--- tool_observation begin ---'):
+        if '--- tool_observation end ---' not in segment:
             continue
-        inner, _, _ = segment.partition("--- tool_observation end ---")
+        (inner, _, _) = segment.partition('--- tool_observation end ---')
         inner = inner.strip()
         if not inner:
             continue
-        cmd_name = ""
+        cmd_name = ''
         ok = True
         msg_lines: List[str] = []
-        mode = "seek"
+        mode = 'seek'
         for line in inner.splitlines():
             s = line.strip()
-            if mode == "seek":
-                if s.startswith("[") and "] command=" in s:
-                    tail = s.split("command=", 1)[1]
-                    if " args=" in tail:
-                        cmd_name = tail.split(" args=", 1)[0].strip()
+            if mode == 'seek':
+                if s.startswith('[') and '] command=' in s:
+                    tail = s.split('command=', 1)[1]
+                    if ' args=' in tail:
+                        cmd_name = tail.split(' args=', 1)[0].strip()
                     else:
                         cmd_name = tail.strip()
-                elif s.startswith("ok="):
-                    ok = s == "ok=True"
-                elif s == "message:":
-                    mode = "msg"
+                elif s.startswith('ok='):
+                    ok = s == 'ok=True'
+                elif s == 'message:':
+                    mode = 'msg'
             else:
-                if s.startswith("data:"):
+                if s.startswith('data:'):
                     break
                 msg_lines.append(line)
-        msg = "\n".join(msg_lines).strip()
+        msg = '\n'.join(msg_lines).strip()
         if not cmd_name:
             continue
-        suffix = "" if ok else " (failed)"
+        suffix = '' if ok else ' (failed)'
         if msg:
-            if "\n" in msg:
-                bullets.append(f"• **{cmd_name}**{suffix}:\n{msg}")
+            if '\n' in msg:
+                bullets.append(f'• **{cmd_name}**{suffix}:\n{msg}')
             else:
-                bullets.append(f"• **{cmd_name}**{suffix}: {msg}")
+                bullets.append(f'• **{cmd_name}**{suffix}: {msg}')
         else:
-            bullets.append(f"• **{cmd_name}**{suffix}")
-    return "\n".join(bullets) if bullets else ""
+            bullets.append(f'• **{cmd_name}**{suffix}')
+    return '\n'.join(bullets) if bullets else ''
 
-
-def gather_tool_observations(
-    executor: ToolExecutor,
-    tool_context: CommandContext,
-    plan: ToolInvocationPlan,
-    *,
-    budgets: ToolGatherBudgets,
-    counters: ToolGatherCounters,
-    phase_label: str,
-    data_keys: Optional[FrozenSet[str]] = None,
-    trace_prefix: str = "tool",
-) -> Tuple[str, List[Dict[str, Any]]]:
+def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContext, plan: ToolInvocationPlan, *, budgets: ToolGatherBudgets, counters: ToolGatherCounters, phase_label: str, data_keys: Optional[FrozenSet[str]]=None, trace_prefix: str='tool') -> Tuple[str, List[Dict[str, Any]]]:
     """
     Execute plan commands in order; return concatenated observation text and trace entries for command_trace.
     """
@@ -216,65 +166,31 @@ def gather_tool_observations(
     trace_entries: List[Dict[str, Any]] = []
     idx = 0
     phase_cmds = 0
-    for command_name, args in plan.commands:
+    for (command_name, args) in plan.commands:
         if counters.commands_run >= budgets.max_commands_per_tick:
-            trace_entries.append(
-                {"step": f"{trace_prefix}_cap", "detail": "tick_max_commands", "phase": phase_label}
-            )
+            trace_entries.append({'step': f'{trace_prefix}_cap', 'detail': 'tick_max_commands', 'phase': phase_label})
             break
         if phase_cmds >= budgets.max_commands_per_phase:
-            trace_entries.append(
-                {"step": f"{trace_prefix}_cap", "detail": "phase_max_commands", "phase": phase_label}
-            )
+            trace_entries.append({'step': f'{trace_prefix}_cap', 'detail': 'phase_max_commands', 'phase': phase_label})
             break
         idx += 1
         res = executor.execute_command(tool_context, command_name, args)
         counters.commands_run += 1
         phase_cmds += 1
-        block = format_tool_observation_block(
-            idx, command_name, args, res, data_keys=data_keys
-        )
+        block = format_tool_observation_block(idx, command_name, args, res, data_keys=data_keys)
         obs_len = len(block)
         if counters.observation_chars + obs_len > budgets.max_chars_observations_per_tick:
-            trace_entries.append(
-                {"step": f"{trace_prefix}_cap", "detail": "tick_max_chars", "phase": phase_label}
-            )
+            trace_entries.append({'step': f'{trace_prefix}_cap', 'detail': 'tick_max_chars', 'phase': phase_label})
             break
         counters.observation_chars += obs_len
         chunks.append(block)
-        trace_entries.append(
-            {
-                "step": f"{trace_prefix}_exec",
-                "phase": phase_label,
-                "command_name": command_name,
-                "args": args,
-                "success": res.success,
-                "message_len": len(str(res.message or "")),
-                "error": str(res.error or ""),
-            }
-        )
+        trace_entries.append({'step': f'{trace_prefix}_exec', 'phase': phase_label, 'command_name': command_name, 'args': args, 'success': res.success, 'message_len': len(str(res.message or '')), 'error': str(res.error or '')})
         guard_decision = None
         if isinstance(res.data, dict):
-            guard_decision = str(res.data.get("guard_decision") or "")
-        if guard_decision == "guard_pass":
-            trace_entries.append(
-                {
-                    "step": "guard_pass",
-                    "phase": phase_label,
-                    "command_name": command_name,
-                    "intent": str((res.data or {}).get("guard_intent") or ""),
-                    "effective_profile": str((res.data or {}).get("guard_effective_profile") or ""),
-                }
-            )
-        elif str(res.error or "").startswith("guard_blocked_"):
-            trace_entries.append(
-                {
-                    "step": "guard_block",
-                    "phase": phase_label,
-                    "command_name": command_name,
-                    "reason": str(res.error or ""),
-                }
-            )
-    text = "\n\n".join(chunks)
-    return text, trace_entries
-
+            guard_decision = str(res.data.get('guard_decision') or '')
+        if guard_decision == 'guard_pass':
+            trace_entries.append({'step': 'guard_pass', 'phase': phase_label, 'command_name': command_name, 'intent': str((res.data or {}).get('guard_intent') or ''), 'effective_profile': str((res.data or {}).get('guard_effective_profile') or '')})
+        elif str(res.error or '').startswith('guard_blocked_'):
+            trace_entries.append({'step': 'guard_block', 'phase': phase_label, 'command_name': command_name, 'reason': str(res.error or '')})
+    text = '\n\n'.join(chunks)
+    return (text, trace_entries)
