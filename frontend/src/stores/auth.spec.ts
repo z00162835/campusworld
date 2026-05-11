@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from './auth'
 import { authApi } from '@/api/auth'
@@ -27,15 +27,20 @@ const createToken = (exp: number) => {
 describe('auth store session handling', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    vi.useRealTimers()
     vi.mocked(authApi.getProfile).mockResolvedValue({
       data: { id: 1, username: 'alice', email: 'alice@example.com' },
     } as any)
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('keeps the login token in memory after successful login', async () => {
     const accessToken = createToken(Math.floor(Date.now() / 1000) + 3600)
     vi.mocked(authApi.login).mockResolvedValue({
-      data: { access_token: accessToken, refresh_token: 'refresh-token', token_type: 'bearer' },
+      data: { access_token: accessToken, token_type: 'bearer' },
     } as any)
 
     const authStore = useAuthStore()
@@ -64,7 +69,6 @@ describe('auth store session handling', () => {
     const accessToken = createToken(Math.floor(Date.now() / 1000) + 3600)
     vi.mocked(tokenApi.refreshWithCookie).mockResolvedValue({
       access_token: accessToken,
-      refresh_token: 'rotated-refresh-token',
       token_type: 'bearer',
     })
 
@@ -86,5 +90,62 @@ describe('auth store session handling', () => {
     await expect(authStore.restoreSession()).resolves.toBe(false)
 
     expect(tokenApi.refreshWithCookie).toHaveBeenCalledTimes(1)
+  })
+
+  it('refreshes access token before expiration', async () => {
+    vi.useFakeTimers()
+    const firstToken = createToken(Math.floor(Date.now() / 1000) + 61)
+    const refreshedToken = createToken(Math.floor(Date.now() / 1000) + 3600)
+    vi.mocked(authApi.login).mockResolvedValue({
+      data: { access_token: firstToken, token_type: 'bearer' },
+    } as any)
+    vi.mocked(tokenApi.refreshWithCookie).mockResolvedValue({
+      access_token: refreshedToken,
+      token_type: 'bearer',
+    })
+
+    const authStore = useAuthStore()
+    await authStore.login({ username: 'alice', password: 'secret' })
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(tokenApi.refreshWithCookie).toHaveBeenCalledTimes(1)
+    expect(authStore.token).toBe(refreshedToken)
+  })
+
+  it('does not let silent refresh reset the idle timeout', async () => {
+    vi.useFakeTimers()
+    const firstToken = createToken(Math.floor(Date.now() / 1000) + 61)
+    const refreshedToken = createToken(Math.floor(Date.now() / 1000) + 3600)
+    vi.mocked(authApi.login).mockResolvedValue({
+      data: { access_token: firstToken, token_type: 'bearer' },
+    } as any)
+    vi.mocked(tokenApi.refreshWithCookie).mockResolvedValue({
+      access_token: refreshedToken,
+      token_type: 'bearer',
+    })
+
+    const authStore = useAuthStore()
+    await authStore.login({ username: 'alice', password: 'secret' })
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(authStore.token).toBe(refreshedToken)
+
+    await vi.advanceTimersByTimeAsync((30 * 60 * 1000) - 1000)
+    expect(authStore.token).toBeNull()
+    expect(authStore.isAuthenticated).toBe(false)
+  })
+
+  it('expires the local session after idle timeout', async () => {
+    vi.useFakeTimers()
+    const accessToken = createToken(Math.floor(Date.now() / 1000) + 3600)
+    vi.mocked(authApi.login).mockResolvedValue({
+      data: { access_token: accessToken, token_type: 'bearer' },
+    } as any)
+
+    const authStore = useAuthStore()
+    await authStore.login({ username: 'alice', password: 'secret' })
+    await vi.advanceTimersByTimeAsync(30 * 60 * 1000)
+
+    expect(authStore.token).toBeNull()
+    expect(authStore.isAuthenticated).toBe(false)
   })
 })

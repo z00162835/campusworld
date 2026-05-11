@@ -26,9 +26,14 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     """Token response schema"""
     access_token: str
-    refresh_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds
+    idle_expires_in: int = 1800  # seconds
+
+
+class RegisterResponse(BaseModel):
+    """Registration response schema"""
+    message: str
 
 
 class TokenData(BaseModel):

@@ -19,6 +19,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTabsStore } from '@/stores/tabs'
+import { useAppTabs } from '@/composables/useAppTabs'
 import {
   Document,
   FolderOpened,
@@ -32,67 +33,51 @@ interface MenuItem {
   label: string
   icon: any
   route: string
-  component: string
 }
 
 const tabsStore = useTabsStore()
+const { openAppTab } = useAppTabs()
 
 const menuItems: MenuItem[] = [
   {
     key: 'works',
     label: 'Works',
     icon: Document,
-    route: '/works',
-    component: 'Home'
+    route: '/works'
   },
   {
     key: 'spaces',
     label: 'Spaces',
     icon: FolderOpened,
-    route: '/spaces',
-    component: 'Spaces'
+    route: '/spaces'
   },
   {
     key: 'agents',
     label: 'Agents',
     icon: User,
-    route: '/agents',
-    component: 'Agents'
+    route: '/agents'
   },
   {
     key: 'discovery',
     label: 'Discovery',
     icon: Search,
-    route: '/discovery',
-    component: 'Discovery'
+    route: '/discovery'
   },
   {
     key: 'history',
     label: 'History',
     icon: Clock,
-    route: '/history',
-    component: 'History'
+    route: '/history'
   }
 ]
 
-const activeKey = computed(() => {
-  return tabsStore.activeTab?.route || ''
-})
+const activeKey = computed(() => tabsStore.activeTab?.route || '')
 
-const handleClick = (item: MenuItem) => {
-  // 使用固定的ID，基于route，这样同一个route只会有一个tab
-  const tabId = `tab-${item.key}`
-  tabsStore.addTab({
-    id: tabId,
-    title: item.label,
-    route: item.route,
-    component: item.component,
-    closable: true
-  })
+const handleClick = async (item: MenuItem) => {
+  await openAppTab(item.route)
 }
 </script>
 
 <style scoped>
 /* 使用全局样式，这里只保留组件特定的样式 */
 </style>
-

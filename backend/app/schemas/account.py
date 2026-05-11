@@ -129,9 +129,9 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     """登录响应模型"""
     access_token: str = Field(..., description="访问令牌")
-    refresh_token: str = Field(..., description="刷新令牌")
     token_type: str = Field(default="bearer", description="令牌类型")
     expires_in: int = Field(..., description="过期时间（秒）")
+    idle_expires_in: int = Field(..., description="空闲超时剩余时间（秒）")
     user: AccountResponse = Field(..., description="用户信息")
 
 
@@ -154,9 +154,9 @@ class RefreshTokenInfo(BaseModel):
 class RefreshTokenResponse(BaseModel):
     """刷新令牌响应模型"""
     access_token: str = Field(..., description="新的访问令牌")
-    refresh_token: str = Field(..., description="新的刷新令牌")
     token_type: str = Field(default="bearer", description="令牌类型")
     expires_in: int = Field(..., description="过期时间（秒）")
+    idle_expires_in: int = Field(..., description="空闲超时剩余时间（秒）")
 
 
 class AccountSearchRequest(BaseModel):

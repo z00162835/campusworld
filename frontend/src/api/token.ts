@@ -9,18 +9,11 @@ const tokenApiClient = axios.create({
   withCredentials: true, // Required for cookies
 })
 
-// OAuth2 requires form-urlencoded format
-const toFormUrlEncoded = (data: Record<string, string>) => {
-  return Object.entries(data)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&')
-}
-
 export interface TokenResponse {
   access_token: string
-  refresh_token?: string
   token_type?: string
   expires_in?: number
+  idle_expires_in?: number
 }
 
 export const tokenApi = {
@@ -34,21 +27,9 @@ export const tokenApi = {
       {
         headers: {
           'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         },
       }
     ).then(res => res.data),
 
-  /**
-   * Refresh access token with explicit refresh token (for non-cookie clients like CLI)
-   */
-  refresh: (refreshToken: string): Promise<TokenResponse> =>
-    tokenApiClient.post<TokenResponse>(
-      '/auth/refresh',
-      toFormUrlEncoded({ refresh_token: refreshToken }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    ).then(res => res.data),
 }

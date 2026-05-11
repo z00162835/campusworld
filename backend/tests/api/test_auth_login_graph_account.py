@@ -39,6 +39,11 @@ def test_login_success_jwt_sub_is_account_id(auth_client):
     assert r.status_code == 200
     body = r.json()
     assert "access_token" in body
+    assert "refresh_token" not in body
+    assert r.headers["Cache-Control"] == "no-store"
+    set_cookie = r.headers.get("set-cookie", "")
+    assert "access_token=" not in set_cookie
+    assert "refresh_token=" in set_cookie
     payload = jwt.decode(
         body["access_token"],
         _get_secret_key(),
@@ -81,9 +86,11 @@ def test_refresh_unauthorized_response_clears_auth_cookies():
         for header in set_cookie_headers
     )
     assert any(
-        header.startswith("refresh_token=") and "Max-Age=0" in header
+        (header.startswith("refresh_token=") or header.startswith("__Host-refresh_token=")) and "Max-Age=0" in header
         for header in set_cookie_headers
     )
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.headers["Clear-Site-Data"] == '"cache", "storage"'
 
 
 def test_login_rejects_disallowed_origin(auth_client):
@@ -97,3 +104,28 @@ def test_login_rejects_disallowed_origin(auth_client):
 
     assert r.status_code == 403
     assert r.json()["detail"] == "Invalid request origin"
+
+
+def test_refresh_requires_ajax_header(auth_client):
+    r = auth_client.post("/api/v1/auth/refresh")
+
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Missing required auth request header"
+
+
+def test_refresh_ignores_explicit_body_token_without_cookie(auth_client):
+    r = auth_client.post(
+        "/api/v1/auth/refresh",
+        data={"refresh_token": "explicit-token"},
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    )
+
+    assert r.status_code == 401
+    assert r.json()["detail"] == "Refresh token required"
+
+
+def test_activity_requires_ajax_header_before_auth(auth_client):
+    r = auth_client.post("/api/v1/auth/activity")
+
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Missing required auth request header"

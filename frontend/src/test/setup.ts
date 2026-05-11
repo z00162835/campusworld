@@ -8,6 +8,12 @@ afterEach(() => {
 
 // Mock global objects
 vi.mock('vue-router', () => ({
+  createRouter: () => ({
+    beforeEach: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+  }),
+  createWebHistory: vi.fn(),
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),

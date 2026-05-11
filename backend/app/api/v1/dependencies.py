@@ -5,6 +5,7 @@ API 依赖注入
 
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
+from datetime import datetime
 
 from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -54,6 +55,37 @@ def _get_secret_key() -> str:
     """获取 JWT 密钥"""
     from app.core.config_manager import get_setting
     return get_setting('security.secret_key', 'your-secret-key-here')
+
+
+def _touch_refresh_session_activity(user_node: Node, attrs: Dict[str, Any], payload: Dict[str, Any], db_session) -> bool:
+    session_jti = payload.get("session_jti")
+    family_id = payload.get("family_id")
+    if not session_jti and not family_id:
+        return False
+
+    refresh_tokens = dict(attrs.get("refresh_tokens", {}))
+    if not refresh_tokens:
+        return False
+
+    now = datetime.utcnow().isoformat()
+    changed = False
+    for jti, token_info in list(refresh_tokens.items()):
+        if session_jti and jti != session_jti:
+            continue
+        if not session_jti and family_id and token_info.get("family_id") != family_id:
+            continue
+        if token_info.get("revoked") or token_info.get("replaced_by"):
+            continue
+        token_info = dict(token_info)
+        token_info["last_activity_at"] = now
+        refresh_tokens[jti] = token_info
+        changed = True
+
+    if changed:
+        attrs["refresh_tokens"] = refresh_tokens
+        user_node.attributes = attrs
+        db_session.commit()
+    return changed
 
 
 async def get_current_http_user(
@@ -136,6 +168,7 @@ async def get_current_http_user(
         # 4. 提取 roles 和 permissions
         roles = list(attrs.get("roles", []))
         permissions = list(attrs.get("permissions", []))
+        _touch_refresh_session_activity(user_node, attrs, payload, db_session)
 
         return AuthenticatedUser(
             user_id=str(user_node.id),

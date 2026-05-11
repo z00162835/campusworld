@@ -1,50 +1,64 @@
 <template>
-  <div class="profile">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>个人资料</span>
-          <el-button text @click="handleClose">
-            <el-icon><Close /></el-icon>
-          </el-button>
+  <div class="account-settings">
+    <div class="settings-container">
+      <header class="settings-header">
+        <div>
+          <h2 class="settings-title">账号设置</h2>
         </div>
-      </template>
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="用户名">
-          {{ authStore.user?.username || '未设置' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="邮箱">
-          {{ authStore.user?.email || '未设置' }}
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-button type="danger" @click="handleLogout" style="margin-top: var(--spacing-xl)">
-        退出登录
-      </el-button>
-    </el-card>
+        <el-button text class="settings-close" @click="handleClose">
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </header>
+
+      <section class="settings-section">
+        <div class="section-heading">
+          <h3>个人资料</h3>
+          <span>当前账号的展示信息</span>
+        </div>
+        <div class="profile-fields">
+          <div class="field-row">
+            <span class="field-label">用户名</span>
+            <span class="field-value">{{ authStore.user?.username || '未设置' }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">邮箱</span>
+            <span class="field-value">{{ authStore.user?.email || '未设置' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="section-heading">
+          <h3>账号安全</h3>
+        </div>
+        <div class="security-actions security-actions--simple">
+          <el-button type="danger" @click="handleLogout">退出登录</el-button>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLogout } from '@/composables/useLogout'
+import { useAppTabs } from '@/composables/useAppTabs'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const { logout } = useLogout()
+const { openAppTab } = useAppTabs()
 
 onMounted(async () => {
-  // Only fetch user if we have a token but no cached user
   if (!authStore.user && authStore.token) {
     await authStore.fetchUser()
   }
 })
 
 const handleClose = () => {
-  router.push('/works')
+  openAppTab('/works')
 }
 
 const handleLogout = async () => {
@@ -54,21 +68,129 @@ const handleLogout = async () => {
 </script>
 
 <style scoped>
-.profile {
+.account-settings {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.settings-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.settings-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-close {
+  color: var(--text-tertiary);
+}
+
+.settings-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
+.section-heading {
+  margin-bottom: var(--spacing-lg);
 }
 
-.card-header .el-button {
-  margin-left: auto;
-  padding: var(--spacing-sm);
+.section-heading h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.section-heading span {
+  display: block;
+  margin-top: var(--spacing-xs);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.profile-fields {
+  display: grid;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr;
+  min-height: 48px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.field-row:last-child {
+  border-bottom: none;
+}
+
+.field-label,
+.field-value {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-lg);
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+}
+
+.field-value {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.security-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: var(--spacing-lg);
+  }
+
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .field-label {
+    min-height: 40px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .field-value {
+    min-height: 44px;
+  }
+
+  .security-actions--simple :deep(.el-button) {
+    width: 100%;
+  }
 }
 </style>

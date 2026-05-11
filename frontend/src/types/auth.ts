@@ -4,9 +4,13 @@
 
 export interface Token {
   access_token: string
-  refresh_token?: string
   token_type?: string
   expires_in?: number
+  idle_expires_in?: number
+}
+
+export interface RegisterResponse {
+  message: string
 }
 
 export interface LoginRequest {
@@ -30,8 +34,13 @@ export interface User {
 
 export interface AuthResponse {
   access_token: string
-  refresh_token?: string
   token_type?: string
   expires_in?: number
+  idle_expires_in?: number
   user?: User
+}
+
+export interface ActivityResponse {
+  message: string
+  idle_expires_in: number
 }

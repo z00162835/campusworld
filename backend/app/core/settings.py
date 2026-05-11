@@ -45,8 +45,9 @@ class SecurityConfig(BaseModel):
     """安全配置"""
     secret_key: str = Field(default="your-secret-key-here-change-in-production", description="JWT密钥")
     algorithm: str = Field(default="HS256", description="JWT算法")
-    access_token_expire_minutes: int = Field(default=11520, description="访问令牌过期时间(分钟)")
-    refresh_token_expire_days: int = Field(default=30, description="刷新令牌过期时间(天)")
+    access_token_expire_minutes: int = Field(default=15, description="访问令牌过期时间(分钟)")
+    refresh_token_expire_days: int = Field(default=7, description="刷新令牌过期时间(天)")
+    session_idle_timeout_minutes: int = Field(default=30, description="会话空闲超时时间(分钟)")
     password_min_length: int = Field(default=8, description="密码最小长度")
     bcrypt_rounds: int = Field(default=12, description="BCrypt轮数")
 

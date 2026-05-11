@@ -27,7 +27,7 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # JWT令牌配置
 ALGORITHM = "HS256"
-REFRESH_TOKEN_EXPIRE_DAYS = 30  # 默认30天
+REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # HTTP Bearer认证
 security = HTTPBearer()
@@ -71,7 +71,13 @@ def _get_secret_key() -> str:
 def _get_token_expire_minutes() -> int:
     """获取 token 过期时间（延迟加载）"""
     from app.core.config_manager import get_setting
-    return get_setting('security.access_token_expire_minutes', 11520)
+    return get_setting('security.access_token_expire_minutes', 15)
+
+
+def _get_refresh_token_expire_days() -> int:
+    """获取 refresh token 过期天数（延迟加载）"""
+    from app.core.config_manager import get_setting
+    return get_setting('security.refresh_token_expire_days', REFRESH_TOKEN_EXPIRE_DAYS)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -154,7 +160,7 @@ def create_refresh_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.utcnow() + timedelta(days=_get_refresh_token_expire_days())
 
     to_encode = {
         "exp": expire,

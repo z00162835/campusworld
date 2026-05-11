@@ -23,23 +23,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTabsStore } from '@/stores/tabs'
+import { useAppTabs } from '@/composables/useAppTabs'
 import { Close } from '@element-plus/icons-vue'
 
 const tabsStore = useTabsStore()
+const { activateAppTab, closeAppTab } = useAppTabs()
 
 const tabs = computed(() => tabsStore.tabs)
 const activeTabId = computed(() => tabsStore.activeTabId)
 
-const handleTabClick = (tabId: string) => {
-  tabsStore.setActiveTab(tabId)
+const handleTabClick = async (tabId: string) => {
+  await activateAppTab(tabId)
 }
 
-const handleTabClose = (tabId: string) => {
-  tabsStore.removeTab(tabId)
+const handleTabClose = async (tabId: string) => {
+  await closeAppTab(tabId)
 }
 </script>
 
 <style scoped>
 /* 使用全局样式，这里只保留组件特定的样式 */
 </style>
-

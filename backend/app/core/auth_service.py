@@ -17,6 +17,7 @@ from app.core.security import (
     create_refresh_token,
     verify_token,
     _get_token_expire_minutes,
+    _get_refresh_token_expire_days,
 )
 
 
@@ -33,6 +34,30 @@ def _get_token_family_id() -> str:
 def _get_token_expire_seconds() -> int:
     """获取 access token 过期时间（秒）"""
     return _get_token_expire_minutes() * 60
+
+
+def _get_session_idle_timeout_minutes() -> int:
+    """获取 Web 会话空闲超时时间（分钟）"""
+    from app.core.config_manager import get_setting
+    return get_setting("security.session_idle_timeout_minutes", 30)
+
+
+def _parse_iso_datetime(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _seconds_until(value: datetime) -> int:
+    return max(0, int((value - datetime.utcnow()).total_seconds()))
+
+
+def _idle_expires_in(last_activity_at: datetime) -> int:
+    expires_at = last_activity_at + timedelta(minutes=_get_session_idle_timeout_minutes())
+    return _seconds_until(expires_at)
 
 
 class AuthService:
@@ -98,15 +123,37 @@ class AuthService:
 
         # 检查 token 是否已撤销或被替换
         token_info = refresh_tokens.get(jti, {})
+        if not token_info:
+            return {"valid": False, "user_id": user_id, "jti": jti, "family_id": family_id, "error": "invalid_token"}
         if token_info.get("revoked"):
             return {"valid": False, "user_id": user_id, "jti": jti, "family_id": family_id, "error": "token_revoked"}
         if token_info.get("replaced_by"):
             return {"valid": False, "user_id": user_id, "jti": jti, "family_id": family_id, "error": "token_reused"}
 
+        now = datetime.utcnow()
+        expires_at = _parse_iso_datetime(token_info.get("expires_at"))
+        family_expires_at = _parse_iso_datetime(token_info.get("family_expires_at")) or expires_at
+        if expires_at and expires_at < now:
+            return {"valid": False, "user_id": user_id, "jti": jti, "family_id": family_id, "error": "token_expired"}
+        if family_expires_at and family_expires_at < now:
+            return {"valid": False, "user_id": user_id, "jti": jti, "family_id": family_id, "error": "token_expired"}
+
+        last_activity_at = _parse_iso_datetime(token_info.get("last_activity_at")) or _parse_iso_datetime(token_info.get("issued_at"))
+        idle_timeout = timedelta(minutes=_get_session_idle_timeout_minutes())
+        if last_activity_at and last_activity_at + idle_timeout < now:
+            return {"valid": False, "user_id": user_id, "jti": jti, "family_id": family_id, "error": "idle_timeout"}
+
         # 获取 family_id（兼容旧 token）
         stored_family_id = token_info.get("family_id", family_id)
 
-        return {"valid": True, "user_id": user_id, "jti": jti, "family_id": stored_family_id, "error": None}
+        return {
+            "valid": True,
+            "user_id": user_id,
+            "jti": jti,
+            "family_id": stored_family_id,
+            "idle_expires_in": _idle_expires_in(last_activity_at or now),
+            "error": None,
+        }
 
     @staticmethod
     def issue_tokens(
@@ -115,6 +162,9 @@ class AuthService:
         username: str,
         device: str,
         family_id: Optional[str] = None,
+        family_issued_at: Optional[datetime] = None,
+        family_expires_at: Optional[datetime] = None,
+        last_activity_at: Optional[datetime] = None,
     ) -> dict:
         """
         颁发新的 access token 和 refresh token。
@@ -131,19 +181,31 @@ class AuthService:
         """
         from app.models.graph import Node
 
-        # 创建 access token
-        access_token = create_access_token(subject=str(user_id), username=username)
-        expires_in = _get_token_expire_seconds()
+        now = datetime.utcnow()
+        session_family_issued_at = family_issued_at or now
+        session_family_expires_at = family_expires_at or (now + timedelta(days=_get_refresh_token_expire_days()))
+        session_last_activity_at = last_activity_at or now
+        refresh_expires_delta = session_family_expires_at - now
+        if refresh_expires_delta.total_seconds() <= 0:
+            return {"error": "token_expired"}
 
-        # 创建 refresh token
         jti = _get_refresh_token_jti()
         new_family_id = family_id or _get_token_family_id()
+
+        access_token = create_access_token(
+            subject=str(user_id),
+            username=username,
+            family_id=new_family_id,
+            session_jti=jti,
+        )
+        expires_in = _get_token_expire_seconds()
+
         refresh_token = create_refresh_token(
             subject=str(user_id),
+            expires_delta=refresh_expires_delta,
             jti=jti,
             family_id=new_family_id,
         )
-        expires_at = datetime.utcnow() + timedelta(days=30)
 
         # 存储 refresh token
         user_node = db.query(Node).filter(
@@ -159,8 +221,11 @@ class AuthService:
                 "jti": jti,
                 "family_id": new_family_id,
                 "device": device,
-                "issued_at": datetime.utcnow().isoformat(),
-                "expires_at": expires_at.isoformat(),
+                "issued_at": now.isoformat(),
+                "family_issued_at": session_family_issued_at.isoformat(),
+                "family_expires_at": session_family_expires_at.isoformat(),
+                "last_activity_at": session_last_activity_at.isoformat(),
+                "expires_at": session_family_expires_at.isoformat(),
                 "revoked": False,
                 "replaced_by": None,
             }
@@ -175,6 +240,9 @@ class AuthService:
             "expires_in": expires_in,
             "jti": jti,
             "family_id": new_family_id,
+            "refresh_expires_at": session_family_expires_at,
+            "refresh_max_age": _seconds_until(session_family_expires_at),
+            "idle_expires_in": _idle_expires_in(session_last_activity_at),
         }
 
     @staticmethod
@@ -229,6 +297,17 @@ class AuthService:
             return {"error": "account_locked"}
 
         username = user_node.name
+        refresh_tokens = attrs.get("refresh_tokens", {})
+        old_token_info = refresh_tokens.get(old_jti, {})
+        now = datetime.utcnow()
+        old_expires_at = _parse_iso_datetime(old_token_info.get("expires_at"))
+        family_issued_at = _parse_iso_datetime(old_token_info.get("family_issued_at")) or _parse_iso_datetime(old_token_info.get("issued_at")) or now
+        family_expires_at = _parse_iso_datetime(old_token_info.get("family_expires_at")) or old_expires_at
+        last_activity_at = _parse_iso_datetime(old_token_info.get("last_activity_at")) or _parse_iso_datetime(old_token_info.get("issued_at")) or now
+        if family_expires_at is None:
+            family_expires_at = now + timedelta(days=_get_refresh_token_expire_days())
+        if family_expires_at <= now:
+            return {"error": "token_expired"}
 
         # 颁发新 token，复用 family_id
         new_tokens = AuthService.issue_tokens(
@@ -237,7 +316,15 @@ class AuthService:
             username=username,
             device=device,
             family_id=old_family_id,
+            family_issued_at=family_issued_at,
+            family_expires_at=family_expires_at,
+            last_activity_at=last_activity_at,
         )
+        if "error" in new_tokens:
+            return new_tokens
+
+        db.refresh(user_node)
+        attrs = dict(user_node.attributes or {})
 
         # 撤销同 family 的所有旧 token（Token Family 机制）
         # 所有同 family 的 token 都被标记为 revoked + replaced_by，避免并发刷新竞态
@@ -255,6 +342,9 @@ class AuthService:
             "access_token": new_tokens["access_token"],
             "refresh_token": new_tokens["refresh_token"],
             "expires_in": new_tokens["expires_in"],
+            "refresh_expires_at": new_tokens["refresh_expires_at"],
+            "refresh_max_age": new_tokens["refresh_max_age"],
+            "idle_expires_in": new_tokens["idle_expires_in"],
         }
 
     @staticmethod
@@ -355,7 +445,7 @@ class AuthService:
 
         keys_to_remove = [
             jti for jti, info in refresh_tokens.items()
-            if info.get("expires_at") and datetime.fromisoformat(info["expires_at"]) < now
+            if info.get("expires_at") and _parse_iso_datetime(info["expires_at"]) and _parse_iso_datetime(info["expires_at"]) < now
         ]
 
         for key in keys_to_remove:

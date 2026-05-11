@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { getAppTabByRoute, type AppTabDefinition } from './appTabs'
 
-export interface Tab {
+export interface Tab extends AppTabDefinition {
   id: string
   title: string
   route: string
   component: string
-  closable?: boolean
+  closable: boolean
 }
 
 export const useTabsStore = defineStore('tabs', () => {
@@ -30,9 +31,9 @@ export const useTabsStore = defineStore('tabs', () => {
     return tab
   }
 
-  const removeTab = (tabId: string) => {
+  const removeTab = (tabId: string): Tab | null => {
     const index = tabs.value.findIndex(t => t.id === tabId)
-    if (index === -1) return
+    if (index === -1) return activeTab.value || null
 
     tabs.value.splice(index, 1)
 
@@ -46,12 +47,33 @@ export const useTabsStore = defineStore('tabs', () => {
         activeTabId.value = ''
       }
     }
+
+    return activeTab.value || null
   }
 
   const setActiveTab = (tabId: string) => {
     if (tabs.value.find(t => t.id === tabId)) {
       activeTabId.value = tabId
     }
+  }
+
+  const openTabByRoute = (route: string): Tab | null => {
+    const tab = getAppTabByRoute(route)
+    if (!tab) return null
+    return addTab(tab)
+  }
+
+  const activateTabByRoute = (route: string): Tab | null => {
+    const existingTab = tabs.value.find(t => t.route === route)
+    if (existingTab) {
+      activeTabId.value = existingTab.id
+      return existingTab
+    }
+    return openTabByRoute(route)
+  }
+
+  const closeTab = (tabId: string): Tab | null => {
+    return removeTab(tabId)
   }
 
   const clearTabs = () => {
@@ -66,7 +88,9 @@ export const useTabsStore = defineStore('tabs', () => {
     addTab,
     removeTab,
     setActiveTab,
+    openTabByRoute,
+    activateTabByRoute,
+    closeTab,
     clearTabs
   }
 })
-

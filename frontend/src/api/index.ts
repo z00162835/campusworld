@@ -3,7 +3,6 @@
  */
 import axios from 'axios'
 import router from '@/router'
-import { tokenApi } from './token'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -31,6 +30,11 @@ const getAccessToken = async (): Promise<string | null> => {
     // Dynamic import to avoid circular dependency and timing issues
     const { useAuthStore } = await import('@/stores/auth')
     const authStore = useAuthStore()
+    if (!authStore.token) return null
+    const now = Math.floor(Date.now() / 1000)
+    if (authStore.tokenExpiresAt && authStore.tokenExpiresAt <= now + 60) {
+      return authStore.refreshAccessToken()
+    }
     return authStore.token
   } catch {
     return null
@@ -40,7 +44,7 @@ const getAccessToken = async (): Promise<string | null> => {
 // Request interceptor: attach JWT token from authStore (memory)
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await getAccessToken()
+    const token = shouldSkipRefresh(config.url) ? null : await getAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -75,22 +79,16 @@ apiClient.interceptors.response.use(
       refreshPromise = (async () => {
         try {
           // Try to refresh using cookie-based refresh endpoint
-          const data = await tokenApi.refreshWithCookie()
-
-          if (data.access_token) {
-            // Sync auth store with new tokens
-            const { useAuthStore } = await import('@/stores/auth')
-            const authStore = useAuthStore()
-            authStore.setTokenData(data)
-
-            return data.access_token
-          }
+          const { useAuthStore } = await import('@/stores/auth')
+          const authStore = useAuthStore()
+          const refreshedToken = await authStore.refreshAccessToken()
+          if (refreshedToken) return refreshedToken
           throw new Error('No access token in refresh response')
         } catch (refreshError) {
           // Refresh failed, clear client state and redirect to login
           const { useAuthStore } = await import('@/stores/auth')
           const authStore = useAuthStore()
-          authStore.clearClientState()
+          authStore.expireSession('refresh_failed')
           router.push('/login')
           throw refreshError
         } finally {

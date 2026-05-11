@@ -20,45 +20,49 @@
   color: var(--text-secondary);
 }
 
-/* Element Plus Card Override */
-:deep(.el-card) {
+.el-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
+  border-radius: var(--radius-lg);
 }
 
-:deep(.el-card__header) {
+.el-card__header {
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-header);
   padding: var(--spacing-lg);
+  color: var(--text-primary);
 }
 
-:deep(.el-card__body) {
+.el-card__body {
   padding: var(--spacing-lg);
   color: var(--text-secondary);
 }
 
-:deep(.el-card__body p) {
+.el-card__body p {
   color: var(--text-secondary);
 }
 
-/* Alert Override */
-:deep(.el-alert) {
+.el-alert {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
 }
 
-/* Descriptions Override */
-:deep(.el-descriptions) {
+.el-descriptions {
   color: var(--text-secondary);
 }
 
-:deep(.el-descriptions__label) {
+.el-descriptions__label {
   color: var(--text-tertiary);
+  background: var(--bg-secondary) !important;
 }
 
-:deep(.el-descriptions__content) {
+.el-descriptions__content {
   color: var(--text-secondary);
+  background: var(--bg-card) !important;
 }
 
+.el-descriptions__cell {
+  border-color: var(--border-color) !important;
+}

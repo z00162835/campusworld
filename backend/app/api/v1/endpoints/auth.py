@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Header
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from slowapi import Limiter
@@ -18,19 +18,18 @@ from slowapi.errors import RateLimitExceeded
 from app.core.database import get_db
 from app.core.config_manager import get_setting
 from app.core.security import (
-    create_access_token,
     get_password_hash,
-    _get_token_expire_minutes,
+    _get_refresh_token_expire_days,
     build_api_key_record,
 )
 from app.core.auth_service import AuthService
 from app.models.user import User
 from app.models.graph import Node, NodeType
 from app.models.system import ApiKey
-from app.schemas.auth import Token, UserCreate
-from app.schemas.account import RefreshTokenRequest, RefreshTokenResponse
+from app.schemas.auth import Token, UserCreate, RegisterResponse
+from app.schemas.account import RefreshTokenResponse
 from app.ssh.game_handler import game_handler
-from app.api.v1.dependencies import get_current_http_user, AuthenticatedUser
+from app.api.v1.dependencies import bearer_scheme, get_current_http_user, AuthenticatedUser
 
 router = APIRouter()
 
@@ -53,19 +52,46 @@ def _is_secure_cookie() -> bool:
     return not debug
 
 
+def _refresh_cookie_name() -> str:
+    if _is_secure_cookie():
+        return "__Host-refresh_token"
+    return "refresh_token"
+
+
+def _refresh_cookie_max_age_seconds() -> int:
+    return _get_refresh_token_expire_days() * 24 * 60 * 60
+
+
+def _get_session_idle_timeout_seconds() -> int:
+    return int(get_setting("security.session_idle_timeout_minutes", 30)) * 60
+
+
+def _set_no_store(response: Response) -> None:
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+
+
+def _set_session_termination_headers(response: Response) -> None:
+    _set_no_store(response)
+    response.headers["Clear-Site-Data"] = '"cache", "storage"'
+
+
 def _clear_auth_cookies(response: Response) -> None:
     response.delete_cookie(
         key="access_token",
         httponly=True,
         samesite="lax",
         secure=_is_secure_cookie(),
+        path="/",
     )
-    response.delete_cookie(
-        key="refresh_token",
-        httponly=True,
-        samesite="lax",
-        secure=_is_secure_cookie(),
-    )
+    for cookie_name in ("refresh_token", "__Host-refresh_token"):
+        response.delete_cookie(
+            key=cookie_name,
+            httponly=True,
+            samesite="lax",
+            secure=_is_secure_cookie(),
+            path="/",
+        )
 
 
 def _refresh_unauthorized_response(detail: str) -> JSONResponse:
@@ -75,7 +101,23 @@ def _refresh_unauthorized_response(detail: str) -> JSONResponse:
         headers={"WWW-Authenticate": "Bearer"},
     )
     _clear_auth_cookies(response)
+    _set_session_termination_headers(response)
     return response
+
+
+def _get_refresh_token_from_request(request: Request) -> Optional[str]:
+    return (
+        request.cookies.get("__Host-refresh_token")
+        or request.cookies.get("refresh_token")
+    )
+
+
+def _validate_auth_ajax_header(x_requested_with: Optional[str]) -> None:
+    if x_requested_with != "XMLHttpRequest":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing required auth request header",
+        )
 
 
 def _allowed_auth_origins() -> List[str]:
@@ -113,26 +155,19 @@ class ApiKeyIssueRequest(BaseModel):
     expires_in_days: Optional[int] = Field(default=None, ge=1, le=365)
 
 
-def _get_token_expire_seconds() -> int:
-    """获取 access token 过期时间（秒）"""
-    return _get_token_expire_minutes() * 60
-
-
 def _get_api_key_ttl_days() -> int:
     return int(get_setting("security.api_key_ttl_days", 90))
 
 
-@router.post("/register", response_model=Token)
+@router.post("/register", response_model=RegisterResponse)
 @limiter.limit("5/minute")  # Rate limit: 5 registrations per minute per IP
 def register(
     request: Request,
+    response: Response,
     user_data: UserCreate,
     db: Session = Depends(get_db),
-    user_agent: Optional[str] = Header(None),
 ):
     """Register a new user (SQL legacy table; graph account required for CLI/WS)."""
-    from app.core.auth_service import AuthService
-
     _validate_auth_request_origin(request)
 
     if db.query(User).filter(User.email == user_data.email).first():
@@ -178,32 +213,8 @@ def register(
             db.commit()
             db.refresh(account_node)
 
-    device = user_agent or "unknown"
-
-    if account_node:
-        # 清理过期 token
-        AuthService.cleanup_expired_tokens(db, account_node.id)
-
-        tokens = AuthService.issue_tokens(
-            db=db,
-            user_id=account_node.id,
-            username=account_node.name,
-            device=device,
-        )
-    else:
-        access_token = create_access_token(subject=user.email)
-        tokens = {
-            "access_token": access_token,
-            "refresh_token": "",
-            "expires_in": _get_token_expire_seconds(),
-        }
-
-    return {
-        "access_token": tokens["access_token"],
-        "refresh_token": tokens.get("refresh_token", ""),
-        "token_type": "bearer",
-        "expires_in": tokens["expires_in"],
-    }
+    _set_no_store(response)
+    return {"message": "Registered successfully"}
 
 
 @router.post("/login", response_model=Token)
@@ -219,8 +230,6 @@ def login(
     Login with the same graph account credentials as SSH (`Node.name` / account name).
     OAuth2 `username` field carries the campus account name, not necessarily an email.
     """
-    from app.core.auth_service import AuthService
-
     _validate_auth_request_origin(request)
 
     client_ip = request.client.host if request.client else "unknown"
@@ -293,38 +302,27 @@ def login(
         device=device,
     )
 
-    # Set httpOnly cookie for web frontend (access token only)
     access_token = tokens["access_token"]
-    cookie_max_age = tokens["expires_in"]
+    _set_no_store(response)
 
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        max_age=cookie_max_age,
-        httponly=True,
-        samesite="lax",  # lax allows cookie on cross-origin top-level nav (works with frontend on different port)
-        secure=_is_secure_cookie(),
-    )
-
-    # Also set refresh token cookie for seamless renewal
     if tokens.get("refresh_token"):
-        refresh_max_age = 30 * 24 * 60 * 60  # 30 days
         response.set_cookie(
-            key="refresh_token",
+            key=_refresh_cookie_name(),
             value=tokens["refresh_token"],
-            max_age=refresh_max_age,
+            max_age=tokens.get("refresh_max_age", _refresh_cookie_max_age_seconds()),
             httponly=True,
             samesite="lax",
             secure=_is_secure_cookie(),
+            path="/",
         )
 
     db.commit()
 
     return {
         "access_token": access_token,
-        "refresh_token": tokens.get("refresh_token", ""),
         "token_type": "bearer",
         "expires_in": tokens["expires_in"],
+        "idle_expires_in": tokens["idle_expires_in"],
     }
 
 
@@ -332,9 +330,9 @@ def login(
 def refresh_token(
     request: Request,
     response: Response,
-    refresh_token: Optional[str] = None,
     db: Session = Depends(get_db),
     user_agent: Optional[str] = Header(None),
+    x_requested_with: Optional[str] = Header(None, alias="X-Requested-With"),
 ):
     """
     使用 refresh token 换取新的 access token 和 refresh token（带轮换）。
@@ -344,13 +342,11 @@ def refresh_token(
     - 颁发新的 access token 和 refresh token
     - 将旧 token 标记为已撤销，设置 replaced_by 为新 JTI
     """
-    from app.core.auth_service import AuthService
-
     _validate_auth_request_origin(request)
+    _validate_auth_ajax_header(x_requested_with)
+    _set_no_store(response)
 
-    # Support both body and cookie for refresh token
-    if not refresh_token:
-        refresh_token = request.cookies.get("refresh_token")
+    refresh_token = _get_refresh_token_from_request(request)
 
     if not refresh_token:
         return _refresh_unauthorized_response("Refresh token required")
@@ -363,6 +359,8 @@ def refresh_token(
         error_messages = {
             "token_revoked": "Refresh token has been revoked",
             "token_reused": "Refresh token has already been used",
+            "token_expired": "Refresh token has expired",
+            "idle_timeout": "Session idle timeout",
         }
         return _refresh_unauthorized_response(
             error_messages.get(validation["error"], "Invalid refresh token")
@@ -388,35 +386,24 @@ def refresh_token(
             error_messages.get(result["error"], "Token rotation failed")
         )
 
-    # Update cookies with new tokens
     access_token = result["access_token"]
-    cookie_max_age = result["expires_in"]
-
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        max_age=cookie_max_age,
-        httponly=True,
-        samesite="lax",  # lax allows cookie on cross-origin top-level nav
-        secure=_is_secure_cookie(),
-    )
 
     if result.get("refresh_token"):
-        refresh_max_age = 30 * 24 * 60 * 60  # 30 days
         response.set_cookie(
-            key="refresh_token",
+            key=_refresh_cookie_name(),
             value=result["refresh_token"],
-            max_age=refresh_max_age,
+            max_age=result.get("refresh_max_age", _refresh_cookie_max_age_seconds()),
             httponly=True,
             samesite="lax",
             secure=_is_secure_cookie(),
+            path="/",
         )
 
     return {
         "access_token": access_token,
-        "refresh_token": result.get("refresh_token", ""),
         "token_type": "bearer",
         "expires_in": result["expires_in"],
+        "idle_expires_in": result.get("idle_expires_in", validation.get("idle_expires_in")),
     }
 
 
@@ -424,19 +411,18 @@ def refresh_token(
 def logout(
     request: Request,
     response: Response,
-    refresh_token: Optional[str] = None,
     db: Session = Depends(get_db),
+    x_requested_with: Optional[str] = Header(None, alias="X-Requested-With"),
 ):
     """
     撤销当前的 refresh token 并清除 cookies。
 
     用户登出时调用，撤销指定的 refresh token 并清除客户端 cookies。
     """
-    from app.core.auth_service import AuthService
-
     _validate_auth_request_origin(request)
+    _validate_auth_ajax_header(x_requested_with)
 
-    # Try to revoke refresh token if provided
+    refresh_token = _get_refresh_token_from_request(request)
     if refresh_token:
         validation = AuthService.validate_refresh_token(db, refresh_token)
         if validation["valid"]:
@@ -444,8 +430,27 @@ def logout(
 
     # Clear cookies regardless of token revocation result
     _clear_auth_cookies(response)
+    _set_session_termination_headers(response)
 
     return {"message": "Logged out successfully"}
+
+
+@router.post("/activity")
+async def record_activity(
+    request: Request,
+    response: Response,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    x_requested_with: Optional[str] = Header(None, alias="X-Requested-With"),
+):
+    _validate_auth_request_origin(request)
+    _validate_auth_ajax_header(x_requested_with)
+    _set_no_store(response)
+    current_user = await get_current_http_user(credentials)
+    return {
+        "message": "Activity recorded",
+        "idle_expires_in": _get_session_idle_timeout_seconds(),
+        "user_id": current_user.user_id,
+    }
 
 
 @router.post("/logout-all")

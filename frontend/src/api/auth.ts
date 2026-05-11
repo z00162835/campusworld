@@ -2,7 +2,7 @@
  * Authentication API endpoints
  */
 import apiClient from './index'
-import type { Token, LoginRequest, RegisterRequest, User } from '@/types/auth'
+import type { ActivityResponse, Token, LoginRequest, RegisterRequest, RegisterResponse, User } from '@/types/auth'
 
 // OAuth2 requires form-urlencoded format
 const toFormUrlEncoded = (data: Record<string, string>) => {
@@ -30,27 +30,24 @@ export const authApi = {
    * Register a new account
    */
   register: (data: RegisterRequest) =>
-    apiClient.post<Token>('/auth/register', data),
-
-  /**
-   * Refresh access token
-   */
-  refresh: (refreshToken: string) =>
-    apiClient.post<Token>(
-      '/auth/refresh',
-      toFormUrlEncoded({ refresh_token: refreshToken }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    ),
+    apiClient.post<RegisterResponse>('/auth/register', data),
 
   /**
    * Logout current user
    */
   logout: () =>
-    apiClient.post('/auth/logout'),
+    apiClient.post('/auth/logout', {}, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    }),
+
+  recordActivity: () =>
+    apiClient.post<ActivityResponse>('/auth/activity', {}, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    }),
 
   /**
    * Get current user profile

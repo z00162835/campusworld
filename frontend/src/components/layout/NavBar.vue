@@ -33,7 +33,7 @@
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+            <el-dropdown-item command="profile">账号设置</el-dropdown-item>
             <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -48,10 +48,12 @@ import { useRouter } from 'vue-router'
 import { Setting } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLogout } from '@/composables/useLogout'
+import { useAppTabs } from '@/composables/useAppTabs'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const { logout } = useLogout()
+const { openAppTab } = useAppTabs()
 
 const isAuthenticated = computed(() => {
   return authStore.isAuthenticated
@@ -67,7 +69,7 @@ const handleRegister = () => {
 
 const handleCommand = async (command: string) => {
   if (command === 'profile') {
-    router.push('/profile')
+    await openAppTab('/profile')
   } else if (command === 'logout') {
     await logout()
   }
