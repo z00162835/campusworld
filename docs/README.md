@@ -6,16 +6,15 @@ CampusWorld 是新一代智慧园区 OS 项目的技术文档中心。
 
 ### 快速开始
 - [系统架构](./architecture/README.md) — 技术栈、模块设计、性能优化、部署架构
-- [配置系统](./configuration.md) — YAML 配置结构说明
-- [配置迁移](./config-migration.md) — 从 Pydantic BaseSettings 迁移到 YAML 的完整指南
-- [Conda 环境设置](./conda-setup.md) — Conda 环境配置方法
+- [快速启动](./quickstart.md) — 环境与 Docker 初始化（若与根目录 `QUICKSTART.md` 并存，以实际维护者更新为准）
+- **配置 / Conda**：见根目录 [`CLAUDE.md`](../CLAUDE.md) 与 [`backend/config/settings.yaml`](../backend/config/settings.yaml)；专章文档待补齐时可在此 README 增链。
 
 ### 后端开发
-- [look 命令设计](./backend/docs/look_command_design.md) — 命令架构、核心方法、集成方案
-- [look 命令使用](./backend/docs/look_command_usage.md) — 语法、示例、权限控制
-- [单例房间实现](./backend/docs/singularity_room_implementation.md) — 默认家位置设计
-- [Demo Building 生成器](./backend/tests/README_demo_building.md) — 测试数据生成文档
-- [日志系统](../backend/app/core/log/README.md) — structlog 使用指南
+- [**后端文档索引（含 backend/docs 迁移说明）**](./backend/README.md) — 命令与模型真源路径、实现对齐锚点
+- [`look` 命令契约](./command/SPEC/features/CMD_look.md) — 语法、行为、实现路径（替代历史上计划的 `backend/docs/look_*.md`）
+- [数据模型 SPEC / SingularityRoom](./models/SPEC/SPEC.md) — 系统入口空间与图模型（替代历史上计划的 `singularity_room_implementation.md`）
+- [奇点屋测试](../backend/tests/models/test_singularity_room.py) — 行为与根节点校验（源码）
+- **日志**：实现位于 [`backend/app/core/log/`](../backend/app/core/log/)（`manager.py`）；用法约定见根目录 `CLAUDE.md`「日志系统」
 
 ### Agent 上下文文档
 - [项目 Agent 指南](../AGENTS.md)
