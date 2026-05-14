@@ -278,7 +278,7 @@ class LoggingManager:
         logger.setLevel(getattr(logging, level.upper()))
         return logger
 
-    def setup_custom(self, level: str='INFO', format_str: Optional[str]=None, file_path: Optional[str]=None, console_output: bool=True, file_output: bool=False):
+    def setup_custom(self, level: str='INFO', format_str: Optional[str]=None, file_path: Optional[str]=None, console_output: bool=True, file_output: bool=False, date_format: Optional[str]=None):
         """
         设置自定义日志配置
 
@@ -288,11 +288,12 @@ class LoggingManager:
             file_path: 日志文件路径
             console_output: 是否输出到控制台
             file_output: 是否输出到文件
+            date_format: ``%(asctime)s`` 的日期时间格式（``logging.Formatter`` 的 ``datefmt``）
         """
         log_level = getattr(logging, level.upper())
         if format_str is None:
             format_str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        formatter = logging.Formatter(format_str)
+        formatter = logging.Formatter(format_str, datefmt=date_format) if date_format else logging.Formatter(format_str)
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)

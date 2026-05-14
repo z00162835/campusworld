@@ -1,5 +1,5 @@
 """
-CampusWorld主程序，作为CampusOS系统的实验性项目的主入口
+CampusWorld主程序，CampusOS系统项目的主入口
 """
 import os
 import sys
@@ -22,7 +22,7 @@ from app.game_engine.manager import game_engine_manager
 from app.api.server import HTTPServer
 
 class CampusWorld:
-    """CampusWorld主程序类"""
+    """CampusWorld main process"""
 
     def __init__(self):
         self.config_manager = get_config()
@@ -33,14 +33,18 @@ class CampusWorld:
         self.ssh_server = None
         self.http_server = None
         self.game_engine_manager = game_engine_manager
-        self.logger.info('CampusWorld main program initialization completed')
 
     def _setup_logging(self):
         """设置日志系统"""
         try:
-            setup_logging(level=get_setting('logging.level', 'INFO'), format_str=get_setting('logging.format'), file_path=str(get_logs_dir(self.config_manager) / get_setting('logging.file_name', 'campusworld.log')), console_output=get_setting('logging.console_output', True), file_output=get_setting('logging.file_output', True))
+            setup_logging(level=get_setting('logging.level', 'INFO'), 
+            format_str=get_setting('logging.format'), 
+            file_path=str(get_logs_dir(self.config_manager) / get_setting('logging.file_name', 'campusworld.log')), 
+            console_output=get_setting('logging.console_output', True), 
+            file_output=get_setting('logging.file_output', True),
+            date_format=get_setting('logging.date_format', '%Y-%m-%d %H:%M:%S'))
         except Exception as e:
-            print(f'Logging system initialization failed: {e}')
+            print(f'Logging system initialization failed: {e}', flush=True)
             setup_logging()
 
     def load_config(self) -> bool:
@@ -198,7 +202,33 @@ class CampusWorld:
             except Exception:
                 status['ssh_server'] = {'is_running': False, 'error': 'shutting_down'}
         status['config'] = {'environment': self.config_manager.get_environment(), 'config_dir': str(self.config_manager.config_dir), 'loaded': self.config_manager.is_loaded()}
+        status['world_runtime'] = self._world_runtime_summary()
         return status
+
+    def _world_runtime_summary(self) -> Dict[str, Any]:
+        """World Engine and loaded worlds from game_engine_manager (for status display)."""
+        try:
+            info = self.game_engine_manager.get_engine_status()
+        except Exception:
+            return {'error': 'unavailable'}
+        if info.get('status') == 'not_initialized':
+            return {'initialized': False, 'worlds': []}
+        loaded = list(info.get('loaded_games') or [])
+        worlds: list = []
+        for wid in loaded:
+            try:
+                st = self.game_engine_manager.get_game_status(wid)
+            except Exception:
+                st = None
+            if st:
+                desc = st.get('description') or ''
+                if len(desc) > 100:
+                    desc = desc[:100] + '...'
+                worlds.append({'id': wid, 'name': st.get('name', wid), 'version': st.get('version', 'N/A'), 'description': desc, 'is_running': bool(st.get('is_running')), 'user_count': st.get('player_count', 0)})
+            else:
+                worlds.append({'id': wid, 'name': wid, 'version': 'N/A', 'description': '', 'is_running': False, 'user_count': 0})
+        engine = self.game_engine_manager.get_engine()
+        return {'initialized': True, 'world_engine_running': bool(engine and getattr(engine, 'is_running', False)), 'world_engine_name': info.get('name'), 'world_engine_version': info.get('version'), 'loaded_world_count': len(loaded), 'worlds': worlds}
 
     def run(self):
         """运行CampusWorld系统"""
@@ -206,7 +236,7 @@ class CampusWorld:
             if not self.start():
                 self.logger.error('CampusWorld system start failed')
                 return False
-            self._display_status()
+            self._print_system_status()
             try:
                 while self.is_running:
                     time.sleep(0.1)
@@ -219,36 +249,44 @@ class CampusWorld:
         finally:
             self.stop()
 
-    def _display_status(self):
-        """显示系统状态"""
+    def _print_system_status(self) -> None:
+        """Print a snapshot of config, World Engine / worlds, and SSH to stdout (English only)."""
         status = self.get_status()
-        self.logger.info('Show system status')
-        print('\n' + '=' * 60)
-        print('CampusWorld System Status')
-        print('=' * 60)
+        print('\n' + '=' * 60, flush=True)
+        print('CampusWorld System Status', flush=True)
+        print('=' * 60, flush=True)
         config = status.get('config', {})
-        print(f"环境: {config.get('environment', 'Unknown')}")
-        print(f"配置目录: {config.get('config_dir', 'Unknown')}")
-        print(f"Config status: {('Loaded' if config.get('loaded') else 'Not loaded')}")
-        if 'game' in status and 'error' not in status['game']:
-            game = status['game']
-            print(f"场景: {game.get('name', 'N/A')}")
-            print(f"  版本: {game.get('version', 'N/A')}")
-            print(f"  描述: {game.get('description', 'N/A')}")
-            print(f"  Status: {('Running' if game.get('is_running') else 'Stopped')}")
-            print(f"  房间数量: {game.get('rooms_count', 0)}")
-            print(f"  物品数量: {game.get('items_count', 0)}")
-            print(f"  角色数量: {game.get('characters_count', 0)}")
+        print(f"Environment: {config.get('environment', 'Unknown')}", flush=True)
+        print(f"Config directory: {config.get('config_dir', 'Unknown')}", flush=True)
+        print(f"Config status: {'Loaded' if config.get('loaded') else 'Not loaded'}", flush=True)
+        wr = status.get('world_runtime') or {}
+        if wr.get('error'):
+            print(f"World runtime: unavailable ({wr.get('error')})", flush=True)
+        elif not wr.get('initialized'):
+            print('World Engine: not initialized', flush=True)
+        else:
+            wen = wr.get('world_engine_name') or 'World Engine'
+            wev = (wr.get('world_engine_version') or '').strip()
+            wer = 'running' if wr.get('world_engine_running') else 'stopped'
+            we_label = f'{wen} {wev}'.strip()
+            print(f'World Engine: {we_label} ({wer})', flush=True)
+            print(f"Loaded worlds: {wr.get('loaded_world_count', 0)}", flush=True)
+            for w in wr.get('worlds') or []:
+                wid = w.get('id', '?')
+                wname = w.get('name', wid)
+                wver = w.get('version', 'N/A')
+                wrun = 'running' if w.get('is_running') else 'stopped'
+                users = w.get('user_count', 0)
+                print(f"  - {wid}: {wname} v{wver} ({wrun}), users: {users}", flush=True)
+                desc = w.get('description') or ''
+                if desc:
+                    print(f"      {desc}", flush=True)
         if status['ssh_server']:
             ssh = status['ssh_server']
-            print(f"SSH server: {('Running' if ssh.get('is_running') else 'Stopped')}")
-            print(f"  地址: {ssh.get('host', 'N/A')}:{ssh.get('port', 'N/A')}")
-        print(f"系统运行时间: {status['runtime']:.2f}秒")
-        print('\nSystem started, you can interact via SSH connection')
-        print("使用 'help' 命令查看可用命令")
-        print("使用 'game help' 命令查看场景管理帮助")
-        print('\nPress Ctrl+C to stop the system')
-        print('=' * 60)
+            print(f"SSH server: {'Running' if ssh.get('is_running') else 'Stopped'}", flush=True)
+            print(f"  Bind: {ssh.get('host', 'N/A')}:{ssh.get('port', 'N/A')}", flush=True)
+        print(f"Uptime: {status['runtime']:.2f}s", flush=True)
+        print('=' * 60, flush=True)
 
 def signal_handler(signum, frame):
     """信号处理器"""
@@ -263,9 +301,17 @@ def signal_handler(signum, frame):
 
 def main():
     """主函数"""
-    print('=' * 60)
-    print('CampusWorld Main Program')
-    print('=' * 60)
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, OSError, ValueError):
+        pass
+    try:
+        sys.stderr.reconfigure(line_buffering=True)
+    except (AttributeError, OSError, ValueError):
+        pass
+    print('=' * 60, flush=True)
+    print('CampusWorld Main Program', flush=True)
+    print('=' * 60, flush=True)
     try:
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
@@ -278,7 +324,7 @@ def main():
         sys.stderr.flush()
         os._exit(0 if success else 1)
     except Exception as e:
-        print(f'Failed to start CampusWorld system: {e}')
+        print(f'Failed to start CampusWorld system: {e}', flush=True)
         try:
             import logging
             logging.error(f'Failed to start CampusWorld system: {e}', exc_info=True)

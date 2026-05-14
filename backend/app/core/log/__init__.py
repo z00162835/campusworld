@@ -71,7 +71,7 @@ def get_logger(name: str, level: Optional[str]=None) -> logging.Logger:
         logger.setLevel(getattr(logging, level.upper()))
     return logger
 
-def setup_logging(level: str='INFO', format_str: Optional[str]=None, file_path: Optional[str]=None, console_output: bool=True, file_output: bool=False) -> object:
+def setup_logging(level: str='INFO', format_str: Optional[str]=None, file_path: Optional[str]=None, console_output: bool=True, file_output: bool=False, date_format: Optional[str]=None) -> object:
     """
     设置日志系统（延迟加载）
     
@@ -81,12 +81,13 @@ def setup_logging(level: str='INFO', format_str: Optional[str]=None, file_path: 
         file_path: 日志文件路径
         console_output: 是否输出到控制台
         file_output: 是否输出到文件
+        date_format: ``%(asctime)s`` 的日期时间格式（传给 ``logging.Formatter`` 的 ``datefmt``）
     
     Returns:
         LoggingManager: 配置后的日志管理器
     """
     manager = get_logging_manager()
-    manager.setup_custom(level, format_str, file_path, console_output, file_output)
+    manager.setup_custom(level, format_str, file_path, console_output, file_output, date_format=date_format)
     return manager
 
 def create_logging_middleware(module_name: str) -> object:
