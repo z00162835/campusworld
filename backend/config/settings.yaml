@@ -49,9 +49,10 @@ npc_agent:
 ssh:
   host: "0.0.0.0"
   port: 2222
-  max_connections: 10
+  max_connections: 50
   worker_threads: 2
   worker_pool_size: 50
+  banner: "Welcome to CampusWorld SSH Console"
   # 连接速率限制
   rate_limit:
     max_connections_per_minute: 10  # 每分钟最大连接数
@@ -290,7 +291,7 @@ agents:
           enabled: true
           log_path: "logs/agent/aico.log"
           level: "DEBUG"
-          max_file_size: "10MB"
+          max_file_size: "20MB"
           backup_count: 5
           max_phase_output_chars: 4000
 

@@ -4,7 +4,7 @@
 """
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class AppConfig(BaseModel):
     """应用基础配置"""
@@ -32,6 +32,25 @@ class ServerConfig(BaseModel):
     reload: bool = Field(default=True, description='自动重载')
     access_log: bool = Field(default=True, description='访问日志')
 
+class SSHRateLimitConfig(BaseModel):
+    """SSH 连接与登录速率限制（与 ``config/settings.yaml`` 的 ``ssh.rate_limit`` 对齐）"""
+    model_config = ConfigDict(extra='ignore')
+    max_connections_per_minute: int = Field(default=10, description='每分钟最大新连接数')
+    max_failed_attempts: int = Field(default=5, description='登录失败次数上限')
+    lockout_duration: int = Field(default=300, description='锁定时长（秒）')
+    attempt_window: int = Field(default=300, description='登录尝试统计窗口（秒）')
+    connection_window: int = Field(default=60, description='连接计数窗口（秒）')
+
+class SSHConfig(BaseModel):
+    """SSH 服务绑定与线程池（默认值与 ``config/settings.yaml`` 的 ``ssh`` 段一致）"""
+    model_config = ConfigDict(extra='ignore')
+    host: str = Field(default='0.0.0.0', description='监听地址')
+    port: int = Field(default=2222, description='监听端口')
+    max_connections: int = Field(default=10, description='最大并发连接数（策略/监控用）')
+    worker_threads: int = Field(default=2, description='工作线程数（遗留/文档对齐）')
+    worker_pool_size: int = Field(default=50, description='Paramiko 客户端处理线程池大小')
+    banner: str = Field(default='Welcome to CampusWorld SSH Console', description='SSH 登录横幅')
+    rate_limit: SSHRateLimitConfig = Field(default_factory=SSHRateLimitConfig)
 class SecurityConfig(BaseModel):
     """安全配置"""
     secret_key: str = Field(default='your-secret-key-here-change-in-production', description='JWT密钥')
@@ -225,6 +244,7 @@ class Settings(BaseModel):
     app: AppConfig = Field(default_factory=AppConfig)
     api: APIConfig = Field(default_factory=APIConfig)
     server: ServerConfig = Field(default_factory=ServerConfig)
+    ssh: SSHConfig = Field(default_factory=SSHConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
@@ -251,3 +271,7 @@ def create_settings_from_config(config_manager) -> Settings:
     """从配置管理器创建设置实例"""
     config_data = config_manager.get_all()
     return Settings(**config_data)
+
+def get_ssh_config_model(config_manager) -> SSHConfig:
+    """Return validated ``ssh`` settings (YAML + env merge); defaults from ``SSHConfig`` when keys are absent."""
+    return create_settings_from_config(config_manager).ssh

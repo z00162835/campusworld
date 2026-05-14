@@ -15,6 +15,7 @@ for _logger_name in ['passlib', 'passlib.utils', 'passlib.utils.compat', 'passli
     logging.getLogger(_logger_name).setLevel(logging.WARNING)
 from app.ssh.server import CampusWorldSSHServer
 from app.core.config_manager import get_setting, get_config
+from app.core.settings import get_ssh_config_model
 from app.core.log import get_logger, setup_logging, LoggerNames
 from app.core.log.manager import get_logging_manager
 from app.core.paths import get_logs_dir
@@ -75,17 +76,13 @@ class CampusWorld:
             return False
 
     def initialize_ssh_server(self) -> bool:
-        """初始化SSH服务器"""
+        """Initialize SSH server from validated ``ssh`` config (see ``config/settings.yaml`` and ``SSHConfig``)."""
         try:
             self.logger.info('Initializing SSH server...')
-            ssh_config = self.config_manager.get_ssh_config()
-            host = ssh_config.get('host', '0.0.0.0')
-            port = ssh_config.get('port', 2222)
-            max_connections = ssh_config.get('max_connections', 10)
-            worker_threads = ssh_config.get('worker_threads', 2)
-            self.logger.info(f'SSH configuration: host={host}, port={port}, max_connections={max_connections}')
-            self.ssh_server = CampusWorldSSHServer(host=host, port=port)
-            self.logger.info(f'SSH server initialized successfully ({host}:{port})')
+            ssh = get_ssh_config_model(self.config_manager)
+            self.logger.info('SSH configuration', extra={'host': ssh.host, 'port': ssh.port, 'max_connections': ssh.max_connections, 'worker_threads': ssh.worker_threads, 'worker_pool_size': ssh.worker_pool_size})
+            self.ssh_server = CampusWorldSSHServer(host=ssh.host, port=ssh.port)
+            self.logger.info(f'SSH server initialized successfully ({ssh.host}:{ssh.port})')
             return True
         except Exception as e:
             self.logger.error(f'Failed to initialize SSH server: {e}', exc_info=True, extra={'error_type': 'ssh_init_error', 'error_message': str(e)})
@@ -148,13 +145,12 @@ class CampusWorld:
             if not self.start_http_server():
                 self.logger.error('HTTP server start failed')
                 return False
-            ssh_config = self.config_manager.get_ssh_config()
-            host = ssh_config.get('host', '0.0.0.0')
-            port = ssh_config.get('port', 2222)
-            max_connections = ssh_config.get('max_connections', 10)
-            self.logger.info(f'SSH configuration: host={host}, port={port}, max_connections={max_connections}')
-            self.ssh_server = CampusWorldSSHServer(host=host, port=port)
-            self.ssh_server.start()
+            if not self.initialize_ssh_server():
+                self.logger.error('SSH server initialization failed')
+                return False
+            if not self.start_ssh_server():
+                self.logger.error('SSH server start failed')
+                return False
             self.logger.info('CampusWorld system started successfully')
             return True
         except Exception as e:
