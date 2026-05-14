@@ -114,6 +114,10 @@
   flex-direction: column;
 }
 
+.form-group {
+  margin-bottom: var(--spacing-sm);
+}
+
 .auth-submit {
   margin-top: var(--spacing-lg);
   width: 100%;

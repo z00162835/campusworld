@@ -49,7 +49,7 @@ import { useAppTabs } from '@/composables/useAppTabs'
 
 const authStore = useAuthStore()
 const { logout } = useLogout()
-const { openAppTab } = useAppTabs()
+const { closeAppTab } = useAppTabs()
 
 onMounted(async () => {
   if (!authStore.user && authStore.token) {
@@ -57,8 +57,8 @@ onMounted(async () => {
   }
 })
 
-const handleClose = () => {
-  openAppTab('/works')
+const handleClose = async () => {
+  await closeAppTab('tab-profile')
 }
 
 const handleLogout = async () => {

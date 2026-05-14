@@ -9,7 +9,7 @@
       <el-button
         v-if="!isAuthenticated"
         text
-        class="navbar-button"
+        class="cw-text-button"
         @click="handleLogin"
       >
         登录
@@ -17,7 +17,7 @@
       <el-button
         v-if="!isAuthenticated"
         text
-        class="navbar-button"
+        class="cw-text-button"
         @click="handleRegister"
       >
         注册
@@ -27,7 +27,7 @@
         trigger="click"
         @command="handleCommand"
       >
-        <el-button text class="navbar-button">
+        <el-button text class="cw-text-button">
           <el-icon><Setting /></el-icon>
           <span style="margin-left: 4px">设置</span>
         </el-button>
@@ -75,56 +75,3 @@ const handleCommand = async (command: string) => {
   }
 }
 </script>
-
-<style scoped>
-/* 确保 NavBar 按钮样式优先级最高，覆盖所有 Element Plus 默认样式 */
-.navbar-button:deep(.el-button) {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-  padding: 0 !important;
-}
-
-.navbar-button:deep(.el-button:hover) {
-  background: var(--bg-hover) !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-  color: var(--text-secondary) !important;
-}
-
-.navbar-button:deep(.el-button:focus),
-.navbar-button:deep(.el-button:active) {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* 覆盖按钮内部所有可能的 wrapper 元素 */
-.navbar-button:deep(.el-button__inner),
-.navbar-button:deep(.el-button__wrapper),
-.navbar-button:deep(.el-button > span),
-.navbar-button:deep(.el-button > *) {
-  background: transparent !important;
-  color: inherit !important;
-}
-
-.navbar-button:hover:deep(.el-button__inner),
-.navbar-button:hover:deep(.el-button__wrapper),
-.navbar-button:hover:deep(.el-button > span),
-.navbar-button:hover:deep(.el-button > *) {
-  background: transparent !important;
-  color: var(--text-secondary) !important;
-}
-
-/* 移除所有伪元素 */
-.navbar-button:deep(.el-button::before),
-.navbar-button:deep(.el-button::after),
-.navbar-button:deep(.el-button__inner::before),
-.navbar-button:deep(.el-button__inner::after) {
-  display: none !important;
-  background: transparent !important;
-}
-</style>

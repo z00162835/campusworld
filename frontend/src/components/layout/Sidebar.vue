@@ -4,7 +4,7 @@
       <div
         v-for="item in menuItems"
         :key="item.key"
-        :class="['sidebar-item', { active: activeKey === item.key }]"
+        :class="['sidebar-item', { active: activeRoute === item.route }]"
         @click="handleClick(item)"
       >
         <div class="sidebar-icon">
@@ -71,7 +71,7 @@ const menuItems: MenuItem[] = [
   }
 ]
 
-const activeKey = computed(() => tabsStore.activeTab?.route || '')
+const activeRoute = computed(() => tabsStore.activeTab?.route || '')
 
 const handleClick = async (item: MenuItem) => {
   await openAppTab(item.route)

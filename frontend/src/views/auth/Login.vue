@@ -21,7 +21,7 @@ const SystemStatus = defineAsyncComponent(() =>
 )
 import CyberInput from '@/components/auth/CyberInput.vue'
 import CyberButton from '@/components/auth/CyberButton.vue'
-import { useAuthStore } from '@/stores/auth'
+import { getAuthErrorMessage, useAuthStore } from '@/stores/auth'
 import { isValidRedirect } from '@/router'
 
 const { t } = useI18n()
@@ -106,7 +106,7 @@ const handleLogin = async () => {
       credentials.password = ''
       authError.value = result.status === 0
         ? t('auth.errors.networkError')
-        : t('auth.errors.invalidCredentials')
+        : t(getAuthErrorMessage(result.status || 0))
     }
   } catch (error: any) {
     // Clear password on failure for security
@@ -209,7 +209,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
         <!-- Register Link -->
         <div class="auth-footer">
           <span class="auth-footer__text">New to CampusWorld?</span>
-          <a href="/register" class="auth-link">CREATE ACCOUNT</a>
+          <router-link to="/register" class="auth-link">CREATE ACCOUNT</router-link>
         </div>
       </form>
     </div>
@@ -220,215 +220,3 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
     </div>
   </div>
 </template>
-
-<style scoped>
-.auth-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--cyber-bg-dark) 0%, var(--cyber-bg-mid) 50%, var(--cyber-bg-dark) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.auth-particles {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-
-.auth-scanlines {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.grid-background {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--cyber-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--cyber-grid) 1px, transparent 1px);
-  background-size: 50px 50px;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.vignette-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 0%,
-    transparent 60%,
-    rgba(0, 0, 0, 0.4) 100%
-  );
-}
-
-.auth-panel {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  max-width: 420px;
-  padding: var(--spacing-3xl);
-  background: rgba(10, 10, 15, 0.85);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(10px);
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.auth-panel--visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.auth-decoration .corner {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border-color: var(--cyber-primary);
-  border-style: solid;
-  border-width: 0;
-}
-
-.auth-decoration .corner--top-left {
-  top: -1px;
-  left: -1px;
-  border-top-width: 2px;
-  border-left-width: 2px;
-}
-
-.auth-decoration .corner--top-right {
-  top: -1px;
-  right: -1px;
-  border-top-width: 2px;
-  border-right-width: 2px;
-}
-
-.auth-decoration .corner--bottom-left {
-  bottom: -1px;
-  left: -1px;
-  border-bottom-width: 2px;
-  border-left-width: 2px;
-}
-
-.auth-decoration .corner--bottom-right {
-  bottom: -1px;
-  right: -1px;
-  border-bottom-width: 2px;
-  border-right-width: 2px;
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: var(--spacing-2xl);
-}
-
-.auth-logo {
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  font-weight: 700;
-  letter-spacing: var(--letter-spacing-wider);
-  color: var(--cyber-text-bright);
-  text-shadow: var(--glow-text);
-  margin: 0 0 var(--spacing-md);
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group {
-  margin-bottom: var(--spacing-sm);
-}
-
-.auth-submit {
-  margin-top: var(--spacing-lg);
-  width: 100%;
-}
-
-.auth-error {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background: rgba(255, 51, 102, 0.1);
-  border: 1px solid var(--cyber-danger);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--spacing-md);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  color: var(--cyber-danger);
-}
-
-.auth-error__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  background: var(--cyber-danger);
-  border-radius: 50%;
-  color: white;
-  font-weight: bold;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-.auth-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-xl);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-}
-
-.auth-footer__text {
-  color: var(--cyber-text-dim);
-}
-
-.auth-link {
-  color: var(--cyber-primary);
-  text-decoration: none;
-  letter-spacing: var(--letter-spacing-wide);
-  transition: all var(--transition-glow);
-}
-
-.auth-link:hover {
-  text-shadow: var(--glow-text);
-}
-
-.auth-version {
-  position: fixed;
-  bottom: var(--spacing-lg);
-  right: var(--spacing-xl);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
-  color: var(--cyber-text-dim);
-  letter-spacing: var(--letter-spacing-wide);
-  z-index: 10;
-}
-
-@media (max-width: 480px) {
-  .auth-panel {
-    margin: var(--spacing-md);
-    padding: var(--spacing-xl);
-  }
-
-  .auth-logo {
-    font-size: 24px;
-  }
-}
-</style>

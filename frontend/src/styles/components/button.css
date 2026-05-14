@@ -62,48 +62,41 @@
 }
 
 /* Text Button */
-/* Text Button - 排除 navbar-button */
-:deep(.el-button--text:not(.navbar-button)) {
-  background: var(--button-text-bg) !important;
-  border-color: transparent !important;
+:deep(.el-button--text) {
+  background: var(--button-text-bg);
+  border-color: transparent;
   color: var(--button-text-text);
   padding: var(--spacing-sm) var(--spacing-md);
 }
 
-:deep(.el-button--text:not(.navbar-button):hover) {
-  background: var(--button-text-bg-hover) !important;
-  border-color: transparent !important;
+:deep(.el-button--text:hover) {
+  background: var(--button-text-bg-hover);
+  border-color: transparent;
   color: var(--button-text-text-hover);
 }
 
-:deep(.el-button--text:not(.navbar-button):active) {
-  background: var(--bg-active) !important;
-  border-color: transparent !important;
+:deep(.el-button--text:active) {
+  background: var(--bg-active);
+  border-color: transparent;
   color: var(--text-primary);
 }
 
-/* 确保 navbar-button 不受全局样式影响 */
-:deep(.navbar-button.el-button--text),
-:deep(.navbar-button.el-button--text:hover),
-:deep(.navbar-button.el-button--text:focus),
-:deep(.navbar-button.el-button--text:active) {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
+.cw-text-button.el-button,
+.cw-text-button.el-button--text {
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
 }
 
-:deep(.navbar-button.el-button--text:hover) {
-  background: var(--bg-hover) !important;
-  color: var(--text-secondary) !important;
-}
-
-/* 确保 navbar-button 内部元素也没有背景 */
-:deep(.navbar-button.el-button--text .el-button__inner),
-:deep(.navbar-button.el-button--text .el-button__wrapper),
-:deep(.navbar-button.el-button--text:hover .el-button__inner),
-:deep(.navbar-button.el-button--text:hover .el-button__wrapper) {
-  background: transparent !important;
+.cw-text-button.el-button:hover,
+.cw-text-button.el-button--text:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: none;
 }
 
 /* Danger Button */
@@ -141,4 +134,3 @@
   padding: var(--spacing-md) var(--spacing-xl);
   font-size: var(--font-size-md);
 }
-

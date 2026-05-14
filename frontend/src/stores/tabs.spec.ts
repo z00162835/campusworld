@@ -45,4 +45,14 @@ describe('tabs store app route handling', () => {
     expect(nextTab?.id).toBe('tab-profile')
     expect(tabsStore.activeTab?.id).toBe('tab-profile')
   })
+
+  it('falls back to works after closing the last active tab', () => {
+    const tabsStore = useTabsStore()
+
+    tabsStore.openTabByRoute('/profile')
+    const nextTab = tabsStore.closeTab('tab-profile')
+
+    expect(nextTab).toBeNull()
+    expect(tabsStore.activeTab).toBeUndefined()
+  })
 })

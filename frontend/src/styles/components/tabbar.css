@@ -1,0 +1,106 @@
+/* TabBar */
+.tab-bar {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  height: var(--tab-bar-height);
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  z-index: calc(var(--z-index-header) - 1);
+}
+
+#app:has(.app-wrapper.with-sidebar) .tab-bar {
+  left: var(--sidebar-width);
+}
+
+.tab-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tab-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-bar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.tab-list {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--spacing-sm);
+  gap: var(--spacing-xs);
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  padding: 6px var(--spacing-md);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-bottom: none;
+  min-width: 100px;
+  max-width: 200px;
+}
+
+.tab-item:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.tab-item.active {
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--bg-primary);
+}
+
+.tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-close {
+  margin-left: var(--spacing-sm);
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.tab-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}

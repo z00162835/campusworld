@@ -1,0 +1,33 @@
+/* Navbar */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 var(--spacing-xl);
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}

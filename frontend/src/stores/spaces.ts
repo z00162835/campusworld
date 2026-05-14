@@ -43,6 +43,7 @@ export const useSpacesStore = defineStore('spaces', () => {
   // Detail drawer state
   const selectedNode = ref<SpaceNode | null>(null)
   const detailDrawerVisible = ref(false)
+  let latestFetchRequestId = 0
 
   // Computed
   const currentNodes = computed(() => nodes.value[activeTab.value])
@@ -51,6 +52,7 @@ export const useSpacesStore = defineStore('spaces', () => {
 
   // Actions
   async function fetchSpaces(tab?: SpaceTab, offset?: number, append = false) {
+    const requestId = ++latestFetchRequestId
     const targetTab = tab || activeTab.value
     loading.value = true
 
@@ -73,6 +75,7 @@ export const useSpacesStore = defineStore('spaces', () => {
       })
 
       const { items, page } = response.data
+      if (requestId !== latestFetchRequestId) return
 
       // Store data for the target tab - append or replace
       if (append) {
@@ -88,9 +91,12 @@ export const useSpacesStore = defineStore('spaces', () => {
       }
       // For non-append, currentPage is already correct (set by pagination or setActiveTab)
     } catch (error) {
+      if (requestId !== latestFetchRequestId) return
       console.error('Failed to fetch spaces:', error)
     } finally {
-      loading.value = false
+      if (requestId === latestFetchRequestId) {
+        loading.value = false
+      }
     }
   }
 
@@ -212,6 +218,7 @@ export const useSpacesStore = defineStore('spaces', () => {
     currentPage.value = 1
     selectedNode.value = null
     detailDrawerVisible.value = false
+    latestFetchRequestId += 1
   }
 
   return {

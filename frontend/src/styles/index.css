@@ -6,6 +6,9 @@
 
 /* 组件样式 */
 @import './components/layout.css';
+@import './components/sidebar.css';
+@import './components/navbar.css';
+@import './components/tabbar.css';
 @import './components/card.css';
 @import './components/button.css';
 @import './components/form.css';
@@ -19,4 +22,3 @@
 @import './animations/glitch.css';
 @import './animations/scanline.css';
 @import './animations/pulse.css';
-
