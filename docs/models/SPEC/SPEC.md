@@ -132,6 +132,8 @@
 
 ## Feature Specs
 
+- Feature index and module keys: [`features/INDEX.md`](features/INDEX.md)
+
 - `F02` Intelligent Agent Service（`npc_agent` 扩展、命令优先、记忆/运行独立表）  
   [`features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)  
   实现锚点：`app/models/system/agent_memory_tables.py`（ORM）、`app/game_engine/agent_runtime/`（PDCA / MemoryPort / 注册表）、`app/commands/agent_commands.py`（统一 [`agent`](../../command/SPEC/features/CMD_agent.md) 含 `list` / `status` / `tool` / `show`，以及独立 `aico`）。  

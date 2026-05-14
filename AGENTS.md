@@ -7,6 +7,7 @@ CampusWorld is a world-semantic Campus OS: graph nodes model people, places, dev
 - Project overview: `README.md`, `QUICKSTART.md`
 - Logging & bilingual terms (normative for log strings): `docs/glossary/TERMINOLOGY.md`
 - Architecture: `docs/architecture/README.md`
+- Docs naming and placement standard: `docs/standards/DOC_NAMING_SPEC.md`
 - Models and Agent runtime: `docs/models/SPEC/SPEC.md`
 - Command system: `docs/command/SPEC/SPEC.md`
 - Frontend: `docs/frontend/SPEC/SPEC.md`
@@ -58,6 +59,7 @@ CampusWorld is a world-semantic Campus OS: graph nodes model people, places, dev
 | PostgreSQL integration | `cd backend && conda run -n campusworld pytest -m postgres_integration` |
 | Frontend | `cd frontend && npm run type-check && npm run test -- --run` |
 | Config | `cd backend && python scripts/validate_config.py` |
+| Docs SPEC layout | `cd backend && python scripts/validate_spec_layout.py` |
 | HiCampus package | `world validate hicampus` after DB-backed install/reload |
 
 Use the smallest meaningful test set first, then broaden when touching shared contracts, auth/session code, graph persistence, command dispatch, or agent runtime.

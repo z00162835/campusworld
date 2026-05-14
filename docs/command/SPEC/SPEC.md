@@ -4,6 +4,8 @@
 
 > **Doc root**: 本规范树为仓库内 **[`docs/command/SPEC/`](.)**（`features/` 为各命令分册与 `F01`/`F02` 深文档，`_generated/` 为注册表 JSON 快照，`template/` 为新建 `CMD_*` 模板）。
 
+> **Feature index and module keys**: [`features/INDEX.md`](features/INDEX.md)。
+
 ## Module Overview
 
 命令系统（`backend/app/commands/`）提供类似 MUD 终端的命令执行框架，命令是**系统命令**，通过 `CommandRegistry` 自动发现和管理。

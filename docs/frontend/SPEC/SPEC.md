@@ -199,6 +199,10 @@ const { status, send, connect, disconnect } = useWebSocket()
 - 状态通过 Pinia stores 管理，禁止直接操作 localStorage
 - 组件使用 unplugin-vue-components 自动导入
 
+## Feature Index
+
+- Feature index and module keys: [`features/INDEX.md`](features/INDEX.md)
+
 ## 依赖
 
 - 依赖 `backend/app/api/v1/`（REST API）
