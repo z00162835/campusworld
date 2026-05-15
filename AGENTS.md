@@ -8,6 +8,7 @@ CampusWorld is a world-semantic Campus OS: graph nodes model people, places, dev
 - Logging & bilingual terms (normative for log strings): `docs/glossary/TERMINOLOGY.md`
 - Architecture: `docs/architecture/README.md`
 - Docs naming and placement standard: `docs/standards/DOC_NAMING_SPEC.md`
+- Docs planning and TODO governance: `docs/standards/PLAN_TODO_GOVERNANCE.md`
 - Models and Agent runtime: `docs/models/SPEC/SPEC.md`
 - Command system: `docs/command/SPEC/SPEC.md`
 - Frontend: `docs/frontend/SPEC/SPEC.md`

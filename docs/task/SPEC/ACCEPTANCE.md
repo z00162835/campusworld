@@ -20,7 +20,7 @@
 
 ## B. Phase B — 实现级 ACCEPTANCE
 
-> 实施 SSOT：[`PLAN_PHASE_B.md`](PLAN_PHASE_B.md)。**Phase B 的状态机事件白名单 = `create / publish / claim / assign / complete`**；其余事件由 `task_state_machine.transition` 显式拒绝（`WorkflowEventNotAllowed`），并标注下方为 "→ Phase C"。
+> Phase B 实施归档：[`_generated/PHASE_B_ROLLOUT_2026Q2.md`](_generated/PHASE_B_ROLLOUT_2026Q2.md)。**Phase B 的状态机事件白名单 = `create / publish / claim / assign / complete`**；其余事件由 `task_state_machine.transition` 显式拒绝（`WorkflowEventNotAllowed`），并标注下方为 "→ Phase C"。
 
 ### B.1 Ontology 与迁移
 

@@ -26,7 +26,7 @@ The following files are feature/topic-level docs currently outside `features/`:
 - `docs/models/SPEC/AGENT_TOOL_SEMANTIC_REVIEW_GATE.md`
 - `docs/models/SPEC/AICO_TOOL_DESCRIPTION_AUDIT.md`
 - `docs/frontend/SPEC/SPACES.md`
-- `docs/task/SPEC/PLAN_PHASE_B.md`
+- `docs/task/SPEC/PLAN_PHASE_B.md` (compatibility stub; canonical archive moved to `docs/task/SPEC/_generated/PHASE_B_ROLLOUT_2026Q2.md`)
 
 ## Naming Heterogeneity
 

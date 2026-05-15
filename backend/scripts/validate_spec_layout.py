@@ -27,7 +27,7 @@ ROOT_MD_ALLOWLIST = {
     "models/SPEC/AGENT_TOOL_SEMANTIC_REVIEW_GATE.md",
     "models/SPEC/AICO_TOOL_DESCRIPTION_AUDIT.md",
     "frontend/SPEC/SPACES.md",
-    "task/SPEC/PLAN_PHASE_B.md",
+    "task/SPEC/PLAN_PHASE_B.md",  # compatibility stub, target removal: 2026-07
 }
 
 # Transitional exceptions to be renamed to CMD_TOPIC_* in command module.

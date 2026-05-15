@@ -17,7 +17,7 @@
 
 ## Phase B — 本体、表、基础命令
 
-> 实施 SSOT：[`PLAN_PHASE_B.md`](PLAN_PHASE_B.md) — 6 PR 线性合并；I1/I3/I4/I5/I6/I2(局部) 全部覆盖；I7/I8 留 Phase C。事件集 = `create / publish / claim / assign / complete`。
+> Phase B 实施归档：[`_generated/PHASE_B_ROLLOUT_2026Q2.md`](_generated/PHASE_B_ROLLOUT_2026Q2.md) — 6 PR 线性合并；I1/I3/I4/I5/I6/I2(局部) 全部覆盖；I7/I8 留 Phase C。事件集 = `create / publish / claim / assign / complete`。
 
 ### B.1 Ontology
 

@@ -253,6 +253,8 @@ v1 仅覆盖 **后端本体 + 关系表 + 命令族（SSH/REST 同源）**；前
 | **Phase B** | `graph_seed_node_types.yaml` 注册 `task`；迁移新建 8 张关系表（含 `task_pools`）；seed `hicampus.cleaning / hicampus.security / hicampus.maintenance` 三池；注册 RBAC 权限码（含 `task.publish` / `task.pool.admin`）；实现 `task_state_machine.transition`（最小事件集 `create/publish/claim/assign/complete` + ACL 校验）；实现命令 `task create / list / show / claim / assign / complete / publish / pool list/show/create` + 单元测试 + 覆盖 I1/I2/I4/I6 + 乐观锁冲突 + ACL 拒绝路径的集成测试。 |
 | **Phase C** | 状态机扩展事件 `submit-review / approve / reject / handoff / cancel / expand`；`npc_agent` 订阅 `kind=pool, pool_key=<task_pools.key>` 含 `*` 通配；selector 解析器 + late-binding freeze；`task.consistency_audit` 巡检 worker；structlog 事件 + 集成测试覆盖 `agent1 → admin → agent2` + 池切换；属性测试；Bulk 命令 `task bulk-approve / bulk-claim`；`task pool stats` 聚合实现。 |
 
+> Phase B 实施过程归档：[`_generated/PHASE_B_ROLLOUT_2026Q2.md`](_generated/PHASE_B_ROLLOUT_2026Q2.md)。该归档为执行快照，不作为契约 SSOT。
+
 ---
 
 ## 7. 文档级 ACCEPTANCE（详见 [`ACCEPTANCE.md`](ACCEPTANCE.md)）

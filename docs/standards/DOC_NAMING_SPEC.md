@@ -83,3 +83,4 @@ Validation must check:
 - Architecture-level governance text: `docs/architecture/README.md`
 - Agent execution constraints: `AGENTS.md`
 - Naming and placement rules: this file (`docs/standards/DOC_NAMING_SPEC.md`)
+- Planning and TODO lifecycle rules: `docs/standards/PLAN_TODO_GOVERNANCE.md`
