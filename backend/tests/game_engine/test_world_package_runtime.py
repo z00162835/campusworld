@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.commands.base import GameCommand
 from app.game_engine.loader import GameLoader
 from app.game_engine.runtime_store import (
     OperationResult,
@@ -140,6 +141,84 @@ def test_unload_game_executes_stop_unregister_and_cleanup():
     assert "hicampus" not in loader.game_modules
     assert result["ok"] is True
     assert result["status_after"] == WorldRuntimeStatus.NOT_INSTALLED.value
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_unload_game_fails_when_world_command_unregistration_fails():
+    loader, engine = _build_loader_with_stubbed_service()
+    engine.unregister_game.return_value = True
+
+    game = MagicMock()
+    game.stop.return_value = True
+    loader.loaded_games["hicampus"] = game
+    loader.game_modules["hicampus"] = object()
+
+    with patch("app.commands.init_commands.unregister_game_commands", return_value=False):
+        result = loader.unload_game("hicampus")
+
+    game.stop.assert_not_called()
+    engine.unregister_game.assert_not_called()
+    assert result["ok"] is False
+    assert result["error_code"] == WorldErrorCode.WORLD_UNLOAD_FAILED.value
+
+
+class _DummyWorldCommand(GameCommand):
+    def __init__(self):
+        super().__init__(name="hicampus_echo", description="dummy", aliases=[], game_name="")
+
+    def execute(self, context, args):
+        raise NotImplementedError()
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_load_game_registers_world_commands():
+    loader, engine = _build_loader_with_stubbed_service()
+    engine.register_game.return_value = True
+    loader._find_game_path = MagicMock(return_value=Path("/tmp/hicampus"))
+    loader._load_manifest = MagicMock(return_value={"world_id": "hicampus", "version": "1.0.0", "api_version": "v1", "data_dir": "data"})
+    loader._load_game_module = MagicMock(return_value=object())
+    loader._load_world_package_snapshot = MagicMock(return_value={})
+    loader._try_run_graph_seed = MagicMock(return_value=(None, None, ""))
+    game = MagicMock()
+    game.initialize_game.return_value = True
+    game.start.return_value = True
+    game.get_commands.return_value = [_DummyWorldCommand()]
+    loader._create_game_instance = MagicMock(return_value=game)
+
+    with patch("app.commands.init_commands.register_game_commands", return_value=True) as m_register:
+        result = loader.load_game("hicampus")
+
+    assert result["ok"] is True
+    m_register.assert_called_once()
+    (world_id, command_list) = m_register.call_args.args
+    assert world_id == "hicampus"
+    assert len(command_list) == 1
+    assert command_list[0].name == "hicampus_echo"
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_load_game_rejects_invalid_world_command_contract():
+    loader, engine = _build_loader_with_stubbed_service()
+    engine.register_game.return_value = True
+    loader._find_game_path = MagicMock(return_value=Path("/tmp/hicampus"))
+    loader._load_manifest = MagicMock(return_value={"world_id": "hicampus", "version": "1.0.0", "api_version": "v1", "data_dir": "data"})
+    loader._load_game_module = MagicMock(return_value=object())
+    loader._load_world_package_snapshot = MagicMock(return_value={})
+    loader._try_run_graph_seed = MagicMock(return_value=(None, None, ""))
+    game = MagicMock()
+    game.initialize_game.return_value = True
+    game.start.return_value = True
+    game.get_commands.return_value = {"bad": object()}
+    loader._create_game_instance = MagicMock(return_value=game)
+
+    result = loader.load_game("hicampus")
+
+    assert result["ok"] is False
+    assert result["error_code"] == WorldErrorCode.WORLD_LOAD_FAILED.value
+    assert "contract invalid command type" in result["message"]
 
 
 @pytest.mark.game

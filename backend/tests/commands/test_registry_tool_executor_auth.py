@@ -28,7 +28,7 @@ def _policy(*, enabled=True, any_perms=None, all_perms=None, roles_any=None):
 @pytest.fixture(autouse=True)
 def _register_help_and_notice():
     """Minimal registry rows — avoids full initialize_commands (builder model discovery)."""
-    from app.commands.game.notice_command import NoticeCommand
+    from app.commands.admin.notice_command import NoticeCommand
     from app.commands.registry import command_registry
     from app.commands.system_commands import HelpCommand
 

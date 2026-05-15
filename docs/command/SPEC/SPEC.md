@@ -25,8 +25,8 @@
 | 类型 | 说明 | 典型命令（以注册表为准） |
 |------|------|----------|
 | `SYSTEM` | 系统可调用命令（图检索、Agent 工具、帮助等） | `help`, `find`, `aico`, `agent_capabilities` |
-| `GAME` | 世界内交互（`look`、方向移动、进/出世界、公告等） | `look`, `go`, `enter`, `leave` |
-| `ADMIN` | 管理/建造型 | `create`, `lexicon`, `world` |
+| `GAME` | 世界内交互（`look`、方向移动、进/出世界等） | `look`, `go`, `enter`, `leave` |
+| `ADMIN` | 管理/建造型 | `create`, `lexicon`, `world`, `notice` |
 
 > 注：实现中 **`look` 为 `GAME`（`LookCommand`）**；**`world` 为 `ADMIN`（`WorldCommand`）**。以 [`registry_snapshot.json`](_generated/registry_snapshot.json) 为准。未在注册表中的 MUD 式名（如 `say` / `inventory`）**不**列为此版已提供命令；**`who`（在线列表）与 `whoami`（当前身份）** 为两条独立命令，分别见 [CMD_who](features/CMD_who.md) / [CMD_whoami](features/CMD_whoami.md)。
 
@@ -133,7 +133,7 @@ CommandResult（成功/失败，自然语言在实现中构造）
 | `north` | GAME | `n` | [CMD_north](features/CMD_north.md) |
 | `northeast` | GAME | `ne` | [CMD_northeast](features/CMD_northeast.md) |
 | `northwest` | GAME | `nw` | [CMD_northwest](features/CMD_northwest.md) |
-| `notice` | GAME | `notices` | [CMD_notice](features/CMD_notice.md) |
+| `notice` | ADMIN | `notices` | [CMD_notice](features/CMD_notice.md) |
 | `out` | GAME | `o` | [CMD_out](features/CMD_out.md) |
 | `south` | GAME | `s` | [CMD_south](features/CMD_south.md) |
 | `southeast` | GAME | `se` | [CMD_southeast](features/CMD_southeast.md) |

@@ -1,7 +1,10 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List, TYPE_CHECKING
 from app.game_engine.base import BaseGame
+
+if TYPE_CHECKING:
+    from app.commands.base import BaseCommand
 
 class Game(BaseGame):
 
@@ -25,8 +28,8 @@ class Game(BaseGame):
         self.start_time = None
         return True
 
-    def get_commands(self) -> Dict[str, Any]:
-        return {}
+    def get_commands(self) -> List['BaseCommand']:
+        return []
 
     def initialize_game(self) -> bool:
         self._initialized = True

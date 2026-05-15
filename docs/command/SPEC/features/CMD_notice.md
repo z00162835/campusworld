@@ -1,15 +1,15 @@
 # `notice`
 
-> **Architecture Role**: 系统公告管理（GAME）；`publish`/`edit`/`archive` 为写操作，`list` 为读操作。一次执行只走单个子命令路径，子分支与错误文案均为中文硬编码。
+> **Architecture Role**: 系统公告管理（ADMIN）；`publish`/`edit`/`archive` 为写操作，`list` 为读操作。一次执行只走单个子命令路径，子分支与错误文案均为中文硬编码。
 
 ## Metadata (anchoring)
 
 | Field | Value |
 |--------|--------|
 | Command | `notice` |
-| `CommandType` | GAME |
-| Class | `app.commands.game.notice_command.NoticeCommand` |
-| Primary implementation | [`backend/app/commands/game/notice_command.py`](../../../../backend/app/commands/game/notice_command.py) |
+| `CommandType` | ADMIN |
+| Class | `app.commands.admin.notice_command.NoticeCommand` |
+| Primary implementation | [`backend/app/commands/admin/notice_command.py`](../../../../backend/app/commands/admin/notice_command.py) |
 | Locale | `commands.notice`（`notices` 别名，见快照） |
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |

@@ -6,6 +6,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from app.commands.base import CommandContext
+from app.commands.base import CommandType
 from app.commands.policy import CommandPolicyEvaluator
 from app.commands.policy_store import CommandPolicyRepository
 
@@ -53,17 +54,18 @@ def _ctx_user() -> CommandContext:
 
 
 def test_notice_command_denies_non_admin():
-    from app.commands.game.notice_command import NoticeCommand
+    from app.commands.admin.notice_command import NoticeCommand
 
     cmd = NoticeCommand()
+    assert cmd.command_type == CommandType.ADMIN
     with patch.object(CommandPolicyRepository, "get_policy", return_value=_notice_policy()):
         decision = CommandPolicyEvaluator().evaluate(cmd, _ctx_user())
     assert not decision.allowed
 
 
 def test_notice_command_publish_success(monkeypatch):
-    from app.commands.game.notice_command import NoticeCommand
-    from app.commands.game import notice_command as mod
+    from app.commands.admin.notice_command import NoticeCommand
+    from app.commands.admin import notice_command as mod
 
     monkeypatch.setattr(
         mod.bulletin_board_service,
@@ -81,8 +83,8 @@ def test_notice_command_publish_success(monkeypatch):
 
 
 def test_notice_command_edit_archive_and_list(monkeypatch):
-    from app.commands.game.notice_command import NoticeCommand
-    from app.commands.game import notice_command as mod
+    from app.commands.admin.notice_command import NoticeCommand
+    from app.commands.admin import notice_command as mod
 
     monkeypatch.setattr(
         mod.bulletin_board_service,

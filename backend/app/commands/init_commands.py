@@ -6,15 +6,19 @@ from .registry import command_registry
 from .graph_inspect_commands import GRAPH_INSPECT_COMMANDS
 from .system_commands import SYSTEM_COMMANDS
 from .system_primer_command import PRIMER_COMMANDS
+from .admin import ADMIN_COMMANDS
 from .game import GAME_COMMANDS
 from .builder import get_build_cmdset
 import threading
+from typing import Dict, Set
 from app.core.log import get_logger, LoggerNames
 logger = get_logger(LoggerNames.COMMAND)
 _commands_initialized = False
 _init_lock = threading.Lock()
 _initializing = False
 _init_done_event = threading.Event()
+_world_command_lock = threading.Lock()
+_world_registered_command_names: Dict[str, Set[str]] = {}
 
 def _schedule_command_ability_sync() -> None:
     """
@@ -75,7 +79,7 @@ def initialize_commands(force_reinit: bool=False) -> bool:
         return _commands_initialized
     success = False
     try:
-        logger.info('command init: registering system + agent + world commands')
+        logger.info('command init: registering system + agent + admin + world commands')
         from .agent_commands import get_agent_commands
         AGENT_COMMANDS = get_agent_commands()
         system_command_groups = [('SYSTEM_COMMANDS', SYSTEM_COMMANDS), ('PRIMER_COMMANDS', PRIMER_COMMANDS), ('GRAPH_INSPECT_COMMANDS', GRAPH_INSPECT_COMMANDS), ('AGENT_COMMANDS', AGENT_COMMANDS)]
@@ -86,6 +90,12 @@ def initialize_commands(force_reinit: bool=False) -> bool:
                     system_success += 1
                 else:
                     logger.error(f"System command '{command.name}' registration failed")
+        admin_success = 0
+        for command in ADMIN_COMMANDS:
+            if command_registry.register_command(command):
+                admin_success += 1
+            else:
+                logger.error(f"Admin command '{command.name}' registration failed")
         game_success = 0
         for command in GAME_COMMANDS:
             if command_registry.register_command(command):
@@ -113,7 +123,7 @@ def initialize_commands(force_reinit: bool=False) -> bool:
         logger.info('command init: scheduling command ability graph sync (non-blocking)')
         _schedule_command_ability_sync()
         expected_sys = sum((len(commands) for (_, commands) in system_command_groups))
-        success = system_success == expected_sys and game_success == len(GAME_COMMANDS)
+        success = system_success == expected_sys and admin_success == len(ADMIN_COMMANDS) and game_success == len(GAME_COMMANDS)
         return success
     except Exception as e:
         logger.error(f'Failed to initialize command system: {e}')
@@ -141,14 +151,35 @@ def get_command_summary() -> dict:
 def register_game_commands(game_name: str, commands: list) -> bool:
     """注册场景特定命令"""
     try:
-        success_count = 0
-        for command in commands:
-            if command_registry.register_command(command):
-                success_count += 1
-            else:
-                logger.error(f"world '{game_name}' command '{command.name}' registration failed")
-        logger.info(f"world '{game_name}' command registration complete: {success_count}/{len(commands)}")
-        return success_count == len(commands)
+        if not isinstance(commands, list):
+            logger.error(f"world '{game_name}' commands must be list, got: {type(commands)}")
+            return False
+        with _world_command_lock:
+            if game_name in _world_registered_command_names:
+                logger.error(f"world '{game_name}' already has registered commands; unregister before re-register")
+                return False
+            batch_tokens: Set[str] = set()
+            for command in commands:
+                if not command_registry.validate_command_tokens(command, reserved_tokens=batch_tokens, allow_replace=False):
+                    logger.error(f"world '{game_name}' command token validation failed")
+                    return False
+                batch_tokens.add(command.name)
+                for alias in command.aliases:
+                    batch_tokens.add(alias)
+            success_count = 0
+            registered_names: Set[str] = set()
+            for command in commands:
+                if command_registry.register_command(command):
+                    success_count += 1
+                    registered_names.add(command.name)
+                else:
+                    logger.error(f"world '{game_name}' command '{command.name}' registration failed")
+                    for name in list(registered_names):
+                        command_registry.unregister_command(name)
+                    return False
+            _world_registered_command_names[game_name] = registered_names
+            logger.info(f"world '{game_name}' command registration complete: {success_count}/{len(commands)}")
+            return True
     except Exception as e:
         logger.error(f"Register world '{game_name}' command failed: {e}")
         return False
@@ -156,8 +187,18 @@ def register_game_commands(game_name: str, commands: list) -> bool:
 def unregister_game_commands(game_name: str) -> bool:
     """注销场景特定命令"""
     try:
-        logger.info(f"world '{game_name}' command unregistered")
-        return True
+        with _world_command_lock:
+            names = _world_registered_command_names.get(game_name, set())
+            if not names:
+                logger.info(f"world '{game_name}' has no registered world commands")
+                return True
+            for command_name in list(names):
+                if not command_registry.unregister_command(command_name):
+                    logger.error(f"world '{game_name}' command '{command_name}' unregister failed")
+                    return False
+            _world_registered_command_names.pop(game_name, None)
+            logger.info(f"world '{game_name}' command unregistered: {len(names)}")
+            return True
     except Exception as e:
         logger.error(f"Unregister world '{game_name}' command failed: {e}")
         return False

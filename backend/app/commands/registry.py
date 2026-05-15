@@ -18,14 +18,53 @@ class CommandRegistry:
         self.commands_by_type: Dict[CommandType, List[BaseCommand]] = {CommandType.SYSTEM: [], CommandType.GAME: [], CommandType.ADMIN: []}
         self.command_groups: Dict[str, List[BaseCommand]] = {}
 
+    def validate_command_tokens(self, command: BaseCommand, *, reserved_tokens: Optional[Set[str]]=None, allow_replace: bool=True) -> bool:
+        """Validate that command name and aliases share one unambiguous input namespace."""
+        if not isinstance(command, BaseCommand):
+            self.logger.error(f'Invalid command type: {type(command)}')
+            return False
+        if not command.name:
+            self.logger.error('Command name must not be empty')
+            return False
+        reserved_tokens = reserved_tokens or set()
+        if command.name in reserved_tokens:
+            self.logger.error(f"Command token '{command.name}' is already reserved in current batch")
+            return False
+        if command.name in self.commands and (not allow_replace):
+            self.logger.error(f"Command name '{command.name}' already registered")
+            return False
+        alias_owner = self.aliases.get(command.name)
+        if alias_owner and (alias_owner != command.name or not allow_replace):
+            self.logger.error(f"Command name '{command.name}' collides with alias owned by '{alias_owner}'")
+            return False
+        command_tokens: Set[str] = {command.name}
+        for alias in command.aliases:
+            if not alias:
+                self.logger.error(f"Command '{command.name}' has empty alias")
+                return False
+            if alias == command.name:
+                self.logger.error(f"Command '{command.name}' alias equals command name: {alias}")
+                return False
+            if alias in command_tokens:
+                self.logger.error(f"Command '{command.name}' has duplicate token: {alias}")
+                return False
+            if alias in reserved_tokens:
+                self.logger.error(f"Command token '{alias}' is already reserved in current batch")
+                return False
+            if alias in self.commands:
+                self.logger.error(f"Command '{command.name}' alias '{alias}' collides with registered command name")
+                return False
+            owner = self.aliases.get(alias)
+            if owner and owner != command.name:
+                self.logger.error(f"Command '{command.name}' alias '{alias}' collides with alias owned by '{owner}'")
+                return False
+            command_tokens.add(alias)
+        return True
+
     def register_command(self, command: BaseCommand) -> bool:
         """注册命令"""
         try:
-            if not isinstance(command, BaseCommand):
-                self.logger.error(f'Invalid command type: {type(command)}')
-                return False
-            if not command.name:
-                self.logger.error('Command name must not be empty')
+            if not self.validate_command_tokens(command):
                 return False
             if command.name in self.commands:
                 self.unregister_command(command.name)

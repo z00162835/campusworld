@@ -68,7 +68,7 @@ class BaseGame:
     def stop() -> bool
     def get_game_info() -> Dict
 
-    def get_commands() -> Dict      # 可用命令
+    def get_commands() -> List[BaseCommand]  # 世界包可选命令（注册到全局 CommandRegistry）
     def get_objects() -> Dict        # 空间/物品对象
     def get_hooks() -> Dict          # 事件钩子
 ```
@@ -78,6 +78,13 @@ class BaseGame:
 1. **启动园区**: `game_engine_manager.start_engine()` 启动引擎，自动加载所有内容包
 2. **空间管理**: 引擎管理园区空间状态，用户 move 时引擎更新位置
 3. **事件触发**: 用户动作触发事件钩子（如进入空间触发脚本）
+
+## World Command Lifecycle
+
+- 世界包可通过 `BaseGame.get_commands()` 返回 `BaseCommand` 实例列表。
+- `GameLoader.load_game/reload_game` 在世界实例启动并注册进引擎后，将该列表注册到全局 `command_registry`。
+- `GameLoader.unload_game/reload_game` 会先执行世界命令硬注销，再停止并注销世界实例，避免命令泄漏。
+- 世界命令采用全局平面命名空间：名称或别名冲突会被拒绝，不做自动前缀化。
 
 ## Acceptance Criteria
 

@@ -14,7 +14,7 @@
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |
 
-**Aliases（以注册表为准）**：`registry_aliases`: `l`, `lookat`（`class_declared_aliases` 另含 `examine`，与 `describe` 冲突，**不**在全局别名表中指向 `look`；终端输入 `examine` 由 `describe` 处理。）
+**Aliases（以注册表为准）**：`registry_aliases`: `l`, `lookat`。终端输入 `examine` 由 `describe` 处理。
 
 ## Synopsis
 

@@ -1,6 +1,6 @@
 {
-  "git_commit": "77efd8d40cb05d104e158ae60cf9477fdadda1a9",
-  "generated_at_utc": "2026-05-09T01:40:12.596996+00:00",
+  "git_commit": "541360dafce4e903ecee3a62efacd6074d102aed",
+  "generated_at_utc": "2026-05-15T11:23:51.799049+00:00",
   "initialize_commands_ok": true,
   "command_count": 36,
   "commands": [
@@ -169,8 +169,7 @@
       "command_type": "GAME",
       "class_declared_aliases": [
         "l",
-        "lookat",
-        "examine"
+        "lookat"
       ],
       "registry_aliases": [
         "l",
@@ -217,15 +216,15 @@
     },
     {
       "name": "notice",
-      "command_type": "GAME",
+      "command_type": "ADMIN",
       "class_declared_aliases": [
         "notices"
       ],
       "registry_aliases": [
         "notices"
       ],
-      "class": "app.commands.game.notice_command.NoticeCommand",
-      "file": "backend/app/commands/game/notice_command.py"
+      "class": "app.commands.admin.notice_command.NoticeCommand",
+      "file": "backend/app/commands/admin/notice_command.py"
     },
     {
       "name": "out",

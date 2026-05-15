@@ -3,18 +3,19 @@ Notice admin command for system bulletin board.
 """
 from __future__ import annotations
 from typing import List, Optional
-from ..base import GameCommand, CommandContext, CommandResult
+from ..base import AdminCommand, CommandContext, CommandResult
 from app.services.bulletin_board import bulletin_board_service
 
-class NoticeCommand(GameCommand):
-    """Admin operations: notice publish/edit/archive/list."""
+
+class NoticeCommand(AdminCommand):
+    """Admin operations: notice publish/edit/archive/list/view."""
 
     def __init__(self):
-        super().__init__(name='notice', description='管理系统公告(publish/edit/archive/list)', aliases=['notices'], game_name='hicampus')
+        super().__init__(name='notice', description='管理系统公告(publish/edit/archive/list/view)', aliases=['notices'])
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return CommandResult.error_result('用法: notice <publish|edit|archive|list> ...')
+            return CommandResult.error_result('用法: notice <publish|edit|archive|list|view> ...')
         action = str(args[0]).lower()
         rest = args[1:]
         if action == 'publish':
@@ -80,25 +81,21 @@ class NoticeCommand(GameCommand):
         status: Optional[str] = None
         page = 1
         if args:
-            a0 = str(args[0]).lower()
-            if a0 not in ('all', 'published', 'draft', 'archived'):
+            status = str(args[0]).lower()
+            if status not in ('published', 'draft', 'archived', 'all'):
                 return CommandResult.error_result('status 仅支持 all|published|draft|archived')
-            status = None if a0 == 'all' else a0
-            if len(args) >= 2:
-                page = self._safe_int(args[1]) or 1
-        payload = bulletin_board_service.admin_list_notices(status=status, include_inactive=True, page=page, page_size=10)
-        items = payload.get('items') or []
-        lines = [f"notices page {payload.get('page', 1)}/{payload.get('total_pages', 1)} (total={payload.get('total', 0)})", '']
+        if len(args) > 1:
+            page = self._safe_int(args[1]) or 1
+        data = bulletin_board_service.admin_list_notices(status=None if status in (None, 'all') else status, include_inactive=True, page=page, page_size=10)
+        items = data.get('items', [])
         if not items:
-            lines.append('No notices.')
-        else:
-            for it in items:
-                lines.append(f"#{it.get('id')} [{it.get('status', 'unknown')}] {it.get('title', 'Untitled')}")
-        return CommandResult.success_result('\n'.join(lines).strip())
+            return CommandResult.success_result('暂无公告')
+        lines = [f"#{it.get('id')} [{it.get('status')}] {it.get('title')}" for it in items]
+        return CommandResult.success_result('\n'.join(lines))
 
     @staticmethod
-    def _safe_int(value) -> Optional[int]:
+    def _safe_int(v) -> Optional[int]:
         try:
-            return int(value)
-        except (TypeError, ValueError):
+            return int(v)
+        except Exception:
             return None

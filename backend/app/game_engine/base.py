@@ -8,11 +8,14 @@
 - 事件钩子系统
 """
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable, TYPE_CHECKING
 from datetime import datetime
 import asyncio
 from pathlib import Path
 from app.core.log import get_logger, LoggerNames
+
+if TYPE_CHECKING:
+    from app.commands.base import BaseCommand
 
 class GameEngine(ABC):
     """场景引擎基类 - 参考Evennia框架设计"""
@@ -272,8 +275,8 @@ class BaseGame(ABC):
         pass
 
     @abstractmethod
-    def get_commands(self) -> Dict[str, Any]:
-        """获取场景命令列表"""
+    def get_commands(self) -> List['BaseCommand']:
+        """获取场景命令列表（world-specific BaseCommand instances）"""
         pass
 
     def get_objects(self) -> Dict[str, Any]:

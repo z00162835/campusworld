@@ -221,6 +221,23 @@ class GameLoader:
             self.logger.error(f"Create world instance '{game_name}' failed: {e}")
             return None
 
+    def _normalize_world_commands(self, game_name: str, game_instance: BaseGame) -> Tuple[Optional[List[Any]], Optional[str]]:
+        """Normalize world-provided commands into BaseCommand list."""
+        from app.commands.base import BaseCommand
+        raw = game_instance.get_commands()
+        if raw is None:
+            return ([], None)
+        if isinstance(raw, dict):
+            commands = list(raw.values())
+        elif isinstance(raw, (list, tuple, set)):
+            commands = list(raw)
+        else:
+            return (None, f"world command contract invalid type: {type(raw)}")
+        for command in commands:
+            if not isinstance(command, BaseCommand):
+                return (None, f"world command contract invalid command type: {type(command)}")
+        return (commands, None)
+
     def load_game(self, game_name: str) -> Dict[str, Any]:
         state_before = self.repository.get_state(game_name)['status']
         lock = self._get_world_lock(game_name)
@@ -275,6 +292,16 @@ class GameLoader:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'game start failed', WorldErrorCode.WORLD_LOAD_FAILED)
                 if not self.engine.register_game(game_instance):
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'engine register failed', WorldErrorCode.WORLD_LOAD_FAILED)
+                from app.commands.init_commands import register_game_commands
+                (world_commands, cmd_err) = self._normalize_world_commands(game_name, game_instance)
+                if cmd_err:
+                    game_instance.stop()
+                    self.engine.unregister_game(game_name)
+                    return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, cmd_err, WorldErrorCode.WORLD_LOAD_FAILED)
+                if world_commands and (not register_game_commands(game_name, world_commands)):
+                    game_instance.stop()
+                    self.engine.unregister_game(game_name)
+                    return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world command registration failed', WorldErrorCode.WORLD_LOAD_FAILED)
                 self.loaded_games[game_name] = game_instance
                 self.game_modules[game_name] = module
                 self._sync_world_entry_visibility_after_load(game_name)
@@ -299,6 +326,9 @@ class GameLoader:
                 if not game_instance:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world is not loaded', WorldErrorCode.WORLD_NOT_INSTALLED)
                 try:
+                    from app.commands.init_commands import unregister_game_commands
+                    if not unregister_game_commands(game_name):
+                        return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world command unregister failed', WorldErrorCode.WORLD_UNLOAD_FAILED)
                     if not game_instance.stop():
                         return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world stop failed', WorldErrorCode.WORLD_UNLOAD_FAILED)
                     if not self.engine.unregister_game(game_name):
@@ -328,6 +358,9 @@ class GameLoader:
                 if not game_instance:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world is not loaded', WorldErrorCode.WORLD_RELOAD_FAILED)
                 try:
+                    from app.commands.init_commands import unregister_game_commands
+                    if not unregister_game_commands(game_name):
+                        return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while unregistering world commands', WorldErrorCode.WORLD_RELOAD_FAILED)
                     if not game_instance.stop():
                         return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while stopping current world', WorldErrorCode.WORLD_RELOAD_FAILED)
                     if not self.engine.unregister_game(game_name):
@@ -376,6 +409,16 @@ class GameLoader:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while starting world instance', WorldErrorCode.WORLD_RELOAD_FAILED)
                 if not self.engine.register_game(instance):
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while registering world instance', WorldErrorCode.WORLD_RELOAD_FAILED)
+                from app.commands.init_commands import register_game_commands
+                (world_commands, cmd_err) = self._normalize_world_commands(game_name, instance)
+                if cmd_err:
+                    instance.stop()
+                    self.engine.unregister_game(game_name)
+                    return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, cmd_err, WorldErrorCode.WORLD_RELOAD_FAILED)
+                if world_commands and (not register_game_commands(game_name, world_commands)):
+                    instance.stop()
+                    self.engine.unregister_game(game_name)
+                    return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while registering world commands', WorldErrorCode.WORLD_RELOAD_FAILED)
                 self.loaded_games[game_name] = instance
                 self.game_modules[game_name] = module
                 self._sync_world_entry_visibility_after_load(game_name)

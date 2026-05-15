@@ -22,7 +22,7 @@ class GameInterface:
         self.logger.info('World interface initialization complete')
 
     def register_game_commands(self, game: BaseGame) -> bool:
-        """注册场景命令到引擎"""
+        """注册场景命令到全局命令注册表"""
         try:
             if not hasattr(game, 'get_commands'):
                 self.logger.warning(f"world '{game.name}' has no get_commands method")
@@ -31,33 +31,26 @@ class GameInterface:
             if not commands:
                 self.logger.info(f"world '{game.name}' no commands to register")
                 return True
-            registered_count = 0
-            for (cmd_name, cmd_handler) in commands.items():
-                if self.engine.command_manager.register_command(cmd_name, cmd_handler):
-                    registered_count += 1
-                    self.logger.debug(f"command '{cmd_name}' registered successfully")
-                else:
-                    self.logger.error(f"command '{cmd_name}' registration failed")
-            self.logger.info(f"world '{game.name}' registered {registered_count} commands")
-            return True
+            if not isinstance(commands, list):
+                self.logger.error(f"world '{game.name}' command contract invalid: expected list, got {type(commands)}")
+                return False
+            from app.commands.init_commands import register_game_commands
+            ok = register_game_commands(game.name, commands)
+            if ok:
+                self.logger.info(f"world '{game.name}' registered {len(commands)} commands")
+            return ok
         except Exception as e:
             self.logger.error(f"Register world '{game.name}' command failed: {e}")
             return False
 
     def unregister_game_commands(self, game: BaseGame) -> bool:
-        """从引擎注销场景命令"""
+        """从全局命令注册表注销场景命令"""
         try:
-            if not hasattr(game, 'get_commands'):
-                return True
-            commands = game.get_commands()
-            if not commands:
-                return True
-            unregistered_count = 0
-            for cmd_name in commands.keys():
-                self.logger.debug(f"command '{cmd_name}' unregistered successfully")
-                unregistered_count += 1
-            self.logger.info(f"world '{game.name}' unregistered {unregistered_count} commands")
-            return True
+            from app.commands.init_commands import unregister_game_commands
+            ok = unregister_game_commands(game.name)
+            if ok:
+                self.logger.info(f"world '{game.name}' command unregistered")
+            return ok
         except Exception as e:
             self.logger.error(f"Unregister world '{game.name}' command failed: {e}")
             return False
