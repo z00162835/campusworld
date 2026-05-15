@@ -76,7 +76,15 @@ commands:
       delete: "lexicon -d <id>"
       activate: "lexicon -a <id>"
   notice:
-    description: "Manage system bulletins (publish/edit/archive/list)"
+    description: "Manage system bulletins (publish/edit/archive/list/view)"
+    view:
+      header: "Notice Detail"
+      author: "Author"
+      time: "Time"
+      error:
+        usage: "Usage: notice view <id>"
+        invalid_id: "Invalid notice ID"
+        not_found: "Notice not found: #{id}"
   world:
     description: "World package management (list/install/uninstall/reload/status/validate/repair/content/bridge)"
   create:

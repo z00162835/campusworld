@@ -26,6 +26,8 @@ class NoticeCommand(AdminCommand):
             return self._archive(context, rest)
         if action == 'list':
             return self._list(context, rest)
+        if action == 'view':
+            return self._view(context, rest)
         return CommandResult.error_result(f'未知操作: {action}')
 
     def _publish(self, context: CommandContext, args: List[str]) -> CommandResult:
@@ -91,6 +93,60 @@ class NoticeCommand(AdminCommand):
         if not items:
             return CommandResult.success_result('暂无公告')
         lines = [f"#{it.get('id')} [{it.get('status')}] {it.get('title')}" for it in items]
+        return CommandResult.success_result('\n'.join(lines))
+
+    def _view(self, context: CommandContext, args: List[str]) -> CommandResult:
+        """
+        notice view <id>
+        """
+        from app.commands.i18n.locale_text import resolve_locale
+        from app.commands.i18n.command_resource import get_command_i18n_text
+
+        loc = resolve_locale(context)
+
+        if not args:
+            return CommandResult.error_result(
+                get_command_i18n_text("notice", "view.error.usage", loc, "用法: notice view <id>")
+            )
+
+        notice_id = self._safe_int(args[0])
+        if not notice_id:
+            return CommandResult.error_result(
+                get_command_i18n_text("notice", "view.error.invalid_id", loc, "无效公告 ID")
+            )
+
+        dto = bulletin_board_service.get_notice_by_id(notice_id, public_only=False)
+        if not dto:
+            return CommandResult.error_result(
+                get_command_i18n_text("notice", "view.error.not_found", loc, "公告不存在: #{id}").format(id=notice_id)
+            )
+
+        title = dto.get('title', '')
+        content_md = dto.get('content_md', '')
+        status = dto.get('status', '')
+        author = dto.get('author_name') or dto.get('author_id') or 'unknown'
+        created_at = dto.get('created_at', '')
+
+        # 渲染 markdown 正文为终端安全文本
+        rendered_content = bulletin_board_service.render_notice_md_to_terminal(content_md)
+
+        # 分块输出（防止超长公告刷屏）
+        chunks = bulletin_board_service.split_terminal_chunks(rendered_content)
+
+        # 构建输出
+        header = get_command_i18n_text("notice", "view.header", loc, "公告详情")
+        lines = [
+            header,
+            "=" * 40,
+            f"#{notice_id} [{status}] {title}",
+            f"{get_command_i18n_text('notice', 'view.author', loc, '作者')}: {author}",
+            f"{get_command_i18n_text('notice', 'view.time', loc, '时间')}: {created_at}",
+            "-" * 40,
+        ]
+
+        for chunk in chunks:
+            lines.append(chunk)
+
         return CommandResult.success_result('\n'.join(lines))
 
     @staticmethod

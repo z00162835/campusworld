@@ -117,3 +117,72 @@ def test_notice_command_edit_archive_and_list(monkeypatch):
     assert r3.success
     assert "#1 [published] n1" in r3.message
 
+
+def test_notice_command_view_success(monkeypatch):
+    from app.commands.admin.notice_command import NoticeCommand
+    from app.commands.admin import notice_command as mod
+
+    monkeypatch.setattr(
+        mod.bulletin_board_service,
+        "get_notice_by_id",
+        lambda notice_id, public_only=False: {
+            "id": 1,
+            "title": "Test Notice",
+            "content_md": "**Bold** and `code`",
+            "status": "published",
+            "author_name": "admin",
+            "author_id": 99,
+            "created_at": "2026-05-15T10:00:00",
+        },
+    )
+    monkeypatch.setattr(
+        mod.bulletin_board_service,
+        "render_notice_md_to_terminal",
+        lambda content_md: "Bold and code",
+    )
+    monkeypatch.setattr(
+        mod.bulletin_board_service,
+        "split_terminal_chunks",
+        lambda text, max_chars=1200: [text],
+    )
+
+    cmd = NoticeCommand()
+    result = cmd.execute(_ctx_admin(), ["view", "1"])
+    assert result.success
+    assert "Test Notice" in result.message
+    assert "admin" in result.message
+    assert "#1 [published] Test Notice" in result.message
+
+
+def test_notice_command_view_not_found(monkeypatch):
+    from app.commands.admin.notice_command import NoticeCommand
+    from app.commands.admin import notice_command as mod
+
+    monkeypatch.setattr(
+        mod.bulletin_board_service,
+        "get_notice_by_id",
+        lambda notice_id, public_only=False: None,
+    )
+
+    cmd = NoticeCommand()
+    result = cmd.execute(_ctx_admin(), ["view", "999"])
+    assert not result.success
+    assert "999" in result.message
+
+
+def test_notice_command_view_invalid_id(monkeypatch):
+    from app.commands.admin.notice_command import NoticeCommand
+
+    cmd = NoticeCommand()
+    result = cmd.execute(_ctx_admin(), ["view", "abc"])
+    assert not result.success
+    assert "无效公告 ID" in result.message
+
+
+def test_notice_command_view_missing_id(monkeypatch):
+    from app.commands.admin.notice_command import NoticeCommand
+
+    cmd = NoticeCommand()
+    result = cmd.execute(_ctx_admin(), ["view"])
+    assert not result.success
+    assert "用法" in result.message

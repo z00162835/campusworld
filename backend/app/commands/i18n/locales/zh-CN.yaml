@@ -76,7 +76,15 @@ commands:
       delete: "lexicon -d <id>"
       activate: "lexicon -a <id>"
   notice:
-    description: "管理系统公告(publish/edit/archive/list)"
+    description: "管理系统公告(publish/edit/archive/list/view)"
+    view:
+      header: "公告详情"
+      author: "作者"
+      time: "时间"
+      error:
+        usage: "用法: notice view <id>"
+        invalid_id: "无效公告 ID"
+        not_found: "公告不存在: #{id}"
   world:
     description: "世界包管理(list/install/uninstall/reload/status/validate/repair/content/bridge)"
   create:
