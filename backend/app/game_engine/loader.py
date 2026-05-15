@@ -326,15 +326,15 @@ class GameLoader:
                 if not game_instance:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world is not loaded', WorldErrorCode.WORLD_NOT_INSTALLED)
                 try:
-                    from app.commands.init_commands import unregister_game_commands
-                    if not unregister_game_commands(game_name):
-                        return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world command unregister failed', WorldErrorCode.WORLD_UNLOAD_FAILED)
                     if not game_instance.stop():
                         return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world stop failed', WorldErrorCode.WORLD_UNLOAD_FAILED)
                     if not self.engine.unregister_game(game_name):
                         return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'engine unregister failed', WorldErrorCode.WORLD_UNLOAD_FAILED)
                     self.loaded_games.pop(game_name, None)
                     self.game_modules.pop(game_name, None)
+                    from app.commands.init_commands import unregister_game_commands
+                    if not unregister_game_commands(game_name):
+                        return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world command unregister failed', WorldErrorCode.WORLD_UNLOAD_FAILED)
                     return self._result(True, game_name, state_before, WorldRuntimeStatus.NOT_INSTALLED.value, 'world unloaded', details={'job_id': job_id})
                 except Exception as e:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, f'unload exception: {e}', WorldErrorCode.WORLD_UNLOAD_FAILED)
@@ -358,15 +358,15 @@ class GameLoader:
                 if not game_instance:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'world is not loaded', WorldErrorCode.WORLD_RELOAD_FAILED)
                 try:
-                    from app.commands.init_commands import unregister_game_commands
-                    if not unregister_game_commands(game_name):
-                        return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while unregistering world commands', WorldErrorCode.WORLD_RELOAD_FAILED)
                     if not game_instance.stop():
                         return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while stopping current world', WorldErrorCode.WORLD_RELOAD_FAILED)
                     if not self.engine.unregister_game(game_name):
                         return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while unregistering current world', WorldErrorCode.WORLD_RELOAD_FAILED)
                     self.loaded_games.pop(game_name, None)
                     self.game_modules.pop(game_name, None)
+                    from app.commands.init_commands import unregister_game_commands
+                    if not unregister_game_commands(game_name):
+                        return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, 'reload failed while unregistering world commands', WorldErrorCode.WORLD_RELOAD_FAILED)
                 except Exception as e:
                     return self._result(False, game_name, state_before, WorldRuntimeStatus.FAILED.value, f'reload unload phase exception: {e}', WorldErrorCode.WORLD_RELOAD_FAILED)
                 game_path = self._find_game_path(game_name)

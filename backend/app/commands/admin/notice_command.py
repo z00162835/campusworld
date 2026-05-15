@@ -89,11 +89,14 @@ class NoticeCommand(AdminCommand):
         if len(args) > 1:
             page = self._safe_int(args[1]) or 1
         data = bulletin_board_service.admin_list_notices(status=None if status in (None, 'all') else status, include_inactive=True, page=page, page_size=10)
-        items = data.get('items', [])
+        items = data.get('items') or []
+        lines = [f"notices page {data.get('page', 1)}/{data.get('total_pages', 1)} (total={data.get('total', 0)})", '']
         if not items:
-            return CommandResult.success_result('暂无公告')
-        lines = [f"#{it.get('id')} [{it.get('status')}] {it.get('title')}" for it in items]
-        return CommandResult.success_result('\n'.join(lines))
+            lines.append('No notices.')
+        else:
+            for it in items:
+                lines.append(f"#{it.get('id')} [{it.get('status', 'unknown')}] {it.get('title', 'Untitled')}")
+        return CommandResult.success_result('\n'.join(lines).strip())
 
     def _view(self, context: CommandContext, args: List[str]) -> CommandResult:
         """

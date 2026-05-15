@@ -115,7 +115,31 @@ def test_notice_command_edit_archive_and_list(monkeypatch):
     assert r2.success
     r3 = cmd.execute(_ctx_admin(), ["list", "all", "1"])
     assert r3.success
+    assert "notices page 1/1 (total=1)" in r3.message
     assert "#1 [published] n1" in r3.message
+
+
+def test_notice_command_list_empty_keeps_pagination_header(monkeypatch):
+    from app.commands.admin.notice_command import NoticeCommand
+    from app.commands.admin import notice_command as mod
+
+    monkeypatch.setattr(
+        mod.bulletin_board_service,
+        "admin_list_notices",
+        lambda status=None, include_inactive=True, page=1, page_size=10: {
+            "items": [],
+            "total": 0,
+            "total_pages": 1,
+            "page": page,
+            "page_size": page_size,
+        },
+    )
+
+    result = NoticeCommand().execute(_ctx_admin(), ["list", "all", "2"])
+
+    assert result.success
+    assert "notices page 2/1 (total=0)" in result.message
+    assert "No notices." in result.message
 
 
 def test_notice_command_view_success(monkeypatch):

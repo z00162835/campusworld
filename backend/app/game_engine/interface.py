@@ -164,7 +164,12 @@ class GameInterface:
                 return []
             if hasattr(game, 'get_commands'):
                 commands = game.get_commands()
-                return list(commands.keys()) if commands else []
+                if not commands:
+                    return []
+                if isinstance(commands, dict):
+                    return list(commands.keys())
+                if isinstance(commands, (list, tuple, set)):
+                    return [getattr(command, 'name', str(command)) for command in commands]
             return []
         except Exception as e:
             self.logger.error(f"Get world '{game_name}' available commands failed: {e}")

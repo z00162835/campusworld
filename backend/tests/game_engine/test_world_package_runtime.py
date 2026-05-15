@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.commands.base import GameCommand
+from app.game_engine.interface import GameInterface
 from app.game_engine.loader import GameLoader
 from app.game_engine.runtime_store import (
     OperationResult,
@@ -154,13 +155,64 @@ def test_unload_game_fails_when_world_command_unregistration_fails():
     loader.loaded_games["hicampus"] = game
     loader.game_modules["hicampus"] = object()
 
-    with patch("app.commands.init_commands.unregister_game_commands", return_value=False):
+    def _fail_unregister(game_name):
+        assert game_name == "hicampus"
+        assert "hicampus" not in loader.loaded_games
+        assert "hicampus" not in loader.game_modules
+        return False
+
+    with patch("app.commands.init_commands.unregister_game_commands", side_effect=_fail_unregister) as unregister:
         result = loader.unload_game("hicampus")
 
-    game.stop.assert_not_called()
-    engine.unregister_game.assert_not_called()
+    game.stop.assert_called_once()
+    engine.unregister_game.assert_called_once_with("hicampus")
+    unregister.assert_called_once_with("hicampus")
     assert result["ok"] is False
     assert result["error_code"] == WorldErrorCode.WORLD_UNLOAD_FAILED.value
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_unload_game_preserves_world_commands_when_stop_fails():
+    loader, engine = _build_loader_with_stubbed_service()
+
+    game = MagicMock()
+    game.stop.return_value = False
+    loader.loaded_games["hicampus"] = game
+    loader.game_modules["hicampus"] = object()
+
+    with patch("app.commands.init_commands.unregister_game_commands") as unregister:
+        result = loader.unload_game("hicampus")
+
+    game.stop.assert_called_once()
+    engine.unregister_game.assert_not_called()
+    unregister.assert_not_called()
+    assert "hicampus" in loader.loaded_games
+    assert "hicampus" in loader.game_modules
+    assert result["ok"] is False
+    assert result["error_code"] == WorldErrorCode.WORLD_UNLOAD_FAILED.value
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_reload_game_preserves_world_commands_when_stop_fails():
+    loader, engine = _build_loader_with_stubbed_service()
+
+    game = MagicMock()
+    game.stop.return_value = False
+    loader.loaded_games["hicampus"] = game
+    loader.game_modules["hicampus"] = object()
+
+    with patch("app.commands.init_commands.unregister_game_commands") as unregister:
+        result = loader.reload_game("hicampus")
+
+    game.stop.assert_called_once()
+    engine.unregister_game.assert_not_called()
+    unregister.assert_not_called()
+    assert "hicampus" in loader.loaded_games
+    assert "hicampus" in loader.game_modules
+    assert result["ok"] is False
+    assert result["error_code"] == WorldErrorCode.WORLD_RELOAD_FAILED.value
 
 
 class _DummyWorldCommand(GameCommand):
@@ -169,6 +221,20 @@ class _DummyWorldCommand(GameCommand):
 
     def execute(self, context, args):
         raise NotImplementedError()
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_game_interface_available_commands_supports_command_list_contract():
+    engine = MagicMock()
+    engine.name = "CampusWorld"
+    game = MagicMock()
+    game.get_commands.return_value = [_DummyWorldCommand()]
+    engine.get_game.return_value = game
+
+    names = GameInterface(engine).get_available_commands("hicampus")
+
+    assert names == ["hicampus_echo"]
 
 
 @pytest.mark.game
