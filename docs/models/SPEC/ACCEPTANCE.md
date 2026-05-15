@@ -20,7 +20,7 @@
 - [ ] `Node` 表包含：id/uuid/type_code/name/description/attributes
 - [ ] `Relationship` 表包含：id/source_id/target_id/type/properties
 - [ ] 查询 Room 的所有出口（通过 Relationship）成功
-- [ ] 查询 Character 的当前位置（通过 LOCATED_IN 边）成功
+- [ ] 查询账号/角色的当前位置（以 `Node.location_id` 为真源）成功；`LOCATED_IN` 类关系不得作为 `look` / movement 的位置真源
 
 ## 用户生命周期验收
 

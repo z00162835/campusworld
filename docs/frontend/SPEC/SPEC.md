@@ -1,6 +1,6 @@
 # Frontend SPEC
 
-> **Architecture Role**: 前端是 **Agent 服务层**的展现层，提供用户与**世界语义**的可视化交互界面。通过 HTTP API 与后端命令系统和知识本体交互，将图数据模型中的实体和关系以 UI 形式呈现。
+> **Architecture Role**: 前端是 **系统适配层 / 用户交互入口** 的可视化界面，提供用户与**世界语义**的交互体验。通过 HTTP API 与后端命令系统、Agent 服务和知识本体交互，将图数据模型中的实体和关系以 UI 形式呈现。
 
 ## Module Overview
 

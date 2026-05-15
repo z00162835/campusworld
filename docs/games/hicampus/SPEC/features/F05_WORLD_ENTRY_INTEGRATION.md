@@ -6,7 +6,7 @@
 
 ## Scope
 
-- 入口对象规范（内部实现可用 `world_portal_hicampus`，但用户可见名称为 `hicampus`）
+- 入口对象规范：持久化节点 `type_code=world_entrance`，用户可见名称为 `hicampus`。当前实现仍读写 `portal_*` 兼容属性，后续迁移为 `target_world_id` / `entry_room_id` / `entry_enabled` 等中性命名。
 - 进入 `hicampus_gate` 路径
 - 世界内最小导航路径：`hicampus_gate --(n)--> hicampus_bridge`
 - 数据缺失/加载失败 fallback
@@ -16,7 +16,7 @@
 - 流程：`world install hicampus` -> 奇点屋 `look` 可见 `hicampus` -> `enter hicampus` -> `look` 见 `hicampus_gate` -> `n` 到 `hicampus_bridge`
 - `look hicampus` 必须展示 DB 中 `world` 本体 node 的描述（不是入口投影文案），并给出提示：`enter hicampus`
 - `hicampus` 对象语义类似公告栏（可 `look`），差异是 world 额外支持 `enter`
-- `world_portal_*` 仅作为内部映射机制，不在用户可见层（look/提示文案）直接出现。
+- `world_portal_*` 仅作为历史兼容命名，不在用户可见层（look/提示文案）直接出现，也不作为新文档/新数据的 `type_code`。
 
 ## Runtime Contract
 
@@ -24,8 +24,8 @@
 - `world uninstall hicampus` 成功后，入口可见状态同步为禁用（奇点屋内不可见）。
 - `world reload hicampus` 成功后，入口状态与世界配置重新同步。
 - 失败错误码建议：
-  - `WORLD_ENTRY_PORTAL_MISSING`
-  - `WORLD_ENTRY_PORTAL_DISABLED`
+  - `WORLD_ENTRY_PORTAL_MISSING`（历史错误码，语义为入口缺失）
+  - `WORLD_ENTRY_PORTAL_DISABLED`（历史错误码，语义为入口禁用）
   - `WORLD_ENTRY_FORBIDDEN`
   - `WORLD_ENTRY_GAME_UNAVAILABLE`
   - `WORLD_ENTRY_FAILED`

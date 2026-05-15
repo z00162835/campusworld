@@ -4,7 +4,7 @@
 
 ## Module Overview
 
-API 层（`backend/app/api/v1/`）提供 HTTP REST 接口，是 Agent 服务层与后端知识本体交互的主要通道。
+API 层（`backend/app/api/v1/`）提供 HTTP REST 接口，是系统适配层面向前端和外部调用者的协议入口。它通过命令系统、图 API 与后端知识本体交互；Agent 服务层本身由后端 `agent_runtime`、`npc_agent` 类型与相关命令/API 承载。
 
 当前端点（真源以 **`GET /openapi.json`** 为准）：
 

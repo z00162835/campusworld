@@ -16,8 +16,8 @@
 - `CONNECTS_TO_REVERSE_MISSING`：存在 `A -> B` 但缺失 `B -> A`。
 - `FLOOR_COUNT_MISMATCH`：`building.floors_total` 与 `building_floor` 节点数不一致。
 - `UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP`：关系两端 `world_id` 不同，且 **未** 带授权桥接元数据（`cross_world_bridge` + `bridge_id`，见 F04）。默认跨世界不联通；仅管理员 `world bridge add` 写入的边视为合规。
-- `SESSION_WORLD_LOCATION_ROOM_MISSING`：账号 `active_world` 指向当前校验世界，但 `world_location` 无法解析到活跃房间节点。
-- `SESSION_ACTIVE_WORLD_LOCATION_MISMATCH`：账号 `active_world` 与 `world_location` 所指房间的 `world_id` 不一致。
+- `SESSION_WORLD_LOCATION_ROOM_MISSING`：过渡期诊断项；账号 `active_world` 指向当前校验世界，但 `world_location` 无法解析到活跃房间节点。该字段组不是 `look` / movement 位置真源，后续应随恢复策略迁移退场。
+- `SESSION_ACTIVE_WORLD_LOCATION_MISMATCH`：过渡期诊断项；账号 `active_world` 与 `world_location` 所指房间的 `world_id` 不一致。长期目标是从 `account.location_id` 指向的 room 派生世界上下文。
 
 ## Multi-World Subgraph（术语）
 

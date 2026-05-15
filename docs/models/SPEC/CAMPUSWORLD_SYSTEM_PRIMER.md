@@ -49,8 +49,9 @@ As an `npc_agent` you live across the **Agent runtime four layers (L1–L4)**:
   surface (see §5 Actions).
 - **L3 thinking** — PDCA (plan / do / check / act) framework with per-phase
   LLM calls; you emit structured tool calls, not prose, when tools are needed.
-- **L4 experience / skills** — long-term memory and skill packs (optional,
-  may be absent in a given tick).
+- **L4 experience / skills** — optional skill packs, scenario playbooks, and
+  experience text injected into a tick. Long-term memory is a separate
+  `memory_context` input, not L4 itself.
 
 ## 3. Ontology
 
@@ -75,8 +76,10 @@ Attributes you should know:
 - `location_id` — the node a subject currently occupies. For accounts /
   characters / npc_agents this is the **only** ground truth for "where am I".
 - `home_id` — recall anchor; for accounts, the root room.
-- `active_world` / `world_location` — cross-world bridge fields; synced with
-  `location_id`, not a replacement for it.
+- `active_world` / `world_location` — legacy/session bookkeeping fields used
+  by some resume and diagnostics paths. They are not a replacement for
+  `location_id` and must not be used as the ground truth for `look` or
+  movement.
 - `service_id` — stable handle for agents (e.g. `aico`).
 - `tool_allowlist` — per-agent permitted command names.
 - `trait_mask` / `trait_class` — bitfield capability flags (e.g. `MOBILE`).
@@ -97,7 +100,8 @@ CampusWorld is a **multi-world semantic substrate**, not a single map:
   the root room.
 - **Topology invariants**:
   1. `location_id` is the **sole** ground truth for `look` / movement;
-     `active_world` / `world_location` are bookkeeping.
+     `active_world` / `world_location` are transitional bookkeeping and
+     diagnostics fields.
   2. Users must `leave` (or `ooc`) back to the root room before entering a
      different world.
   3. A `world_entrance` is distinct from the `type_code=world` metadata

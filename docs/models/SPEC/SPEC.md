@@ -97,7 +97,7 @@
   campus   — 园区
 
 语义边类型：
-  LOCATED_IN  — 角色位于空间
+  LOCATED_IN  — 角色/实体与空间的语义关联（不得替代 `Node.location_id` 作为 `look` / movement 的当前位置真源）
   CONNECTED   — 空间通过出口连接
   OWNS        — 账户拥有角色
   CONTAINS    — 世界包含空间/建筑

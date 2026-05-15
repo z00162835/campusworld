@@ -482,6 +482,26 @@ node_types:
           type: string
           value_kind: static
           mutability: package_seed
+        entry_room_id:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        entry_enabled:
+          type: boolean
+          value_kind: static
+          mutability: runtime_managed
+        portal_world_id:
+          type: string
+          value_kind: static
+          mutability: legacy_compat
+        portal_spawn_key:
+          type: string
+          value_kind: static
+          mutability: legacy_compat
+        portal_enabled:
+          type: boolean
+          value_kind: static
+          mutability: legacy_compat
   task:
     trait_class: TASK
     trait_mask: 1089

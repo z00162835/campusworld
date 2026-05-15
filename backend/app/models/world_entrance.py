@@ -10,7 +10,8 @@ class WorldEntrance(DefaultObject):
     Portal from SingularityRoom into a world's gate room.
 
     Attributes (JSONB) typically include:
-    - portal_world_id, portal_spawn_key, portal_enabled
+    - target_world_id, entry_room_id, entry_enabled
+    - legacy compatibility: portal_world_id, portal_spawn_key, portal_enabled
     - destination_node_id: int room Node id of gate (when resolved)
     - access_locks: view / interact
     """

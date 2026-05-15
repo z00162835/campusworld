@@ -41,13 +41,13 @@
   - 空间拓扑（room graph）
   - 建筑与对象语义
   - 世界内出生点与交互规则
-- 用户通过“世界入口对象（world portal）”从 `SingularityRoom` 进入 `HiCampus`。
+- 用户通过 `world_entrance` 世界入口对象从 `SingularityRoom` 进入 `HiCampus`。历史文档或旧实现中的 `world_portal_*` 仅作为兼容命名，不作为持久化 `type_code`。
 
 ```mermaid
 flowchart TD
     user[User] --> singularityRoom[SingularityRoom]
-    singularityRoom --> worldPortal[WorldPortal]
-    worldPortal --> gameEngine[GameEngineManager]
+    singularityRoom --> worldEntrance[WorldEntrance]
+    worldEntrance --> gameEngine[GameEngineManager]
     gameEngine --> gameLoader[GameLoader]
     gameLoader --> hiCampusPkg[games_hicampus_package]
     hiCampusPkg --> hiCampusWorld[HiCampusWorld]
@@ -475,7 +475,7 @@ flowchart TD
 
 | type_code | 用途 | 示例对象 |
 |---|---|---|
-| `world_portal` | 世界入口对象 | `world_portal_hicampus` |
+| `world_entrance` | 世界入口对象 | `hicampus` |
 | `access_terminal` | 门禁/登记终端 | `visitor_checkin_terminal` |
 | `display_terminal` | 信息展示终端 | `ops_dashboard_screen` |
 | `service_terminal` | 生活/报修/预约终端 | `property_service_terminal` |
@@ -504,7 +504,7 @@ flowchart TD
 | `expo_room` | `["room"]` | `{"view":"all()","interact":"all()"}` | 展陈空间通常开放 |
 | `residential_room` | `["room"]` | `{"view":"perm(resident)","interact":"perm(resident)"}` | 居住区默认受限 |
 | `service_room` | `["room"]` | `{"view":"all()","interact":"perm(service.access)"}` | 服务空间按岗位权限 |
-| `world_portal` | `["room"]` | `{"view":"all()","interact":"all()"}` | 奇点屋入口对象 |
+| `world_entrance` | `["room"]` | `{"view":"all()","interact":"all()"}` | 奇点屋入口对象；历史 `world_portal_*` 仅为兼容别名 |
 | `access_terminal` | `["room"]` | `{"view":"all()","interact":"perm(access.terminal.use)"}` | 门禁/登记终端 |
 | `display_terminal` | `["room"]` | `{"view":"all()","interact":"all()"}` | 展示终端可读为主 |
 | `service_terminal` | `["room"]` | `{"view":"all()","interact":"perm(service.terminal.use)"}` | 报修/服务终端 |
@@ -740,7 +740,7 @@ python -m app.games.hicampus.package.entity_relationship_generate --write
 
 ### Entry Through SingularityRoom
 
-- `SingularityRoom` 只负责承载入口对象（如 `world_portal_hicampus`）。
+- `SingularityRoom` 只负责承载 `world_entrance` 入口对象（用户可见名为 `hicampus`）。
 - 进入动作触发“加载并切换到 HiCampus 世界出生点”的流程。
 - 世界默认出生点建议设为 `hicampus_gate`，用于形成“入口 -> 过桥 -> 广场 -> 功能区”的认知路径。
 
@@ -851,7 +851,7 @@ python -m app.games.hicampus.package.entity_relationship_generate --write
   - 入口对象语义与跳转逻辑
   - 不改变 SSH 登录流程本身
 - **主要产物**:
-  - `world_portal_hicampus` 入口对象规范
+  - `world_entrance` 入口对象规范（用户可见名为 `hicampus`）
   - 进入世界时的 fallback 策略（数据缺失/加载失败）
 - **验收重点**:
   - 从奇点屋可达 `hicampus_gate`
@@ -891,7 +891,7 @@ python -m app.games.hicampus.package.entity_relationship_generate --write
   - 不扩展业务命令范围
 - **主要产物**:
   - world 管理事件日志（install/uninstall/repair/validate）
-  - 用户进入世界行为日志（portal enter / fallback）
+  - 用户进入世界行为日志（world_entrance enter / fallback）
 - **验收重点**:
   - 关键路径有统一 event name 和字段
   - 可按 `world_id` 快速排障
