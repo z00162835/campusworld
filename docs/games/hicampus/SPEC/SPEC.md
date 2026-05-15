@@ -32,7 +32,7 @@
 
 1. 数据库最小种子当前主要覆盖账号、根节点（奇点屋）和基础系统对象，不包含完整园区世界样例（见 `backend/db/seed_data.py`）。
 2. 世界内容应通过引擎加载器动态发现和加载，不应写死到系统启动主流程（见 `backend/app/game_engine/loader.py` 与 `backend/app/game_engine/manager.py`）。
-3. 系统入口必须保持 `SingularityRoom`，`HiCampus` 只负责世界内空间与对象，不定义系统登录入口（与 `games/campus_life` 的边界一致）。
+3. 系统入口必须保持 `SingularityRoom`，`HiCampus` 只负责世界内空间与对象，不定义系统登录入口。
 
 ## Entry Boundary (System vs World)
 

@@ -21,7 +21,7 @@ SSH 服务器（`backend/app/ssh/`）基于 Paramiko 实现，采用 Evennia 的
 ## Unified Terms (Cross-SPEC)
 
 - **System Entry Space**: `SingularityRoom`，系统级默认登录入口。
-- **World Default Spawn**: 用户进入某个具体世界后，该世界内部的默认出生点（例如 `campus_life` 的 `campus`）。
+- **World Default Spawn**: 用户进入某个具体世界后，该世界内部的默认出生点（例如 `hicampus` 的 `hicampus_gate`）。
 - **Last Location Resume**: 恢复用户上次有效位置的策略，不应与“系统入口”语义冲突。
 
 ## Login to Hub Call Chain (Current Implementation)

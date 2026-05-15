@@ -56,7 +56,7 @@ class LookCommand(GameCommand):
     """Look命令 - 查看环境和物品"""
 
     def __init__(self):
-        super().__init__(name='look', description='查看当前环境或特定物品', aliases=['l', 'lookat', 'examine'], game_name='campus_life')
+        super().__init__(name='look', description='查看当前环境或特定物品', aliases=['l', 'lookat', 'examine'], game_name='hicampus')
         self.logger = get_logger(LoggerNames.COMMAND)
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:

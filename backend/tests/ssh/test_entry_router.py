@@ -28,12 +28,12 @@ def test_route_to_world_with_resume_location():
     user_node = type("UserNode", (), {})()
     user_node.id = uuid.uuid4()
     user_node.attributes = {
-        "active_world": "campus_life",
-        "last_world_location": "library",
+        "active_world": "hicampus",
+        "last_world_location": "hicampus_gate",
     }
 
     decision = router.resolve_post_auth_destination(user_node)
 
     assert decision.target_kind == "world"
-    assert decision.world_name == "campus_life"
-    assert decision.world_spawn_key == "library"
+    assert decision.world_name == "hicampus"
+    assert decision.world_spawn_key == "hicampus_gate"

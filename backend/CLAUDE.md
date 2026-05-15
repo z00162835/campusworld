@@ -49,7 +49,7 @@ backend/
 │   │   └── ssh_handler.py      # SSH处理
 │   │
 │   ├── games/              # 内容
-│   │   └── campus_life/       # 园区生活
+│   │   └── hicampus/       # HiCampus 世界包
 │   │
 │   └── api/                # REST API
 │       └── v1/

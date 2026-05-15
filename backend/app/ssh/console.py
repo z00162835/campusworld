@@ -348,11 +348,23 @@ class SSHConsole:
             engine = game_engine_manager.get_engine()
             if not engine:
                 return {'is_running': False, 'current_game': None, 'game_info': {}}
-            game_status = engine.interface.get_game_status('campus_life')
-            if game_status:
-                return {'is_running': game_status.get('is_running', False), 'current_game': 'campus_life', 'game_info': game_status}
-            else:
+            loaded_games = list(engine.list_games() or [])
+            if not loaded_games:
                 return {'is_running': False, 'current_game': None, 'game_info': {}}
+            status_rows = []
+            for game_name in loaded_games:
+                status = engine.interface.get_game_status(game_name)
+                if status:
+                    status_rows.append((game_name, status))
+            if not status_rows:
+                return {'is_running': False, 'current_game': None, 'game_info': {}}
+            running_row = next((row for row in status_rows if bool(row[1].get('is_running'))), None)
+            (current_game, game_status) = running_row or status_rows[0]
+            return {
+                'is_running': bool(game_status.get('is_running', False)),
+                'current_game': current_game,
+                'game_info': game_status,
+            }
         except Exception as e:
             self.logger.error(f'Failed to get state from World Engine: {e}')
             return {'is_running': False, 'current_game': None, 'game_info': {'error': str(e)}}

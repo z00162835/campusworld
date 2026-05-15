@@ -6,7 +6,7 @@
 
 引擎（`backend/app/game_engine/`）参考 Evennia 框架设计，提供场景与引擎解耦的基础设施。
 
-> **注**：CampusWorld 是智慧园区 OS，"引擎"是驱动园区空间运行的核心服务，"内容包"是具体的园区体验实现（如 campus_life）。
+> **注**：CampusWorld 是智慧园区 OS，"引擎"是驱动园区空间运行的核心服务，"内容包"是具体的园区体验实现（如 hicampus）。
 
 ```
 game_engine/
@@ -55,7 +55,7 @@ class GameEngineManager:
 
 ### 内容包结构
 
-每个内容包（如 `games/campus_life/`）实现 `BaseGame` 接口：
+每个内容包（如 `games/hicampus/`）实现 `BaseGame` 接口：
 
 ```python
 class BaseGame:
@@ -81,7 +81,7 @@ class BaseGame:
 
 ## Acceptance Criteria
 
-- [ ] `CampusWorldGameEngine().start()` 成功加载 campus_life 内容包
+- [ ] `CampusWorldGameEngine().start()` 成功加载 hicampus 内容包
 - [ ] `game_engine_manager.start_engine()` 后引擎处于 running 状态
 - [ ] `game_engine_manager.get_engine().get_info()` 返回引擎信息
 - [ ] 引擎停止后所有内容包正确清理

@@ -87,8 +87,8 @@ def mock_user_node_with_world():
     user.attributes = {
         "email": "return@example.com",
         "roles": ["player"],
-        "active_world": "campus_life",
-        "last_world_location": "library",
+        "active_world": "hicampus",
+        "last_world_location": "hicampus_gate",
     }
     user.is_active = True
     return user
@@ -193,8 +193,8 @@ def sample_world():
     world = MagicMock()
     world.id = 1
     world.uuid = uuid.uuid4()
-    world.name = "campus_life"
-    world.description = "园区生活世界"
+    world.name = "hicampus"
+    world.description = "HiCampus 世界"
     world.type_code = "world"
     world.attributes = {
         "is_public": True,

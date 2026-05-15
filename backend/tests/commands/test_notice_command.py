@@ -24,8 +24,8 @@ def _ctx_admin() -> CommandContext:
         user_id="99",
         username="admin",
         session_id="s-admin",
-        permissions=["admin.*", "game.campus_life"],
-        game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
+        permissions=["admin.*", "game.hicampus"],
+        game_state={"is_running": True, "current_game": "hicampus", "game_info": {}},
         db_session=MagicMock(),
     )
 
@@ -35,8 +35,8 @@ def _ctx_admin_system_notice() -> CommandContext:
         user_id="100",
         username="admin2",
         session_id="s-admin2",
-        permissions=["admin.system_notice", "game.campus_life"],
-        game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
+        permissions=["admin.system_notice", "game.hicampus"],
+        game_state={"is_running": True, "current_game": "hicampus", "game_info": {}},
         db_session=MagicMock(),
     )
 
@@ -46,8 +46,8 @@ def _ctx_user() -> CommandContext:
         user_id="1",
         username="u1",
         session_id="s-user",
-        permissions=["game.campus_life"],
-        game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
+        permissions=["game.hicampus"],
+        game_state={"is_running": True, "current_game": "hicampus", "game_info": {}},
         db_session=MagicMock(),
     )
 

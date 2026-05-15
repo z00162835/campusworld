@@ -28,7 +28,7 @@ def test_npc_gateway_denies_without_policy_match(monkeypatch):
             actor_name="npc",
             permissions=["player"],
             command_line="notice list",
-            game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
+            game_state={"is_running": True, "current_game": "hicampus", "game_info": {}},
         )
     assert not res.success
     assert "Permission denied" in res.message
@@ -47,7 +47,7 @@ def test_npc_gateway_allows_help_by_default(monkeypatch):
             game_state={},
         )
     assert res.success
-    assert "Available commands" in res.message
+    assert ("Available commands" in res.message) or ("可用命令" in res.message)
 
 
 def test_npc_gateway_allows_world_list_with_admin_world_permission(monkeypatch):
@@ -61,7 +61,7 @@ def test_npc_gateway_allows_world_list_with_admin_world_permission(monkeypatch):
                     actor_name="npc_admin",
                     permissions=["admin.world.*"],
                     command_line="world list",
-                    game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
+                    game_state={"is_running": True, "current_game": "hicampus", "game_info": {}},
                 )
     assert res.success
     assert "hicampus" in res.message

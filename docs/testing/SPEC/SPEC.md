@@ -145,7 +145,7 @@ export default defineConfig({
 后端: test_<module>_<feature>.py
      test_ssh_session.py
      test_entry_router.py
-     test_campus_life_entry_state.py
+     test_hicampus_entry_state.py
 
 前端: <Module>.spec.ts
      LoginPage.spec.ts

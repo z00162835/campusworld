@@ -9,18 +9,18 @@
 - SSH 服务可连接（默认 `localhost:2222`）。
 - 存在可登录账号（例如 `admin/dev/campus`）。
 - 数据库中存在 `SingularityRoom` 根节点（`type_code='room'` 且 `attributes.is_root=true`）。
-- `campus_life` 世界可加载（用于世界内入口验收）。
+- `hicampus` 世界可加载（用于世界内入口验收）。
 
 ## 场景 A：成功路径（新用户/无恢复状态）
 
 ### 步骤
 1. 使用 SSH 登录。
 2. 完成认证后观察用户当前位置。
-3. 执行进入 `campus_life` 世界动作（命令或路由策略触发）。
+3. 执行进入 `hicampus` 世界动作（命令或路由策略触发）。
 
 ### 期望
 - 认证后先进入 `SingularityRoom`。
-- 进入 `campus_life` 后，世界内默认位置为 `campus`。
+- 进入 `hicampus` 后，世界内默认位置为 `hicampus_gate`。
 - 会话保持 ACTIVE，可继续执行命令。
 
 ## 场景 B：恢复路径（Last Location Resume）
@@ -62,7 +62,7 @@
 ## 最小回归清单
 
 - [ ] SSH 登录成功后进入 `SingularityRoom`。
-- [ ] 从 `SingularityRoom` 进入 `campus_life` 后到 `campus`。
+- [ ] 从 `SingularityRoom` 进入 `hicampus` 后到 `hicampus_gate`。
 - [ ] 无权限世界请求被拒绝且会话保持。
 - [ ] 世界不可用时回退到 `SingularityRoom`。
 - [ ] 断线重连时恢复策略按预期生效。

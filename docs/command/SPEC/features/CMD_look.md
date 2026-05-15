@@ -7,7 +7,7 @@
 | Field | Value |
 |--------|--------|
 | Command | `look` |
-| `CommandType` | GAME (`game_name` 类字段 `campus_life`) |
+| `CommandType` | GAME (`game_name` 类字段 `hicampus`) |
 | Class | `app.commands.game.look_command.LookCommand` |
 | Primary implementation | [`backend/app/commands/game/look_command.py`](../../../../backend/app/commands/game/look_command.py)；外观组块见 [`look_appearance.py`](../../../../backend/app/commands/game/look_appearance.py) |
 | Locale | `commands.look` in `backend/app/commands/i18n/locales/{zh-CN,en-US}.yaml` |

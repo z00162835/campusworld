@@ -1,6 +1,6 @@
 # Game Engine - 引擎
 
-> **Architecture Role**: 引擎是**能力服务层**的核心，管理世界状态和业务能力。它将**世界语义**（Room/Character/Building 等图节点）封装为可操作的内容包（games/campus_life），驱动世界的运行逻辑。与 commands/（命令系统）和 models/（全图数据模型）紧密协作：命令系统触发引擎操作，引擎操作修改图数据模型中的实体。
+> **Architecture Role**: 引擎是**能力服务层**的核心，管理世界状态和业务能力。它将**世界语义**（Room/Character/Building 等图节点）封装为可操作的内容包（games/hicampus），驱动世界的运行逻辑。与 commands/（命令系统）和 models/（全图数据模型）紧密协作：命令系统触发引擎操作，引擎操作修改图数据模型中的实体。
 
 CampusWorld 内容引擎，参考 Evennia 框架设计，提供场景与引擎解耦的基础设施。
 
@@ -111,11 +111,11 @@ engine.start()
 
 ```
 games/
-├── campus_life/      # 园区生活
-│   ├── game.py      # 定义
-│   ├── commands.py  # 命令
-│   ├── objects.py   # 对象
-│   └── scripts.py   # 脚本
+├── hicampus/         # HiCampus 世界包
+│   ├── game.py       # 世界实现
+│   ├── manifest.yaml # 包清单
+│   ├── package/      # 数据与生成器
+│   └── AGENTS.md
 └── __init__.py
 ```
 

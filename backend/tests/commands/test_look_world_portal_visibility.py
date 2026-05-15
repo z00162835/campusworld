@@ -16,8 +16,8 @@ def _ctx() -> CommandContext:
         user_id="1",
         username="admin",
         session_id="s1",
-        permissions=["admin.*", "game.campus_life"],
-        game_state={"is_running": True, "current_game": "campus_life", "game_info": {}},
+        permissions=["admin.*", "game.hicampus"],
+        game_state={"is_running": True, "current_game": "hicampus", "game_info": {}},
     )
 
 

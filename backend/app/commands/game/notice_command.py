@@ -10,7 +10,7 @@ class NoticeCommand(GameCommand):
     """Admin operations: notice publish/edit/archive/list."""
 
     def __init__(self):
-        super().__init__(name='notice', description='管理系统公告(publish/edit/archive/list)', aliases=['notices'], game_name='campus_life')
+        super().__init__(name='notice', description='管理系统公告(publish/edit/archive/list)', aliases=['notices'], game_name='hicampus')
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:

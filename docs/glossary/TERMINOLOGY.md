@@ -24,7 +24,7 @@
 
 | 中文（语境） | 英文 | 说明 |
 |--------------|------|------|
-| 园区世界 | **CampusWorld** | 与产品名一致；`campus_life` 世界包日志中表示该运行时整体。 |
+| 园区世界 | **CampusWorld** | 与产品名一致；世界包日志中表示该运行时整体。 |
 | CampusWorld 系统 | **CampusWorld system** | 进程/服务级启停。 |
 | 场景引擎 | **World Engine** | 日志用语；代码包名仍为 `game_engine`。 |
 | 场景（命令/模块/状态等日志前缀） | **world** | 例：`world '{name}'`、`Register world`、`World initialized`。 |

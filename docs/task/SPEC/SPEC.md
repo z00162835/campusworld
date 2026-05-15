@@ -341,7 +341,7 @@ v1 仅覆盖 **后端本体 + 关系表 + 命令族（SSH/REST 同源）**；前
 - **`task_comments` 评论流**：Markdown 渲染、@mention、附件。
 - **多语言任务内容**：`task_details_i18n(task_node_id, locale, title, description_md)`。
 - **任务依赖 DAG**：`BLOCKED_BY` 之外的并发分支与汇合节点。
-- **跨世界任务联邦**：跨 hicampus / campus_life 任务接力。
+- **跨世界任务联邦**：跨多个已安装世界（例如 hicampus 与后续新世界）的任务接力。
 - **向量化任务检索 / GraphRAG 整合**：与 [F06 CampusLibrary](../../models/SPEC/features/F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md) 的语义搜索拼接。
 - **自愈式一致性修复**：巡检从"检测"升级为"补偿事务"。
 - **CQRS 读侧投影**：`user_task_inbox` 等预聚合表，加速大用户待办列表。
