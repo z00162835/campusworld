@@ -70,4 +70,4 @@ agents:
       aico:
         max_tokens: 2048
         extra:
-          tool_gather_max_rounds_per_phase: 2
+          tool_gather_max_rounds_per_phase: 3

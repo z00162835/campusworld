@@ -184,7 +184,8 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
             break
         counters.observation_chars += obs_len
         chunks.append(block)
-        trace_entries.append({'step': f'{trace_prefix}_exec', 'phase': phase_label, 'command_name': command_name, 'args': args, 'success': res.success, 'message_len': len(str(res.message or '')), 'error': str(res.error or '')})
+        message_text = str(res.message or '')
+        trace_entries.append({'step': f'{trace_prefix}_exec', 'phase': phase_label, 'command_name': command_name, 'args': args, 'success': res.success, 'message_len': len(message_text), 'message_preview': _trace_message_preview(message_text), 'error': str(res.error or '')})
         guard_decision = None
         if isinstance(res.data, dict):
             guard_decision = str(res.data.get('guard_decision') or '')
@@ -194,3 +195,9 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
             trace_entries.append({'step': 'guard_block', 'phase': phase_label, 'command_name': command_name, 'reason': str(res.error or '')})
     text = '\n\n'.join(chunks)
     return (text, trace_entries)
+
+
+def _trace_message_preview(text: str, limit: int=4000) -> str:
+    if len(text) <= limit:
+        return text
+    return text[:limit] + '\n...[truncated]'

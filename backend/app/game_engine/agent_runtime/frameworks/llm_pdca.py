@@ -410,12 +410,20 @@ class LlmPDCAFramework(ThinkingFramework):
             tool_router_hint_text = format_tool_router_hint(rr)
             if rr.enforcement_level == EnforcementLevel.schema_subset:
                 ctx.payload['pdca_tool_schema_allowlist'] = rr.schema_allowlist_names()
+        chain_criteria_text = ''
+        snap_for_criteria = ctx.payload.get('tool_router_snapshot')
+        if isinstance(snap_for_criteria, dict):
+            chain_criteria_text = _tool_chain_completion_criteria_text(
+                list(snap_for_criteria.get('mandatory_tool_names') or [])
+            )
         if ctx.recent_conversation is not None or ctx.retrieved_memory is not None:
             rc = (ctx.recent_conversation or '').strip()
             rm = (ctx.retrieved_memory or '').strip()
             plan_user = _assemble_plan_user(user_msg=user_msg, memory=rm or '(none)', world_snapshot=world_snapshot, tool_manifest_text=tool_manifest_text, intent_hint=intent_hint, recent_conversation=rc if rc else None, tool_router_hint=tool_router_hint_text or None)
         else:
             plan_user = _assemble_plan_user(user_msg=user_msg, memory=mem, world_snapshot=world_snapshot, tool_manifest_text=tool_manifest_text, intent_hint=intent_hint, tool_router_hint=tool_router_hint_text or None)
+        if chain_criteria_text:
+            plan_user += '\n\n' + chain_criteria_text
         accumulated_plan_tool_results: List[ToolResult] = []
         self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
         plan_sys = _phase_system(base_system, PDCAPhase.plan.value, merged_phases)
@@ -455,6 +463,8 @@ class LlmPDCAFramework(ThinkingFramework):
             mans = snap.get('mandatory_tool_names') or []
             if mans:
                 check_user += '\n\nRouting mandatory tools (verify ToolObservation covers each): ' + ', '.join((str(x) for x in mans))
+        if chain_criteria_text:
+            check_user += '\n\n' + chain_criteria_text
         check_sys = _phase_system_core(base_system, PDCAPhase.check.value, merged_phases, slim_followup)
         self._tick_hooks.on_before_phase(ThinkingPhaseId.check, ctx)
         t_check = time.perf_counter()
@@ -466,6 +476,35 @@ class LlmPDCAFramework(ThinkingFramework):
         else:
             co = check_out or ''
             ok = 'error' not in co.lower()[:80]
+        snap_gap_for_retry = ctx.payload.get('tool_router_snapshot')
+        if retry_tools is None and isinstance(snap_gap_for_retry, dict):
+            mans_retry = [str(x).strip() for x in (snap_gap_for_retry.get('mandatory_tool_names') or []) if str(x).strip()]
+            if mans_retry:
+                plan_trace_for_gap_retry = [
+                    e
+                    for e in trace
+                    if isinstance(e, dict) and e.get('phase') == PDCAPhase.plan.value
+                ]
+                (has_gap_retry, gap_retry_detail) = mandatory_observation_gap(
+                    mans_retry,
+                    accumulated_plan_tool_results,
+                    plan_trace=plan_trace_for_gap_retry,
+                )
+                if has_gap_retry:
+                    retry_tools = sorted(
+                        set(
+                            [str(x).strip() for x in (gap_retry_detail.get('missing') or []) if str(x).strip()]
+                            + [str(x).strip() for x in (gap_retry_detail.get('failed') or []) if str(x).strip()]
+                        )
+                    )
+                    check_entry['retry_reason'] = 'mandatory_tool_gap'
+                    trace.append(
+                        {
+                            'step': 'mandatory_gap_retry_override',
+                            'tools': retry_tools,
+                            'details': gap_retry_detail,
+                        }
+                    )
         check_entry['passed'] = ok
         if retry_tools is not None:
             check_entry['retry_tools'] = retry_tools
@@ -609,3 +648,20 @@ def _assemble_plan_user(*, user_msg: str, memory: str, world_snapshot: str, tool
         segments.append(tool_router_hint)
     segments.append(f'User message:\n{user_msg}')
     return '\n\n'.join(segments)
+
+
+def _tool_chain_completion_criteria_text(mandatory_tools: Sequence[str]) -> str:
+    """Structured completion criteria for multi-tool routing chains.
+
+    Keep this compact so it can be safely appended to Plan/Check user turns.
+    """
+    tools = [str(t).strip() for t in mandatory_tools if str(t).strip()]
+    if not tools:
+        return ''
+    joined = ', '.join(tools)
+    return (
+        'Tool-chain completion criteria:\n'
+        f'1) Mandatory chain tools must be observed in this tick: {joined}\n'
+        '2) If a mandatory tool has no successful ToolObservation, request retry and do not finalize.\n'
+        '3) Final answer must be grounded in observed tool output for chain-dependent claims.'
+    )

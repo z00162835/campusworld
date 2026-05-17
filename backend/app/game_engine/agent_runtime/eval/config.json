@@ -1,0 +1,45 @@
+{
+  "adapter": "aico",
+  "cases_path": "data/aico_initial_cases.jsonl",
+  "cases_by_suite": {
+    "gate": "data/aico_initial_cases.jsonl",
+    "smoke": "data/aico_smoke_cases.jsonl",
+    "stress": "data/aico_stress_cases.jsonl"
+  },
+  "pairs_path": "data/pairs.live.jsonl",
+  "report_path": "data/report.live.json",
+  "corrected_pairs_path": "data/corrected_pairs.jsonl",
+  "regression_cases_path": "data/cases.regression.jsonl",
+  "gate_policy": {
+    "enforce": true,
+    "tolerance": 1e-09,
+    "live": {
+      "live_trace_presence": {"op": "gte", "value": 1.0},
+      "final_reply_after_tool": {"op": "gte", "value": 1.0},
+      "illegal_tool_rate": {"op": "lte", "value": 0.0},
+      "schema_violation_rate": {"op": "lte", "value": 0.0}
+    }
+  },
+  "dataset_governance": {
+    "strict": true,
+    "require_tags": true,
+    "require_intent_metadata": true,
+    "require_dataset_tier": true
+  },
+  "aico": {
+    "require_live_env": false,
+    "require_db_trace": true,
+    "invoke_via": "ssh",
+    "default_new_dialogue": false,
+    "user_id": "1",
+    "username": "eval_user",
+    "permissions": ["player"],
+    "roles": [],
+    "log_path": null,
+    "ssh_host": "127.0.0.1",
+    "ssh_port": 2222,
+    "ssh_username": "admin",
+    "ssh_password_env": "AICO_EVAL_SSH_PASSWORD",
+    "ssh_command_timeout_seconds": 180
+  }
+}

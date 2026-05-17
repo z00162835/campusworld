@@ -16,6 +16,7 @@ from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
 from app.game_engine.agent_runtime.llm_client import StubLlmClient
 from app.game_engine.agent_runtime.resolved_tool_surface import PreauthorizedToolExecutor, ResolvedToolSurface
 from app.game_engine.agent_runtime.tool_gather import ToolGatherBudgets, ToolGatherCounters
+from app.game_engine.agent_runtime.tool_router.router_result import EnforcementLevel, RouterResult
 
 
 class _FakeMem:
@@ -101,6 +102,17 @@ class _RecordingLlm:
         return "ok"
 
 
+class _AlwaysOkRecordingLlm:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.users: List[str] = []
+
+    def complete(self, *, system: str, user: str, call_spec=None) -> str:
+        self.calls += 1
+        self.users.append(user)
+        return "ok"
+
+
 @pytest.mark.unit
 def test_llm_pdca_ctx_overrides_system_prompt():
     mem = _FakeMem()
@@ -123,6 +135,54 @@ def test_llm_pdca_ctx_overrides_system_prompt():
     assert rec.systems
     assert "CTX_OVERRIDE" in rec.systems[0]
     assert "suffix_plan" in rec.systems[0]
+
+
+@pytest.mark.unit
+def test_llm_pdca_forces_retry_when_mandatory_chain_tools_missing() -> None:
+    mem = _FakeMem()
+    rec = _AlwaysOkRecordingLlm()
+    cfg = AgentLlmServiceConfig(
+        system_prompt="sys",
+        phase_prompts={
+            "plan": "Plan step.",
+            "do": "Answer step.",
+            "check": "Check step.",
+            "act": "Act step.",
+        },
+        extra={"tool_router": {"enabled": True}},
+    )
+    fw = LlmPDCAFramework(
+        memory=mem,
+        llm_config=cfg,
+        instance_phase_llm={},
+        instance_mode_models={},
+        llm=rec,
+    )
+    ctx = FrameworkRunContext(
+        agent_node_id=1,
+        correlation_id="c-mandatory-gap",
+        payload={"message": "find buildings and summarize space"},
+        memory_context="",
+    )
+    fake_rr = RouterResult(
+        candidates=[],
+        mandatory_tool_names=["type", "find"],
+        enforcement_level=EnforcementLevel.hard_must_invoke,
+    )
+    from unittest.mock import patch
+
+    with patch.object(llm_pdca_mod, "run_tool_router", return_value=fake_rr):
+        res = fw.run(ctx)
+    assert res.ok
+    finish = [r for r in mem.runs if r["op"] == "finish"][-1]
+    trace = [x for x in finish["trace"] if isinstance(x, dict)]
+    forced = [x for x in trace if x.get("step") == "mandatory_gap_retry_override"]
+    assert forced, f"missing mandatory-gap retry override trace row; trace_steps={[x.get('step') for x in trace]}"
+    assert set(forced[-1].get("tools") or []) == {"find", "type"}
+    retried = [x for x in trace if x.get("step") == "check_retry_triggered"]
+    assert retried, "missing check retry trigger row"
+    assert set(retried[-1].get("tools") or []) == {"find", "type"}
+    assert any("Tool-chain completion criteria" in u for u in rec.users)
 
 
 @pytest.mark.unit

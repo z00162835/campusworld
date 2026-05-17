@@ -6,6 +6,8 @@ import time
 from typing import Any, Dict
 _MAX_ERROR_RESPONSE_CHARS = 12000
 _MAX_REQUEST_SUMMARY_CHARS = 8000
+_LLM_HTTP_MAX_ATTEMPTS = 3
+_LLM_HTTP_RETRY_BASE_SEC = 0.5
 
 def _summarize_llm_request_body(body: Dict[str, Any]) -> str:
     """Compact JSON for failure logs — avoids dumping megabyte ``system`` / messages."""
@@ -72,27 +74,67 @@ def _log_llm_http_error(*, url: str, status_code: int, elapsed_ms: float, body: 
         log = logging.getLogger('app.game_engine.llm_http')
     log.error('%sllm_http_error status=%s elapsed_ms=%.2f url=%s\n--- response body ---\n%s\n--- request summary (truncated) ---\n%s', prefix, status_code, elapsed_ms, url, rt or '(empty)', summary)
 
-def httpx_post_json(url: str, *, headers: Dict[str, str], body: Dict[str, Any], timeout: float) -> Dict[str, Any]:
+def _transient_httpx_errors():
     import httpx
-    t0 = time.perf_counter()
-    with httpx.Client(timeout=timeout) as client:
-        r = client.post(url, headers=headers, json=body)
-        elapsed_ms = (time.perf_counter() - t0) * 1000.0
-        status = r.status_code
-        if status >= 400:
+    return (
+        httpx.RemoteProtocolError,
+        httpx.ConnectError,
+        httpx.ConnectTimeout,
+        httpx.ReadTimeout,
+        httpx.WriteTimeout,
+        httpx.PoolTimeout,
+    )
+
+
+def httpx_post_json(url: str, *, headers: Dict[str, str], body: Dict[str, Any], timeout: float) -> Dict[str, Any]:
+    """POST JSON to an LLM provider endpoint.
+
+    Uses ``trust_env=False`` so local ``HTTP(S)_PROXY`` settings do not hijack
+    outbound provider calls (a common cause of ``RemoteProtocolError`` during eval).
+    Retries transient transport failures a few times before surfacing.
+    """
+    import httpx
+
+    log = logging.getLogger('app.game_engine.llm_http')
+    transient_errors = _transient_httpx_errors()
+    last_exc: Exception | None = None
+    for attempt in range(1, _LLM_HTTP_MAX_ATTEMPTS + 1):
+        t0 = time.perf_counter()
+        try:
+            with httpx.Client(timeout=timeout, trust_env=False) as client:
+                r = client.post(url, headers=headers, json=body)
+            elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            status = r.status_code
+            if status >= 400:
+                try:
+                    raw = r.text or ''
+                except Exception:
+                    raw = ''
+                _log_llm_http_error(url=url, status_code=status, elapsed_ms=elapsed_ms, body=body, response_text=raw)
+            r.raise_for_status()
+            data = r.json()
+            if not isinstance(data, dict):
+                raise RuntimeError('LLM response JSON root must be an object')
             try:
-                raw = r.text or ''
+                from app.core.config_manager import get_config
+                from app.core.log.aico_observability import log_aico_http_exchange
+                log_aico_http_exchange(get_config(), url=url, status_code=status, elapsed_ms=elapsed_ms, request_body=body, response_data=data)
             except Exception:
-                raw = ''
-            _log_llm_http_error(url=url, status_code=status, elapsed_ms=elapsed_ms, body=body, response_text=raw)
-        r.raise_for_status()
-        data = r.json()
-    if not isinstance(data, dict):
-        raise RuntimeError('LLM response JSON root must be an object')
-    try:
-        from app.core.config_manager import get_config
-        from app.core.log.aico_observability import log_aico_http_exchange
-        log_aico_http_exchange(get_config(), url=url, status_code=status, elapsed_ms=elapsed_ms, request_body=body, response_data=data)
-    except Exception:
-        pass
-    return data
+                pass
+            return data
+        except transient_errors as exc:
+            last_exc = exc
+            if attempt >= _LLM_HTTP_MAX_ATTEMPTS:
+                break
+            delay = _LLM_HTTP_RETRY_BASE_SEC * (2 ** (attempt - 1))
+            log.warning(
+                'llm_http_transient_error attempt=%s/%s url=%s error=%s; retry in %.1fs',
+                attempt,
+                _LLM_HTTP_MAX_ATTEMPTS,
+                url,
+                exc,
+                delay,
+            )
+            time.sleep(delay)
+    assert last_exc is not None
+    raise last_exc

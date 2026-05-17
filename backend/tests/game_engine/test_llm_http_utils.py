@@ -53,3 +53,31 @@ def test_httpx_post_json_logs_error_before_raise(caplog):
     assert "llm_http_error" in joined
     assert "400" in joined
     assert "bad tool" in joined
+    assert client_cls.call_args.kwargs.get("trust_env") is False
+
+
+@pytest.mark.unit
+def test_httpx_post_json_retries_transient_remote_protocol_error():
+    import httpx
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"content": [{"type": "text", "text": "ok"}]}
+
+    with patch("httpx.Client") as client_cls:
+        inst = MagicMock()
+        client_cls.return_value.__enter__.return_value = inst
+        inst.post.side_effect = [
+            httpx.RemoteProtocolError("Server disconnected without sending a response."),
+            mock_resp,
+        ]
+        data = http_utils.httpx_post_json(
+            "https://api.minimaxi.com/anthropic/v1/messages",
+            headers={"Authorization": "Bearer x"},
+            body={"model": "m", "messages": []},
+            timeout=1.0,
+        )
+
+    assert data["content"][0]["text"] == "ok"
+    assert inst.post.call_count == 2
+    assert client_cls.call_args.kwargs.get("trust_env") is False

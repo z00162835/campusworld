@@ -1,0 +1,8 @@
+# Optional local UI/reporting tools for Agent Tool Eval.
+# Install into the project-standard Conda env only when running the
+# Streamlit report UI; this file is not part of default backend runtime.
+
+streamlit>=1.35.0
+pandas>=2.0.0
+plotly>=5.20.0
+

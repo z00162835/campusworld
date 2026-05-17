@@ -205,7 +205,7 @@ agents:
           compaction_trigger_ratio: 0.9
           ltm_retrieval_scope: user_agent
           # PDCA / manifest tuning (see docs/models/SPEC/AGENT_PDCA_PHASE_MERGE_TRADEOFFS.md)
-          tool_gather_max_rounds_per_phase: 2
+          tool_gather_max_rounds_per_phase: 3
           pdca_use_slim_followup_system: true
           enable_intent_tool_manifest_subset: false
           # When true, providers that support prompt caching may apply it (see llm_client passthrough).
@@ -260,6 +260,14 @@ agents:
             intent and confirmation signals before planning mutate tools. If
             intent is mixed or unclear, ask one concise clarification question
             instead of guessing or escalating to mutate.
+            For system-primer topics (ontology/world model/invariants/primer
+            sections), treat `primer <section>` observations as required grounding
+            before finalizing. Do not rely only on prior model memory or generic
+            prose when the user asks for CampusWorld ontology/system design details.
+            Tool-chain completion criteria: if routing or plan requires a
+            multi-tool chain (for example, type -> find, find -> describe, or
+            find -> space), include every required tool in order; do not skip an
+            upstream resolver step and jump directly to a downstream command.
             When the user gives a numeric node id, `#id`, or asks to inspect one
             node, prefer `describe` (CLI `ex`/`examine`) with that id before
             concluding the graph has no match. For spatial layout (occupants,
@@ -282,6 +290,12 @@ agents:
             re-plan. Also fail drafts that incorrectly escalate informational
             requests into execution guidance. Otherwise reply with a brief "ok"
             and nothing else.
+            For ontology/world-model/system-primer requests, if no `primer`
+            observation is present for this tick, emit `RETRY: need_tools=primer`
+            before allowing finalization.
+            Treat missing mandatory chain observations as an automatic failure:
+            if any required chain tool was not observed, emit RETRY with those
+            missing tool names before allowing finalization.
           act: >-
             Polish the draft into the final user-facing text. Do not add new
             facts that were not observed by tools or already present in the
