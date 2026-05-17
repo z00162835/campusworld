@@ -145,6 +145,7 @@ def test_notice_command_list_empty_keeps_pagination_header(monkeypatch):
 def test_notice_command_view_success(monkeypatch):
     from app.commands.admin.notice_command import NoticeCommand
     from app.commands.admin import notice_command as mod
+    from unittest.mock import MagicMock
 
     monkeypatch.setattr(
         mod.bulletin_board_service,
@@ -154,7 +155,6 @@ def test_notice_command_view_success(monkeypatch):
             "title": "Test Notice",
             "content_md": "**Bold** and `code`",
             "status": "published",
-            "author_name": "admin",
             "author_id": 99,
             "created_at": "2026-05-15T10:00:00",
         },
@@ -170,8 +170,15 @@ def test_notice_command_view_success(monkeypatch):
         lambda text, max_chars=1200: [text],
     )
 
+    # Mock user node lookup for author name resolution
+    mock_user_node = MagicMock()
+    mock_user_node.name = "admin"
+
+    ctx = _ctx_admin()
+    ctx.db_session.query.return_value.filter.return_value.first.return_value = mock_user_node
+
     cmd = NoticeCommand()
-    result = cmd.execute(_ctx_admin(), ["view", "1"])
+    result = cmd.execute(ctx, ["view", "1"])
     assert result.success
     assert "Test Notice" in result.message
     assert "admin" in result.message

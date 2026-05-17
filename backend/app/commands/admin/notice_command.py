@@ -127,8 +127,26 @@ class NoticeCommand(AdminCommand):
         title = dto.get('title', '')
         content_md = dto.get('content_md', '')
         status = dto.get('status', '')
-        author = dto.get('author_name') or dto.get('author_id') or 'unknown'
-        created_at = dto.get('created_at', '')
+        author_id = dto.get('author_id')
+        # author 存储为 ID，需要查询数据库获取用户名
+        author = 'unknown'
+        if author_id and context.db_session:
+            try:
+                from app.models.graph import Node
+                user_node = context.db_session.query(Node).filter(
+                    Node.id == author_id,
+                    Node.type_code == 'account',
+                    Node.is_active == True
+                ).first()
+                if user_node:
+                    author = user_node.name or str(author_id)
+                else:
+                    author = str(author_id)
+            except Exception:
+                author = str(author_id) if author_id else 'unknown'
+        elif author_id:
+            author = str(author_id)
+        created_at = dto.get('published_at') or dto.get('created_at', '')
 
         # 渲染 markdown 正文为终端安全文本
         rendered_content = bulletin_board_service.render_notice_md_to_terminal(content_md)
