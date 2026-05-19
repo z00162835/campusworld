@@ -1,0 +1,18 @@
+version: '1'
+datasets:
+  slot_slm_v1:
+    description: Gold slot SLM rows (tool_router_slot_output.schema.json labels)
+    train:
+    - shards/slot_train_part00.jsonl
+    val:
+    - shards/slot_val_part00.jsonl
+    test:
+    - shards/slot_test_part00.jsonl
+  router_head_v1:
+    description: Multi-label tool routing supervision (tool_router_train_row.schema.json)
+    train:
+    - shards/router_train_part00.jsonl
+    val:
+    - shards/router_val_part00.jsonl
+    test:
+    - shards/router_test_part00.jsonl

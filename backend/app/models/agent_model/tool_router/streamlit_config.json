@@ -1,0 +1,55 @@
+{
+  "deprecated_model_ids": {
+    "Qwen/Qwen3-4B-Instruct": "Qwen/Qwen3-4B-Instruct-2507"
+  },
+  "noisy_loggers": [
+    "fsevents",
+    "watchdog",
+    "watchdog.observers",
+    "watchdog.observers.fsevents",
+    "watchdog.events"
+  ],
+  "ui_defaults": {
+    "sample_default_path_router": "app/models/agent_model/tool_router/data/shards/router_train_part00.jsonl",
+    "sample_default_path_slot": "app/models/agent_model/tool_router/data/shards/slot_train_part00.jsonl",
+    "training_output_dir_router": "artifacts/tool_router/router_head/manual_run",
+    "training_output_dir_slot": "artifacts/tool_router/slot/manual_run",
+    "eval_gold_default": "app/models/agent_model/tool_router/data/shards/router_test_part00.jsonl",
+    "eval_pred_default": "app/models/agent_model/tool_router/data/shards/router_pred.jsonl",
+    "eval_validate_gold_default": true,
+    "log_tail_max_chars": 20000
+  },
+  "training_limits": {
+    "epochs": {"min": 1, "max": 50, "step": 1},
+    "batch_size": {"min": 1, "max": 64, "step": 1},
+    "grad_accum": {"min": 1, "max": 128, "step": 1},
+    "lr": {"min": 1e-7, "max": 0.1, "step": 0.0001},
+    "max_seq_len": {"min": 64, "max": 8192, "step": 64},
+    "completion_tokens": {"min": 32, "max": 2048, "step": 32}
+  },
+  "model_presets": {
+    "Qwen2.5-0.5B (baseline)": {
+      "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "epochs": 2,
+      "batch_size": 2,
+      "grad_accum": 8,
+      "lr": 0.0002,
+      "max_seq_len": 2048,
+      "completion_tokens_router": 256,
+      "completion_tokens_slot": 384,
+      "bf16": true
+    },
+    "Qwen3-4B (candidate)": {
+      "base_model": "Qwen/Qwen3-4B-Instruct-2507",
+      "epochs": 2,
+      "batch_size": 1,
+      "grad_accum": 16,
+      "lr": 0.00015,
+      "max_seq_len": 2048,
+      "completion_tokens_router": 256,
+      "completion_tokens_slot": 384,
+      "bf16": true
+    },
+    "Custom": {}
+  }
+}
