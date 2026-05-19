@@ -10,7 +10,7 @@
 | `agent status <id>` | Single-row JSON for handle / `service_id` / alias match (exactly one agent). |
 | `agent tool` | Table of all agents with effective tool ids per agent. |
 | `agent tool <id>` | JSON `{"tools":[...]}` for one agent; structured payload includes `id`, `agent_node_id`, `excluded_by_policy`. |
-| `agent tool add \|del <id> <tool>...` | Idempotent edit of `nodes.attributes.tool_allowlist` (primary command names). Requires **`admin.agent.tools.manage`**. |
+| `agent tool add \|del <id> <tool>...` | Idempotent edit of `nodes.attributes.tool_allowlist` (primary command names). Requires **`admin.agent.tools.manage`**. **`add`** rejects unknown registry names; **`del`** also accepts names already on that agent's stored allowlist (for cleaning retired commands). |
 | `agent show <id>` | JSON capability summary (`typeclass`, `decision_mode`, static capability keys). Same visibility rules as other read-only `agent` subcommands (no separate `agent.capabilities` gate). |
 
 Invalid subcommands yield usage (see registry help).
@@ -25,6 +25,7 @@ Invalid subcommands yield usage (see registry help).
 
 - Read paths (`list`, `status`, `tool` query, `show`): follow the standard command policy for `agent` (no extra permission key for `show`).
 - `agent tool add` / `agent tool del`: **`admin.agent.tools.manage`** (unchanged from prior `agent_tools` write path).
+- Write validation: **`add`** — every tool must resolve via `command_registry` (unknown → `AGENT_TOOLS_UNKNOWN_TOOL`, no write). **`del`** — same, **or** the name matches an entry on the agent's current `tool_allowlist` (case-insensitive), so legacy allowlist rows can be removed after commands are unregistered.
 
 ## Migration (breaking)
 

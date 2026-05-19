@@ -129,6 +129,26 @@ def _resolve_tool_to_primary(name: str) -> Optional[str]:
     cmd = command_registry.get_command(name)
     return cmd.name if cmd is not None else None
 
+def _resolve_tool_for_allowlist_write(name: str, *, action: str, current_allowlist: List[str]) -> Optional[str]:
+    """Resolve a tool token for ``add`` / ``del`` writes.
+
+    ``add`` requires a registered command (or alias). ``del`` also accepts entries
+    present on the agent's stored allowlist so ops can remove legacy names after
+    commands are retired from the registry.
+    """
+    primary = _resolve_tool_to_primary(name)
+    if primary is not None:
+        return primary
+    if action != 'del':
+        return None
+    needle = name.strip()
+    if not needle:
+        return None
+    for entry in current_allowlist:
+        if entry == needle or entry.lower() == needle.lower():
+            return entry
+    return None
+
 def _effective_tools_for_agent(session: Session, node: Node, invoker: CommandContext) -> List[str]:
     from app.game_engine.agent_runtime.resolved_tool_surface import _normalize_allowlist
     from app.game_engine.agent_runtime.tooling import RegistryToolExecutor, ToolRouter
@@ -276,9 +296,10 @@ def _agent_tool_write(context: CommandContext, action: str, rest: List[str], loc
     (node, rerr) = resolve_npc_agent_by_handle(context.db_session, handle)
     if rerr:
         return CommandResult.error_result(rerr)
+    current_allowlist = _normalize_allowlist_to_primary((node.attributes or {}).get('tool_allowlist') or [])
     primaries: List[str] = []
     for raw in tool_args:
-        primary = _resolve_tool_to_primary(raw)
+        primary = _resolve_tool_for_allowlist_write(raw, action=action, current_allowlist=current_allowlist)
         if primary is None:
             template = _agent_tool_text(locale, 'error.unknown_tool', 'unknown tool: {name}')
             return CommandResult.error_result(template.format(name=raw), error=AGENT_TOOLS_UNKNOWN_TOOL)

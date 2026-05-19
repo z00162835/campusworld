@@ -295,8 +295,6 @@ def ensure_aico_npc_agent(session) -> bool:
                 "find",
                 "describe",
                 "agent",
-                "agent_capabilities",
-                "agent_tools",
             ],
             "model_config_ref": "aico",
             "service_account_id": None,

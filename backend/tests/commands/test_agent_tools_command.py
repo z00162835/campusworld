@@ -462,6 +462,31 @@ def test_agent_tools_del_unknown_tool_rejected(patch_resolve, patch_flag_modifie
 
 
 @pytest.mark.unit
+def test_agent_tools_del_removes_unregistered_legacy_allowlist_entries(
+    patch_resolve, patch_flag_modified
+):
+    """Retired command names still on tool_allowlist can be removed without registry lookup."""
+    node = _mk_agent_node(
+        node_id=42,
+        service_id="aico",
+        name="AICO",
+        tool_allowlist=["help", "agent", "agent_capabilities", "agent_tools"],
+    )
+    patch_resolve["aico"] = node
+    session = MagicMock()
+
+    res = AgentCommand().execute(
+        _ctx(db_session=session, permissions=["admin.agent.tools.manage"]),
+        ["tool", "del", "aico", "agent_capabilities", "agent_tools"],
+    )
+
+    assert res.success, res.message
+    assert res.data["removed"] == ["agent_capabilities", "agent_tools"]
+    assert node.attributes["tool_allowlist"] == ["help", "agent"]
+    session.commit.assert_called_once()
+
+
+@pytest.mark.unit
 def test_agent_tools_admin_wildcard_grants_write(patch_resolve, patch_flag_modified):
     node = _mk_agent_node(
         node_id=42, service_id="aico", name="AICO", tool_allowlist=[]
