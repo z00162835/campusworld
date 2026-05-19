@@ -395,5 +395,7 @@ modules.xml
 
 # Local dev SSH host key (see ssh.host_key_path)
 backend/ssh_host_key
+# Model Artifacts
+backend/artifacts/
 
 # Local Config Files
