@@ -82,6 +82,16 @@ def test_manifest_contains_updated_agent_description():
 
 
 @pytest.mark.unit
+def test_tool_semantics_read_commands_exclude_legacy_agent():
+    from app.commands.tool_semantics import get_command_tool_semantics
+
+    sem = get_command_tool_semantics("agent")
+    assert sem["interaction_profile"] == "read"
+    assert get_command_tool_semantics("agent_capabilities")["semantic_pending"] is True
+    assert get_command_tool_semantics("agent_tools")["semantic_pending"] is True
+
+
+@pytest.mark.unit
 def test_legacy_agent_tools_not_registered():
     assert command_registry.get_command("agent_tools") is None
     assert command_registry.get_command("agent_capabilities") is None

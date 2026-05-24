@@ -24,7 +24,7 @@
 
 | 类型 | 说明 | 典型命令（以注册表为准） |
 |------|------|----------|
-| `SYSTEM` | 系统可调用命令（图检索、Agent 工具、帮助等） | `help`, `find`, `aico`, `agent_capabilities` |
+| `SYSTEM` | 系统可调用命令（图检索、Agent 工具、帮助等） | `help`, `find`, `aico`, `agent` |
 | `GAME` | 世界内交互（`look`、方向移动、进/出世界等） | `look`, `go`, `enter`, `leave` |
 | `ADMIN` | 管理/建造型 | `create`, `lexicon`, `world`, `notice` |
 
@@ -106,8 +106,6 @@ CommandResult（成功/失败，自然语言在实现中构造）
 |------|------|----------|------|
 | `aico` | SYSTEM | — | [CMD_aico](features/CMD_aico.md) |
 | `agent` | SYSTEM | — | [CMD_agent](features/CMD_agent.md) |
-| `agent_capabilities` | SYSTEM | `agent.capabilities` | [CMD_agent_capabilities](features/CMD_agent_capabilities.md) |
-| `agent_tools` | SYSTEM | `agent.tools` | [CMD_agent_tools](features/CMD_agent_tools.md) |
 | `create` | ADMIN | `spawn`, `build`, `make` | [CMD_create](features/CMD_create.md) |
 | `create_info` | ADMIN | `cinfo`, `model_info` | [CMD_create_info](features/CMD_create_info.md) |
 | `describe` | SYSTEM | `ex`, `examine` | [CMD_describe](features/CMD_describe.md) 深契约占 [F01](features/F01_FIND_COMMAND.md) |

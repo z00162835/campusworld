@@ -3,6 +3,16 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 _MUTATE_COMMANDS = {'task', 'create', 'notice', 'world'}
 _DOCUMENT_COMMANDS = {'help', 'primer', 'version'}
+_READ_COMMANDS = {
+    'agent',
+    'describe',
+    'find',
+    'look',
+    'stats',
+    'time',
+    'type',
+    'whoami',
+}
 
 def _routing_hint_i18n_for(name: str) -> Dict[str, str]:
     if name == 'task':
@@ -26,6 +36,8 @@ def get_command_tool_semantics(command_name: str) -> Dict[str, Any]:
         profile = 'mutate'
     elif name in _DOCUMENT_COMMANDS:
         profile = 'document'
+    elif name in _READ_COMMANDS:
+        profile = 'read'
     else:
         profile = 'read'
         pending = True

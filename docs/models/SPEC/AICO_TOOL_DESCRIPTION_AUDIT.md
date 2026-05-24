@@ -62,7 +62,7 @@ audit entries below should not diverge from it.
 ```
 help, look, time, version, whoami,
 primer, find, describe,
-agent, agent_capabilities, agent_tools
+agent
 ```
 
 | Name                | Registered description                                                                                                                                                                                                      | Usage                                                                                                       | Purpose | Input | Output | No-halu | Grade |
@@ -75,9 +75,7 @@ agent, agent_capabilities, agent_tools
 | `primer`            | Show the CampusWorld system primer (world design, ontology, invariants).                                                                                                                                                    | `primer [<section> \| --toc \| --raw \| --for <service_id>]`                                                |  ✓      |  ✓    |  ✓     |  ✓      | **A** |
 | `find`              | Find graph nodes. Flags AND-compose: -n name, -des desc, -t type, -loc id, -l N, -a (capped). Shortcuts: #<id>, *<account>. Returns data.results [{id,type_code,name,location_id,description}] + total/next_offset. Not semantic.                                           | see [F01_FIND_COMMAND](../../command/SPEC/features/F01_FIND_COMMAND.md) §1                                 |  ✓      |  ✓    |  ✓     |  ✓      | **A** |
 | `describe`          | Show a single graph node's details (type, name, description, attrs, edges).                                                                                                                                                 | `describe <node_id \| #<id> \| node_name>`                                                                  |  ✓      |  ✓    |  ✓     |  ✓      | **A** |
-| `agent`             | Inspect and drive agents. Subcommands: `agent list`, `agent status <id>`, `agent nlp <handle> <text>`. Prefer `agent_capabilities <service_id>` when you only need the capability summary.                                 | `agent [list\|status <id> \| nlp <handle> <text>]`                                                          |  ✓      |  ✓    |  ✓     |  ✓      | **A** |
-| `agent_capabilities`| List agent capabilities for a service_id                                                                                                                                                                                    | `agent_capabilities <service_id>`                                                                           |  ✓      |  ✓    |  ✓     |  ✓      | **A** |
-| `agent_tools`       | List every command registered in the agent tool registry with its category. This is the global registry, NOT the current agent's callable surface — use `agent_capabilities <service_id>` for what a specific agent may invoke. | `agent_tools`                                                                                               |  ✓      |  ✓    |  ✓     |  ✓      | **A** |
+| `agent`             | Agent directory: list / status / tool / show. Subcommands: `agent list`, `agent status <id>`, `agent tool [<id>]`, `agent show <id>`. Use `agent tool <id>` for effective tools; `agent show <id>` for static capability JSON. | `agent list \| agent status <id> \| agent tool [args] \| agent show <id>` |  ✓      |  ✓    |  ✓     |  ✓      | **A** |
 
 ## Findings and recommended fixes
 
@@ -110,14 +108,10 @@ changed.
   matching. The wording is deliberately kept under the 240-character
   manifest truncation so the disclaimer always reaches the model
   (see `graph_inspect_commands.py::FindCommand`).
-- **`agent` (was C)** — description now enumerates subcommands
-  (`list`, `status <id>`, `nlp <handle> <text>`) and points at the
-  cheaper `agent_capabilities` tool when only a summary is needed
-  (see `agent_commands.py::AgentCommand`).
-- **`agent_tools` (was B)** — description now disambiguates the
-  *global registry* from the *current agent's callable surface*, so
-  an LLM that sees a command here does not assume it can invoke it
-  immediately (see `agent_commands.py::AgentToolsCommand`).
+- **`agent` (was C, then unified 2026-05)** — description enumerates subcommands
+  (`list`, `status`, `tool`, `show`) and distinguishes effective tool listing
+  from static capability summary (see `agent_commands.py::AgentCommand`).
+  Retired top-level `agent_capabilities` / `agent_tools` are no longer on the allowlist.
 
 ## Structural gaps (not command-level)
 

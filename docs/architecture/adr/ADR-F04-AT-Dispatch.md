@@ -16,7 +16,7 @@ Evennia typically merges **CmdSets** (account/character/session) and parses the 
 
 2. **Authorization** for `@` lines uses **`authorize_command(aico)`**, so policy and audit paths match the **`aico`** shorthand (same NLP entry path as line-prefix dispatch).
 
-3. **Handle resolution** is centralized in **[`resolve_npc_agent_by_handle`](../../../backend/app/commands/npc_agent_resolve.py)** and reused by **`at_agent_dispatch`**, **`aico`**, **`agent_capabilities`**, **`agent_tools`**, and other agent commands that resolve by `service_id` / alias.
+3. **Handle resolution** is centralized in **[`resolve_npc_agent_by_handle`](../../../backend/app/commands/npc_agent_resolve.py)** and reused by **`at_agent_dispatch`**, **`aico`**, **`agent`** (subcommands), and other agent commands that resolve by `service_id` / alias.
 
 4. **Future**: A full Evennia-like CmdSet stack is **not** required for F04; a prefix hook remains valid if CmdSets are introduced later (e.g. high-priority session command).
 

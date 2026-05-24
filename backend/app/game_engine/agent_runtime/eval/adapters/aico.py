@@ -33,9 +33,7 @@ DEFAULT_AICO_TOOL_DESCRIPTIONS: Dict[str, str] = {
     'primer': 'Show the CampusWorld system primer.',
     'find': 'Find graph nodes by name, description, type, or location.',
     'describe': 'Show a single graph node details.',
-    'agent': 'Inspect and drive agents.',
-    'agent_capabilities': 'List agent capabilities for a service_id.',
-    'agent_tools': 'List commands registered in the global agent tool registry.',
+    'agent': 'Inspect and drive agents (subcommands: list, status, tool, show).',
 }
 
 

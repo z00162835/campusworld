@@ -29,8 +29,28 @@ Invalid subcommands yield usage (see registry help).
 
 ## Migration (breaking)
 
-- CLI commands **`agent_tools`** and **`agent_capabilities`** are **removed** from registration; use **`agent tool`** and **`agent show`**.
+Retired top-level commands **`agent_tools`** and **`agent_capabilities`** are **not** registered. Use **`agent`** subcommands instead:
+
+| Old CLI | New CLI |
+|---------|---------|
+| `agent_capabilities <id>` | `agent show <id>` |
+| `agent_tools` | `agent tool` |
+| `agent_tools <id>` | `agent tool <id>` |
+| `agent_tools add <id> <tool>...` | `agent tool add <id> <tool>...` |
+| `agent_tools del <id> <tool>...` | `agent tool del <id> <tool>...` |
+
 - JSON consumers must use **`id`** instead of **`service_id`** where applicable.
+- Aliases **`agent.capabilities`** / **`agent.tools`** are retired with the old top-level names.
+
+### Manual cleanup (existing databases)
+
+Remove legacy names from an agent node's stored allowlist (example for AICO):
+
+```bash
+agent tool del aico agent_capabilities agent_tools
+```
+
+Optional: deactivate orphan `system_command_ability` graph nodes for retired command names, then re-export the tool-router lexicon (`lexicon export`) so enrich snapshots no longer list them.
 
 ## Implementation
 

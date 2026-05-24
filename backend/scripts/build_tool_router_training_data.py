@@ -33,6 +33,7 @@ from app.models.agent_model.tool_router.train.train_common import (
 
 
 TOOL_CANONICAL_ALIASES = {
+    # Legacy ingest only: retired top-level commands map to unified ``agent``.
     "agent_capabilities": "agent",
     "agents": "agent",
 }

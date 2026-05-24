@@ -6,7 +6,7 @@
 
 **交叉引用：** [`F09`](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（CampusWorld Agent 四层架构 L1–L4）、[`F08`](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（Command-as-Tool、ToolGather）、[`F10`](F10_AICO_PERFORMANCE_AND_LATENCY.md)（AICO tick 延迟 SLO、可观测性与实现收敛；**运维调参速查见 F10 第 13 节**）、[`F02`](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)（`npc_agent` 通用模型）、[`F04`](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@` 协议）、[`F07`](F07_PER_USER_AGENT_MEMORY_AND_ASYNC_LTM_PROMOTION.md)（按用户记忆与 LTM 异步晋升，后续迭代）、[`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)（trait）、[`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)（数据访问主体）。
 
-**实现锚点（非 exhaustive）：** [`backend/app/models/things/agents.py`](../../../../backend/app/models/things/agents.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`aico`、`agent`、`agent_capabilities`、`agent_tools`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/`](../../../../backend/app/game_engine/agent_runtime/)（`LlmPdcaAssistantWorker`、`LlmPDCAFramework`、`agent_node_phase_llm`）、[`backend/app/constants/trait_mask.py`](../../../../backend/app/constants/trait_mask.py)、[`backend/app/core/settings.py`](../../../../backend/app/core/settings.py) / [`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)（**连接参数 + 默认 system_prompt / phase_prompts**）、[`backend/app/game_engine/agent_runtime/agent_llm_config.py`](../../../../backend/app/game_engine/agent_runtime/agent_llm_config.py)（`prompt_overrides` 与 **内联 `model_config` 非密钥合并**）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/db/seed_data.py`](../../../../backend/db/seed_data.py)（种子落地时）。**AICO 优化可观测（专用日志，§5.7）：** [`backend/app/core/log/aico_observability.py`](../../../../backend/app/core/log/aico_observability.py)、[`backend/app/game_engine/agent_runtime/aico_observability_hooks.py`](../../../../backend/app/game_engine/agent_runtime/aico_observability_hooks.py)、配置加载见 [`backend/app/core/config_manager.py`](../../../../backend/app/core/config_manager.py)。运行时决策记录见 [`docs/architecture/adr/ADR-F03-AICO-NL-Pipeline.md`](../../../architecture/adr/ADR-F03-AICO-NL-Pipeline.md)。
+**实现锚点（非 exhaustive）：** [`backend/app/models/things/agents.py`](../../../../backend/app/models/things/agents.py)、[`backend/app/commands/agent_command_context.py`](../../../../backend/app/commands/agent_command_context.py)、[`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`aico`、`agent`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/`](../../../../backend/app/game_engine/agent_runtime/)（`LlmPdcaAssistantWorker`、`LlmPDCAFramework`、`agent_node_phase_llm`）、[`backend/app/game_engine/agent_runtime/aico/profile.py`](../../../../backend/app/game_engine/agent_runtime/aico/profile.py)（AICO 专属 runtime profile：流式、progress、observability、manifest subset 等策略钩子）、[`backend/app/constants/trait_mask.py`](../../../../backend/app/constants/trait_mask.py)、[`backend/app/core/settings.py`](../../../../backend/app/core/settings.py) / [`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)（**连接参数 + 默认 system_prompt / phase_prompts**）、[`backend/app/game_engine/agent_runtime/agent_llm_config.py`](../../../../backend/app/game_engine/agent_runtime/agent_llm_config.py)（`prompt_overrides` 与 **内联 `model_config` 非密钥合并**）、[`backend/db/ontology/graph_seed_node_types.yaml`](../../../../backend/db/ontology/graph_seed_node_types.yaml)、[`backend/db/seed_data.py`](../../../../backend/db/seed_data.py)（种子落地时）。**AICO 优化可观测（专用日志，§5.7）：** [`backend/app/core/log/aico_observability.py`](../../../../backend/app/core/log/aico_observability.py)、[`backend/app/game_engine/agent_runtime/aico_observability_hooks.py`](../../../../backend/app/game_engine/agent_runtime/aico_observability_hooks.py)、配置加载见 [`backend/app/core/config_manager.py`](../../../../backend/app/core/config_manager.py)。运行时决策记录见 [`docs/architecture/adr/ADR-F03-AICO-NL-Pipeline.md`](../../../architecture/adr/ADR-F03-AICO-NL-Pipeline.md)。
 
 ---
 
@@ -16,7 +16,7 @@
 - **架构位置**：AICO 是 **`npc_agent`** 的默认实例，跨 **L2**（命令工具）、**L3**（LLM + PDCA 等思考管线）、可选 **L4**（经验 Skill）与 **F07** 侧 `memory_context`；**全局四层定义** 见 [**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)，**工具输出进上下文** 见 [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)。
 - 以 **单一 `npc_agent` 图节点** 表达实例；**静态配置** 在 `nodes.attributes`（见 §5、附录 A）；记忆与运行过程在 F02 独立表。
 - **认知**：`decision_mode: llm`，思维框架 **PDCA**（与 `agent_run_records.phase` 对齐）；工具侧经 **命令注册表** + 授权（与 F02 §6 一致）。
-- **可执行命令（`tool_allowlist`）**：v2 Discovery Suite（`help`、`look`、`time`、`version`、`whoami`、`primer`、`find`、`describe`、`agent`、`agent_capabilities`、`agent_tools`），其中 `primer` / `find` / `describe` 为 **v2 新增**、为 LLM 提供 **按需拉取** 的世界本体与图内检索能力。命名与 Evennia 对齐：`find`（别名 `@find`、`locate`）对应 Evennia `@find`；`describe`（别名 `examine`、`ex`）对应 Evennia `examine`。allowlist 中的别名在 `build_resolved_tool_surface` 阶段自动规范化为 primary 名。详见 §5.2 默认值表与 [`F08`](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §12「工具优先 harness」刷新说明。清单须与 **注册表 + `command_policies` + 服务账号权限** 共同生效。
+- **可执行命令（`tool_allowlist`）**：v2 Discovery Suite（`help`、`look`、`time`、`version`、`whoami`、`primer`、`find`、`describe`、`agent`），其中 `primer` / `find` / `describe` 为 **v2 新增**、为 LLM 提供 **按需拉取** 的世界本体与图内检索能力。命名与 Evennia 对齐：`find`（别名 `@find`、`locate`）对应 Evennia `@find`；`describe`（别名 `examine`、`ex`）对应 Evennia `examine`。allowlist 中的别名在 `build_resolved_tool_surface` 阶段自动规范化为 primary 名。详见 §5.2 默认值表与 [`F08`](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §12「工具优先 harness」刷新说明。清单须与 **注册表 + `command_policies` + 服务账号权限** 共同生效。Agent 自省经 **`agent show`** / **`agent tool`** 子命令（见 [`CMD_agent`](../../../command/SPEC/features/CMD_agent.md)）。
 - **LLM 参数**：**主配置源** 为 CampusWorld **系统级 YAML**（[`settings.yaml`](../../../../backend/config/settings.yaml) 及环境覆盖 `settings.*.yaml`），按 **`service_id`**（如 `aico`）为 **不同系统 Agent** 配置 **provider、model、API key、temperature** 等；**禁止**在图节点 `attributes` 中长期存放明文密钥（见 §5.3）。
 - **拓扑**：AICO **实际位置**为 **奇点屋根房间**（`location_id`）；用户可在 **任意位置** 通过 **F04 `@` 协议** 与 AICO 交互（不要求同房间）。
 - **触发模式**：实例 **`nodes.attributes`** 须声明 **主触发模式**；AICO 为 **NLP 触发**（自然语言输入，含 **`@aico <payload>`** 与会话内 NL），与 [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md) 中 `default_triggers[].kind` 的 **`NLP`** 语义一致（见 §5.2.2 **`trigger_mode`**）。
@@ -94,7 +94,7 @@
 [
   "help", "look", "time", "version", "whoami",
   "primer", "find", "describe",
-  "agent", "agent_capabilities", "agent_tools"
+  "agent"
 ]
 ```
 
@@ -104,10 +104,10 @@
 - **`primer`** — 详见 [`system_primer_command.py`](../../../../backend/app/commands/system_primer_command.py)；以命令形态暴露 CampusWorld 系统本体 [`CAMPUSWORLD_SYSTEM_PRIMER.md`](../../CAMPUSWORLD_SYSTEM_PRIMER.md) 的各语义段（identity / ontology / world / invariants / examples 等），由 [`system_primer_context.py`](../../../../backend/app/game_engine/agent_runtime/system_primer_context.py) 渲染。与 Tier-1 静态 system prompt 协作：`system_prompt` 只放「身份 + 不变量」的精简版，完整设计说明由 agent 主动 `primer <section>` 按需拉取（与 F08 §12.3 对齐）。
 - **`find`** — 图节点检索（Evennia `@find` 风格，列表工具）。契约见 [`F01_FIND_COMMAND`](../../../command/SPEC/features/F01_FIND_COMMAND.md)。别名：`@find`、`locate`。v3 新增 `-n` / `-des` / `-loc` / `-l` / `-a` 与 AND 组合查询。
 - **`describe <id | #<id> | name>`** — 同上模块；输出单节点详情 + 出边采样。别名：`examine`、`ex`（Evennia 对齐）。
-- **`agent_capabilities`**、**`agent_tools`** 用于自省与能力查询；可按产品需要收紧 **`tool_allowlist`**（不暴露过多注册表命令）。
+- **`agent`**（子命令 **`show`** / **`tool`**）用于自省与能力/工具面查询；可按产品需要收紧 **`tool_allowlist`**（不暴露过多注册表命令）。
 - 后续可追加经策略允许的 **只读图/本体查询** 类命令名；须与 `command_policies` 及服务账号权限一致。
 
-> **迁移提示**：将现有数据库从 v1 迁移到 v2 时，在 AICO 节点 `attributes.tool_allowlist` 中写入 v2 清单（`help`、`look`、`time`、`version`、`whoami`、`primer`、`find`、`describe`、`agent`、`agent_capabilities`、`agent_tools`）。旧值 `graph_find` 已不再注册，需要替换为 `find`（或 Evennia 风格的 `locate`）。新部署由 `ensure_aico_npc_agent` 直接写入 v2 清单。
+> **迁移提示**：将现有数据库从 v1 迁移到 v2 时，在 AICO 节点 `attributes.tool_allowlist` 中写入 v2 清单（`help`、`look`、`time`、`version`、`whoami`、`primer`、`find`、`describe`、`agent`）。旧值 `graph_find` 已不再注册，需要替换为 `find`（或 Evennia 风格的 `locate`）。若 allowlist 仍含已退役的 `agent_capabilities` / `agent_tools`，用 `agent tool del aico agent_capabilities agent_tools` 清理。新部署由 `ensure_aico_npc_agent` 直接写入 v3 清单（仅 `agent`）。
 
 **与 F02 `default_triggers`：** 若需在类型层表达完整触发器模板，可使用 `default_triggers: [{ "kind": "NLP", "config": { } }]`；实例层以 **`trigger_mode`** 为 **摘要字段**，调度与路由逻辑 **以 `trigger_mode` + F04 为准**，避免与 F02 枚举冲突（`NLP` ↔ `nlp` 大小写由实现统一）。
 
@@ -221,6 +221,14 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 
 ---
 
+### 5.8 AICO Runtime Profile（L3′ / L4′ 策略承载）
+
+AICO 专属运行时策略通过最小 **`AicoRuntimeProfile`** 承载：公共 `run_npc_agent_nlp_tick` 仍负责配置解析、STM/LTM、Worker 构造、PDCA tick、STM append 与 `CommandResult`；profile 只提供 AICO 专属策略钩子。当前 profile 覆盖：informational manifest subset、AICO NDJSON tick lifecycle、REPL progress hint、AICO observability hooks、full-chain debug log 开关。`LlmPDCAFramework`、`ToolGather`、`ResolvedToolSurface` 不得依赖或 import AICO profile。
+
+完整 AICO orchestrator（复制或接管通用 tick 生命周期）不在当前阶段采用；若未来需要，须单独 ADR 说明如何避免 STM/LTM、ToolGather、trace 行为与通用 `npc_agent` 漂移。
+
+---
+
 ## 6. 与 F04（`@`）的关系
 
 - 用户侧 **发起与 AICO 的对话**：遵循 [**F04**](F04_AT_AGENT_INTERACTION_PROTOCOL.md)（`@aico <payload>` 或等价形式）。
@@ -274,7 +282,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
     "tool_allowlist": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "建议包含 help, look, time, version 及 agent_capabilities, agent_tools 等"
+      "description": "建议包含 help, look, time, version, primer, find, describe, agent 等"
     },
     "model_config": {
       "type": "object",
@@ -319,7 +327,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
     "trigger_mode": "nlp",
     "decision_mode": "llm",
     "cognition_profile_ref": "pdca_v1",
-    "tool_allowlist": ["help", "look", "time", "version", "whoami", "primer", "find", "describe", "agent", "agent_capabilities", "agent_tools"],
+    "tool_allowlist": ["help", "look", "time", "version", "whoami", "primer", "find", "describe", "agent"],
     "model_config_ref": "aico",
     "mode_models": {
       "fast": "gpt-4o-mini",

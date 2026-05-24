@@ -251,7 +251,7 @@ def test_agent_tools_default_drops_unregistered_aliases(
 
 @pytest.mark.unit
 def test_agent_tools_misordered_add_gives_i18n_corrective_en():
-    """``agent_tools <service_id> add ...`` is parsed as a query for ``service_id``; return hint."""
+    """Misordered ``agent tool <id> add ...`` is parsed as a query for ``<id>``; return hint."""
     res = AgentCommand().execute(
         _ctx(db_session=MagicMock(), locale="en-US"),
         ["tool", "aico", "add", "find"],
