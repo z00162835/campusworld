@@ -114,14 +114,6 @@ def test_worker_create_with_tick_inputs_skips_resolve_caller(monkeypatch):
         roles=[],
         db_session=session,
     )
-    monkeypatch.setattr(
-        "app.game_engine.agent_runtime.worker.get_config",
-        lambda: MagicMock(),
-    )
-    monkeypatch.setattr(
-        "app.game_engine.agent_runtime.worker.is_aico_observability_enabled",
-        lambda _cm: False,
-    )
     LlmPdcaAssistantWorker.create(
         session,
         3,

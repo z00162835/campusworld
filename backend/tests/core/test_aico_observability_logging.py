@@ -96,6 +96,9 @@ def test_truncate_for_aico_log():
 
 @pytest.mark.unit
 def test_log_aico_llm_call_debug(caplog):
+    logger = logging.getLogger(LoggerNames.AICO_AGENT)
+    old_propagate = logger.propagate
+    logger.propagate = True
     caplog.set_level(logging.DEBUG, LoggerNames.AICO_AGENT)
     cm = MagicMock()
     cm.get.side_effect = _config_get(
@@ -121,6 +124,7 @@ def test_log_aico_llm_call_debug(caplog):
     finally:
         clear_aico_full_chain_tick()
         clear_aico_observability_context()
+        logger.propagate = old_propagate
     assert "aico_llm_call" in caplog.text
     assert "run-test" in caplog.text
     assert "corr-test" in caplog.text

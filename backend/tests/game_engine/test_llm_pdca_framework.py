@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -113,6 +114,73 @@ class _AlwaysOkRecordingLlm:
         return "ok"
 
 
+class _RecordingObservability:
+    def __init__(self) -> None:
+        self.events: List[tuple[str, str, Optional[str]]] = []
+        self.llm_calls: List[Dict[str, Any]] = []
+        self.tool_observations: List[Dict[str, Any]] = []
+
+    @contextmanager
+    def run_scope(self, *, run_id: str, correlation_id: Optional[str]):
+        self.events.append(("enter", run_id, correlation_id))
+        try:
+            yield
+        finally:
+            self.events.append(("exit", run_id, correlation_id))
+
+    def should_log_full_chain(self, config: Any) -> bool:
+        _ = config
+        return True
+
+    def log_llm_call(self, config: Any, *, phase: str, system: str, user: str, spec: Any, skipped: bool) -> None:
+        _ = config
+        self.llm_calls.append({"phase": phase, "system": system, "user": user, "skipped": skipped})
+
+    def log_tool_observations_text(self, config: Any, *, phase: str, observation_text: str) -> None:
+        _ = config
+        self.tool_observations.append({"phase": phase, "observation_text": observation_text})
+
+    def log_http_exchange(self, config: Any, *, url: str, status_code: int, elapsed_ms: float, request_body: Any, response_data: Any) -> None:
+        _ = (config, url, status_code, elapsed_ms, request_body, response_data)
+
+
+@pytest.mark.unit
+def test_llm_pdca_uses_observability_adapter_scope_and_llm_logging():
+    mem = _FakeMem()
+    obs = _RecordingObservability()
+    cfg = AgentLlmServiceConfig(
+        system_prompt="sys",
+        phase_prompts={
+            "plan": "Plan step.",
+            "do": "Answer step.",
+            "check": "Check step.",
+            "act": "Act step.",
+        },
+    )
+    fw = LlmPDCAFramework(
+        memory=mem,
+        llm_config=cfg,
+        instance_phase_llm={},
+        instance_mode_models={},
+        llm=StubLlmClient(),
+        observability=obs,
+    )
+    res = fw.run(
+        FrameworkRunContext(
+            agent_node_id=1,
+            correlation_id="corr-obs",
+            payload={"message": "hello"},
+        )
+    )
+
+    assert res.ok
+    assert obs.events[0][0] == "enter"
+    assert obs.events[0][2] == "corr-obs"
+    assert obs.events[-1][0] == "exit"
+    assert obs.events[-1][1] == obs.events[0][1]
+    assert [call["phase"] for call in obs.llm_calls] == ["plan", "do", "check", "act"]
+
+
 @pytest.mark.unit
 def test_llm_pdca_ctx_overrides_system_prompt():
     mem = _FakeMem()
@@ -181,8 +249,82 @@ def test_llm_pdca_forces_retry_when_mandatory_chain_tools_missing() -> None:
     assert set(forced[-1].get("tools") or []) == {"find", "type"}
     retried = [x for x in trace if x.get("step") == "check_retry_triggered"]
     assert retried, "missing check retry trigger row"
+    assert len(retried) == 1
     assert set(retried[-1].get("tools") or []) == {"find", "type"}
+    assert res.message.startswith("ok")
+    assert "【系统提示】" in res.message
+    assert "未形成观测的工具" in res.message
     assert any("Tool-chain completion criteria" in u for u in rec.users)
+
+
+@pytest.mark.unit
+def test_llm_pdca_mandatory_satisfied_by_do_phase_tool_observation() -> None:
+    class _PlanThenDoTool:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, *, system: str, user: str, call_spec=None) -> str:
+            self.calls += 1
+            if self.calls == 1:
+                return "plan prose"
+            if self.calls == 2:
+                return '{"commands": [{"name": "help", "args": []}]}'
+            return "draft after tool"
+
+    mem = _FakeMem()
+    ctx_cmd = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="s",
+        permissions=[],
+        roles=[],
+    )
+    surface = ResolvedToolSurface(allowed_command_names=frozenset({"help"}), tool_command_context=ctx_cmd)
+    pre = PreauthorizedToolExecutor(surface)
+
+    class _HelpCmd:
+        name = "help"
+
+        def execute(self, c, args):
+            from app.commands.base import CommandResult
+
+            return CommandResult.success_result("help observed")
+
+    cfg = AgentLlmServiceConfig(
+        system_prompt="sys",
+        phase_prompts={"plan": "P", "do": "D", "check": "C", "act": "A"},
+        extra={"tool_router": {"enabled": True}},
+    )
+    fake_rr = RouterResult(
+        candidates=[],
+        mandatory_tool_names=["help"],
+        enforcement_level=EnforcementLevel.hard_must_invoke,
+    )
+    from unittest.mock import patch
+
+    with patch.object(llm_pdca_mod, "run_tool_router", return_value=fake_rr), patch(
+        "app.game_engine.agent_runtime.resolved_tool_surface.command_registry.get_command",
+        return_value=_HelpCmd(),
+    ):
+        fw = LlmPDCAFramework(
+            memory=mem,
+            llm_config=cfg,
+            instance_phase_llm={
+                "check": PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip),
+                "act": PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip),
+            },
+            instance_mode_models={},
+            llm=_PlanThenDoTool(),
+            tools=pre,
+            tool_command_context=ctx_cmd,
+            preauthorized_tool_executor=pre,
+        )
+        res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "help me"}))
+    assert res.ok
+    finish = [r for r in mem.runs if r["op"] == "finish"][-1]
+    trace = [x for x in finish["trace"] if isinstance(x, dict)]
+    assert not [x for x in trace if x.get("step") == "mandatory_observation_gap"]
+    assert any(x.get("step") == "tool_exec" and x.get("phase") == "do" for x in trace)
 
 
 @pytest.mark.unit

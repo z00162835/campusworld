@@ -14,9 +14,11 @@ from app.game_engine.agent_runtime.tool_gather import (
     ToolGatherBudgets,
     ToolGatherCounters,
     ToolInvocationPlan,
+    format_tool_observation_block,
     gather_tool_observations,
     parse_tool_invocation_plan_from_text,
 )
+from app.game_engine.agent_runtime.tool_observation_policy import ToolObservationPolicy
 
 
 class _FakeExec:
@@ -123,3 +125,69 @@ def test_build_resolved_surface_excludes_aico_when_in_policy():
         s = build_resolved_tool_surface(node_tool_allowlist=["help", "aico", "look"], tool_command_context=ctx)
     assert "aico" not in s.allowed_command_names
     assert "help" in s.allowed_command_names
+
+
+@pytest.mark.unit
+def test_tool_gather_summarizes_mutating_command_observation():
+    class _CreateExec(_FakeExec):
+        def execute_command(self, context, command_name: str, args: list[str]) -> CommandResult:
+            self.calls.append((command_name, args))
+            return CommandResult.success_result("created node\nsecret second line")
+
+    fake = _CreateExec()
+    ctx = CommandContext(user_id="1", username="u", session_id="s", permissions=[], roles=[])
+    budgets = ToolGatherBudgets(max_commands_per_tick=2, max_chars_observations_per_tick=100000, max_commands_per_phase=8)
+    text, trace = gather_tool_observations(
+        fake,
+        ctx,
+        ToolInvocationPlan(commands=[("create", [])]),
+        budgets=budgets,
+        counters=ToolGatherCounters(),
+        phase_label="plan",
+    )
+    assert "created node" in text
+    assert "secret second line" not in text
+    assert "original_chars=" in text
+    assert trace[0]["observation_message_mode"] == "summary"
+    assert "secret second line" not in trace[0]["message_preview"]
+
+
+@pytest.mark.unit
+def test_tool_gather_caches_observation_policy_per_command(monkeypatch):
+    calls: list[str] = []
+
+    def fake_policy(command_name, *, session=None):
+        calls.append(command_name)
+        return ToolObservationPolicy(message_mode="summary")
+
+    monkeypatch.setattr(
+        "app.game_engine.agent_runtime.tool_gather.resolve_tool_observation_policy",
+        fake_policy,
+    )
+    fake = _FakeExec()
+    ctx = CommandContext(user_id="1", username="u", session_id="s", permissions=[], roles=[])
+    budgets = ToolGatherBudgets(max_commands_per_tick=3, max_chars_observations_per_tick=100000, max_commands_per_phase=8)
+
+    gather_tool_observations(
+        fake,
+        ctx,
+        ToolInvocationPlan(commands=[("help", []), ("help", ["again"]), ("look", [])]),
+        budgets=budgets,
+        counters=ToolGatherCounters(),
+        phase_label="plan",
+    )
+
+    assert calls == ["help", "look"]
+
+
+@pytest.mark.unit
+def test_tool_observation_block_can_block_message():
+    block = format_tool_observation_block(
+        1,
+        "create",
+        [],
+        CommandResult.success_result("sensitive content"),
+        policy=ToolObservationPolicy(message_mode="blocked"),
+    )
+    assert "sensitive content" not in block
+    assert "message blocked by observation policy" in block

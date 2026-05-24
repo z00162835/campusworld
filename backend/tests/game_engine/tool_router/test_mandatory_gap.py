@@ -99,3 +99,19 @@ def test_notice_mentions_permission_hint():
         }
     )
     assert "权限" in text or "门禁" in text
+
+
+@pytest.mark.unit
+def test_gap_reports_tick_wide_observed_phases():
+    has_gap, detail = mandatory_observation_gap(
+        ["look"],
+        [ToolResult(id="1", name="look", ok=True, text="ok")],
+        plan_trace=[
+            {"phase": "plan", "step": "plan"},
+            {"phase": "do", "step": "tool_exec", "command_name": "look", "success": True},
+        ],
+    )
+    assert has_gap is False
+    assert "do" in detail["checked_phases"]
+    assert "look" in detail["observed_tools"]
+    assert detail["observed_phases_by_tool"]["look"] == ["do"]
