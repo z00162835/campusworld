@@ -1,4 +1,4 @@
-"""Detect gaps between F14 mandatory_tool_names and Plan-phase ToolObservation results (F14 §3.4 D6 hint)."""
+"""Detect gaps between F14 mandatory_tool_names and tick ToolObservation results."""
 from __future__ import annotations
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from app.commands.registry import command_registry
@@ -11,14 +11,14 @@ def normalize_command_name(name: str) -> str:
     cmd = command_registry.get_command(raw)
     return (cmd.name if cmd is not None else raw).strip().lower()
 
-def _plan_phase_entries(trace: Optional[Sequence[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+def _trace_entries(trace: Optional[Sequence[Dict[str, Any]]]) -> List[Dict[str, Any]]:
     if not trace:
         return []
-    return [e for e in trace if isinstance(e, dict) and e.get('phase') == 'plan']
+    return [e for e in trace if isinstance(e, dict)]
 
-def _gather_budget_pressure(plan_entries: Sequence[Dict[str, Any]]) -> bool:
-    """True if Plan phase hit gather caps or skip-before-execute."""
-    for e in plan_entries:
+def _gather_budget_pressure(entries: Sequence[Dict[str, Any]]) -> bool:
+    """True if this tick hit gather caps or skipped before execute."""
+    for e in entries:
         step = str(e.get('step') or '')
         if step == 'tool_gather_skip' or step.endswith('_cap'):
             return True
@@ -29,10 +29,15 @@ def _error_suggests_permission_denied(err: str) -> bool:
     needles = ('permission', 'denied', 'forbidden', 'guard_blocked', 'not_on_resolved_surface', 'world_forbidden', 'execution_gate', 'not allowed')
     return any((n in s for n in needles))
 
-def mandatory_observation_gap(mandatory_tool_names: List[str], plan_tool_results: List[ToolResult], *, plan_trace: Optional[Sequence[Dict[str, Any]]]=None) -> Tuple[bool, Dict[str, Any]]:
-    """Return (has_gap, detail) with missing / failed tools, reason_codes, and trace-derived hints."""
+def mandatory_observation_gap(mandatory_tool_names: List[str], tool_results: List[ToolResult], *, plan_trace: Optional[Sequence[Dict[str, Any]]]=None) -> Tuple[bool, Dict[str, Any]]:
+    """Return tick-wide mandatory observation gap details.
+
+    ``plan_trace`` is kept as a keyword for compatibility with existing call
+    sites; callers should pass the full tick trace. Any phase in the same tick
+    may satisfy a mandatory tool when it produced a successful ToolObservation.
+    """
     by_primary: Dict[str, List[bool]] = {}
-    for tr in plan_tool_results:
+    for tr in tool_results:
         k = normalize_command_name(tr.name)
         if not k:
             continue
@@ -57,12 +62,36 @@ def mandatory_observation_gap(mandatory_tool_names: List[str], plan_tool_results
         codes.append('mandatory_not_invoked')
     if failed:
         codes.append('mandatory_failed')
-    detail: Dict[str, Any] = {'missing': missing, 'failed': failed, 'reason_codes': codes, 'permission_denied_tools': [], 'gather_budget_limited': False}
+    entries = _trace_entries(plan_trace)
+    observed_phases_by_tool: Dict[str, List[str]] = {}
+    checked_phases: List[str] = []
+    for e in entries:
+        phase = str(e.get('phase') or '').strip()
+        if phase and phase not in checked_phases:
+            checked_phases.append(phase)
+        if e.get('step') != 'tool_exec':
+            continue
+        cmd_k = normalize_command_name(str(e.get('command_name') or ''))
+        if not cmd_k:
+            continue
+        observed_phases_by_tool.setdefault(cmd_k, [])
+        if phase and phase not in observed_phases_by_tool[cmd_k]:
+            observed_phases_by_tool[cmd_k].append(phase)
+    observed_tools = sorted(k for (k, vals) in by_primary.items() if any(vals))
+    detail: Dict[str, Any] = {
+        'missing': missing,
+        'failed': failed,
+        'reason_codes': codes,
+        'permission_denied_tools': [],
+        'gather_budget_limited': False,
+        'checked_phases': checked_phases,
+        'observed_tools': observed_tools,
+        'observed_phases_by_tool': observed_phases_by_tool,
+    }
     has_gap = bool(missing or failed)
-    plan_entries = _plan_phase_entries(plan_trace)
     mandatory_keys = {normalize_command_name(m) for m in mandatory_tool_names if normalize_command_name(m)}
     permission_tools: List[str] = []
-    for e in plan_entries:
+    for e in entries:
         if e.get('step') != 'tool_exec':
             continue
         if e.get('success') is True:
@@ -79,7 +108,7 @@ def mandatory_observation_gap(mandatory_tool_names: List[str], plan_tool_results
     detail['permission_denied_tools'] = permission_tools
     if permission_tools and 'permission_denied' not in codes:
         codes.append('permission_denied')
-    budget_hit = _gather_budget_pressure(plan_entries)
+    budget_hit = _gather_budget_pressure(entries)
     detail['gather_budget_limited'] = bool(has_gap and budget_hit)
     if detail['gather_budget_limited'] and 'gather_budget_limited' not in codes:
         codes.append('gather_budget_limited')

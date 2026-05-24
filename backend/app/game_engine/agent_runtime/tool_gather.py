@@ -5,8 +5,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, FrozenSet, List, Optional, Tuple
 from app.commands.base import CommandContext, CommandResult
+from app.game_engine.agent_runtime.tool_observation_policy import DEFAULT_OBSERVATION_DATA_KEYS, ToolObservationPolicy, apply_observation_message_policy, resolve_tool_observation_policy, trace_message_preview
 from app.game_engine.agent_runtime.tooling import ToolExecutor
-DEFAULT_TOOL_OBSERVATION_DATA_KEYS: FrozenSet[str] = frozenset({'ok', 'phase', 'handle', 'service_id'})
+DEFAULT_TOOL_OBSERVATION_DATA_KEYS: FrozenSet[str] = DEFAULT_OBSERVATION_DATA_KEYS
 
 @dataclass
 class ToolInvocationPlan:
@@ -92,13 +93,21 @@ def _format_data_subset(data: Optional[Dict[str, Any]], allowed_keys: FrozenSet[
         return ''
     return 'data: ' + ', '.join(parts)
 
-def format_tool_observation_block(index: int, command_name: str, args: List[str], result: CommandResult, *, data_keys: Optional[FrozenSet[str]]=None, max_message_chars: int=4000) -> str:
+def format_tool_observation_block(index: int, command_name: str, args: List[str], result: CommandResult, *, data_keys: Optional[FrozenSet[str]]=None, max_message_chars: int=4000, policy: Optional[ToolObservationPolicy]=None) -> str:
     """F08 appendix A style single observation."""
-    keys = data_keys if data_keys is not None else DEFAULT_TOOL_OBSERVATION_DATA_KEYS
+    if policy is None:
+        base_policy = resolve_tool_observation_policy(command_name)
+        effective_policy = ToolObservationPolicy(
+            message_mode=base_policy.message_mode,
+            max_message_chars=max_message_chars,
+            trace_preview_chars=base_policy.trace_preview_chars,
+            data_keys=base_policy.data_keys,
+        )
+    else:
+        effective_policy = policy
+    keys = data_keys if data_keys is not None else effective_policy.data_keys
     ok = result.success
-    msg = str(result.message or '')
-    if len(msg) > max_message_chars:
-        msg = msg[:max_message_chars - 3] + '...'
+    msg = apply_observation_message_policy(str(result.message or ''), effective_policy)
     extra = _format_data_subset(result.data if isinstance(result.data, dict) else None, keys)
     lines = [f'--- tool_observation begin ---', f'[{index}] command={command_name} args={args!r}', f'ok={ok}', 'message:', msg]
     if extra:
@@ -164,6 +173,7 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
     """
     chunks: List[str] = []
     trace_entries: List[Dict[str, Any]] = []
+    policy_cache: Dict[str, ToolObservationPolicy] = {}
     idx = 0
     phase_cmds = 0
     for (command_name, args) in plan.commands:
@@ -175,9 +185,14 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
             break
         idx += 1
         res = executor.execute_command(tool_context, command_name, args)
+        policy_key = str(command_name or '').strip().lower()
+        policy = policy_cache.get(policy_key)
+        if policy is None:
+            policy = resolve_tool_observation_policy(command_name, session=tool_context.db_session)
+            policy_cache[policy_key] = policy
         counters.commands_run += 1
         phase_cmds += 1
-        block = format_tool_observation_block(idx, command_name, args, res, data_keys=data_keys)
+        block = format_tool_observation_block(idx, command_name, args, res, data_keys=data_keys, policy=policy)
         obs_len = len(block)
         if counters.observation_chars + obs_len > budgets.max_chars_observations_per_tick:
             trace_entries.append({'step': f'{trace_prefix}_cap', 'detail': 'tick_max_chars', 'phase': phase_label})
@@ -185,7 +200,7 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
         counters.observation_chars += obs_len
         chunks.append(block)
         message_text = str(res.message or '')
-        trace_entries.append({'step': f'{trace_prefix}_exec', 'phase': phase_label, 'command_name': command_name, 'args': args, 'success': res.success, 'message_len': len(message_text), 'message_preview': _trace_message_preview(message_text), 'error': str(res.error or '')})
+        trace_entries.append({'step': f'{trace_prefix}_exec', 'phase': phase_label, 'command_name': command_name, 'args': args, 'success': res.success, 'message_len': len(message_text), 'message_preview': trace_message_preview(message_text, policy), 'observation_message_mode': policy.message_mode, 'error': str(res.error or '')})
         guard_decision = None
         if isinstance(res.data, dict):
             guard_decision = str(res.data.get('guard_decision') or '')
@@ -195,9 +210,3 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
             trace_entries.append({'step': 'guard_block', 'phase': phase_label, 'command_name': command_name, 'reason': str(res.error or '')})
     text = '\n\n'.join(chunks)
     return (text, trace_entries)
-
-
-def _trace_message_preview(text: str, limit: int=4000) -> str:
-    if len(text) <= limit:
-        return text
-    return text[:limit] + '\n...[truncated]'

@@ -37,28 +37,6 @@ def _apply_stm_compaction_with_optional_llm(extra: Dict[str, Any], llm, cfg, msg
             rs = merged
     return apply_compaction_truncate(msgs, rs, stm_max_turns=max_turns, stm_max_chars=max_chars)
 
-def _informational_manifest_payload_overrides(session, node: Node, context: CommandContext, message: str, attrs: Dict[str, Any], cfg_extra: Dict[str, Any]) -> Dict[str, Any]:
-    from app.game_engine.agent_runtime.agent_llm_extra import parse_bool_extra
-    if not parse_bool_extra(cfg_extra, 'enable_intent_tool_manifest_subset', False):
-        return {}
-    from app.commands.registry import command_registry
-    from app.game_engine.agent_runtime.aico_world_context import build_llm_tool_manifest
-    from app.game_engine.agent_runtime.intent_classifier_interface import RuleFallbackIntentClassifier, classify_intent
-    from app.game_engine.agent_runtime.resolved_tool_surface import build_resolved_tool_surface
-    ic = classify_intent(message, agent_id=str(node.id), metadata={'correlation_id': str(context.session_id or '')}, classifier=RuleFallbackIntentClassifier())
-    if ic.intent != 'informational':
-        return {}
-    raw_allow = attrs.get('tool_allowlist') or []
-    allowlist = [str(x) for x in raw_allow] if isinstance(raw_allow, list) else []
-    surface = build_resolved_tool_surface(node_tool_allowlist=allowlist, tool_command_context=context)
-    loc = None
-    md = context.metadata or {}
-    v = md.get('locale')
-    if isinstance(v, str) and v.strip():
-        loc = v.strip()
-    (mtext, mschemas) = build_llm_tool_manifest(surface, command_registry, session=session, locale=loc, manifest_interaction_filter='informational')
-    return {'tool_manifest_text': mtext, 'pdca_tool_schema_allowlist': [s.name for s in mschemas]}
-
 def maybe_ltm_memory_context(session, agent_node_id: int, user_message: str, cfg_extra: Dict[str, Any], *, caller_account_node_id: Optional[int]=None, conversation_thread_id=None) -> Optional[str]:
     """
     Optional LTM injection. Disabled unless extra.enable_ltm is true in agents.llm YAML extra.
@@ -81,8 +59,10 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
     from app.game_engine.agent_runtime.conversation_stm_service import CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE, append_turns_to_messages, format_stm_for_prompt, load_or_create_conversation_stm, normalize_messages, parse_conversation_scope_mode, refresh_daemon_success_tick, stm_should_compact_after_append, touch_thread_metadata, try_acquire_daemon_possession, finalize_daemon_possession_after_success, ensure_conversation_thread_id, try_acquire_conversation_thread_tick_lock
     from app.game_engine.agent_runtime.frameworks.base import FrameworkRunResult
     from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config, http_llm_available
+    from app.game_engine.agent_runtime.profiles import resolve_agent_runtime_profile
     from app.game_engine.agent_runtime.prompt_fingerprint import compute_npc_prompt_fingerprint
     from app.game_engine.agent_runtime.worker import LlmPdcaAssistantWorker
+    from app.core.config_manager import get_config
     attrs = node.attributes or {}
     service_id = str(attrs.get('service_id') or 'aico')
     model_ref = attrs.get('model_config_ref')
@@ -91,11 +71,13 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
     if not http_llm_available(cfg):
         return FrameworkRunResult(ok=True, message=str(message).strip(), final_phase='passthrough')
     extra = dict(cfg.extra or {})
+    cm = get_config()
+    profile = resolve_agent_runtime_profile(service_id)
     caller_snap = build_caller_graph_snapshot(session, context)
     caller_id = caller_snap.caller_node_id
     llm = build_llm_client_from_service_config(cfg)
     tick_inputs = NpcAgentTickInputs(agent=node, attrs=dict(attrs), service_id=service_id, model_ref_s=model_ref_s, cfg=cfg, caller=caller_snap)
-    w = LlmPdcaAssistantWorker.create(session, node.id, invoker_context=context, llm_client=llm, agent_llm_config=cfg, tick_inputs=tick_inputs)
+    w = LlmPdcaAssistantWorker.create(session, node.id, invoker_context=context, llm_client=llm, agent_llm_config=cfg, tick_inputs=tick_inputs, tick_hooks=profile.build_tick_hooks(config=cm), runtime_observability=profile.build_framework_observability(config=cm))
     world_snapshot_text = ''
     try:
         caller_username = getattr(context, 'username', None)
@@ -150,50 +132,26 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
         mem_do = 'Recent conversation and retrieved memory were provided only in the Plan phase; use the Plan section and tool observations below.'
     elif mem_ctx is None:
         mem_ctx = maybe_ltm_memory_context(session, node.id, message, extra)
-    from app.core.config_manager import get_config
-    from app.core.log.aico_observability import clear_aico_full_chain_tick, is_aico_dev_chain_verbose, set_aico_full_chain_tick
-    cm = get_config()
-    allow_full = service_id.strip().lower() == 'aico' and is_aico_dev_chain_verbose(cm)
-    set_aico_full_chain_tick(allow_full)
-    try:
+    with profile.enter_tick_scope(config=cm):
         payload: Dict[str, Any] = {'message': message}
         if world_snapshot_text:
             payload['world_snapshot'] = world_snapshot_text
-        payload.update(_informational_manifest_payload_overrides(session, node, context, message, attrs, extra))
+        payload.update(profile.prepare_payload_overrides(session=session, node=node, context=context, message=message, attrs=attrs, cfg=cfg, worker=w))
         manifest_for_fp = str(payload.get('tool_manifest_text') or w.tool_manifest_text or '')
         payload['prompt_fingerprint'] = compute_npc_prompt_fingerprint(world_snapshot=world_snapshot_text, tool_manifest_text=manifest_for_fp, user_message=message)
-        emit_fn = getattr(context, 'stream_emit', None)
-        stream_on = bool(getattr(context, 'supports_aico_stream', False) and emit_fn)
-        progress_emit = getattr(context, 'aico_progress_emit', None)
-        tick_ndjson_started = False
         corr_s = str(context.session_id or '')
         if context.metadata is None:
             context.metadata = {}
-        if stream_on:
-            from app.commands.aico_stream import emit_tick_lifecycle_meta
-            emit_tick_lifecycle_meta(emit_fn, phase='start', thread_id=thread_id, correlation_id=corr_s or None, client_hint='running')
-            tick_ndjson_started = True
-            context.metadata['_aico_stream_emitted'] = True
-        elif progress_emit:
-            from app.commands.aico_stream import aico_repl_progress_message
-            progress_emit(aico_repl_progress_message())
+        stream_state = profile.configure_streaming(context=context, thread_id=thread_id, correlation_id=corr_s or None)
+        if not stream_state.stream_on:
+            profile.emit_progress(context=context)
         try:
             res = w.tick(payload, correlation_id=context.session_id, memory_context=mem_ctx if recent_conv is None else None, recent_conversation=recent_conv, retrieved_memory=retrieved_mem if recent_conv is not None else None, memory_context_do=mem_do, phase_llm_overrides=phase_llm_overrides)
         except Exception:
             _NPC_AGENT_NLP_LOG.exception('npc_agent_nlp tick failed: service_id=%s session=%s', service_id, context.session_id)
-            if tick_ndjson_started and emit_fn:
-                from app.commands.aico_stream import emit_aico_error_ndjson
-                emit_aico_error_ndjson(emit_fn, code='tick_exception', message=NPC_AGENT_LLM_FAILURE_USER_MSG)
+            profile.emit_stream_error(state=stream_state, code='tick_exception', message=NPC_AGENT_LLM_FAILURE_USER_MSG)
             return FrameworkRunResult(ok=False, message=NPC_AGENT_LLM_FAILURE_USER_MSG, final_phase='error')
-        if tick_ndjson_started and emit_fn:
-            from app.commands.aico_stream import emit_aico_error_ndjson, emit_assistant_stream_ndjson, emit_tick_lifecycle_meta
-            if not res.ok:
-                fail_msg = str(res.message or '').strip() or NPC_AGENT_LLM_FAILURE_USER_MSG
-                emit_aico_error_ndjson(emit_fn, code='tick_failed', message=fail_msg)
-            else:
-                assistant_reply = str(res.message or '').strip()
-                emit_assistant_stream_ndjson(emit_fn, assistant_reply, thread_id=thread_id, correlation_id=corr_s or None, allow_empty_body=True)
-                emit_tick_lifecycle_meta(emit_fn, phase='complete', thread_id=thread_id, correlation_id=corr_s or None, ok=True, final_phase=res.final_phase, empty_reply=not bool(assistant_reply))
+        profile.emit_stream_result(state=stream_state, result=res, thread_id=thread_id, correlation_id=corr_s or None, fallback_message=NPC_AGENT_LLM_FAILURE_USER_MSG)
         if stm_on and caller_id is not None and res.ok:
             assistant_reply = str(res.message or '').strip()
             if scope_mode == CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE and daemon_row is not None:
@@ -217,8 +175,6 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
                 if thread_id is not None:
                     touch_thread_metadata(session, thread_id, message)
         return res
-    finally:
-        clear_aico_full_chain_tick()
 
 def assistant_nlp_command_result(handle: str, res, *, service_id: Optional[str]=None, context: Optional[Any]=None) -> CommandResult:
     """Assistant NLP tick → CommandResult: human text in message; machine fields in data."""

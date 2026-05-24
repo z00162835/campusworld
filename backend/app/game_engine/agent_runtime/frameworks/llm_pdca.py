@@ -8,13 +8,13 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from app.commands.base import CommandContext
 from app.commands.registry import command_registry
 from app.core.config_manager import get_config
-from app.core.log.aico_observability import clear_aico_observability_context, log_aico_llm_call, log_aico_tool_observations_text, set_aico_observability_context, should_emit_aico_full_chain_logs
 from app.core.settings import AgentLlmServiceConfig, PhaseLlmMode, PhaseLlmPhaseConfig
 from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, FrameworkRunResult, ThinkingFramework
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
 from app.game_engine.agent_runtime.intent_classifier_interface import IntentClassifier, RuleFallbackIntentClassifier, classify_intent
 from app.game_engine.agent_runtime.llm_client import AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC, LlmCallSpec, LlmClient, StubLlmClient, complete_with_tools, supports_tools
 from app.game_engine.agent_runtime.memory_port import MemoryPort
+from app.game_engine.agent_runtime.observability import AgentRuntimeObservability, NoopAgentRuntimeObservability
 from app.game_engine.agent_runtime.phase_llm_resolve import merge_phase_config, to_llm_call_spec
 from app.game_engine.agent_runtime.resolved_tool_surface import PreauthorizedToolExecutor
 from app.game_engine.agent_runtime.thinking_pipeline import AgentTickHooks, NoOpAgentTickHooks, ThinkingPhaseId
@@ -183,7 +183,7 @@ class LlmPDCAFramework(ThinkingFramework):
       allows.
     """
 
-    def __init__(self, memory: MemoryPort, llm_config: AgentLlmServiceConfig, *, instance_phase_llm: Dict[str, PhaseLlmPhaseConfig], instance_mode_models: Dict[str, str], llm: Optional[LlmClient]=None, tools: Optional[ToolExecutor]=None, tool_command_context: Optional[CommandContext]=None, preauthorized_tool_executor: Optional[PreauthorizedToolExecutor]=None, tool_gather_budgets: Optional[ToolGatherBudgets]=None, tick_hooks: Optional[AgentTickHooks]=None, tool_schemas: Optional[Sequence[ToolSchema]]=None, intent_classifier: Optional[IntentClassifier]=None):
+    def __init__(self, memory: MemoryPort, llm_config: AgentLlmServiceConfig, *, instance_phase_llm: Dict[str, PhaseLlmPhaseConfig], instance_mode_models: Dict[str, str], llm: Optional[LlmClient]=None, tools: Optional[ToolExecutor]=None, tool_command_context: Optional[CommandContext]=None, preauthorized_tool_executor: Optional[PreauthorizedToolExecutor]=None, tool_gather_budgets: Optional[ToolGatherBudgets]=None, tick_hooks: Optional[AgentTickHooks]=None, tool_schemas: Optional[Sequence[ToolSchema]]=None, intent_classifier: Optional[IntentClassifier]=None, observability: Optional[AgentRuntimeObservability]=None):
         self._memory = memory
         self._cfg = llm_config
         self._instance_phase_llm = instance_phase_llm
@@ -196,6 +196,7 @@ class LlmPDCAFramework(ThinkingFramework):
         self._tick_hooks: AgentTickHooks = tick_hooks or NoOpAgentTickHooks()
         self._tool_schemas: List[ToolSchema] = list(tool_schemas or [])
         self._intent_classifier: Optional[IntentClassifier] = intent_classifier
+        self._observability: AgentRuntimeObservability = observability or NoopAgentRuntimeObservability()
 
     @property
     def framework_id(self) -> str:
@@ -227,8 +228,8 @@ class LlmPDCAFramework(ThinkingFramework):
         """Single plain-text LLM call (back-compat shape for existing tests)."""
         spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx)
         cm = get_config()
-        if should_emit_aico_full_chain_logs(cm):
-            log_aico_llm_call(cm, phase=phase, system=system, user=user, spec=spec, skipped=spec.mode == PhaseLlmMode.skip)
+        if self._observability.should_log_full_chain(cm):
+            self._observability.log_llm_call(cm, phase=phase, system=system, user=user, spec=spec, skipped=spec.mode == PhaseLlmMode.skip)
         if spec.mode == PhaseLlmMode.skip:
             return ('', {'step': phase, 'skipped': True, 'mode': spec.mode.value})
         out = self._llm.complete(system=system, user=user, call_spec=spec)
@@ -252,8 +253,8 @@ class LlmPDCAFramework(ThinkingFramework):
         trace.extend(entries)
         if text:
             cm = get_config()
-            if should_emit_aico_full_chain_logs(cm):
-                log_aico_tool_observations_text(cm, phase=pdca_phase, observation_text=text)
+            if self._observability.should_log_full_chain(cm):
+                self._observability.log_tool_observations_text(cm, phase=pdca_phase, observation_text=text)
         return text
 
     def _call_llm_dual_track(self, phase: str, system: str, turns: List[ConversationTurn], ctx: FrameworkRunContext) -> Tuple[str, List[ToolCall], Dict[str, Any]]:
@@ -265,8 +266,8 @@ class LlmPDCAFramework(ThinkingFramework):
         spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx)
         cm = get_config()
         user_text_for_log = _render_turns_as_text(turns)
-        if should_emit_aico_full_chain_logs(cm):
-            log_aico_llm_call(cm, phase=phase, system=system, user=user_text_for_log, spec=spec, skipped=spec.mode == PhaseLlmMode.skip)
+        if self._observability.should_log_full_chain(cm):
+            self._observability.log_llm_call(cm, phase=phase, system=system, user=user_text_for_log, spec=spec, skipped=spec.mode == PhaseLlmMode.skip)
         if spec.mode == PhaseLlmMode.skip:
             return ('', [], {'step': phase, 'skipped': True, 'mode': spec.mode.value})
         channel = 'text'
@@ -345,8 +346,8 @@ class LlmPDCAFramework(ThinkingFramework):
                 _trace_phase_timing(trace, scope='tool_gather', phase=pdca_phase, elapsed_ms=(time.perf_counter() - t_gather) * 1000.0, round_idx=round_idx + 1)
                 if obs_text:
                     cm = get_config()
-                    if should_emit_aico_full_chain_logs(cm):
-                        log_aico_tool_observations_text(cm, phase=pdca_phase, observation_text=obs_text)
+                    if self._observability.should_log_full_chain(cm):
+                        self._observability.log_tool_observations_text(cm, phase=pdca_phase, observation_text=obs_text)
                 round_results: List[ToolResult] = []
                 exec_entries = [e for e in gather_entries if e.get('step') == 'tool_exec']
                 for (i, e) in enumerate(exec_entries):
@@ -371,11 +372,8 @@ class LlmPDCAFramework(ThinkingFramework):
         user_msg = str(ctx.payload.get('message') or ctx.payload.get('text') or '').strip()
         gather_counters = ToolGatherCounters()
         corr_s = correlation if isinstance(correlation, str) else None
-        set_aico_observability_context(run_id=str(run_id), correlation_id=corr_s)
-        try:
+        with self._observability.run_scope(run_id=str(run_id), correlation_id=corr_s):
             return self._run_inner(ctx, run_id, trace, user_msg, gather_counters, correlation)
-        finally:
-            clear_aico_observability_context()
 
     def _run_inner(self, ctx: FrameworkRunContext, run_id: uuid.UUID, trace: List[Dict[str, Any]], user_msg: str, gather_counters: ToolGatherCounters, correlation: Any) -> FrameworkRunResult:
         self._memory.start_run(run_id=run_id, correlation_id=correlation if isinstance(correlation, str) else None, phase=PDCAPhase.plan.value, command_trace=list(trace), status='running')
@@ -424,11 +422,11 @@ class LlmPDCAFramework(ThinkingFramework):
             plan_user = _assemble_plan_user(user_msg=user_msg, memory=mem, world_snapshot=world_snapshot, tool_manifest_text=tool_manifest_text, intent_hint=intent_hint, tool_router_hint=tool_router_hint_text or None)
         if chain_criteria_text:
             plan_user += '\n\n' + chain_criteria_text
-        accumulated_plan_tool_results: List[ToolResult] = []
+        accumulated_tick_tool_results: List[ToolResult] = []
         self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
         plan_sys = _phase_system(base_system, PDCAPhase.plan.value, merged_phases)
         (plan_out, plan_tools_text, plan_tool_results, plan_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan_user, ctx, gather_counters, trace)
-        accumulated_plan_tool_results.extend(plan_tool_results)
+        accumulated_tick_tool_results.extend(plan_tool_results)
         self._memory.update_run(run_id, PDCAPhase.plan.value, trace, 'running')
         self._tick_hooks.on_after_phase(ThinkingPhaseId.plan, ctx, phase_llm_output=plan_out or '', skipped=bool(plan_entry.get('skipped')))
         if plan_tools_text:
@@ -448,7 +446,8 @@ class LlmPDCAFramework(ThinkingFramework):
             do_entry: Dict[str, Any] = {'step': PDCAPhase.do.value, 'skipped': True, 'mode': PhaseLlmMode.skip.value, 'skip_do_draft_chars': len(reply or '')}
             trace.append(do_entry)
         else:
-            (reply, do_tools_text, _do_results, do_entry) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do_user, ctx, gather_counters, trace)
+            (reply, do_tools_text, do_tool_results, do_entry) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do_user, ctx, gather_counters, trace)
+            accumulated_tick_tool_results.extend(do_tool_results)
         self._memory.update_run(run_id, PDCAPhase.do.value, trace, 'running')
         self._tick_hooks.on_after_phase(ThinkingPhaseId.do, ctx, phase_llm_output=reply or '', skipped=bool(do_entry.get('skipped')))
         if do_tools_text:
@@ -480,15 +479,10 @@ class LlmPDCAFramework(ThinkingFramework):
         if retry_tools is None and isinstance(snap_gap_for_retry, dict):
             mans_retry = [str(x).strip() for x in (snap_gap_for_retry.get('mandatory_tool_names') or []) if str(x).strip()]
             if mans_retry:
-                plan_trace_for_gap_retry = [
-                    e
-                    for e in trace
-                    if isinstance(e, dict) and e.get('phase') == PDCAPhase.plan.value
-                ]
                 (has_gap_retry, gap_retry_detail) = mandatory_observation_gap(
                     mans_retry,
-                    accumulated_plan_tool_results,
-                    plan_trace=plan_trace_for_gap_retry,
+                    accumulated_tick_tool_results,
+                    plan_trace=trace,
                 )
                 if has_gap_retry:
                     retry_tools = sorted(
@@ -517,7 +511,7 @@ class LlmPDCAFramework(ThinkingFramework):
             trace.append({'step': 'check_retry_triggered', 'tools': retry_tools})
             plan2_user = f'{plan_user}\n\nGuardrail note:\n{retry_hint}\nEmit a tool call plan now.'
             (plan2_out, plan2_tools_text, plan2_tool_results, plan2_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan2_user, ctx, gather_counters, trace)
-            accumulated_plan_tool_results.extend(plan2_tool_results)
+            accumulated_tick_tool_results.extend(plan2_tool_results)
             if plan2_tools_text:
                 trace.append({'step': 'plan_retry_tool_observations', 'chars': len(plan2_tools_text)})
             do2_blocks = f'\n\nTool observations (plan retry):\n{plan2_tools_text}' if plan2_tools_text else ''
@@ -528,7 +522,8 @@ class LlmPDCAFramework(ThinkingFramework):
                 reply2 = assemble_plan_skip_do_draft(plan2_out or plan_out or '', plan2_tools_text or '')
                 trace.append({'step': PDCAPhase.do.value, 'skipped': True, 'mode': PhaseLlmMode.skip.value, 'after_check_retry': True, 'skip_do_draft_chars': len(reply2 or '')})
             else:
-                (reply2, do2_tools_text, _dr2, _de2) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace)
+                (reply2, do2_tools_text, do2_tool_results, _de2) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace)
+                accumulated_tick_tool_results.extend(do2_tool_results)
             if reply2.strip():
                 final_text = reply2
             if do2_tools_text:
@@ -538,8 +533,7 @@ class LlmPDCAFramework(ThinkingFramework):
         if isinstance(snap_gap, dict):
             mans_gap = list(snap_gap.get('mandatory_tool_names') or [])
             if mans_gap:
-                plan_trace_for_gap = [e for e in trace if isinstance(e, dict) and e.get('phase') == PDCAPhase.plan.value]
-                (has_m_gap, gap_detail) = mandatory_observation_gap(mans_gap, accumulated_plan_tool_results, plan_trace=plan_trace_for_gap)
+                (has_m_gap, gap_detail) = mandatory_observation_gap(mans_gap, accumulated_tick_tool_results, plan_trace=trace)
                 if has_m_gap:
                     mandatory_notice = format_mandatory_gap_user_notice(gap_detail)
                     _LLM_PDCA_LOG.warning('mandatory_fallback', extra={'mandatory_fallback_reason': ','.join(gap_detail.get('reason_codes') or []), 'mandatory_missing': gap_detail.get('missing'), 'mandatory_failed': gap_detail.get('failed'), 'mandatory_permission_denied_tools': gap_detail.get('permission_denied_tools'), 'mandatory_gather_budget_limited': gap_detail.get('gather_budget_limited'), 'tool_router_threshold_revision': snap_gap.get('threshold_revision'), 'tool_router_registry_revision': snap_gap.get('tool_registry_revision')})

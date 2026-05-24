@@ -2,30 +2,33 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from app.commands.agent_command_context import command_context_for_npc_agent
 from app.commands.base import CommandContext
-from app.core.config_manager import get_config
-from app.core.log import LoggerNames, get_logger
-from app.core.log.aico_observability import get_aico_max_phase_output_chars, is_aico_observability_enabled
 from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, ThinkingFramework
 from app.game_engine.agent_runtime.memory_port import MemoryPort, SqlAlchemyMemoryPort
+from app.game_engine.agent_runtime.thinking_pipeline import AgentTickHooks
 from app.models.graph import Node
 if TYPE_CHECKING:
     from app.core.settings import AgentLlmServiceConfig
     from app.game_engine.agent_runtime.agent_tick_context import NpcAgentTickInputs
     from app.game_engine.agent_runtime.llm_client import LlmClient
+    from app.game_engine.agent_runtime.observability import AgentRuntimeObservability
+    from app.game_engine.agent_runtime.resolved_tool_surface import ResolvedToolSurface
     from app.game_engine.agent_runtime.tool_calling import ToolSchema
     from app.game_engine.agent_runtime.tooling import ToolExecutor
 else:
+    AgentRuntimeObservability = Any
+    ResolvedToolSurface = Any
     ToolExecutor = Any
     ToolSchema = Any
 
 class AgentWorker:
     """Binds a ThinkingFramework with ports (memory + optional tools)."""
 
-    def __init__(self, *, memory: MemoryPort, framework: ThinkingFramework, tools: Optional[ToolExecutor]=None, tool_command_context: Optional[CommandContext]=None, tool_manifest_text: str='', tool_schemas: Optional[List[ToolSchema]]=None):
+    def __init__(self, *, memory: MemoryPort, framework: ThinkingFramework, tools: Optional[ToolExecutor]=None, tool_command_context: Optional[CommandContext]=None, tool_manifest_text: str='', tool_schemas: Optional[List[ToolSchema]]=None, resolved_tool_surface: Optional[ResolvedToolSurface]=None):
         self.memory = memory
         self.framework = framework
         self.tools = tools
         self.tool_command_context = tool_command_context
+        self.resolved_tool_surface = resolved_tool_surface
         self.tool_manifest_text = tool_manifest_text or ''
         self.tool_schemas = list(tool_schemas or [])
 
@@ -63,7 +66,7 @@ class LlmPdcaAssistantWorker(AgentWorker):
     """NLP + LLM + PDCA for assistants with ``decision_mode: llm``."""
 
     @classmethod
-    def create(cls, session, agent_node_id: int, invoker_context: Optional[CommandContext]=None, *, llm_client: Optional[LlmClient]=None, agent_llm_config: Optional['AgentLlmServiceConfig']=None, tick_inputs: Optional['NpcAgentTickInputs']=None) -> 'LlmPdcaAssistantWorker':
+    def create(cls, session, agent_node_id: int, invoker_context: Optional[CommandContext]=None, *, llm_client: Optional[LlmClient]=None, agent_llm_config: Optional['AgentLlmServiceConfig']=None, tick_inputs: Optional['NpcAgentTickInputs']=None, tick_hooks: Optional[AgentTickHooks]=None, runtime_observability: Optional[AgentRuntimeObservability]=None) -> 'LlmPdcaAssistantWorker':
         from app.commands.registry import command_registry as _command_registry
         from app.game_engine.agent_runtime.agent_llm_config import resolve_agent_llm_config_for_npc_tick
         from app.game_engine.agent_runtime.agent_node_phase_llm import parse_phase_llm_from_attributes
@@ -131,13 +134,8 @@ class LlmPdcaAssistantWorker(AgentWorker):
             (manifest_text, tool_schemas) = build_llm_tool_manifest(surface, _command_registry, session=session, locale=manifest_locale)
         except Exception:
             (manifest_text, tool_schemas) = ('', [])
-        tick_hooks = None
-        cm = get_config()
-        if service_id.strip().lower() == 'aico' and is_aico_observability_enabled(cm):
-            from app.game_engine.agent_runtime.aico_observability_hooks import AicoObservabilityTickHooks
-            tick_hooks = AicoObservabilityTickHooks(get_logger(LoggerNames.AICO_AGENT), max_phase_output_chars=get_aico_max_phase_output_chars(cm))
         from app.game_engine.agent_runtime.intent_classifier_runtime import build_intent_classifier_for_tick, resolve_intent_classifier_runtime
         ic_runtime = resolve_intent_classifier_runtime(dict(cfg.extra or {}), attrs)
         intent_classifier = build_intent_classifier_for_tick(ic_runtime)
-        fw = LlmPDCAFramework(memory=mem, llm_config=cfg, instance_phase_llm=instance_phase_llm, instance_mode_models=instance_mode_models, llm=llm_impl, tools=pre_ex, tool_command_context=tool_ctx, preauthorized_tool_executor=pre_ex, tool_gather_budgets=budgets, tick_hooks=tick_hooks, tool_schemas=tool_schemas, intent_classifier=intent_classifier)
-        return cls(memory=mem, framework=fw, tools=pre_ex, tool_command_context=tool_ctx, tool_manifest_text=manifest_text, tool_schemas=tool_schemas)
+        fw = LlmPDCAFramework(memory=mem, llm_config=cfg, instance_phase_llm=instance_phase_llm, instance_mode_models=instance_mode_models, llm=llm_impl, tools=pre_ex, tool_command_context=tool_ctx, preauthorized_tool_executor=pre_ex, tool_gather_budgets=budgets, tick_hooks=tick_hooks, tool_schemas=tool_schemas, intent_classifier=intent_classifier, observability=runtime_observability)
+        return cls(memory=mem, framework=fw, tools=pre_ex, tool_command_context=tool_ctx, tool_manifest_text=manifest_text, tool_schemas=tool_schemas, resolved_tool_surface=surface)

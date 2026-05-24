@@ -61,13 +61,12 @@ def _log_llm_http_error(*, url: str, status_code: int, elapsed_ms: float, body: 
     summary = _summarize_llm_request_body(body)
     prefix = ''
     try:
-        from app.core.log import LoggerNames
-        from app.core.log.aico_observability import get_aico_correlation_from_context, get_aico_run_id_from_context
-        rid = get_aico_run_id_from_context()
-        corr = get_aico_correlation_from_context()
+        from app.game_engine.agent_runtime.observability import get_agent_runtime_correlation_from_context, get_agent_runtime_logger_name_from_context, get_agent_runtime_run_id_from_context
+        rid = get_agent_runtime_run_id_from_context()
+        corr = get_agent_runtime_correlation_from_context()
         if rid is not None or corr is not None:
             prefix = f'run_id={rid!s} correlation_id={corr!s}\n'
-            log = logging.getLogger(LoggerNames.AICO_AGENT)
+            log = logging.getLogger(get_agent_runtime_logger_name_from_context() or 'app.game_engine.llm_http')
         else:
             log = logging.getLogger('app.game_engine.llm_http')
     except Exception:
@@ -117,8 +116,8 @@ def httpx_post_json(url: str, *, headers: Dict[str, str], body: Dict[str, Any], 
                 raise RuntimeError('LLM response JSON root must be an object')
             try:
                 from app.core.config_manager import get_config
-                from app.core.log.aico_observability import log_aico_http_exchange
-                log_aico_http_exchange(get_config(), url=url, status_code=status, elapsed_ms=elapsed_ms, request_body=body, response_data=data)
+                from app.game_engine.agent_runtime.observability import log_agent_runtime_http_exchange
+                log_agent_runtime_http_exchange(get_config(), url=url, status_code=status, elapsed_ms=elapsed_ms, request_body=body, response_data=data)
             except Exception:
                 pass
             return data
