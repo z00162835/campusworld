@@ -223,7 +223,7 @@ AICO 的 **可验收执行语义**（与仅声明 `decision_mode: llm` 不同）
 
 ### 5.8 AICO Runtime Profile（L3′ / L4′ 策略承载）
 
-AICO 专属运行时策略通过最小 **`AicoRuntimeProfile`** 承载：公共 `run_npc_agent_nlp_tick` 仍负责配置解析、STM/LTM、Worker 构造、PDCA tick、STM append 与 `CommandResult`；profile 只提供 AICO 专属策略钩子。当前 profile 覆盖：informational manifest subset、AICO NDJSON tick lifecycle、REPL progress hint、AICO observability hooks、full-chain debug log 开关。`LlmPDCAFramework`、`ToolGather`、`ResolvedToolSurface` 不得依赖或 import AICO profile。
+AICO 专属运行时策略通过最小 **`AicoRuntimeProfile`** 承载：公共 `run_npc_agent_nlp_tick` 仍负责配置解析、STM/LTM、Worker 构造、PDCA tick、STM append 与 `CommandResult`；profile 只提供 AICO 专属策略钩子。当前 profile 覆盖：informational manifest subset、AICO NDJSON tick lifecycle、REPL progress hint、AICO observability hooks、full-chain debug log 开关。informational manifest subset **必须**基于 `LlmPdcaAssistantWorker.create` 已冻结的 `ResolvedToolSurface` 派生，不得在 profile 层重新读取 `tool_allowlist` 或重新执行权限面构建；若 worker 未暴露冻结面，则不覆盖 manifest。框架内 full-chain logging 只能调用通用 observability adapter，由 AICO profile 注入具体实现与 tick scope。`LlmPDCAFramework`、`ToolGather`、`ResolvedToolSurface` 不得依赖或 import AICO profile。
 
 完整 AICO orchestrator（复制或接管通用 tick 生命周期）不在当前阶段采用；若未来需要，须单独 ADR 说明如何避免 STM/LTM、ToolGather、trace 行为与通用 `npc_agent` 漂移。
 

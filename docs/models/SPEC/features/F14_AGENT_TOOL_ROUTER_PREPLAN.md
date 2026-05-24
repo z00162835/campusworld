@@ -52,6 +52,8 @@
 
 **顺序与参数填充** 仍由 Plan / ReAct 负责；F14 只约束 **允许出现的工具名集合** 与 **提示**，除非启用硬门控。
 
+**mandatory 达成范围（实现约束）：** **同一 tick 内任一允许工具阶段**（当前实现为 Plan、Do、Check retry 后的 Plan/Do；未来若 Check 阶段启用 ToolGather 也自动纳入）产生该工具的 **成功 ToolObservation** 即视为达成。`mandatory_observation_gap` trace 必须保留 `missing`、`failed`、`reason_codes` 等既有键，并可追加 `checked_phases`、`observed_tools`、`observed_phases_by_tool` 便于区分「路由缺失」与「执行阶段未达成」。
+
 ### 3.3 `candidates[].tier` 语义（已决议 P1）
 
 **`tier`** 表示该工具进入 **`candidates[]` 的最后一跳来源**（便于日志与 §9 对比），**不等于**整条路由的 `source`（管线级）。
@@ -65,9 +67,11 @@
 
 **排序建议**：同分时 **`rerank` > embedding > rule`**（或按 `score` 全局排序）；实现须在日志中固定 documented。
 
-### 3.4 `mandatory` 执行异常与兜底反馈（已决议 D6）
+### 3.4 `mandatory` repair retry 与兜底反馈（已决议 D6 / D10 / D11）
 
-当 **`mandatory_tool_names[]` 中任一工具**在本轮执行链路中出现 **超时**、**权限拒绝**、**用户中断**，或 **同一 mandatory 集合仅部分达成 ToolObservation**（「部分成功」的判定边界由实现与产品共同细化）：**不再进入**基于 `RETRY: need_tools=` 的常规重试主路径作为主要补救（可与 Check 解耦）；统一转入 **兜底反馈**——向用户返回 **结构化失败说明**（原因码：timeout / denied / interrupted / partial）、已成功的观测摘要（若有）、以及可选 **`clarify` / 下一步建议**。须打结构化日志（如 `mandatory_fallback_reason`），供 §7 与 **执行达成率** 分列统计。
+当 **`mandatory_tool_names[]`** 在 Check 前仍缺少成功 ToolObservation 时，当前阶段允许 **一次 bounded mandatory repair retry**：框架将缺失或失败的 mandatory 工具写入 `mandatory_gap_retry_override` / `check_retry_triggered` trace，并仅追加一次 retry Plan / Do。该 retry 不是无限循环，也不是自由文本 `RETRY: need_tools=` 的常规主路径；retry 后仍缺失、失败、权限拒绝或预算受限时，统一进入兜底反馈。
+
+P0 用户可见兜底为 **短系统提示追加**：不得覆盖已有助手正文，只附加缺失/失败工具和权限、预算等简短提示。机器侧必须保持结构化 trace / log（例如 `reason_codes`、`missing`、`failed`、`permission_denied_tools`、`gather_budget_limited`、`mandatory_fallback_reason`），供 §7 与 **执行达成率** 分列统计。完整结构化用户失败块（原因码 `timeout / denied / interrupted / partial`、已成功观测摘要、`clarify` / 下一步建议）作为 P1 后续增强，不作为本轮 P0 门禁。
 
 ---
 
@@ -396,7 +400,7 @@ flowchart TB
 | **结构化路由审计 `router_trace`** | 除 `source` / `tier` 外，规范可选 **`router_trace`**（或等价 payload）：EnrichQuery **规范化文本或哈希**、阶段 A 的 **K**、**阈值表版本**、阶段 B **模型 id**、**被丢弃候选及原因**（低于 `max_score`、margin 不足等）。便于排障与离线回放（Claude Code 类助手强依赖「为何选/未选某工具」）。 |
 | **与 ToolGather / tick 预算挂钩** | 显式交叉引用 [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) **ToolGather 上限**与 tick 超时：**mandatory 的 ToolObservation 达成**会受工具延迟、权限拒绝影响，与「路由精度」分解指标；§7 宜分栏 **路由 recall** vs **执行达成率**（§6 已提示，实现须落实日志字段）。 |
 | **F11 `informational` 与阶段 B** | **已决议（D1）**：仅缩小 K，见 §4；本行保留作对标说明。 |
-| **并行多工具与 mandatory** | 若 Plan 支持 **同一轮多工具调用**：须定义 **mandatory** 是否要求 **同一 ToolGather 批次内全部完成**，或允许 **分阶段**；否则 §3.2「当前 tick」与 Check 证据易产生歧义。 |
+| **并行多工具与 mandatory** | **已定：允许分阶段达成**。同一 tick 内 Plan、Do、retry Plan/Do（及未来启用的 Check ToolGather）任一阶段的成功 ToolObservation 均可满足 mandatory；无需同一 ToolGather 批次内全部完成。 |
 | **冷启动与空词表** | 无 **激活 lexicon**、空 embedding 索引或 manifest 刚变更未重建时，规定 **降级路径**（仅规则+GLiNER、`clarify`、或暂时禁止 `schema_subset`），避免静默劣质检索。词表侧工程原则与 **手工 `lexicon -b`** 对齐 **§4.1a**、**§4.1**（D8）。 |
 | **训练数据治理（附录 C）** | LLM 生成样本须约定 **脱敏、授权副本、与 gold 冲突时的优先级**、人工抽检比例；满足常见企业 agent 数据合规习惯。 |
 | **确定性回放 bundle** | 评测与 CI 固定最小输入包：`user_message`、`world_snapshot`、**STM 片段**、`lexicon_active_id`、`tool_registry_revision` / manifest hash、**路由配置与阈值版本**，支撑 mandatory / clarify 回归。 |

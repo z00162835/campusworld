@@ -8,6 +8,8 @@
 
 **实现锚点：** `[backend/app/commands/npc_agent_nlp.py](../../../../backend/app/commands/npc_agent_nlp.py)`（`run_npc_agent_nlp_tick`）、`[backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py](../../../../backend/app/game_engine/agent_runtime/frameworks/llm_pdca.py)`（`LlmPDCAFramework`、`_phase_react_loop`、`_call_llm_dual_track`）、`[backend/app/game_engine/agent_runtime/worker.py](../../../../backend/app/game_engine/agent_runtime/worker.py)`（`LlmPdcaAssistantWorker`）、`[backend/app/game_engine/agent_runtime/resolved_tool_surface.py](../../../../backend/app/game_engine/agent_runtime/resolved_tool_surface.py)`（`build_resolved_tool_surface`、`PreauthorizedToolExecutor`）、`[backend/app/game_engine/agent_runtime/tool_gather.py](../../../../backend/app/game_engine/agent_runtime/tool_gather.py)`（`gather_tool_observations`、`parse_tool_invocation_plan_from_text`、`ToolGatherBudgets`）、`[backend/app/game_engine/agent_runtime/tool_calling.py](../../../../backend/app/game_engine/agent_runtime/tool_calling.py)`（`ToolSchema`、`ToolCall`、`ToolResult`、`ConversationTurn`、`CompleteWithToolsResult`，**provider-agnostic tool_use 协议**）、`[backend/app/game_engine/agent_runtime/aico_world_context.py](../../../../backend/app/game_engine/agent_runtime/aico_world_context.py)`（`build_world_snapshot_from_session`、`build_llm_tool_manifest`）、`[backend/app/game_engine/agent_runtime/system_primer_context.py](../../../../backend/app/game_engine/agent_runtime/system_primer_context.py)`（`build_ontology_primer`、`identity_and_invariants_snippet`、`primer_reload_if_stale`）、`[backend/app/game_engine/agent_runtime/llm_client.py](../../../../backend/app/game_engine/agent_runtime/llm_client.py)`（`LlmClient.supports_tools`、`complete_with_tools`）、`[backend/app/game_engine/agent_runtime/tooling.py](../../../../backend/app/game_engine/agent_runtime/tooling.py)`（`RegistryToolExecutor`、`ToolRouter`）、`[backend/app/commands/agent_command_context.py](../../../../backend/app/commands/agent_command_context.py)`（`command_context_for_npc_agent`）、`[backend/app/commands/system_primer_command.py](../../../../backend/app/commands/system_primer_command.py)`（`primer` 系统命令）、`[backend/app/commands/graph_inspect_commands.py](../../../../backend/app/commands/graph_inspect_commands.py)`（`find` / `describe` 系统命令）、`[backend/app/commands/invoke.py](../../../../backend/app/commands/invoke.py)`（进程内命令网关语义）。**本 SPEC 为需求与契约；实现决策见 [ADR-F08-Tool-Gather](../../../../architecture/adr/ADR-F08-Tool-Gather.md)。**
 
+**补充实现锚点：** `[backend/app/game_engine/agent_runtime/tool_observation_policy.py](../../../../backend/app/game_engine/agent_runtime/tool_observation_policy.py)`（ToolObservation `full` / `summary` / `blocked` 策略）、`[backend/app/game_engine/agent_runtime/profiles/base.py](../../../../backend/app/game_engine/agent_runtime/profiles/base.py)` / `[registry.py](../../../../backend/app/game_engine/agent_runtime/profiles/registry.py)`（最小 runtime profile 协议与注册）、`[backend/app/game_engine/agent_runtime/aico/profile.py](../../../../backend/app/game_engine/agent_runtime/aico/profile.py)`（AICO 专属 profile）、`[backend/app/game_engine/agent_runtime/observability.py](../../../../backend/app/game_engine/agent_runtime/observability.py)`（框架侧通用 observability adapter）。
+
 ---
 
 ## 1. Goal
@@ -68,7 +70,7 @@
 ### 5.1 实现要点（与 §5.2 对齐）
 
 - **F03** 约定 **`tool_allowlist`** 与注册表工具面；**`agent tool`** 可列出白名单内有效工具。
-- **初始化冻结权限面**：`LlmPdcaAssistantWorker.create` 构建 **`ResolvedToolSurface`**（`tool_allowlist` ∩ `get_available_commands(tool_ctx)`，并移除默认禁止项如 **`aico`**），运行时由 **`PreauthorizedToolExecutor`** 执行命令（集合成员校验 + `execute`，避免 tick 内热路径重复 `authorize_command`；权限与策略的交集在构造面时一次性等价于原链）。
+- **初始化冻结权限面**：`LlmPdcaAssistantWorker.create` 构建并持有 **`ResolvedToolSurface`**（`tool_allowlist` ∩ `get_available_commands(tool_ctx)`，并移除默认禁止项如 **`aico`**），该冻结面是本 worker 工具执行、manifest 生成与 profile 派生子集的唯一真源。运行时由 **`PreauthorizedToolExecutor`** 执行命令（集合成员校验 + `execute`，避免 tick 内热路径重复 `authorize_command`；权限与策略的交集在构造面时一次性等价于原链）。
 - **ToolGather**：对 LLM 输出中解析到的 **`llm_tool_plan`（JSON，`commands` 数组，0..N 条）** 顺序执行，生成 **ToolObservation**，写入 **`command_trace`**；**各 PDCA 阶段**在阶段 LLM 调用之后均可解析并执行一批命令（多工具、多阶段），再注入**后续**阶段 LLM 的 `user` 侧（见 `llm_pdca.py`）。
 - **上限**：`agents.llm` 的 `extra` 可选键 `tool_gather_max_commands_tick`、`tool_gather_max_chars_tick`、`tool_gather_max_commands_phase`、`tool_gather_max_rounds_per_phase`（见 `tool_gather.py`）。
 
@@ -245,7 +247,7 @@ message:
 
 **拼装入口**：
 - 静态：`settings.yaml` 的 `agents.llm.by_service_id.aico.system_prompt` + `phase_prompts`（v2 已全面重写）。
-- Tier-2：`LlmPdcaAssistantWorker.create` 在 worker 生命期内计算 `build_llm_tool_manifest(surface, command_registry, session=...)`；每 tick `run_npc_agent_nlp_tick` 计算 `build_world_snapshot_from_session(...)`，二者通过 `payload.world_snapshot` / `payload.tool_manifest_text` 传入，由 `_assemble_plan_user` 组装。
+- Tier-2：`LlmPdcaAssistantWorker.create` 在 worker 生命期内计算并保存冻结 `ResolvedToolSurface`，再由该 surface 生成 `build_llm_tool_manifest(surface, command_registry, session=...)`；每 tick `run_npc_agent_nlp_tick` 计算 `build_world_snapshot_from_session(...)`，二者通过 `payload.world_snapshot` / `payload.tool_manifest_text` 传入，由 `_assemble_plan_user` 组装。AICO informational manifest subset 只能从同一冻结 surface 派生，不得重建权限面。
 - Tier-3：由 LLM 自行决定是否调用 `primer` / `find` / `describe` / `look` 等 **新增工具**，其输出自然成为下一轮 ReAct 的观测。
 
 ### 12.4 Check 阶段守门与 `RETRY` 信号

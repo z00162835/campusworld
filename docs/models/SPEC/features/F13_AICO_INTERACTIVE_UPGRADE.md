@@ -6,7 +6,7 @@
 
 **交叉引用：** [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（禁止嵌套调度 `aico` NLP）、[**F10**](F10_AICO_PERFORMANCE_AND_LATENCY.md)（tick 延迟与可观测性）、[**F12**](F12_NLP_AGENT_MULTI_TURN_SESSION_MEMORY.md)（STM scope、`agent_conversation_thread`）。
 
-**实现锚点（现状 / 目标）：** [`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`AicoCommand`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/conversation_stm_service.py`](../../../../backend/app/game_engine/agent_runtime/conversation_stm_service.py)、[`backend/app/ssh/console.py`](../../../../backend/app/ssh/console.py)（PTY 输入）、[`backend/app/game_engine/agent_runtime/llm_providers/minimax_anthropic.py`](../../../../backend/app/game_engine/agent_runtime/llm_providers/minimax_anthropic.py)（HTTP 流式扩展）、[`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)。
+**实现锚点（现状 / 目标）：** [`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py)（`AicoCommand`）、[`backend/app/commands/npc_agent_nlp.py`](../../../../backend/app/commands/npc_agent_nlp.py)（`run_npc_agent_nlp_tick`）、[`backend/app/game_engine/agent_runtime/aico/profile.py`](../../../../backend/app/game_engine/agent_runtime/aico/profile.py)（AICO 运行时策略）、[`backend/app/game_engine/agent_runtime/conversation_stm_service.py`](../../../../backend/app/game_engine/agent_runtime/conversation_stm_service.py)、[`backend/app/ssh/console.py`](../../../../backend/app/ssh/console.py)（PTY 输入）、[`backend/app/game_engine/agent_runtime/llm_providers/minimax_anthropic.py`](../../../../backend/app/game_engine/agent_runtime/llm_providers/minimax_anthropic.py)（HTTP 流式扩展）、[`backend/config/settings.yaml`](../../../../backend/config/settings.yaml)。
 
 ---
 
@@ -58,6 +58,7 @@
 - **`AicoCommand`**：已实现 `-nd`、`-l`、`-cd`、裸消息；**尚未**实现 `-i`、`-d`、`-his`；响应为 **单次 `CommandResult.message`**（无 NDJSON 侧信道）。
 - **持久 transcript**：`enable_conversation_stm` 开启且 tick **`ok`** 时，`agent_conversation_stm.messages` **就地追加** user/assistant 对（见 `conversation_stm_service.append_turns_to_messages`）；passthrough **不写** STM。
 - **线程目录**：`agent_conversation_thread`；`title_snippet` 由 `touch_thread_metadata` 等在成功 tick 后更新。
+- **AICO 运行时策略**：AICO 的 NDJSON tick lifecycle、REPL progress hint 与 observability hooks 由 `AicoRuntimeProfile` 承载；wire shape 与本 SPEC 保持一致。当前实现仍是块级流式/侧信道生命周期，不新增真实 token streaming 或全链路 cancel 能力。
 
 ---
 
