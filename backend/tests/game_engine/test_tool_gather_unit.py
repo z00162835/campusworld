@@ -14,8 +14,10 @@ from app.game_engine.agent_runtime.tool_gather import (
     ToolGatherBudgets,
     ToolGatherCounters,
     ToolInvocationPlan,
+    format_tool_batch_limit_hint,
     format_tool_observation_block,
     gather_tool_observations,
+    max_executable_commands_this_round,
     parse_tool_invocation_plan_from_text,
 )
 from app.game_engine.agent_runtime.tool_observation_policy import ToolObservationPolicy
@@ -65,6 +67,23 @@ def test_gather_respects_tick_cap():
     )
     assert len(fake.calls) == 2
     assert "tick_max_commands" in str(trace[-1])
+
+
+@pytest.mark.unit
+def test_max_executable_commands_this_round():
+    budgets = ToolGatherBudgets(max_commands_per_tick=16, max_commands_per_phase=8)
+    assert max_executable_commands_this_round(budgets, ToolGatherCounters(commands_run=0)) == 8
+    assert max_executable_commands_this_round(budgets, ToolGatherCounters(commands_run=10)) == 6
+    assert max_executable_commands_this_round(budgets, ToolGatherCounters(commands_run=16)) == 0
+
+
+@pytest.mark.unit
+def test_format_tool_batch_limit_hint():
+    budgets = ToolGatherBudgets(max_commands_per_tick=16, max_commands_per_phase=8)
+    hint = format_tool_batch_limit_hint(budgets, ToolGatherCounters())
+    assert "at most 8 tool call" in hint
+    exhausted = format_tool_batch_limit_hint(budgets, ToolGatherCounters(commands_run=16))
+    assert "no command executions remain" in exhausted
 
 
 @pytest.mark.unit

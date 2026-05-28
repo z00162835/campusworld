@@ -38,6 +38,29 @@ def tool_gather_budgets_from_agent_extra(extra: Optional[Dict[str, Any]]) -> Too
     ex = extra or {}
     return ToolGatherBudgets(max_commands_per_tick=int(ex.get('tool_gather_max_commands_tick', 16)), max_chars_observations_per_tick=int(ex.get('tool_gather_max_chars_tick', 12000)), max_commands_per_phase=int(ex.get('tool_gather_max_commands_phase', 8)), max_tool_rounds_per_phase=int(ex.get('tool_gather_max_rounds_per_phase', 3)))
 
+
+def max_executable_commands_this_round(budgets: ToolGatherBudgets, counters: ToolGatherCounters) -> int:
+    """How many commands may run in the next gather batch (tick + per-round caps)."""
+    tick_remaining = max(0, int(budgets.max_commands_per_tick) - int(counters.commands_run))
+    phase_cap = max(0, int(budgets.max_commands_per_phase))
+    return min(tick_remaining, phase_cap)
+
+
+def format_tool_batch_limit_hint(budgets: ToolGatherBudgets, counters: ToolGatherCounters) -> str:
+    """LLM-facing guidance: max tool calls to emit in one assistant turn."""
+    n = max_executable_commands_this_round(budgets, counters)
+    if n <= 0:
+        return (
+            'Tool batch limit: no command executions remain for this tick; '
+            'answer from prior observations or ask the user to simplify.'
+        )
+    return (
+        f'Tool batch limit: emit at most {n} tool call(s) per assistant turn '
+        f'(per-round cap {budgets.max_commands_per_phase}, tick cap {budgets.max_commands_per_tick}). '
+        'If you need more evidence, wait for observations and use another tool round.'
+    )
+
+
 def parse_tool_invocation_plan_from_text(text: str) -> ToolInvocationPlan:
     """
     Extract first JSON object with a "commands" array from LLM output (F08 §7).

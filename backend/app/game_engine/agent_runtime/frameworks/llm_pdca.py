@@ -22,7 +22,7 @@ from app.game_engine.agent_runtime.tool_calling import AssistantToolUseTurn, Com
 from app.game_engine.agent_runtime.tool_router import format_tool_router_hint, parse_tool_router_config, run_tool_router
 from app.game_engine.agent_runtime.tool_router.mandatory_gap import format_mandatory_gap_user_notice, mandatory_observation_gap
 from app.game_engine.agent_runtime.tool_router.router_result import EnforcementLevel
-from app.game_engine.agent_runtime.tool_gather import ToolGatherBudgets, ToolGatherCounters, ToolInvocationPlan, format_tool_observation_block, gather_tool_observations, parse_tool_invocation_plan_from_text, tool_gather_budgets_from_agent_extra
+from app.game_engine.agent_runtime.tool_gather import ToolGatherBudgets, ToolGatherCounters, ToolInvocationPlan, format_tool_batch_limit_hint, format_tool_observation_block, gather_tool_observations, max_executable_commands_this_round, parse_tool_invocation_plan_from_text, tool_gather_budgets_from_agent_extra
 from app.game_engine.agent_runtime.tool_runtime_view import resolve_tool_runtime_view
 from app.game_engine.agent_runtime.tooling import ToolExecutor
 _CHECK_RETRY_RE = re.compile('RETRY\\s*:\\s*need_tools\\s*=\\s*([A-Za-z0-9_.\\-]+(?:\\s*,\\s*[A-Za-z0-9_.\\-]+)*)', flags=re.IGNORECASE)
@@ -36,7 +36,7 @@ def assemble_plan_skip_do_draft(plan_out: str, _plan_tools_text: str) -> str:
     call sites and tests.
     """
     return (plan_out or '').strip()
-_DEFAULT_PD_CA_SLIM_FOLLOWUP = 'You are a CampusWorld npc_agent continuing after Plan (Do / Check / Act).\n- Ground factual claims about live graph or command output only in tool observations or text already present in this user turn (Plan, Memory, Draft). Do not invent nodes, locations, or command results.\n- Tool calling: use native tool_use when the runtime supports it; otherwise emit exactly one fenced JSON block of the form {"commands": [{"name": "<registered_tool>", "args": ["..."]}, ...]}. Do not claim a tool ran unless observations include its output.\n- Match the user\'s language; stay concise unless the phase prompt asks otherwise.'
+_DEFAULT_PD_CA_SLIM_FOLLOWUP = 'You are a CampusWorld npc_agent continuing after Plan (Do / Check / Act).\n- Ground factual claims about live graph or command output only in tool observations or text already present in this user turn (Plan, Memory, Draft). Do not invent nodes, locations, or command results.\n- Tool calling: use native tool_use when the runtime supports it; otherwise emit exactly one fenced JSON block of the form {"commands": [{"name": "<registered_tool>", "args": ["..."]}, ...]}. Do not claim a tool ran unless observations include its output. Respect the per-turn tool batch limit in the system prompt.\n- Match the user\'s language; stay concise unless the phase prompt asks otherwise.'
 
 def _resolve_pdca_slim_followup_system(cfg: AgentLlmServiceConfig) -> Optional[str]:
     """Return slim follow-up system text, or None to keep the full base system on every phase.
@@ -314,7 +314,9 @@ class LlmPDCAFramework(ThinkingFramework):
         try:
             for round_idx in range(max_rounds):
                 t_llm = time.perf_counter()
-                (text, calls, entry) = self._call_llm_dual_track(pdca_phase, system, turns, ctx)
+                budget_hint = format_tool_batch_limit_hint(self._tool_budgets, counters)
+                system_for_llm = f'{system}\n\n{budget_hint}' if budget_hint else system
+                (text, calls, entry) = self._call_llm_dual_track(pdca_phase, system_for_llm, turns, ctx)
                 entry = dict(entry)
                 entry['round'] = round_idx + 1
                 trace.append(entry)
@@ -338,23 +340,39 @@ class LlmPDCAFramework(ThinkingFramework):
                 if not view.can_execute:
                     trace.append({'step': 'tool_gather_skip', 'phase': pdca_phase, 'reason': view.reason, 'round': round_idx + 1})
                     break
-                plan = tool_calls_to_invocation_plan(calls)
+                max_exec = max_executable_commands_this_round(self._tool_budgets, counters)
+                calls_to_run = list(calls[:max_exec])
+                calls_deferred = list(calls[max_exec:])
+                if calls_deferred:
+                    trace.append({'step': 'tool_cap_pre_truncated', 'phase': pdca_phase, 'round': round_idx + 1, 'requested': len(calls), 'executed': len(calls_to_run), 'deferred': len(calls_deferred)})
+                    _LLM_PDCA_LOG.warning('tool_batch_pre_truncated phase=%s round=%s requested=%s executed=%s', pdca_phase, round_idx + 1, len(calls), len(calls_to_run))
+                pre_truncated_reason = 'tick_max_commands' if max_exec <= 0 and counters.commands_run >= self._tool_budgets.max_commands_per_tick else 'phase_max_commands'
                 assert view.executor is not None and view.tool_context is not None
                 t_gather = time.perf_counter()
-                (obs_text, gather_entries) = gather_tool_observations(view.executor, view.tool_context, plan, budgets=view.budgets, counters=counters, phase_label=pdca_phase)
+                if calls_to_run:
+                    plan = tool_calls_to_invocation_plan(calls_to_run)
+                    (obs_text, gather_entries) = gather_tool_observations(view.executor, view.tool_context, plan, budgets=view.budgets, counters=counters, phase_label=pdca_phase)
+                else:
+                    obs_text = ''
+                    gather_entries = [{'step': 'tool_cap', 'detail': pre_truncated_reason, 'phase': pdca_phase}]
                 trace.extend(gather_entries)
                 _trace_phase_timing(trace, scope='tool_gather', phase=pdca_phase, elapsed_ms=(time.perf_counter() - t_gather) * 1000.0, round_idx=round_idx + 1)
                 if obs_text:
                     cm = get_config()
                     if self._observability.should_log_full_chain(cm):
                         self._observability.log_tool_observations_text(cm, phase=pdca_phase, observation_text=obs_text)
-                round_results: List[ToolResult] = []
                 exec_entries = [e for e in gather_entries if e.get('step') == 'tool_exec']
-                for (i, e) in enumerate(exec_entries):
-                    if i >= len(calls):
-                        break
-                    c = calls[i]
-                    round_results.append(ToolResult(id=c.id or f'call_{round_idx}_{i}', name=c.name, ok=bool(e.get('success', False)), text=_extract_observation_text_for_call(obs_text, i + 1)))
+                round_results = build_round_tool_results(
+                    calls=calls,
+                    executed_call_count=len(calls_to_run),
+                    exec_entries=exec_entries,
+                    obs_text=obs_text,
+                    gather_entries=gather_entries,
+                    round_idx=round_idx,
+                    pre_truncated_reason=pre_truncated_reason,
+                )
+                if len(round_results) != len(calls):
+                    _LLM_PDCA_LOG.warning('tool_result_count_mismatch phase=%s round=%s calls=%s results=%s', pdca_phase, round_idx + 1, len(calls), len(round_results))
                 all_results.extend(round_results)
                 turns.append(AssistantToolUseTurn(text=text or '', tool_calls=[ToolCall(id=c.id, name=c.name, args=list(c.args)) for c in calls]))
                 turns.append(ToolResultsTurn(results=round_results))
@@ -594,6 +612,33 @@ def _render_turns_as_text(turns: Sequence[ConversationTurn]) -> str:
             if block:
                 parts.append('Tool observations:\n' + block)
     return '\n\n'.join((p for p in parts if p.strip()))
+
+def _gather_cap_reason(gather_entries: Sequence[Dict[str, Any]]) -> str:
+    for entry in gather_entries:
+        if entry.get('step') == 'tool_cap':
+            return str(entry.get('detail') or 'budget_exhausted')
+    return 'budget_exhausted'
+
+
+def _skip_tool_result(call: ToolCall, reason: str, *, round_idx: int, index: int) -> ToolResult:
+    call_id = (call.id or '').strip() or f'call_{round_idx}_{index}'
+    return ToolResult(id=call_id, name=call.name, ok=False, text=f'[tool skipped: {reason}; not executed]')
+
+
+def build_round_tool_results(*, calls: Sequence[ToolCall], executed_call_count: int, exec_entries: Sequence[Dict[str, Any]], obs_text: str, gather_entries: Sequence[Dict[str, Any]], round_idx: int, pre_truncated_reason: str='phase_max_commands') -> List[ToolResult]:
+    """Build one :class:`ToolResult` per ``ToolCall``, preserving call order."""
+    cap_reason = _gather_cap_reason(gather_entries)
+    results: List[ToolResult] = []
+    exec_n = len(exec_entries)
+    for (i, call) in enumerate(calls):
+        if i < executed_call_count and i < exec_n:
+            results.append(ToolResult(id=(call.id or '').strip() or f'call_{round_idx}_{i}', name=call.name, ok=bool(exec_entries[i].get('success', False)), text=_extract_observation_text_for_call(obs_text, i + 1)))
+        elif i < executed_call_count:
+            results.append(_skip_tool_result(call, cap_reason, round_idx=round_idx, index=i))
+        else:
+            results.append(_skip_tool_result(call, pre_truncated_reason, round_idx=round_idx, index=i))
+    return results
+
 
 def _extract_observation_text_for_call(full_text: str, index: int) -> str:
     """Slice a single observation block out of the concatenated gather text.

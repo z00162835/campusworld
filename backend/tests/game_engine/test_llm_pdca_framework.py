@@ -561,3 +561,96 @@ def test_empty_final_text_uses_extra_npc_agent_empty_reply_message():
     assert any(
         isinstance(x, dict) and x.get("step") == "empty_reply_fallback" for x in finish["trace"]
     )
+
+
+@pytest.mark.unit
+def test_build_round_tool_results_fills_skipped_slots_for_budget():
+    from app.game_engine.agent_runtime.frameworks.llm_pdca import build_round_tool_results
+    from app.game_engine.agent_runtime.tool_calling import ToolCall
+
+    calls = [ToolCall(id=f'call_function_x_{i}', name='help', args=[]) for i in range(1, 10)]
+    exec_entries = [{'step': 'tool_exec', 'success': True} for _ in range(8)]
+    results = build_round_tool_results(
+        calls=calls,
+        executed_call_count=8,
+        exec_entries=exec_entries,
+        obs_text='',
+        gather_entries=[{'step': 'tool_cap', 'detail': 'phase_max_commands'}],
+        round_idx=0,
+    )
+    assert len(results) == 9
+    assert results[8].ok is False
+    assert 'phase_max_commands' in results[8].text
+    assert {r.id for r in results} == {c.id for c in calls}
+
+
+@pytest.mark.unit
+def test_react_loop_nine_tool_calls_satisfies_anthropic_wire_invariant(monkeypatch):
+    from app.game_engine.agent_runtime.llm_providers.minimax_anthropic import (
+        _turns_to_anthropic_messages,
+        _validate_anthropic_tool_messages,
+    )
+    from app.game_engine.agent_runtime.tool_calling import CompleteWithToolsResult, ToolCall, ToolSchema
+
+    class _NineCallLlm:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def supports_tools(self) -> bool:
+            return True
+
+        def complete(self, *, system: str, user: str, call_spec=None) -> str:
+            return 'done'
+
+        def complete_with_tools(self, *, system: str, turns, tools, call_spec=None):
+            self.calls += 1
+            if self.calls == 1:
+                batch = [
+                    ToolCall(id=f'call_function_ktd1g7ai1ss4_{i}', name='help', args=[])
+                    for i in range(1, 10)
+                ]
+                return CompleteWithToolsResult(text='', tool_calls=batch, finish_reason='tool_use')
+            msgs = _turns_to_anthropic_messages(turns)
+            _validate_anthropic_tool_messages(msgs, allowed_tool_names={'help'})
+            return CompleteWithToolsResult(text='plan done', tool_calls=[], finish_reason='stop')
+
+    class _HelpCmd:
+        name = 'help'
+
+        def execute(self, context, args):
+            from app.commands.base import CommandResult
+
+            return CommandResult.success_result('HELP')
+
+    mem = _FakeMem()
+    cfg = AgentLlmServiceConfig(
+        system_prompt='sys',
+        phase_prompts={'plan': 'P', 'do': 'D', 'check': 'C', 'act': 'A'},
+    )
+    ctx_cmd = CommandContext(user_id='1', username='u', session_id='s', permissions=[], roles=[])
+    surface = ResolvedToolSurface(allowed_command_names=frozenset({'help'}), tool_command_context=ctx_cmd)
+    pre = PreauthorizedToolExecutor(surface)
+    llm = _NineCallLlm()
+    monkeypatch.setattr(
+        'app.game_engine.agent_runtime.resolved_tool_surface.command_registry.get_command',
+        lambda _name: _HelpCmd(),
+    )
+    fw = LlmPDCAFramework(
+        memory=mem,
+        llm_config=cfg,
+        instance_phase_llm={},
+        instance_mode_models={},
+        llm=llm,
+        tools=pre,
+        tool_command_context=ctx_cmd,
+        preauthorized_tool_executor=pre,
+        tool_gather_budgets=ToolGatherBudgets(max_commands_per_phase=8, max_tool_rounds_per_phase=2),
+        tool_schemas=[ToolSchema(name='help', description='help')],
+    )
+    out = fw.run(FrameworkRunContext(agent_node_id=1, payload={'message': 'hi'}))
+    assert out.ok
+    assert llm.calls >= 2
+    assert any(
+        isinstance(x, dict) and x.get('step') == 'tool_cap_pre_truncated'
+        for x in (mem.runs[-1].get('trace') or [])
+    )
