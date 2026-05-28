@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-from app.commands.tool_semantics import get_command_tool_semantics, pick_routing_hint
+from app.commands.command_tool_semantics import get_command_tool_semantics, pick_routing_hint, resolve_command_tool_semantics
 from app.game_engine.agent_runtime.tool_calling import ToolSchema, tool_schemas_from_surface
 from app.game_engine.agent_runtime.world_runtime_queries import installed_worlds_from_session
 
@@ -114,40 +114,32 @@ def _llm_hint_from_command_node(session, name: str, *, locale: str) -> Optional[
     return None
 
 def _command_semantics_from_node(session, name: str) -> Dict[str, Any]:
-    base = get_command_tool_semantics(name)
+    sem = resolve_command_tool_semantics(name)
+    out = get_command_tool_semantics(name)
     if session is None:
-        return base
+        return out
     try:
         from app.models.graph import Node
         row = session.query(Node).filter(Node.type_code == 'system_command_ability', Node.attributes['command_name'].astext == name, Node.is_active == True).first()
         if row is None:
-            return base
+            return out
         attrs = row.attributes or {}
-        profile = str(attrs.get('interaction_profile') or '').strip().lower()
-        if profile in {'document', 'read', 'mutate'}:
-            base['interaction_profile'] = profile
-        if isinstance(attrs.get('invocation_guard'), dict):
-            base['invocation_guard'] = dict(attrs['invocation_guard'])
         routing = pick_routing_hint(attrs, 'en-US')
         if routing:
-            base['routing_hint'] = routing
+            out['routing_hint'] = routing
         if isinstance(attrs.get('routing_hint_i18n'), dict):
-            base['routing_hint_i18n'] = dict(attrs['routing_hint_i18n'])
+            out['routing_hint_i18n'] = dict(attrs['routing_hint_i18n'])
     except Exception:
-        return base
-    return base
+        return out
+    return out
 
 def _manifest_section_title(locale: str, profile: str) -> str:
     zh = str(locale or '').lower().startswith('zh')
-    if profile == 'document':
-        return '文档类（document）' if zh else 'Document tools'
     if profile == 'read':
         return '查询类（read）' if zh else 'Read-only tools'
     if profile == 'mutate':
         return '变更类（mutate）' if zh else 'State-changing tools'
     return '其它' if zh else 'Other tools'
-_INFORMATIONAL_MANIFEST_PROFILES = frozenset({'document', 'read'})
-_INFORMATIONAL_MANIFEST_ALWAYS = frozenset({'describe', 'find', 'space', 'help', 'primer', 'look', 'whoami', 'version', 'time', 'stats', 'type'})
 
 def _manifest_agent_routing_preamble(locale: str) -> str:
     zh = str(locale or '').lower().startswith('zh')
@@ -184,7 +176,7 @@ def build_llm_tool_manifest(surface, command_registry, *, session=None, locale: 
     loc = tool_manifest_locale(locale)
     schemas = tool_schemas_from_surface(surface, command_registry)
     patched: List[ToolSchema] = []
-    rows_by_profile: Dict[str, List[str]] = {'document': [], 'read': [], 'mutate': [], 'other': []}
+    rows_by_profile: Dict[str, List[str]] = {'read': [], 'mutate': [], 'other': []}
     for schema in schemas:
         hint = _llm_hint_from_command_node(session, schema.name, locale=loc)
         sem = _command_semantics_from_node(session, schema.name)
@@ -197,10 +189,11 @@ def build_llm_tool_manifest(surface, command_registry, *, session=None, locale: 
                 reg_desc = (getattr(cmd, 'description', None) or '').strip()
         desc = (hint or reg_desc or schema.description or '').strip()
         profile = str(sem.get('interaction_profile') or 'read').strip().lower()
-        if profile not in {'document', 'read', 'mutate'}:
+        if profile not in {'read', 'mutate'}:
             profile = 'other'
         if manifest_interaction_filter == 'informational':
-            if profile not in _INFORMATIONAL_MANIFEST_PROFILES and schema.name not in _INFORMATIONAL_MANIFEST_ALWAYS:
+            tier = str(sem.get('manifest_tier') or 'none').strip().lower()
+            if tier != 'informational':
                 continue
         attrs_for_hint = {'routing_hint': sem.get('routing_hint'), 'routing_hint_i18n': sem.get('routing_hint_i18n')}
         routing_hint = pick_routing_hint(attrs_for_hint, loc) or ''
@@ -232,7 +225,7 @@ def build_llm_tool_manifest(surface, command_registry, *, session=None, locale: 
     if manifest_interaction_filter and (not patched):
         return build_llm_tool_manifest(surface, command_registry, session=session, locale=locale, max_description_chars=max_description_chars, include_json_example=include_json_example, manifest_interaction_filter=None)
     text_rows: List[str] = []
-    for profile in ('document', 'read', 'mutate', 'other'):
+    for profile in ('read', 'mutate', 'other'):
         rows = rows_by_profile.get(profile) or []
         if not rows:
             continue

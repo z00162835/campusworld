@@ -52,6 +52,12 @@ agent tool del aico agent_capabilities agent_tools
 
 Optional: deactivate orphan `system_command_ability` graph nodes for retired command names, then re-export the tool-router lexicon (`lexicon export`) so enrich snapshots no longer list them.
 
+## Agent tool semantics
+
+- 类级 **`read`**；`agent tool add` / `agent tool del` 经 `subcommand_profiles` 解析为 **`mutate`**。
+- `manifest_tier=informational`（进入 AICO Plan manifest）。
+- 见快照 `tool_semantics` 与 `backend/app/commands/command_tool_semantics.py`。
+
 ## Implementation
 
 - [`backend/app/commands/agent_commands.py`](../../../../backend/app/commands/agent_commands.py): `AgentCommand`, `AicoCommand`; `get_agent_commands()` registers **`aico`** and **`agent`** only.

@@ -152,7 +152,7 @@ flowchart LR
 
 - **禁止默认递归**：工具上下文中 **不得** 默认再次调度 **`aico` / `@` NLP**（避免无限嵌套）；若未来允许「子助手 tick」，须单独 **深度上限** 与 **标识符**。
 - **每 tick 上限**：**最大命令条数**、**ToolObservation 总字符**、**wall-clock 时间**；超限截断并记入 **tool_trace**。
-- **ToolObservation policy**：命令输出进入 LLM 前必须经确定性策略处理。默认 **已明确建模** 的 `document/read` 命令允许 `message_mode=full`；`mutate`、未知命令、以及 `semantic_pending=true` 的未明确建模命令使用 `message_mode=summary`（首个非空行 + `original_chars=<n>`，不使用 LLM 摘要或 hash）；策略可由 `system_command_ability.attributes.agent_observation_policy` 覆盖。可选模式为 `full` / `summary` / `blocked`，均受 `max_message_chars` 与 trace preview 上限约束。
+- **ToolObservation policy**：命令输出进入 LLM 前必须经确定性策略处理。语义真源为命令注册表上的 `Command.tool_semantics`（`backend/app/commands/command_tool_semantics.py`）；`resolve_command_tool_semantics(name, args=...)` 按类级 `interaction_profile` 与可选 `subcommand_profiles`（最长 `arg_prefix` 优先）解析。**read** 默认 `message_mode=full`；**mutate** 默认 `message_mode=summary`（首个非空行 + `original_chars=<n>`，不使用 LLM 摘要或 hash）。**未注册**命令与 `semantic_pending=true` 命令默认 `summary`；`semantic_pending` **不**再单独驱动已注册命令的 observation 模式。L2 `system_command_ability.attributes.agent_observation_policy` **仅**可 ops 覆盖 observation（profile / guard 以 registry 为准）。可选模式为 `full` / `summary` / `blocked`，均受 `max_message_chars` 与 trace preview 上限约束。单次 gather 内 policy 缓存键为 `(command_name, tuple(args))`。
 - **`CommandResult.data`**：仅允许 **白名单键** 进入 ToolObservation（防泄漏大图 JSON、内部 id）；默认键为 `ok`、`phase`、`handle`、`service_id`，可由 ToolObservation policy 的 `data_keys` 收窄或扩展。
 - **Trace preview 同源策略**：`agent_run_records.command_trace[].message_preview` 必须使用同一 ToolObservation policy 的 message 处理结果，并受 `trace_preview_chars` 限制，避免 LLM 上下文与审计预览脱敏规则漂移。
 - **授权**：与 **`authorize_command`**、**`command_policies`**、F11 数据访问策略 **一致**；**不**因「Agent 调用」绕过审计。

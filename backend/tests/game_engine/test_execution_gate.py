@@ -40,7 +40,7 @@ def test_execution_gate_blocks_mutate_when_caller_profile_read():
     assert d.reason_code == "guard_blocked_profile_ceiling"
 
 
-def test_execution_gate_allows_document_tool_for_info_intent():
+def test_execution_gate_allows_read_tool_for_info_intent():
     d = evaluate_execution_gate(
         db_session=None,
         command_name="help",
@@ -51,12 +51,59 @@ def test_execution_gate_allows_document_tool_for_info_intent():
         },
     )
     assert d.allow is True
-    assert d.effective_profile == "document"
+    assert d.effective_profile == "read"
+
+
+def test_execution_gate_allows_task_list_for_verify_intent():
+    d = evaluate_execution_gate(
+        db_session=None,
+        command_name="task",
+        args=["list"],
+        context_metadata={
+            "agent_interaction_profile": "read",
+            "user_message": "查一下当前任务",
+        },
+    )
+    assert d.allow is True
+    assert d.callee_profile == "read"
+
+
+def test_execution_gate_allows_notice_list_for_verify_intent():
+    d = evaluate_execution_gate(
+        db_session=None,
+        command_name="notice",
+        args=["list"],
+        context_metadata={
+            "agent_interaction_profile": "read",
+            "user_message": "查一下公告列表",
+        },
+    )
+    assert d.allow is True
+    assert d.callee_profile == "read"
+
+
+def test_execution_gate_blocks_notice_publish_without_confirmation():
+    d = evaluate_execution_gate(
+        db_session=None,
+        command_name="notice",
+        args=["publish"],
+        context_metadata={
+            "agent_interaction_profile": "mutate",
+            "agent_intent": "execute",
+            "user_message": "publish a new notice",
+        },
+    )
+    assert d.allow is False
+    assert d.reason_code == "guard_blocked_confirmation"
+    assert d.callee_profile == "mutate"
 
 
 def test_preauthorized_executor_blocks_and_reports_guard(monkeypatch):
+    from app.commands.command_tool_semantics import TASK_MUTATE_SEMANTICS
+
     class DummyCmd:
         name = "task"
+        tool_semantics = TASK_MUTATE_SEMANTICS
 
         def execute(self, context, args):
             return CommandResult.success_result("ok", data={})

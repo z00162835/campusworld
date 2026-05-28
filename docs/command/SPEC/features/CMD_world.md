@@ -32,6 +32,11 @@
 - **写副作用**：`install`/`uninstall`/`reload`/`content apply` 等会调用引擎/管理器/覆盖逻辑；`list` 等为读。
 - **用户可见错误示例**：`Permission denied for world {action}`（`error=WORLD_FORBIDDEN` 等，见 `execute` 与各 helper）。
 
+## Agent tool semantics
+
+- 类级 **`mutate`**；`list`、`status`、`validate` 及 `bridge list|validate`、`content validate|diff` 等只读路径经 `subcommand_profiles` 解析为 **`read`**；`install`/`repair`/`content apply`/`bridge add|remove` 等保持 **`mutate`**。
+- 见快照 `tool_semantics` 与 `backend/app/commands/command_tool_semantics.py`。
+
 ## i18n status
 
 - 当前用户可见错误（如 `Permission denied for world {action}`、`未知 world 子命令: {action}`、`WORLD_BRIDGE_*` 错误等）混合中英文硬编码，见 `world_command.py`。

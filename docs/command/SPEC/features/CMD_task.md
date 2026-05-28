@@ -22,6 +22,12 @@
 task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 ```
 
+## Agent tool semantics
+
+- 类级 **`mutate`**；只读子命令（`list`、`show`、`pool list|show|stats`、`workflow list|show` 等）经 `subcommand_profiles` 解析为 **`read`**。
+- 写子命令（`create`、`claim`、`assign`、`publish`、`complete` 等）保持 **`mutate`**。
+- 见快照 `tool_semantics` 与 `backend/app/commands/command_tool_semantics.py`。
+
 ## Implementation contract（SSOT：[`docs/task/SPEC/`](../../../task/SPEC/)）
 
 ### A. 写命令统一约束

@@ -9,6 +9,7 @@ Look命令实现 - 参考Evennia设计
 """
 from typing import List, Optional, Dict, Any, Union
 from ..base import GameCommand, CommandResult, CommandContext
+from app.commands.command_tool_semantics import INFORMATIONAL_MANIFEST
 from app.core.log import get_logger, LoggerNames
 from app.commands.policy_expr import evaluate_policy_expr, PolicyExprError
 from app.game_engine.world_room_resolve import room_is_world_entry_gate
@@ -54,6 +55,8 @@ def _merge_room_exit_labels_from_attrs_and_graph(room_attrs: Dict[str, Any], gra
 
 class LookCommand(GameCommand):
     """Look命令 - 查看环境和物品"""
+
+    tool_semantics = INFORMATIONAL_MANIFEST
 
     def __init__(self):
         super().__init__(name='look', description='查看当前环境或特定物品', aliases=['l', 'lookat'], game_name='hicampus')

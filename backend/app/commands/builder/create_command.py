@@ -5,11 +5,14 @@ import json
 import ast
 from typing import List, Dict, Any, Optional, Type
 from app.commands.base import BaseCommand, CommandResult, CommandType
+from app.commands.command_tool_semantics import CREATE_MUTATE_SEMANTICS
 from app.commands.builder.model_discovery import model_discoverer
 from app.models.base import DefaultObject
 from app.core.log import get_logger, LoggerNames
 
 class CreateCommand(BaseCommand):
+
+    tool_semantics = CREATE_MUTATE_SEMANTICS
 
     def __init__(self):
         super().__init__(name='create', description='创建对象 - create ClassName = {参数}', aliases=['spawn', 'build', 'make'], command_type=CommandType.ADMIN)

@@ -51,6 +51,8 @@ def _effective_aliases(cmd: BaseCommand, reg: Any) -> List[str]:
 
 
 def _command_row(cmd: BaseCommand, reg: Any, root: Path) -> Dict[str, Any]:
+    from app.commands.command_tool_semantics import resolve_command_tool_semantics
+
     cls = cmd.__class__
     try:
         abspath = Path(inspect.getfile(cls)).resolve()
@@ -60,6 +62,7 @@ def _command_row(cmd: BaseCommand, reg: Any, root: Path) -> Dict[str, Any]:
             file_path = str(abspath)
     except (TypeError, OSError, ValueError):
         file_path = ""
+    sem = resolve_command_tool_semantics(cmd.name)
     return {
         "name": cmd.name,
         "command_type": cmd.command_type.name if isinstance(cmd.command_type, CommandType) else str(cmd.command_type),
@@ -67,6 +70,7 @@ def _command_row(cmd: BaseCommand, reg: Any, root: Path) -> Dict[str, Any]:
         "registry_aliases": _effective_aliases(cmd, reg),
         "class": f"{cls.__module__}.{cls.__qualname__}",
         "file": file_path,
+        "tool_semantics": sem.to_dict(),
     }
 
 

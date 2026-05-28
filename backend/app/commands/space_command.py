@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from app.commands.base import CommandContext, CommandResult, SystemCommand
+from app.commands.command_tool_semantics import INFORMATIONAL_MANIFEST
 from app.commands.room_connects_to_query import connects_to_exits_from_room
 
 @dataclass
@@ -178,6 +179,8 @@ def _format_table_row(cols: List[str], widths: List[int]) -> str:
     return '  '.join(parts)
 
 class SpaceCommand(SystemCommand):
+
+    tool_semantics = INFORMATIONAL_MANIFEST
 
     def __init__(self) -> None:
         super().__init__('space', 'Query spatial (SPACE) node summary: appearance, occupants, devices, relations', [])

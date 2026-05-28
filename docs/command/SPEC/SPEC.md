@@ -32,7 +32,29 @@
 
 ### 一命令一 SPEC
 
-每个已注册主名有 [`features/CMD_<name>.md`](features/)；**有效别名**以快照的 `registry_aliases` 为准。生成快照（在 `backend` 下、Conda 环境 `campusworld`）：`python scripts/export_command_registry_snapshot.py`；对账（可选）：`python scripts/verify_command_spec_files.py`。
+每个已注册主名有 [`features/CMD_<name>.md`](features/)；**有效别名**以快照的 `registry_aliases` 为准。生成快照（在 `backend` 下、Conda 环境 `campusworld`）：`python scripts/export_command_registry_snapshot.py`；对账（可选）：`python scripts/verify_command_spec_files.py`；**tool_semantics 漂移校验**：`python scripts/validate_command_tool_semantics.py`。
+
+### Agent tool semantics（registry SSOT）
+
+命令作为 Agent 工具时的交互语义在 **命令类** 上声明，不由全局命令名表推导：
+
+```python
+# backend/app/commands/command_tool_semantics.py
+@dataclass(frozen=True)
+class CommandToolSemantics:
+    interaction_profile: Literal["read", "mutate"]  # BaseCommand 默认 read
+    semantic_pending: bool = False                  # 仅未注册命令为 True
+    subcommand_profiles: tuple[SubcommandProfileRule, ...] = ()
+    manifest_tier: Literal["informational", "full", "none"] = "none"
+    invocation_guard: dict[str, Any] = field(default_factory=dict)
+    # 可选 observation_message_mode / observation_data_keys / routing_hint*
+```
+
+- **类级 mutate**：`task`、`create`、`notice`、`world`。
+- **子命令混合**（最长 `arg_prefix` 优先）：`agent`、`task`、`world`、`notice`（例：`notice list|view`→read；`publish|edit|archive`→mutate）。
+- **manifest**：仅 `manifest_tier=informational` 的命令进入 AICO Plan manifest；默认 `none`。
+- **L2 镜像**：`ability_sync` 自 registry 同步 profile/guard/`manifest_tier`；DB 仅可 ops 覆盖 `agent_observation_policy`。
+- **快照**：`registry_snapshot.json` 每条 command 含 `tool_semantics` 块；CI/PR 可跑 `validate_command_tool_semantics.py`。
 
 与实现 1:1 的验收见 [ACCEPTANCE.md](ACCEPTANCE.md)。
 

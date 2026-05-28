@@ -8,6 +8,7 @@
 - [ ] **可溯源**：对错误文案、`CommandResult.data` 键名、互斥条件等，注明 **源码位置** 或 **测试用例**（`backend/tests/...`）以便复查。
 - [ ] **不混入未实现行为**：`Implementation contract` 中不出现代码未分支的断言；产品设想放在 **Non-Goals / Roadmap**，且不与契约矛盾。
 - [ ] **与注册表一致**：命令主名、别名、类型与 `initialize_commands()` 后注册表一致；变更命令行为时 **同 PR** 更新对应 `CMD_*.md` 或重跑 `backend/scripts/export_command_registry_snapshot.py`。
+- [ ] **tool_semantics 一致**：变更 `Command.tool_semantics` / `subcommand_profiles` / `manifest_tier` 时同 PR 重跑 `export_command_registry_snapshot.py` 且 `validate_command_tool_semantics.py` 通过。
 - [ ] **`find` / `describe` SSOT**：[F01_FIND_COMMAND](features/F01_FIND_COMMAND.md) 为图检索**深文档**；`CMD_find` / `CMD_describe` 为摘要+链接，避免双份契约冲突。
 
 ## 基础功能验收

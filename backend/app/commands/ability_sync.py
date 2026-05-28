@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from app.core.log import get_logger, LoggerNames
-from app.commands.tool_semantics import get_command_tool_semantics
+from app.commands.command_tool_semantics import resolve_command_tool_semantics
 from app.models.graph import Node, NodeType
 from app.models.root_manager import RootNodeManager
 from db.ontology.schema_envelope import system_command_ability_node_type_schema_definition
@@ -40,21 +40,36 @@ def _sync_llm_hints_from_command(cmd: Any, attrs: Dict[str, Any]) -> None:
     else:
         attrs.pop('llm_hint_i18n', None)
 
+def _default_observation_policy_from_semantics(sem: Any) -> Dict[str, Any]:
+    from app.game_engine.agent_runtime.tool_observation_policy import _default_policy_for_profile
+
+    profile = str(getattr(sem, 'interaction_profile', '') or 'read')
+    base = _default_policy_for_profile(profile)
+    mode = getattr(sem, 'observation_message_mode', None) or base.message_mode
+    policy: Dict[str, Any] = {'message_mode': mode}
+    keys = getattr(sem, 'observation_data_keys', None)
+    if keys:
+        policy['data_keys'] = sorted(keys)
+    return policy
+
 def _sync_tool_semantics(command_name: str, attrs: Dict[str, Any]) -> None:
-    sem = get_command_tool_semantics(command_name)
-    attrs['interaction_profile'] = sem['interaction_profile']
-    attrs['semantic_pending'] = bool(sem.get('semantic_pending', False))
-    attrs['invocation_guard'] = dict(sem.get('invocation_guard') or {})
-    hint = str(sem.get('routing_hint') or '').strip()
+    sem = resolve_command_tool_semantics(command_name)
+    attrs['interaction_profile'] = sem.interaction_profile
+    attrs['semantic_pending'] = bool(sem.semantic_pending)
+    attrs['manifest_tier'] = sem.manifest_tier
+    attrs['invocation_guard'] = dict(sem.invocation_guard or {})
+    hint = str(sem.routing_hint or '').strip()
     if hint:
         attrs['routing_hint'] = hint
     else:
         attrs.pop('routing_hint', None)
-    hints_i18n = sem.get('routing_hint_i18n') or {}
+    hints_i18n = sem.routing_hint_i18n or {}
     if isinstance(hints_i18n, dict) and hints_i18n:
         attrs['routing_hint_i18n'] = {str(k): str(v) for (k, v) in hints_i18n.items() if str(v).strip()}
     else:
         attrs.pop('routing_hint_i18n', None)
+    if not isinstance(attrs.get('agent_observation_policy'), dict):
+        attrs['agent_observation_policy'] = _default_observation_policy_from_semantics(sem)
 
 def _get_or_create_command_ability_type(session: Session) -> Optional[int]:
     try:
@@ -94,9 +109,12 @@ def ensure_command_ability_nodes(session: Session) -> int:
         existing = session.query(Node).filter(and_(Node.type_code == 'system_command_ability', Node.attributes['command_name'].astext == command_name, Node.is_active == True)).first()
         if existing:
             attrs = dict(existing.attributes or {})
+            preserved_obs = attrs.get('agent_observation_policy') if isinstance(attrs.get('agent_observation_policy'), dict) else None
             attrs.update({'command_name': command_name, 'aliases': aliases, 'command_type': command_type, 'entity_kind': 'ability', 'presentation_domains': ['help', 'npc'], 'access_locks': {'view': 'all()', 'invoke': 'all()'}, 'updated_at': now})
             _sync_llm_hints_from_command(cmd, attrs)
             _sync_tool_semantics(command_name, attrs)
+            if preserved_obs:
+                attrs['agent_observation_policy'] = preserved_obs
             existing.attributes = attrs
             if root_node_id and (not existing.location_id):
                 existing.location_id = root_node_id

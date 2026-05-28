@@ -176,6 +176,12 @@ space -i <node_id>
 
 - 与 `find` / `describe` 同级**只读**；默认策略在 [`policy_bootstrap.py`](../../../../backend/app/commands/policy_bootstrap.py) 或等价处显式**一行**说明，避免空注册误解。
 
+## Agent tool semantics
+
+- **`interaction_profile=read`**（`BaseCommand` 默认）；`manifest_tier=informational`（进入 AICO Plan manifest）。
+- ToolObservation 与其他 read 命令相同：`message_mode=full`；**无**命令名或 `space` 专属 observation 硬编码。
+- 见快照 `tool_semantics` 与 `backend/app/commands/command_tool_semantics.py`。
+
 ## Non-Goals / Roadmap
 
 - **段 2「进入时间」**：首版**不**做；有统一 **presence/审计** 真源后**再**在 `data.occupants` 与 `message` 增列，并改本文与版本记录。

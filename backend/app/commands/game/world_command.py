@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import yaml
 from app.commands.base import AdminCommand, CommandContext, CommandResult
+from app.commands.command_tool_semantics import WORLD_MUTATE_SEMANTICS
 from app.core.database import db_session_context
 from app.core.permissions import permission_checker
 from app.game_engine.manager import game_engine_manager
@@ -53,6 +54,7 @@ def _format_world_list_message(rows: List[Dict[str, Any]]) -> str:
 
 class WorldCommand(AdminCommand):
     """Admin world operations: list/install/uninstall/reload/status/validate/repair, and bridge subcommands."""
+    tool_semantics = WORLD_MUTATE_SEMANTICS
     _SUB_PERM: Dict[str, str] = {'list': 'admin.world.read', 'status': 'admin.world.read', 'install': 'admin.world.manage', 'uninstall': 'admin.world.manage', 'reload': 'admin.world.manage', 'validate': 'admin.world.maintain', 'repair': 'admin.world.maintain', 'content': 'admin.world.maintain'}
 
     def __init__(self):

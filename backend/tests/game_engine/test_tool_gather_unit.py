@@ -154,10 +154,10 @@ def test_tool_gather_summarizes_mutating_command_observation():
 
 @pytest.mark.unit
 def test_tool_gather_caches_observation_policy_per_command(monkeypatch):
-    calls: list[str] = []
+    calls: list[tuple[str, tuple]] = []
 
-    def fake_policy(command_name, *, session=None):
-        calls.append(command_name)
+    def fake_policy(command_name, *, args=None, session=None):
+        calls.append((command_name, tuple(args or [])))
         return ToolObservationPolicy(message_mode="summary")
 
     monkeypatch.setattr(
@@ -166,18 +166,20 @@ def test_tool_gather_caches_observation_policy_per_command(monkeypatch):
     )
     fake = _FakeExec()
     ctx = CommandContext(user_id="1", username="u", session_id="s", permissions=[], roles=[])
-    budgets = ToolGatherBudgets(max_commands_per_tick=3, max_chars_observations_per_tick=100000, max_commands_per_phase=8)
+    budgets = ToolGatherBudgets(max_commands_per_tick=4, max_chars_observations_per_tick=100000, max_commands_per_phase=8)
 
     gather_tool_observations(
         fake,
         ctx,
-        ToolInvocationPlan(commands=[("help", []), ("help", ["again"]), ("look", [])]),
+        ToolInvocationPlan(
+            commands=[("help", []), ("help", []), ("help", ["again"]), ("look", [])]
+        ),
         budgets=budgets,
         counters=ToolGatherCounters(),
         phase_label="plan",
     )
 
-    assert calls == ["help", "look"]
+    assert calls == [("help", ()), ("help", ("again",)), ("look", ())]
 
 
 @pytest.mark.unit

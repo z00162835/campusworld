@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from app.commands.agent_command_context import command_context_for_npc_agent
 from app.commands.base import CommandContext, CommandResult, SystemCommand
+from app.commands.command_tool_semantics import AGENT_READ_SEMANTICS
 from app.commands.registry import command_registry
 from app.commands.npc_agent_resolve import enabled_allows, normalize_handle, resolve_npc_agent_by_handle
 from app.core.permissions import permission_checker
@@ -361,6 +362,8 @@ class AicoCommand(SystemCommand):
 
 class AgentCommand(SystemCommand):
     """List/query agents, tool allowlists, and capability summaries."""
+
+    tool_semantics = AGENT_READ_SEMANTICS
 
     def __init__(self):
         super().__init__('agent', 'Inspect agents: `agent list`, `agent status <id>`, `agent tool` (allowlists; add/del requires admin), `agent show <id>` (capability summary).', [])

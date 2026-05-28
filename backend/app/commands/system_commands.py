@@ -10,9 +10,12 @@ from datetime import datetime
 from collections import Counter
 from typing import List, Dict, Any, Optional
 from .base import SystemCommand, CommandResult, CommandType
+from app.commands.command_tool_semantics import INFORMATIONAL_MANIFEST
 
 class HelpCommand(SystemCommand):
     """帮助命令"""
+
+    tool_semantics = INFORMATIONAL_MANIFEST
 
     def __init__(self):
         super().__init__('help', 'List available commands for the current caller, or show detailed help for one command.', ['h', '?'])
@@ -39,6 +42,8 @@ class HelpCommand(SystemCommand):
 class StatsCommand(SystemCommand):
     """统计命令"""
 
+    tool_semantics = INFORMATIONAL_MANIFEST
+
     def __init__(self):
         super().__init__('stats', 'Show system statistics', ['stat', 'system'])
 
@@ -59,6 +64,8 @@ class StatsCommand(SystemCommand):
 
 class VersionCommand(SystemCommand):
     """版本命令"""
+
+    tool_semantics = INFORMATIONAL_MANIFEST
 
     def __init__(self):
         super().__init__('version', 'Show version information', ['ver'])
@@ -85,6 +92,8 @@ class QuitCommand(SystemCommand):
 class TimeCommand(SystemCommand):
     """时间命令"""
 
+    tool_semantics = INFORMATIONAL_MANIFEST
+
     def __init__(self):
         super().__init__('time', 'Show current time', ['date'])
 
@@ -99,6 +108,8 @@ class TimeCommand(SystemCommand):
 class WhoamiCommand(SystemCommand):
     """显示当前用户命令"""
 
+    tool_semantics = INFORMATIONAL_MANIFEST
+
     def __init__(self):
         super().__init__('whoami', 'Show current user', [])
 
@@ -111,6 +122,8 @@ class WhoamiCommand(SystemCommand):
 
 class WhoCommand(SystemCommand):
     """显示当前在线会话列表（独立命令，不是 whoami 别名）。"""
+
+    tool_semantics = INFORMATIONAL_MANIFEST
 
     def __init__(self):
         super().__init__('who', 'List online users and sessions', [])
@@ -232,6 +245,7 @@ class TypeCommand(SystemCommand):
     database. The text line uses ``-`` when the field is null or only whitespace.
     """
     DEFAULT_LIMIT: int = 8
+    tool_semantics = INFORMATIONAL_MANIFEST
 
     def __init__(self):
         super().__init__('type', 'List system-registered node types', [])

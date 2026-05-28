@@ -101,6 +101,13 @@ _SYSTEM_COMMAND_ABILITY_FLAT: Dict[str, str] = {
     "input_schema": "json",
     "output_schema": "json",
     "updated_at": "string",
+    "interaction_profile": "string",
+    "semantic_pending": "json",
+    "manifest_tier": "string",
+    "invocation_guard": "json",
+    "routing_hint": "string",
+    "routing_hint_i18n": "json",
+    "agent_observation_policy": "json",
 }
 
 

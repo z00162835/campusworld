@@ -1,7 +1,7 @@
 """ToolObservation policy for LLM context and trace previews."""
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Dict, FrozenSet, Optional
+from typing import Any, Dict, FrozenSet, Optional, Sequence
 
 DEFAULT_OBSERVATION_DATA_KEYS: FrozenSet[str] = frozenset({'ok', 'phase', 'handle', 'service_id'})
 OBSERVATION_MESSAGE_MODES: FrozenSet[str] = frozenset({'full', 'summary', 'blocked'})
@@ -24,7 +24,7 @@ def _coerce_positive_int(value: Any, default: int) -> int:
 
 
 def _default_policy_for_profile(profile: str) -> ToolObservationPolicy:
-    if profile in {'document', 'read'}:
+    if profile == 'read':
         return ToolObservationPolicy(message_mode='full')
     return ToolObservationPolicy(message_mode='summary')
 
@@ -65,21 +65,34 @@ def _command_ability_policy(session: Any, command_name: str) -> Optional[Dict[st
         return None
 
 
-def resolve_tool_observation_policy(command_name: str, *, session: Any=None) -> ToolObservationPolicy:
-    """Resolve policy from command ability override, then command semantics."""
+def resolve_tool_observation_policy(
+    command_name: str,
+    *,
+    args: Optional[Sequence[str]] = None,
+    session: Any = None,
+) -> ToolObservationPolicy:
+    """Resolve policy from registry semantics, then optional ability override."""
+    from app.commands.command_tool_semantics import resolve_command_tool_semantics
+
     name = str(command_name or '').strip().lower()
     try:
-        from app.commands.tool_semantics import get_command_tool_semantics
-        sem = get_command_tool_semantics(name)
-        profile = str(sem.get('interaction_profile') or '').strip().lower()
-        semantic_pending = bool(sem.get('semantic_pending'))
+        sem = resolve_command_tool_semantics(name, args=args)
+        profile = str(sem.interaction_profile or '').strip().lower()
+        if sem.semantic_pending:
+            base = ToolObservationPolicy(message_mode='summary')
+        elif sem.observation_message_mode in OBSERVATION_MESSAGE_MODES:
+            base = ToolObservationPolicy(message_mode=str(sem.observation_message_mode))
+        else:
+            base = _default_policy_for_profile(profile)
+        if sem.observation_data_keys:
+            base = ToolObservationPolicy(
+                message_mode=base.message_mode,
+                max_message_chars=base.max_message_chars,
+                trace_preview_chars=base.trace_preview_chars,
+                data_keys=sem.observation_data_keys,
+            )
     except Exception:
-        profile = ''
-        semantic_pending = True
-    if semantic_pending:
         base = ToolObservationPolicy(message_mode='summary')
-    else:
-        base = _default_policy_for_profile(profile)
     raw = _command_ability_policy(session, name)
     if raw:
         return _policy_from_mapping(raw, base)

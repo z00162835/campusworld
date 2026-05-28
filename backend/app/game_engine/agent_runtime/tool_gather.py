@@ -96,7 +96,7 @@ def _format_data_subset(data: Optional[Dict[str, Any]], allowed_keys: FrozenSet[
 def format_tool_observation_block(index: int, command_name: str, args: List[str], result: CommandResult, *, data_keys: Optional[FrozenSet[str]]=None, max_message_chars: int=4000, policy: Optional[ToolObservationPolicy]=None) -> str:
     """F08 appendix A style single observation."""
     if policy is None:
-        base_policy = resolve_tool_observation_policy(command_name)
+        base_policy = resolve_tool_observation_policy(command_name, args=args)
         effective_policy = ToolObservationPolicy(
             message_mode=base_policy.message_mode,
             max_message_chars=max_message_chars,
@@ -173,7 +173,7 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
     """
     chunks: List[str] = []
     trace_entries: List[Dict[str, Any]] = []
-    policy_cache: Dict[str, ToolObservationPolicy] = {}
+    policy_cache: Dict[tuple, ToolObservationPolicy] = {}
     idx = 0
     phase_cmds = 0
     for (command_name, args) in plan.commands:
@@ -185,10 +185,10 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
             break
         idx += 1
         res = executor.execute_command(tool_context, command_name, args)
-        policy_key = str(command_name or '').strip().lower()
+        policy_key = (str(command_name or '').strip().lower(), tuple(args or []))
         policy = policy_cache.get(policy_key)
         if policy is None:
-            policy = resolve_tool_observation_policy(command_name, session=tool_context.db_session)
+            policy = resolve_tool_observation_policy(command_name, args=args, session=tool_context.db_session)
             policy_cache[policy_key] = policy
         counters.commands_run += 1
         phase_cmds += 1

@@ -13,9 +13,25 @@ def test_unknown_or_pending_command_observation_policy_defaults_summary():
 
 
 @pytest.mark.unit
-def test_explicit_read_command_observation_policy_defaults_full():
-    policy = resolve_tool_observation_policy("find")
-    assert policy.message_mode == "full"
+def test_read_commands_including_space_use_full_observation():
+    from app.commands.init_commands import initialize_commands
+
+    initialize_commands(force_reinit=True)
+    for name in ("find", "space", "go"):
+        policy = resolve_tool_observation_policy(name)
+        assert policy.message_mode == "full", name
+
+
+@pytest.mark.unit
+def test_mutate_command_observation_summary():
+    policy = resolve_tool_observation_policy("create")
+    assert policy.message_mode == "summary"
+
+
+@pytest.mark.unit
+def test_agent_list_full_tool_add_summary():
+    assert resolve_tool_observation_policy("agent", args=["list"]).message_mode == "full"
+    assert resolve_tool_observation_policy("agent", args=["tool", "add"]).message_mode == "summary"
 
 
 @pytest.mark.unit

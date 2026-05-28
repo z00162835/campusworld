@@ -124,6 +124,22 @@ def test_manifest_informational_filter_excludes_mutate_tools():
 
 
 @pytest.mark.unit
+def test_manifest_informational_filter_excludes_manifest_tier_none():
+    surface = _surface_for({"go", "lexicon", "help"})
+    _, schemas = build_llm_tool_manifest(
+        surface,
+        command_registry,
+        session=None,
+        locale="en-US",
+        manifest_interaction_filter="informational",
+    )
+    names = {s.name for s in schemas}
+    assert "help" in names
+    assert "go" not in names
+    assert "lexicon" not in names
+
+
+@pytest.mark.unit
 def test_manifest_sorts_tools_and_includes_example_payload():
     surface = _surface_for({"help", "find", "whoami"})
     text, schemas = build_llm_tool_manifest(surface, command_registry, session=None)
@@ -133,8 +149,8 @@ def test_manifest_sorts_tools_and_includes_example_payload():
     # native tool use has a concrete template to mimic.
     for name in ("help", "find", "whoami"):
         assert f"'name': '{name}'" in text or f'"name": "{name}"' in text
-    assert ("[Document tools]" in text) or ("[文档类（document）]" in text)
     assert ("[Read-only tools]" in text) or ("[查询类（read）]" in text)
+    assert "[Document tools]" not in text
 
 
 @pytest.mark.unit

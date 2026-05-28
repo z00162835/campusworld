@@ -38,6 +38,15 @@ notice view <id>
 - 未知子命令 → `未知操作: {action}`。
 - **副作用**：`publish`/`edit`/`archive` 写 `bulletin_board_service`；`list`/`view` 为读。
 
+## Agent tool semantics
+
+| 子命令前缀 | `interaction_profile` |
+|------------|----------------------|
+| `list`, `view` | `read` |
+| `publish`, `edit`, `archive`（及未匹配前缀） | `mutate`（类默认） |
+
+类级 `tool_semantics` 为 mutate；`subcommand_profiles` 将 `list`/`view` 降为 read。见快照 `tool_semantics` 与 `backend/app/commands/command_tool_semantics.py`。
+
 ## i18n status
 
 - `notice.view.header`、`notice.view.author`、`notice.view.time` 提供 view 输出标题行 i18n。

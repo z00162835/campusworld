@@ -1,6 +1,6 @@
 {
-  "git_commit": "872127f6e3fd3c84d4188ef6d41a96eab9a27cb9",
-  "generated_at_utc": "2026-05-24T02:22:36.609475+00:00",
+  "git_commit": "3047f99ca7751d202b8c0d9a7eab3fb5830e7653",
+  "generated_at_utc": "2026-05-28T15:14:43.269988+00:00",
   "initialize_commands_ok": true,
   "command_count": 36,
   "commands": [
@@ -10,7 +10,56 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.agent_commands.AgentCommand",
-      "file": "backend/app/commands/agent_commands.py"
+      "file": "backend/app/commands/agent_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "show"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "status"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "tool"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "tool",
+              "add"
+            ],
+            "interaction_profile": "mutate"
+          },
+          {
+            "arg_prefix": [
+              "tool",
+              "del"
+            ],
+            "interaction_profile": "mutate"
+          }
+        ],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "aico",
@@ -18,7 +67,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.agent_commands.AicoCommand",
-      "file": "backend/app/commands/agent_commands.py"
+      "file": "backend/app/commands/agent_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "create",
@@ -34,7 +93,20 @@
         "spawn"
       ],
       "class": "app.commands.builder.create_command.CreateCommand",
-      "file": "backend/app/commands/builder/create_command.py"
+      "file": "backend/app/commands/builder/create_command.py",
+      "tool_semantics": {
+        "interaction_profile": "mutate",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": "Example/syntax requests should use `help create`; call only with explicit execution intent and confirmation.",
+        "routing_hint_i18n": {
+          "zh-CN": "create 会改变系统状态。示例/语法问题应使用 help create；仅在明确执行且确认后调用。",
+          "en-US": "create mutates system state. Example/syntax requests should use `help create`; call only with explicit execution intent and confirmation."
+        }
+      }
     },
     {
       "name": "create_info",
@@ -48,7 +120,17 @@
         "model_info"
       ],
       "class": "app.commands.builder.create_command.CreateInfoCommand",
-      "file": "backend/app/commands/builder/create_command.py"
+      "file": "backend/app/commands/builder/create_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "describe",
@@ -62,7 +144,17 @@
         "examine"
       ],
       "class": "app.commands.graph_inspect_commands.DescribeCommand",
-      "file": "backend/app/commands/graph_inspect_commands.py"
+      "file": "backend/app/commands/graph_inspect_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "down",
@@ -74,7 +166,17 @@
         "d"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "east",
@@ -86,7 +188,17 @@
         "e"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "enter",
@@ -94,7 +206,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.game.enter_world_command.EnterWorldCommand",
-      "file": "backend/app/commands/game/enter_world_command.py"
+      "file": "backend/app/commands/game/enter_world_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "find",
@@ -108,7 +230,17 @@
         "locate"
       ],
       "class": "app.commands.graph_inspect_commands.FindCommand",
-      "file": "backend/app/commands/graph_inspect_commands.py"
+      "file": "backend/app/commands/graph_inspect_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "go",
@@ -120,7 +252,17 @@
         "walk"
       ],
       "class": "app.commands.game.direction_command.MovementCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "help",
@@ -134,7 +276,17 @@
         "h"
       ],
       "class": "app.commands.system_commands.HelpCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "in",
@@ -142,7 +294,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "leave",
@@ -154,7 +316,17 @@
         "ooc"
       ],
       "class": "app.commands.game.leave_world_command.LeaveWorldCommand",
-      "file": "backend/app/commands/game/leave_world_command.py"
+      "file": "backend/app/commands/game/leave_world_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "lexicon",
@@ -162,7 +334,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.lexicon_command.LexiconCommand",
-      "file": "backend/app/commands/lexicon_command.py"
+      "file": "backend/app/commands/lexicon_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "look",
@@ -176,7 +358,17 @@
         "lookat"
       ],
       "class": "app.commands.game.look_command.LookCommand",
-      "file": "backend/app/commands/game/look_command.py"
+      "file": "backend/app/commands/game/look_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "north",
@@ -188,7 +380,17 @@
         "n"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "northeast",
@@ -200,7 +402,17 @@
         "ne"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "northwest",
@@ -212,7 +424,17 @@
         "nw"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "notice",
@@ -224,7 +446,30 @@
         "notices"
       ],
       "class": "app.commands.admin.notice_command.NoticeCommand",
-      "file": "backend/app/commands/admin/notice_command.py"
+      "file": "backend/app/commands/admin/notice_command.py",
+      "tool_semantics": {
+        "interaction_profile": "mutate",
+        "semantic_pending": false,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "view"
+            ],
+            "interaction_profile": "read"
+          }
+        ],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "out",
@@ -236,7 +481,17 @@
         "o"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "primer",
@@ -248,7 +503,17 @@
         "manual"
       ],
       "class": "app.commands.system_primer_command.PrimerCommand",
-      "file": "backend/app/commands/system_primer_command.py"
+      "file": "backend/app/commands/system_primer_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "quit",
@@ -262,7 +527,17 @@
         "q"
       ],
       "class": "app.commands.system_commands.QuitCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "south",
@@ -274,7 +549,17 @@
         "s"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "southeast",
@@ -286,7 +571,17 @@
         "se"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "southwest",
@@ -298,7 +593,17 @@
         "sw"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "space",
@@ -306,7 +611,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.space_command.SpaceCommand",
-      "file": "backend/app/commands/space_command.py"
+      "file": "backend/app/commands/space_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "stats",
@@ -320,7 +635,17 @@
         "system"
       ],
       "class": "app.commands.system_commands.StatsCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "task",
@@ -332,7 +657,33 @@
         "tasks"
       ],
       "class": "app.commands.game.task.task_command.TaskCommand",
-      "file": "backend/app/commands/game/task/task_command.py"
+      "file": "backend/app/commands/game/task/task_command.py",
+      "tool_semantics": {
+        "interaction_profile": "mutate",
+        "semantic_pending": false,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "show"
+            ],
+            "interaction_profile": "read"
+          }
+        ],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": "For task examples/syntax/usage, route to `help task` (or primer) first; call state-changing subcommands only after explicit execution intent and confirmation.",
+        "routing_hint_i18n": {
+          "zh-CN": "若用户问 task 的例子/语法/用法，先走 help task（或 primer）；不要把示例请求当作执行请求。仅在用户明确执行且确认后才可调用会改状态的 task 子命令。",
+          "en-US": "For task examples/syntax/usage, route to `help task` (or primer) first; do not treat example requests as execute intent. Call state-changing task subcommands only after explicit execution intent and confirmation."
+        }
+      }
     },
     {
       "name": "time",
@@ -344,7 +695,17 @@
         "date"
       ],
       "class": "app.commands.system_commands.TimeCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "type",
@@ -352,7 +713,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.system_commands.TypeCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "up",
@@ -364,7 +735,17 @@
         "u"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "version",
@@ -376,7 +757,17 @@
         "ver"
       ],
       "class": "app.commands.system_commands.VersionCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "west",
@@ -388,7 +779,17 @@
         "w"
       ],
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
-      "file": "backend/app/commands/game/direction_command.py"
+      "file": "backend/app/commands/game/direction_command.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "who",
@@ -396,7 +797,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.system_commands.WhoCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "whoami",
@@ -404,7 +815,17 @@
       "class_declared_aliases": [],
       "registry_aliases": [],
       "class": "app.commands.system_commands.WhoamiCommand",
-      "file": "backend/app/commands/system_commands.py"
+      "file": "backend/app/commands/system_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     },
     {
       "name": "world",
@@ -416,7 +837,64 @@
         "worlds"
       ],
       "class": "app.commands.game.world_command.WorldCommand",
-      "file": "backend/app/commands/game/world_command.py"
+      "file": "backend/app/commands/game/world_command.py",
+      "tool_semantics": {
+        "interaction_profile": "mutate",
+        "semantic_pending": false,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "status"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "validate"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "bridge",
+              "list"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "bridge",
+              "validate"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "content",
+              "validate"
+            ],
+            "interaction_profile": "read"
+          },
+          {
+            "arg_prefix": [
+              "content",
+              "diff"
+            ],
+            "interaction_profile": "read"
+          }
+        ],
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null
+      }
     }
   ]
 }

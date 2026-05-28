@@ -3,10 +3,11 @@
 基于单一职责原则，命令与协议无关
 """
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, ClassVar
 from dataclasses import dataclass, field
 from enum import Enum
 from app.core.log import get_logger, LoggerNames
+from app.commands.command_tool_semantics import CommandToolSemantics, DEFAULT_READ_SEMANTICS
 
 class CommandType(Enum):
     """命令类型枚举"""
@@ -76,6 +77,8 @@ class CommandResult:
 
 class BaseCommand(ABC):
     """抽象命令基类 - 协议无关"""
+
+    tool_semantics: ClassVar[CommandToolSemantics] = DEFAULT_READ_SEMANTICS
 
     def __init__(self, name: str, description: str='', aliases: List[str]=None, command_type: CommandType=CommandType.SYSTEM):
         self.name = name

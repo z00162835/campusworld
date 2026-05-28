@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
-from app.commands.tool_semantics import get_command_tool_semantics
-_PROFILE_RANK = {'document': 0, 'read': 1, 'mutate': 2}
+from app.commands.command_tool_semantics import resolve_command_tool_semantics
+_PROFILE_RANK = {'read': 1, 'mutate': 2}
 _EXECUTE_PATTERNS = ('\\b请执行\\b', '\\b确认执行\\b', '\\b继续执行\\b', '\\b马上创建\\b', '\\b帮我创建\\b', '\\byes,\\s*execute\\b', '\\bexecute now\\b')
 _VERIFY_PATTERNS = ('\\b是否存在\\b', '\\b现在是什么状态\\b', '\\b查一下\\b', '\\bcurrent state\\b', '\\bdoes it exist\\b')
 _INFO_PATTERNS = ('\\b例子\\b', '\\b怎么用\\b', '\\b语法\\b', '\\bhelp\\b', '\\bexample\\b', '\\busage\\b', '\\bsyntax\\b')
@@ -66,23 +66,13 @@ def _is_confirmed(meta: Dict[str, Any], guard: Dict[str, Any], user_message: str
     msg = str(user_message or '')
     return any((str(p).strip() and str(p).strip().lower() in msg.lower() for p in phrases))
 
-def _load_callee_semantics(db_session, command_name: str) -> Dict[str, Any]:
-    base = get_command_tool_semantics(command_name)
-    if db_session is None:
-        return base
-    try:
-        from app.models.graph import Node
-        row = db_session.query(Node).filter(Node.type_code == 'system_command_ability', Node.attributes['command_name'].astext == command_name, Node.is_active == True).first()
-        if row is None:
-            return base
-        attrs = row.attributes or {}
-        prof = _normalize_profile(attrs.get('interaction_profile'))
-        base['interaction_profile'] = prof
-        if isinstance(attrs.get('invocation_guard'), dict):
-            base['invocation_guard'] = dict(attrs['invocation_guard'])
-        return base
-    except Exception:
-        return base
+def _load_callee_semantics(db_session, command_name: str, args: List[str]) -> Dict[str, Any]:
+    sem = resolve_command_tool_semantics(command_name, args=args)
+    return {
+        'interaction_profile': sem.interaction_profile,
+        'semantic_pending': sem.semantic_pending,
+        'invocation_guard': dict(sem.invocation_guard or {}),
+    }
 
 def _effective_guard(caller_policy: Dict[str, Any], callee_guard: Dict[str, Any], effective_profile: str) -> Dict[str, Any]:
     caller_allowed = {'informational', 'verify_state'}
@@ -102,7 +92,7 @@ def _effective_guard(caller_policy: Dict[str, Any], callee_guard: Dict[str, Any]
 def evaluate_execution_gate(*, db_session, command_name: str, args: List[str], context_metadata: Optional[Dict[str, Any]]) -> GateDecision:
     meta = dict(context_metadata or {})
     caller = _parse_caller_policy(meta)
-    callee_sem = _load_callee_semantics(db_session, command_name)
+    callee_sem = _load_callee_semantics(db_session, command_name, args)
     callee_profile = _normalize_profile(callee_sem.get('interaction_profile'))
     callee_guard = dict(callee_sem.get('invocation_guard') or {})
     effective_profile = min_privilege_profile(caller['caller_profile'], callee_profile)
