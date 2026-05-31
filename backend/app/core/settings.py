@@ -41,6 +41,16 @@ class SSHRateLimitConfig(BaseModel):
     attempt_window: int = Field(default=300, description='登录尝试统计窗口（秒）')
     connection_window: int = Field(default=60, description='连接计数窗口（秒）')
 
+class SSHSessionConfig(BaseModel):
+    """SSH session lifecycle (idle, keepalive, auth grace). See ``docs/ssh/SPEC/features/F01_SSH_SESSION_LIFECYCLE.md``."""
+    model_config = ConfigDict(extra='ignore')
+    auth_timeout_seconds: int = Field(default=20, description='Transport.accept() login grace (seconds)')
+    idle_timeout_minutes: int = Field(default=5, description='App idle disconnect; 0 disables')
+    idle_warning_minutes: int = Field(default=1, description='English warning before idle disconnect')
+    keepalive_interval_seconds: int = Field(default=30, description='Paramiko transport keepalive; 0 disables')
+    cleanup_poll_interval_seconds: int = Field(default=60, description='Idle worker poll interval (seconds)')
+    max_sessions_per_user: int = Field(default=3, description='Max concurrent SSH sessions per account; 0 = unlimited')
+
 class SSHConfig(BaseModel):
     """SSH 服务绑定与线程池（默认值与 ``config/settings.yaml`` 的 ``ssh`` 段一致）"""
     model_config = ConfigDict(extra='ignore')
@@ -51,6 +61,7 @@ class SSHConfig(BaseModel):
     worker_pool_size: int = Field(default=50, description='Paramiko 客户端处理线程池大小')
     banner: str = Field(default='Welcome to CampusWorld SSH Console', description='SSH 登录横幅')
     rate_limit: SSHRateLimitConfig = Field(default_factory=SSHRateLimitConfig)
+    session: SSHSessionConfig = Field(default_factory=SSHSessionConfig)
 class SecurityConfig(BaseModel):
     """安全配置"""
     secret_key: str = Field(default='your-secret-key-here-change-in-production', description='JWT密钥')

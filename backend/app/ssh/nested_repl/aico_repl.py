@@ -21,6 +21,8 @@ class AicoNestedReplDriver:
             sess = io.session
             if getattr(sess, 'nested_repl', None) is not self:
                 break
+            if io.poll_disconnect():
+                break
             if not self._send_prompt(io):
                 break
             line = self._read_line(io)
@@ -68,13 +70,20 @@ class AicoNestedReplDriver:
     def _read_line(self, io: SshReplIo) -> Optional[str]:
         buf: list[str] = []
         while io.running:
+            if io.poll_disconnect():
+                return None
             try:
                 (ready, _, _) = select.select([io.channel], [], [], 0.25)
                 if not ready:
+                    if io.channel.closed:
+                        io.stop_console()
+                        return None
                     continue
                 data = io.channel.recv(4096)
                 if not data:
-                    continue
+                    if io.channel.closed:
+                        io.stop_console()
+                    return None
                 text = data.decode('utf-8', errors='ignore')
                 for char in text:
                     if char == '\x11':
@@ -86,6 +95,7 @@ class AicoNestedReplDriver:
                     if char == '\x03':
                         io.safe_send_output('^C\n')
                         buf.clear()
+                        io.touch_session(user_input=True, reason='ctrl_c')
                         continue
                     if char in ('\r', '\n'):
                         io.send_char_echo('\r\n')
@@ -96,6 +106,7 @@ class AicoNestedReplDriver:
                             io.send_char_echo('\x08 \x08')
                         continue
                     if ord(char) >= 32:
+                        io.touch_session(user_input=True, reason='keystroke')
                         buf.append(char)
                         io.send_char_echo(char)
             except Exception as e:

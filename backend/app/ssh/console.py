@@ -76,7 +76,11 @@ class SSHConsole:
             self._display_prompt()
             while self.running:
                 try:
+                    if self._poll_disconnect():
+                        break
                     self._process_raw_input()
+                    if self._poll_disconnect():
+                        break
                     time.sleep(0.01)
                 except Exception as e:
                     self.logger.error(f'Main loop error: {e}')
@@ -123,6 +127,18 @@ class SSHConsole:
             self.logger.error(f'Failed to send prompt: {e}')
             return False
 
+    def _poll_disconnect(self) -> bool:
+        sess = self.current_session
+        if sess is not None and sess.should_disconnect():
+            self.running = False
+            return True
+        return False
+
+    def _touch_session_activity(self, *, user_input: bool = False, reason: str = '') -> None:
+        if self.session_manager is None or self.current_session is None:
+            return
+        self.session_manager.touch_session(self.current_session.session_id, user_input=user_input, reason=reason)
+
     def _process_raw_input(self):
         """处理原始输入数据 - 简化版本"""
         try:
@@ -158,6 +174,7 @@ class SSHConsole:
                 self._send_char_echo('\n')
                 ctrl_c_msg = f'Command cancelled (Ctrl+C)\n'
                 self._safe_send_output(ctrl_c_msg)
+                self._touch_session_activity(user_input=True, reason='ctrl_c')
                 self._display_prompt()
             elif char == '\x04':
                 self.input_buffer = ''
@@ -166,6 +183,8 @@ class SSHConsole:
                 self._safe_send_output(ctrl_d_msg)
                 self.running = False
             else:
+                if ord(char) >= 32:
+                    self._touch_session_activity(user_input=True, reason='keystroke')
                 self.input_buffer += char
                 self._send_char_echo(char)
 
@@ -175,6 +194,8 @@ class SSHConsole:
             if input_text.strip():
                 self.history.append(input_text)
                 self.history_index = len(self.history)
+                if self.session_manager is not None and self.current_session is not None:
+                    self.session_manager.add_command_to_session(self.current_session.session_id, input_text.strip())
             if self.current_session:
                 user_id = str(self.current_session.user_id)
                 username = self.current_session.username
@@ -202,6 +223,8 @@ class SSHConsole:
                 nr = getattr(self.current_session, 'nested_repl', None)
                 if nr is not None:
                     nr.run(SshReplIo(self))
+                    if self._poll_disconnect():
+                        return
             if self.running:
                 self._display_prompt()
         except Exception as e:

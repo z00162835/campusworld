@@ -85,7 +85,11 @@
 ## 会话验收
 
 - [ ] 登录成功后 spawn 到 SingularityRoom
-- [ ] 会话超时（auth_timeout）后自动断开
+- [ ] 认证阶段超时（`auth_timeout_seconds`，默认 20s）后拒绝未完成登录的连接
+- [ ] 应用层 idle（`idle_timeout_minutes`，默认 5min）：从 `console_ready` 起算；无活跃操作后英文 warning（可选）并断开 SSH；`aico -i` 与主 shell 同一规则（见 `features/F01_SSH_SESSION_LIFECYCLE.md`）
+- [ ] `max_sessions_per_user`（默认 3）：同账号第 N+1 次连接认证失败；0 = 不限制
+- [ ] Orphan session（auth 成功无 channel）在 `auth_timeout_seconds * 2` 内被清理
+- [ ] `idle_timeout_minutes: 0` 时禁用应用层 idle 断连
 - [ ] 正确执行 `quit` 断开连接
 - [ ] 连接断开后释放所有资源
 
@@ -102,6 +106,7 @@
 - [ ] 登录失败追踪记录准确
 - [ ] IP 白名单功能正常
 - [ ] 会话数据不泄露到其他会话
+- [ ] 同用户并发连接（≤ `max_sessions_per_user`）各自独立 session，无 username 误绑
 
 ## 性能验收
 

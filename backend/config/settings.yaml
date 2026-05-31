@@ -53,6 +53,13 @@ ssh:
   worker_threads: 2
   worker_pool_size: 50
   banner: "Welcome to CampusWorld SSH Console"
+  session:
+    auth_timeout_seconds: 20
+    idle_timeout_minutes: 5
+    idle_warning_minutes: 1
+    keepalive_interval_seconds: 30
+    cleanup_poll_interval_seconds: 60
+    max_sessions_per_user: 3  # 0 = unlimited
   # 连接速率限制
   rate_limit:
     max_connections_per_minute: 10  # 每分钟最大连接数

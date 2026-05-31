@@ -15,40 +15,14 @@ from typing import Dict, Optional
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, Future
 import paramiko
-from paramiko import ServerInterface
-from paramiko.common import AUTH_SUCCESSFUL, AUTH_FAILED, OPEN_SUCCEEDED
 from app.core.config_manager import get_setting
 from app.core.log import get_logger, LoggerNames
 from app.ssh.console import SSHConsole
-from app.ssh.session import SSHSession, SessionManager
-from app.ssh.protocol_handler import SSHProtocolHandler, ProtocolFactory
+from app.ssh.session import SessionManager
+from app.ssh.protocol_handler import ProtocolFactory
 from app.ssh.game_handler import game_handler
 from app.ssh.rate_limiter import get_rate_limiter
-
-class CampusWorldSSHServerInterface(SSHProtocolHandler):
-    """
-    CampusWorld SSH服务器接口
-
-    继承自SSHProtocolHandler，处理SSH协议相关操作
-    逻辑已委托给GameHandler
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.host_key = self._load_host_key()
-        self.banner = get_setting('ssh.banner', 'Welcome to CampusWorld SSH Console')
-
-    def _load_host_key(self) -> paramiko.RSAKey:
-        """加载或生成主机密钥"""
-        return ProtocolFactory.load_host_key()
-
-    def check_auth_password(self, username: str, password: str) -> int:
-        """
-        验证用户名和密码
-
-        委托给父类SSHProtocolHandler处理，父类会调用GameHandler
-        """
-        return super().check_auth_password(username, password)
+from app.ssh.session_config import get_ssh_session_settings
 
 class CampusWorldSSHServer:
     """
@@ -65,7 +39,9 @@ class CampusWorldSSHServer:
         self.running = False
         self.logger = get_logger(LoggerNames.SSH)
         self.audit_logger = get_logger(LoggerNames.AUDIT)
-        self.ssh_interface = CampusWorldSSHServerInterface()
+        self.host_key = ProtocolFactory.load_host_key()
+        self.banner = get_setting('ssh.banner', 'Welcome to CampusWorld SSH Console')
+        self.session_manager = SessionManager()
         max_workers = get_setting('ssh.worker_pool_size', 50)
         self.executor = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix='ssh_client')
         self.active_connections: Dict[str, Future] = {}
@@ -108,6 +84,7 @@ class CampusWorldSSHServer:
         console = None
         channel = None
         transport = None
+        handler = None
         rate_limiter = get_rate_limiter()
         check_result = rate_limiter.check_connection(client_ip)
         if not check_result['allowed']:
@@ -124,34 +101,42 @@ class CampusWorldSSHServer:
             return
         self.logger.info(f'New SSH connection', extra={'client_ip': client_ip, 'client_port': client_port, 'connection_id': connection_id, 'event_type': 'ssh_connection_start'})
         try:
+            handler = ProtocolFactory.create_ssh_handler(client_ip, session_manager=self.session_manager)
             t = paramiko.Transport(client)
             transport = t
-            t.add_server_key(self.ssh_interface.host_key)
-            t.start_server(server=self.ssh_interface)
-            channel = t.accept(20)
+            session_settings = get_ssh_session_settings()
+            if session_settings.keepalive_interval_seconds > 0:
+                t.set_keepalive(session_settings.keepalive_interval_seconds)
+                self.logger.debug('SSH transport keepalive enabled', extra={'interval_seconds': session_settings.keepalive_interval_seconds, 'event_type': 'ssh_session_keepalive_enabled'})
+            t.add_server_key(self.host_key)
+            t.start_server(server=handler)
+            auth_timeout = max(1, session_settings.auth_timeout_seconds)
+            channel = t.accept(auth_timeout)
             if channel is None:
                 self.logger.warning(f'SSH authentication timed out', extra={'client_ip': client_ip, 'client_port': client_port, 'connection_id': connection_id, 'event_type': 'ssh_auth_timeout'})
                 return
-            ssh_session = None
+            ssh_session = handler.authenticated_session
+            if ssh_session is None:
+                self.logger.warning(f'No matching SSH session found', extra={'client_ip': client_ip, 'connection_id': connection_id, 'event_type': 'ssh_session_not_found'})
+                return
             try:
-                transport = channel.get_transport()
-                if transport and hasattr(transport, 'get_username'):
-                    username = transport.get_username()
-                    self.logger.info(f'Setting SSH console', extra={'username': username, 'client_ip': client_ip, 'connection_id': connection_id, 'event_type': 'ssh_console_setup'})
-                    for (session_id, session) in self.ssh_interface.sessions.items():
-                        if session.username == username:
-                            ssh_session = session
-                            session.set_channel(channel)
-                            game_handler.spawn_user(user_id=session.user_id, username=username)
-                            self.logger.info(f'SSH session set', extra={'username': username, 'session_id': session_id, 'client_ip': client_ip, 'connection_id': connection_id, 'event_type': 'ssh_session_established'})
-                            break
-                    else:
-                        self.logger.warning(f'No matching SSH session found', extra={'username': username, 'client_ip': client_ip, 'connection_id': connection_id, 'event_type': 'ssh_session_not_found'})
-                else:
-                    self.logger.warning(f'Unable to get username from transport layer', extra={'client_ip': client_ip, 'connection_id': connection_id, 'event_type': 'ssh_username_not_available'})
+                ssh_session.set_channel(channel)
+                game_handler.spawn_user(user_id=ssh_session.user_id, username=ssh_session.username)
+                self.session_manager.touch_session(ssh_session.session_id, reason='console_ready')
+                self.logger.info(
+                    f'SSH session set',
+                    extra={
+                        'username': ssh_session.username,
+                        'session_id': ssh_session.session_id,
+                        'client_ip': client_ip,
+                        'connection_id': connection_id,
+                        'event_type': 'ssh_session_established',
+                    },
+                )
             except Exception as e:
                 self.logger.error(f'Error setting SSH console session', extra={'client_ip': client_ip, 'connection_id': connection_id, 'error': str(e), 'error_type': type(e).__name__, 'event_type': 'ssh_console_setup_error'})
-            console = SSHConsole(channel, ssh_session, session_manager=self.ssh_interface.session_manager, game_handler=game_handler)
+                return
+            console = SSHConsole(channel, ssh_session, session_manager=self.session_manager, game_handler=game_handler)
             console.run()
         except Exception as e:
             self.logger.error(f'Error handling SSH client connection', extra={'client_ip': client_ip, 'client_port': client_port, 'connection_id': connection_id, 'error': str(e), 'error_type': type(e).__name__, 'event_type': 'ssh_connection_error'})
@@ -192,7 +177,7 @@ class CampusWorldSSHServer:
         self.running = False
         self.logger.warning('Force closing SSH server...')
         try:
-            self.ssh_interface.session_manager.force_close_all()
+            self.session_manager.force_close_all()
         except Exception as e:
             self.logger.error(f'Force close sessions failed: {e}')
         if self.executor:
@@ -205,7 +190,7 @@ class CampusWorldSSHServer:
             except Exception as e:
                 self.logger.error(f'Error closing SSH server socket', extra={'error': str(e), 'error_type': type(e).__name__, 'event_type': 'ssh_socket_close_error'})
         try:
-            self.ssh_interface.session_manager.cleanup_all()
+            self.session_manager.cleanup_all()
             self.logger.info(f'SSH session cleaned up', extra={'event_type': 'ssh_sessions_cleaned'})
         except Exception as e:
             self.logger.error(f'Error cleaning up SSH session', extra={'error': str(e), 'error_type': type(e).__name__, 'event_type': 'ssh_sessions_cleanup_error'})

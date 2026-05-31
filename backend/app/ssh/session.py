@@ -12,7 +12,20 @@ from app.core.database import db_session_context
 from app.models.graph import Node
 from app.models.user import User
 from app.core.log import get_logger, LoggerNames
+from app.ssh.session_config import get_ssh_session_settings
 logger = get_logger(LoggerNames.SSH)
+audit_logger = get_logger(LoggerNames.AUDIT)
+
+
+def _send_terminal_line(session: 'SSHSession', line: str) -> None:
+    ch = getattr(session, 'channel', None)
+    if ch is None or getattr(ch, 'closed', True):
+        return
+    try:
+        ch.send((line + '\r\n').encode('utf-8'))
+    except Exception:
+        pass
+
 
 @dataclass
 class SSHSession:
@@ -23,8 +36,11 @@ class SSHSession:
     user_attrs: Dict[str, Any]
     connected_at: datetime = field(default_factory=datetime.now)
     last_activity: datetime = field(default_factory=datetime.now)
+    last_user_input_at: datetime = field(default_factory=datetime.now)
     is_active: bool = True
     is_closing: bool = False
+    idle_warning_sent: bool = False
+    disconnect_reason: Optional[str] = None
     roles: List[str] = field(default_factory=list)
     permissions: List[str] = field(default_factory=list)
     access_level: str = 'normal'
@@ -35,6 +51,7 @@ class SSHSession:
     command_ephemeral: Dict[str, Any] = field(default_factory=dict)
     nested_repl: Optional[Any] = field(default=None, init=False, repr=False)
     channel: Optional[Any] = field(default=None, init=False, repr=False)
+    disconnect_event: threading.Event = field(default_factory=threading.Event, init=False, repr=False)
 
     def __post_init__(self):
         """初始化后处理"""
@@ -55,16 +72,23 @@ class SSHSession:
                 self.permissions = ['player']
             logger.warning('ssh_session_permission_fallback', extra={'username': self.username, 'user_id': self.user_id, 'access_level': self.access_level, 'fallback_permissions': list(self.permissions)})
 
-    def update_activity(self):
-        """更新最后活动时间"""
-        self.last_activity = datetime.now()
+    @property
+    def last_activity_at(self) -> datetime:
+        return self.last_activity
+
+    def update_activity(self, *, user_input: bool = False) -> None:
+        """Update idle clock (last_activity)."""
+        now = datetime.now()
+        self.last_activity = now
+        if user_input:
+            self.last_user_input_at = now
 
     def add_command(self, command: str):
         """添加命令到历史记录"""
         self.command_history.append(command)
         if len(self.command_history) > 100:
             self.command_history = self.command_history[-100:]
-        self.update_activity()
+        self.update_activity(user_input=True)
 
     def add_output(self, text: str):
         """追加待下发/回显的输出行（测试与控制台缓冲）。"""
@@ -75,11 +99,14 @@ class SSHSession:
         """清空输出缓冲。"""
         self.output_buffer.clear()
 
+    def should_disconnect(self) -> bool:
+        return self.disconnect_event.is_set()
+
     def get_session_info(self) -> Dict[str, Any]:
         """获取会话信息摘要"""
         return {'session_id': self.session_id, 'username': self.username, 'user_id': self.user_id, 'connected_at': self.connected_at.isoformat(), 'last_activity': self.last_activity.isoformat(), 'duration': str(datetime.now() - self.connected_at), 'roles': self.roles, 'access_level': self.access_level, 'command_count': len(self.command_history)}
 
-    def is_expired(self, timeout_minutes: int=30) -> bool:
+    def is_expired(self, timeout_minutes: int = 30) -> bool:
         """检查会话是否过期"""
         if not self.is_active:
             return True
@@ -91,6 +118,8 @@ class SSHSession:
         self.is_active = False
         self.is_closing = True
         self.nested_repl = None
+        if not self.disconnect_event.is_set():
+            self.disconnect_event.set()
         self._close_channel()
         self._save_session_state()
 
@@ -136,11 +165,7 @@ class SSHSession:
         return self._user_object
 
     def _load_user_object(self) -> Optional[Any]:
-        """从图库加载账号到内存（单向 hydrate，不写新 ``nodes`` 行）。
-
-        禁止 ``User(**attributes)`` 走默认构造里的 ``sync_to_node``，否则会按新 uuid
-        插入重复 ``account`` 节点；见 ``GraphSynchronizer.sync_node_to_object``。
-        """
+        """从图库加载账号到内存（单向 hydrate，不写新 ``nodes`` 行）。"""
         try:
             from app.models.graph_sync import GraphSynchronizer
             with db_session_context() as session:
@@ -151,6 +176,7 @@ class SSHSession:
         except Exception as e:
             logger.error(f'Failed to load user object: {e}')
             return None
+
 
 class SessionManager:
     """会话管理器"""
@@ -167,6 +193,48 @@ class SessionManager:
         with self.lock:
             self.sessions[session.session_id] = session
             self.logger.info(f'Session added: {session.session_id} for user {session.username}')
+
+    def touch_session(self, session_id: str, *, user_input: bool = False, reason: str = '') -> None:
+        """Refresh session activity clock (F01 idle enforcement)."""
+        with self.lock:
+            sess = self.sessions.get(session_id)
+            if sess is None or not sess.is_active:
+                return
+            sess.update_activity(user_input=user_input)
+            if user_input:
+                sess.idle_warning_sent = False
+
+    def maybe_send_idle_warning(self, session: SSHSession, settings) -> None:
+        if settings.idle_timeout_minutes <= 0 or settings.idle_warning_minutes <= 0:
+            return
+        if session.idle_warning_sent or not session.is_active:
+            return
+        idle_limit = timedelta(minutes=settings.idle_timeout_minutes)
+        warn_at = idle_limit - timedelta(minutes=settings.idle_warning_minutes)
+        idle_elapsed = datetime.now() - session.last_activity
+        if idle_elapsed < warn_at:
+            return
+        remaining = max(1, settings.idle_warning_minutes)
+        _send_terminal_line(session, f'Session will disconnect in {remaining} minute(s) due to inactivity.')
+        session.idle_warning_sent = True
+        logger.info('ssh_session_idle_warning', extra={'session_id': session.session_id, 'username': session.username, 'idle_seconds': int(idle_elapsed.total_seconds()), 'reason': 'idle_warning'})
+        audit_logger.info('ssh_session_idle_warning', extra={'session_id': session.session_id, 'username': session.username, 'event_type': 'ssh_session_idle_warning'})
+
+    def request_disconnect(self, session_id: str, reason: str = 'idle_timeout') -> None:
+        """Signal console to exit and close channel (full session teardown)."""
+        with self.lock:
+            sess = self.sessions.get(session_id)
+            if sess is None or not sess.is_active or sess.is_closing:
+                return
+            sess.is_closing = True
+            sess.disconnect_reason = reason
+        idle_seconds = int((datetime.now() - sess.last_activity).total_seconds())
+        if reason == 'idle_timeout':
+            _send_terminal_line(sess, 'Session idle timeout. Disconnecting.')
+        audit_logger.info('ssh_session_idle_disconnect', extra={'session_id': session_id, 'username': sess.username, 'idle_seconds': idle_seconds, 'reason': reason, 'event_type': 'ssh_session_idle_disconnect'})
+        logger.info('ssh_session_idle_disconnect', extra={'session_id': session_id, 'username': sess.username, 'idle_seconds': idle_seconds, 'reason': reason})
+        sess.disconnect_event.set()
+        sess._close_channel()
 
     def remove_session(self, session_id: str):
         """移除会话"""
@@ -219,11 +287,14 @@ class SessionManager:
         with self.lock:
             return len([s for s in self.sessions.values() if s.username == username])
 
+    def count_active_sessions_for_user(self, user_id: int) -> int:
+        """Count active sessions for an account (session cap enforcement)."""
+        with self.lock:
+            return len([s for s in self.sessions.values() if s.is_active and s.user_id == user_id])
+
     def update_session_activity(self, session_id: str):
         """更新会话活动时间"""
-        with self.lock:
-            if session_id in self.sessions:
-                self.sessions[session_id].update_activity()
+        self.touch_session(session_id)
 
     def add_command_to_session(self, session_id: str, command: str):
         """向指定会话添加命令"""
@@ -244,8 +315,50 @@ class SessionManager:
                 user_stats[session.username]['total_commands'] += len(session.command_history)
             return {'total_sessions': total_sessions, 'active_sessions': len(active_sessions), 'user_stats': user_stats, 'timestamp': datetime.now().isoformat()}
 
-    def cleanup_expired_sessions(self, timeout_minutes: int=30):
-        """清理过期会话"""
+    def enforce_idle_timeouts(self) -> None:
+        """Apply configured app-layer idle disconnect (F01)."""
+        settings = get_ssh_session_settings()
+        if settings.idle_timeout_minutes <= 0:
+            return
+        idle_limit = timedelta(minutes=settings.idle_timeout_minutes)
+        with self.lock:
+            active = [s for s in self.sessions.values() if s.is_active and not s.is_closing and s.channel is not None]
+        for sess in active:
+            idle_elapsed = datetime.now() - sess.last_activity
+            self.maybe_send_idle_warning(sess, settings)
+            if idle_elapsed >= idle_limit:
+                self.request_disconnect(sess.session_id, reason='idle_timeout')
+
+    def cleanup_orphan_pre_channel_sessions(self) -> None:
+        """Remove sessions that authenticated but never bound a channel (orphan TTL)."""
+        settings = get_ssh_session_settings()
+        ttl = timedelta(seconds=max(1, settings.auth_timeout_seconds) * 2)
+        now = datetime.now()
+        with self.lock:
+            orphan_ids = [
+                sid for sid, sess in self.sessions.items()
+                if sess.is_active and sess.channel is None and (now - sess.connected_at) > ttl
+            ]
+        for session_id in orphan_ids:
+            sess = self.get_session(session_id)
+            username = sess.username if sess else 'unknown'
+            logger.info(
+                'ssh_session_orphan_removed',
+                extra={
+                    'session_id': session_id,
+                    'username': username,
+                    'reason': 'orphan_pre_channel',
+                    'event_type': 'ssh_session_orphan_removed',
+                },
+            )
+            self.remove_session(session_id)
+
+    def cleanup_expired_sessions(self, timeout_minutes: int = 30):
+        """Legacy helper; delegates to enforce_idle_timeouts when using default config."""
+        settings = get_ssh_session_settings()
+        if settings.idle_timeout_minutes > 0:
+            self.enforce_idle_timeouts()
+            return
         with self.lock:
             expired_sessions = [session_id for (session_id, session) in self.sessions.items() if session.is_expired(timeout_minutes)]
         for session_id in expired_sessions:
@@ -290,16 +403,20 @@ class SessionManager:
                 self.logger.warning('daemon_possession_transport_release_failed session_id=%s error=%s', sid, e)
         for session in sessions:
             session.is_closing = True
+            session.disconnect_event.set()
             session._close_channel()
             session.is_active = False
         self.logger.warning('All sessions force closed')
 
     def _cleanup_worker(self):
-        """清理工作线程"""
+        """Idle enforcement worker (F01)."""
         while True:
             try:
-                time.sleep(300)
-                self.cleanup_expired_sessions()
+                settings = get_ssh_session_settings()
+                poll = max(1, settings.cleanup_poll_interval_seconds)
+                time.sleep(poll)
+                self.cleanup_orphan_pre_channel_sessions()
+                self.enforce_idle_timeouts()
             except Exception as e:
                 self.logger.error(f'Cleanup worker error: {e}')
 
@@ -311,6 +428,7 @@ class SessionManager:
                     self.logger.info(f'Active session: {session_obj.get_session_info()}')
         except Exception as e:
             self.logger.error(f'Failed to save session logs: {e}')
+
 
 class SessionMonitor:
     """会话监控器"""
@@ -332,9 +450,11 @@ class SessionMonitor:
     def check_security_issues(self) -> List[Dict[str, Any]]:
         """检查安全相关问题"""
         issues = []
+        settings = get_ssh_session_settings()
+        warn_minutes = settings.idle_timeout_minutes if settings.idle_timeout_minutes > 0 else 10
         active_sessions = self.session_manager.get_active_sessions()
         for session in active_sessions:
-            if session.is_expired(10):
+            if session.is_expired(warn_minutes):
                 issues.append({'type': 'idle_session', 'session_id': session.session_id, 'username': session.username, 'idle_time': str(datetime.now() - session.last_activity), 'severity': 'warning'})
             if len(session.command_history) > 50:
                 issues.append({'type': 'high_command_volume', 'session_id': session.session_id, 'username': session.username, 'command_count': len(session.command_history), 'severity': 'info'})

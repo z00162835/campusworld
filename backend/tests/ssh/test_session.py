@@ -211,6 +211,7 @@ class TestSessionManager:
     @patch("app.ssh.session.SSHSession._save_session_state")
     def test_cleanup_expired_sessions(self, _mock_save):
         """测试清理过期会话"""
+        from app.ssh.session_config import SSHSessionSettings
         # 添加一个正常会话
         normal_session = self.session_class(
             session_id="normal",
@@ -230,8 +231,16 @@ class TestSessionManager:
         expired_session.last_activity = datetime.now() - timedelta(hours=1)
         self.manager.add_session(expired_session)
 
-        # 清理过期会话
-        self.manager.cleanup_expired_sessions(timeout_minutes=30)
+        settings = SSHSessionSettings(
+            auth_timeout_seconds=20,
+            idle_timeout_minutes=0,
+            idle_warning_minutes=1,
+            keepalive_interval_seconds=30,
+            cleanup_poll_interval_seconds=60,
+            max_sessions_per_user=3,
+        )
+        with patch('app.ssh.session.get_ssh_session_settings', return_value=settings):
+            self.manager.cleanup_expired_sessions(timeout_minutes=30)
 
         # 正常会话应该保留
         assert self.manager.get_session("normal") is not None
@@ -268,11 +277,17 @@ class TestProtocolFactory:
     def test_create_ssh_handler(self):
         """测试创建SSH处理器"""
         from app.ssh.protocol_handler import ProtocolFactory, SSHProtocolHandler
+        from app.ssh.session import SessionManager
 
-        handler = ProtocolFactory.create_ssh_handler(client_ip="127.0.0.1")
+        with patch.object(SessionManager, '__init__', lambda self: None):
+            mgr = SessionManager.__new__(SessionManager)
+            mgr.sessions = {}
+            mgr.lock = __import__('threading').Lock()
+        handler = ProtocolFactory.create_ssh_handler(client_ip="127.0.0.1", session_manager=mgr)
 
         assert isinstance(handler, SSHProtocolHandler)
         assert handler.client_ip == "127.0.0.1"
+        assert handler.session_manager is mgr
 
 
 class TestSSHProtocolHandler:
@@ -281,14 +296,20 @@ class TestSSHProtocolHandler:
     def setup_method(self):
         """每个测试方法前的设置"""
         from app.ssh.protocol_handler import SSHProtocolHandler
-        self.handler = SSHProtocolHandler(client_ip="127.0.0.1")
+        from app.ssh.session import SessionManager
+        with patch.object(SessionManager, '__init__', lambda self: None):
+            self.session_manager = SessionManager.__new__(SessionManager)
+            self.session_manager.sessions = {}
+            self.session_manager.lock = __import__('threading').Lock()
+        self.handler = SSHProtocolHandler(client_ip="127.0.0.1", session_manager=self.session_manager)
 
     def test_handler_initialization(self):
         """测试处理器初始化"""
         assert self.handler is not None
         assert self.handler.client_ip == "127.0.0.1"
         assert self.handler.event is not None
-        assert isinstance(self.handler.sessions, dict)
+        assert self.handler.authenticated_session is None
+        assert self.handler.session_manager is self.session_manager
 
     def test_check_channel_request_session(self):
         """测试通道请求 - session类型"""

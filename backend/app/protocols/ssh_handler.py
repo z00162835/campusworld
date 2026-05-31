@@ -19,7 +19,20 @@ class SSHHandler(ProtocolHandler):
         super().__init__()
         self.logger.info('SSH protocol handler initialized')
 
-    def _attach_aico_stream_context(self, context: CommandContext, session: Optional[Any]) -> None:
+    def _session_activity_touch(self, session_id: str, metadata: Optional[Dict[str, Any]], *, reason: str = 'command') -> None:
+        if not session_id or not metadata:
+            return
+        sm = metadata.get('session_manager')
+        if sm is not None and hasattr(sm, 'touch_session'):
+            sm.touch_session(session_id, reason=reason)
+
+    def _wrap_activity_emit(self, emit_fn, session_id: str, metadata: Optional[Dict[str, Any]], reason: str):
+        def _emit(*args, **kwargs):
+            self._session_activity_touch(session_id, metadata, reason=reason)
+            return emit_fn(*args, **kwargs)
+        return _emit
+
+    def _attach_aico_stream_context(self, context: CommandContext, session: Optional[Any], session_id: str, metadata: Optional[Dict[str, Any]]) -> None:
         """F13: opt-in NDJSON side channel via session ephemeral or SSH_AICO_STREAM env."""
         stream_on = False
         if session is not None:
@@ -40,9 +53,9 @@ class SSHHandler(ProtocolHandler):
                 ch.send((line + '\n').encode('utf-8'))
             except Exception:
                 pass
-        context.stream_emit = _emit
+        context.stream_emit = self._wrap_activity_emit(_emit, session_id, metadata, 'aico_tick')
 
-    def _attach_aico_repl_human_progress(self, context: CommandContext, session: Optional[Any]) -> None:
+    def _attach_aico_repl_human_progress(self, context: CommandContext, session: Optional[Any], session_id: str, metadata: Optional[Dict[str, Any]]) -> None:
         """
         F13 §17.7: plain-text processing hint for ``aico -i`` on native SSH — not NDJSON.
         Suppressed when ``supports_aico_stream`` (thin client / debug pipe owns the wire).
@@ -66,19 +79,26 @@ class SSHHandler(ProtocolHandler):
                 ch.send(text.encode('utf-8'))
             except Exception:
                 pass
-        context.aico_progress_emit = _emit
+        def _emit(text: str) -> None:
+            try:
+                ch.send(text.encode('utf-8'))
+            except Exception:
+                pass
+        context.aico_progress_emit = self._wrap_activity_emit(_emit, session_id, metadata, 'aico_tick')
 
     def handle_interactive_command(self, user_id: str, username: str, session_id: str, permissions: List[str], command_line: str, session: Optional[Any]=None, game_state: Optional[Dict[str, Any]]=None, metadata: Optional[Dict[str, Any]]=None) -> str:
         """处理SSH交互式命令"""
         try:
             if not command_line.strip():
                 return ''
+            self._session_activity_touch(session_id, metadata, reason='command_start')
             with db_session_context() as db_session:
                 context = self.create_context(user_id, username, session_id, permissions, session, game_state, db_session=db_session, metadata=metadata)
-                self._attach_aico_stream_context(context, session)
-                self._attach_aico_repl_human_progress(context, session)
+                self._attach_aico_stream_context(context, session, session_id, metadata)
+                self._attach_aico_repl_human_progress(context, session, session_id, metadata)
                 at_res = try_dispatch_at_line(command_line, context)
                 if at_res is not None:
+                    self._session_activity_touch(session_id, metadata, reason='command_end')
                     return self._format_command_result(at_res)
                 parts = split_command_line(command_line)
                 command_name = parts[0].lower()
@@ -90,6 +110,7 @@ class SSHHandler(ProtocolHandler):
                 if not decision.allowed:
                     return self._format_permission_denied(command_name)
                 result = command.execute(context, args)
+                self._session_activity_touch(session_id, metadata, reason='command_end')
                 return self._format_command_result(result)
         except Exception:
             self.logger.exception('Command execution error')

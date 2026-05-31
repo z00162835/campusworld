@@ -54,20 +54,16 @@ ssh/
 
 ### server.py - SSH服务器
 
-**CampusWorldSSHServerInterface** (继承自 `SSHProtocolHandler`)
-- 处理 SSH 连接认证（委托给 GameHandler）
-- 管理多个 SSH 会话
-
 **CampusWorldSSHServer**
-- SSH 服务器主类
+- SSH 服务器主类；持有 `host_key`、共享 `SessionManager`
+- 每 TCP 连接创建独立 `SSHProtocolHandler`（Portal）
 - 监听和接受连接
-- 事件驱动架构
 
-### protocol_handler.py - 协议层
+### protocol_handler.py - 协议层（每连接 Portal）
 
 **SSHProtocolHandler** (继承自 `paramiko.ServerInterface`)
-- SSH 协议处理
-- 用户认证入口（委托给 GameHandler）
+- 每连接实例，携带 `client_ip` 与 `authenticated_session`
+- 注入共享 `SessionManager`（idle / `who` 权威源）
 - 会话创建
 
 **ProtocolFactory**

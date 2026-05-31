@@ -70,3 +70,18 @@ class SshReplIo:
         if result:
             c._safe_send_output(result)
         c._send_command_output_newline()
+
+    def poll_disconnect(self) -> bool:
+        sess = self.session
+        if sess is not None and sess.should_disconnect():
+            self.stop_console()
+            return True
+        return False
+
+    def stop_console(self) -> None:
+        self._console.running = False
+
+    def touch_session(self, *, user_input: bool = False, reason: str = '') -> None:
+        if self.session_manager is None or self.session is None:
+            return
+        self.session_manager.touch_session(self.session.session_id, user_input=user_input, reason=reason)

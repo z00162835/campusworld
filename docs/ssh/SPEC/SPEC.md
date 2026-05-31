@@ -11,6 +11,7 @@ SSH 服务器（`backend/app/ssh/`）基于 Paramiko 实现，采用 Evennia 的
 - SSH 特性文档统一存放于 `docs/ssh/SPEC/features/`。
 - `docs/ssh/SPEC/` 根目录仅保留模块级文件：`SPEC.md`、`TODO.md`、`ACCEPTANCE.md`。
 - 公告栏特性规范唯一来源：`docs/ssh/SPEC/features/F00_BULLETIN_BOARD.md`。
+- 会话生命周期（idle / teardown）：`docs/ssh/SPEC/features/F01_SSH_SESSION_LIFECYCLE.md`。
 
 > **注**：CampusWorld 是智慧园区 OS，SSH 终端是用户与园区空间交互的标准接口之一，借鉴 MUD 设计原理而非开发。
 
@@ -26,12 +27,13 @@ SSH 服务器（`backend/app/ssh/`）基于 Paramiko 实现，采用 Evennia 的
 
 ## Login to Hub Call Chain (Current Implementation)
 
-1. `SSHProtocolHandler.check_auth_password()` 调用 `game_handler.authenticate_user()` 进行认证。
-2. 认证成功后创建 `SSHSession`。
-3. `CampusWorldSSHServer._handle_client()` 在绑定会话后调用 `game_handler.spawn_user()`。
-4. `spawn_user()` 调用 `root_manager.ensure_root_node_exists()` 并将用户 `location_id/home_id` 指向根空间。
+1. `CampusWorldSSHServer._handle_client()` creates a **per-connection** `SSHProtocolHandler` (Portal) with `client_ip` and shared `SessionManager`.
+2. `SSHProtocolHandler.check_auth_password()` calls `game_handler.authenticate_user()`; enforces `max_sessions_per_user` when configured.
+3. On success, `SSHSession` is registered in the shared `SessionManager`; handler holds `authenticated_session` for this transport only.
+4. After `Transport.accept()`, server binds channel, calls `game_handler.spawn_user()`, then `touch_session(..., reason='console_ready')`.
+5. `SSHConsole.run()` drives the interactive shell.
 
-该调用链说明：当前实现已具备“登录后进入奇点屋”的基础行为，但仍是同进程同步调用，不是进程间消息架构。
+该调用链说明：Portal 粒度为每 TCP 连接一个 handler；Session 注册表与 idle/`who` 仍为进程级共享。同进程同步调用，不是进程间消息架构。
 
 ## 架构设计（四层架构）
 
@@ -67,9 +69,8 @@ SSH 服务器（`backend/app/ssh/`）基于 Paramiko 实现，采用 Evennia 的
 
 | 类 | 文件 | 说明 |
 |---|---|---|
-| `CampusWorldSSHServer` | server.py | SSH 服务器主类，生命周期管理 |
-| `CampusWorldSSHServerInterface` | server.py | Paramiko ServerInterface 实现 |
-| `SSHProtocolHandler` | protocol_handler.py | SSH 协议处理 |
+| `CampusWorldSSHServer` | server.py | SSH 服务器主类，生命周期管理；持有 `host_key` 与共享 `SessionManager` |
+| `SSHProtocolHandler` | protocol_handler.py | 每连接 Portal：Paramiko ServerInterface，认证与 transport 上下文 |
 | `ProtocolFactory` | protocol_handler.py | 协议处理器工厂 |
 | `GameHandler` | game_handler.py | 层：authenticate_user/spawn_user |
 | `SSHSession` | session.py | 单个 SSH 会话 |
@@ -129,7 +130,7 @@ DISCONNECTED
 
 - [ ] 是否需要公钥认证支持？
 - [ ] 会话数据是否需要持久化（断线重连）？
-- [ ] 是否需要命令执行超时机制？
+- [ ] 是否需要命令执行超时机制？ → 见 F01（idle）与 TODO「命令执行超时」
 - [ ] 是否将当前同进程调用升级为进程间消息交互（Portal/Server 分离）？
 
 ## Dependencies

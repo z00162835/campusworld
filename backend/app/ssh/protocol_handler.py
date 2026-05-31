@@ -4,10 +4,8 @@
 负责处理SSH协议相关的操作，与逻辑解耦。
 参考Evenia的Portal层设计。
 """
-import socket
 import threading
-import time
-from typing import Dict, Any, Optional, Callable
+from typing import Optional
 from datetime import datetime
 import paramiko
 from paramiko import ServerInterface
@@ -15,29 +13,33 @@ from paramiko.common import AUTH_SUCCESSFUL, AUTH_FAILED, OPEN_SUCCEEDED
 from app.core.config_manager import get_setting
 from app.core.log import get_logger, LoggerNames
 from app.ssh.session import SSHSession, SessionManager
+from app.ssh.session_config import get_ssh_session_settings
 from app.ssh.game_handler import game_handler
 from app.ssh.rate_limiter import get_rate_limiter
 
 class SSHProtocolHandler(ServerInterface):
     """
-    SSH协议处理器
+    SSH协议处理器（每连接 Portal）
 
     负责：
     - SSH连接管理
     - 用户认证（委托给GameHandler）
-    - 会话生命周期
-    - 通道管理
+    - 本会话 transport 上下文（client_ip, authenticated_session）
     """
 
-    def __init__(self, client_ip: str='unknown'):
+    def __init__(self, client_ip: str = 'unknown', *, session_manager: SessionManager):
         self.event = threading.Event()
-        self.sessions: Dict[str, SSHSession] = {}
-        self.session_manager = SessionManager()
+        self.session_manager = session_manager
         self.client_ip = client_ip
+        self._authenticated_session: Optional[SSHSession] = None
         self.logger = get_logger(LoggerNames.SSH)
         self.audit_logger = get_logger(LoggerNames.AUDIT)
         self.security_logger = get_logger(LoggerNames.SECURITY)
-        self.auth_timeout = get_setting('ssh.auth_timeout', 60)
+        self.auth_timeout = int(get_setting('ssh.session.auth_timeout_seconds', 20))
+
+    @property
+    def authenticated_session(self) -> Optional[SSHSession]:
+        return self._authenticated_session
 
     def check_auth_password(self, username: str, password: str) -> int:
         """
@@ -51,8 +53,24 @@ class SSHProtocolHandler(ServerInterface):
             rate_limiter = get_rate_limiter()
             rate_limiter.record_login_attempt(self.client_ip, result['success'])
             if result['success']:
+                settings = get_ssh_session_settings()
+                if settings.max_sessions_per_user > 0:
+                    active_count = self.session_manager.count_active_sessions_for_user(result['user_id'])
+                    if active_count >= settings.max_sessions_per_user:
+                        self.security_logger.warning(
+                            'ssh_session_limit_exceeded',
+                            extra={
+                                'username': username,
+                                'user_id': result['user_id'],
+                                'client_ip': self.client_ip,
+                                'active_count': active_count,
+                                'max_sessions_per_user': settings.max_sessions_per_user,
+                                'event_type': 'ssh_session_limit_exceeded',
+                            },
+                        )
+                        return AUTH_FAILED
                 ssh_session = SSHSession(session_id=result['session_id'], username=result['username'], user_id=result['user_id'], user_attrs=result['user_attrs'])
-                self.sessions[result['session_id']] = ssh_session
+                self._authenticated_session = ssh_session
                 self.session_manager.add_session(ssh_session)
                 self.audit_logger.info(f'SSH login succeeded', extra={'username': username, 'session_id': result['session_id'], 'client_ip': self.client_ip, 'login_time': datetime.now().isoformat(), 'event_type': 'ssh_login'})
                 return AUTH_SUCCESSFUL
@@ -98,9 +116,9 @@ class ProtocolFactory:
     """
 
     @staticmethod
-    def create_ssh_handler(client_ip: str='unknown') -> SSHProtocolHandler:
-        """创建SSH协议处理器"""
-        return SSHProtocolHandler(client_ip=client_ip)
+    def create_ssh_handler(client_ip: str = 'unknown', *, session_manager: SessionManager) -> SSHProtocolHandler:
+        """Create a per-connection SSH protocol handler (Portal)."""
+        return SSHProtocolHandler(client_ip=client_ip, session_manager=session_manager)
 
     @staticmethod
     def load_host_key() -> paramiko.RSAKey:
