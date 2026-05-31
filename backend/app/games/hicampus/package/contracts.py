@@ -3,7 +3,7 @@ Dual-model (entity + concept) contracts for HiCampus world data package.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 class DataPackageError(Exception):
 
@@ -26,3 +26,4 @@ class PackageSnapshotV2:
     concepts: Dict[str, List[Dict[str, Any]]]
     relationships: List[Dict[str, Any]]
     meta: Dict[str, Any] = field(default_factory=dict)
+    world_environment: Optional[Dict[str, Any]] = None

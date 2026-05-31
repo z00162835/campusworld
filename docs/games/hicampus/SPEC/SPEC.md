@@ -58,7 +58,8 @@ flowchart TD
 - **房间与连边的真源**为 `data/rooms.yaml`、`data/relationships.yaml`（含 `connects_to` 的 `direction`）。其中**大量** `connects_to` 由 `app/games/hicampus/package/topology_connect_generate.py` 生成（带 `topology_auto`）；手工维护时勿覆盖脊线保留集，见该文件内 `PRESERVE_CONNECT_IDS`。
 - **改包后刷新命令顺序**（在 `backend/` 下）：见 [`app/games/hicampus/package/README.md`](../../../../backend/app/games/hicampus/package/README.md)（`spatial_generate` 可选 → `topology_connect_generate` → `entity_item_generate` 可选 → `entity_relationship_generate` → `world reload hicampus`）。
 - **安装与奇点屋进入**：`world install hicampus` → 奇点屋 `look` / `enter hicampus`；**图种子**由包内 `manifest.yaml` 的 `graph_seed` 控制，需 PostgreSQL，说明见 [`QUICKSTART.md`](../../../../QUICKSTART.md) 与 [`backend/app/games/hicampus/AGENTS.md`](../../../../backend/app/games/hicampus/AGENTS.md)。
-- **特性分档**：入口与容错见 `SPEC/features/F05_WORLD_ENTRY_INTEGRATION.md`，图种子见 `F03_GRAPH_SEED_PIPELINE.md`。
+- **特性分档**：入口与容错见 `SPEC/features/F05_WORLD_ENTRY_INTEGRATION.md`，图种子见 `F03_GRAPH_SEED_PIPELINE.md`，园区宏观环境见 [`F09_WORLD_ENVIRONMENT.md`](features/F09_WORLD_ENVIRONMENT.md)。
+- **改 `world.yaml` 环境块或户外 room tag 后**：先 `python -m db.init_database migrate`（刷新 `node_types`），再 `world reload hicampus`；无独立 data migration。详见 F09 Deployment。
 
 ## Evennia Reference Mapping
 
@@ -73,6 +74,9 @@ flowchart TD
 3. **属性/标签驱动内容组织**
    - Evennia 使用 attributes/tags 组织对象行为与检索。
    - 映射：`HiCampus` 节点初始化字段统一沉淀在 `attributes`，并用 `tags` 支持检索与展示策略。
+4. **世界级环境状态（GLOBAL Script 类比）**
+   - Evennia 常用 GLOBAL Script 持有天气/时间等全局状态。
+   - 映射：CampusWorld 用 **`world_environment` 图节点**（`trait_class: ENV`）+ `location_id → world` 表达每 world 单例宏观天气/温湿度；户外 room 以 tag `environment:outdoor` 门控 `look` 摘要。规范见 [`F09_WORLD_ENVIRONMENT.md`](features/F09_WORLD_ENVIRONMENT.md)。
 
 参考资料：
 - [Evennia Exits](https://www.evennia.com/docs/latest/Components/Exits.html)
@@ -133,8 +137,8 @@ flowchart TB
 | ID | 名称 | 类型 | 最小说明 |
 |---|---|---|---|
 | `hicampus_gate` | HiCampus 大门 | room | 世界入口地标，连接奇点屋入口对象 |
-| `hicampus_bridge` | HiCampus 长桥 | room | 过渡空间，承接入口流量 |
-| `hicampus_plaza` | HiCampus 中心广场 | room | 主枢纽节点，承接主导航 |
+| `hicampus_bridge` | HiCampus 长桥 | room | 过渡空间，承接入口流量；tag `environment:outdoor` |
+| `hicampus_plaza` | HiCampus 中心广场 | room | 主枢纽节点，承接主导航；tag `environment:outdoor` |
 | `hicampus_f1` | F1 办公楼 | building | 23层办公综合体（叙事名：F1 Office） |
 | `hicampus_f2` | F2 食堂 | building | 3层餐饮服务建筑 |
 | `hicampus_f3` | F3 培训中心 | building | 6层培训与会议建筑 |
@@ -577,7 +581,7 @@ backend/app/games/hicampus/
   ├── __init__.py
   ├── game.py
   ├── data/
-  │   ├── world.yaml
+  │   ├── world.yaml          # world + world_environment（见 F09）
   │   ├── buildings.yaml
   │   ├── floors.yaml
   │   ├── rooms.yaml
@@ -726,6 +730,10 @@ python -m app.games.hicampus.package.topology_connect_generate --write
 python -m app.games.hicampus.package.entity_relationship_generate --write
 
 # 3) 进引擎后重载世界（管理员命令）
+# world reload hicampus
+
+# 3b) 若改动了 world.yaml 的 world_environment 或 node_types 本体，先 migrate 再 reload：
+# python -m db.init_database migrate
 # world reload hicampus
 
 # 4) 严格校验（管理员命令）

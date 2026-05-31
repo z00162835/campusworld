@@ -134,3 +134,59 @@ def test_look_command_world_prefers_node_description_over_entry_text():
     assert "WORLD NODE DESC" in out
     assert "ENTRY DESC" not in out
 
+
+def test_outdoor_environment_summary_skips_without_outdoor_tag():
+    from app.commands.game.look_command import LookCommand
+
+    cmd = LookCommand()
+    ctx = _build_context()
+    room = {
+        "tags": ["room", "hicampus"],
+        "room_node_attributes": {"world_id": "hicampus"},
+    }
+    assert cmd._outdoor_environment_summary(ctx, room) is None
+
+
+def test_look_outdoor_room_shows_environment_summary():
+    from app.commands.game.look_command import LookCommand
+
+    cmd = LookCommand()
+    ctx = _build_context()
+
+    class _FakeNode:
+        attributes = {"weather_code": "clear", "temperature_c": 26, "humidity_pct": 68}
+
+    cmd._outdoor_environment_summary = lambda _ctx, room: (
+        "室外：晴，26°C，湿度 68%" if "environment:outdoor" in (room.get("tags") or []) else None
+    )
+    cmd._get_current_room = lambda _ctx: {
+        "name": "Plaza",
+        "description": "开阔的广场。",
+        "tags": ["environment:outdoor"],
+        "attributes": {"world_id": "hicampus"},
+        "items": [],
+        "exits": [],
+    }
+    result = cmd.execute(ctx, [])
+    assert result.success
+    assert "室外：晴" in result.message
+    assert result.message.index("开阔的广场") < result.message.index("室外：晴")
+
+
+def test_look_indoor_room_skips_environment_summary():
+    from app.commands.game.look_command import LookCommand
+
+    cmd = LookCommand()
+    ctx = _build_context()
+    cmd._get_current_room = lambda _ctx: {
+        "name": "Gate",
+        "description": "门厅。",
+        "tags": ["room", "hicampus"],
+        "attributes": {"world_id": "hicampus"},
+        "items": [],
+        "exits": [],
+    }
+    result = cmd.execute(ctx, [])
+    assert result.success
+    assert "室外：" not in result.message
+

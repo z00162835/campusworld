@@ -34,6 +34,7 @@ def test_graph_seed_ontology_node_rows_matches_matrix_targets():
         "furniture": "world_thing",
         "npc_agent": "world_thing",
         "logical_zone": "world_thing",
+        "world_environment": "world_thing",
         "access_terminal": "world_thing",
         "network_access_point": "world_thing",
         "av_display": "world_thing",

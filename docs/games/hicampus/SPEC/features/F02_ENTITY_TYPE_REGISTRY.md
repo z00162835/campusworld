@@ -22,6 +22,7 @@
 | access_terminal | access_terminal | app.models.things.terminals | AccessTerminal | — | 门禁/接入终端 |
 | npc_agent | npc_agent | app.models.things.agents | NpcAgent | — | NPC 语义节点 |
 | logical_zone | logical_zone | app.models.things.zones | LogicalZone | — | 逻辑区域/围栏 |
+| world_environment | world_environment | app.models.things.environments | WorldEnvironment | world_thing | 园区级宏观天气/温湿度（每 world 单例） |
 
 **说明**：`db_node_type_code` 与 F03 `graph_profile.map_node_type` 输出一致；当前 HiCampus 为 **1:1**（无别名压扁）。
 

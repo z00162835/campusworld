@@ -17,7 +17,7 @@
 
 ## Data Files
 
-- `world.yaml`
+- `world.yaml`（含 `world` 与 **`world_environment`** 块，HiCampus 必填后者）
 - `buildings.yaml`
 - `floors.yaml`
 - `rooms.yaml`
@@ -69,6 +69,16 @@ games/hicampus/data/
 - `definition`, `bindings`
 - `attributes`, `tags`, `source_ref`
 
+### `world_environment`（HiCampus 必填）
+
+`world.yaml` 除 `world:` 外须含 **单对象** `world_environment:`（非 entities 桶）：
+
+- `id`, `type_code: world_environment`, `display_name`, `world_ref`（须等于 `world.id`）
+- `attributes`：宏观天气/温湿度等（见 [F09](F09_WORLD_ENVIRONMENT.md)）
+- `tags`
+
+户外 room 在 `rooms.yaml` 用 tag **`environment:outdoor`** 标记（HiCampus：`hicampus_bridge`、`hicampus_plaza`；**不含** `hicampus_gate`）。`spatial_generate` 会为上述 landmark room 保留/注入该 tag。
+
 ### Relationship extensions
 
 - 在 `contains/connects_to/located_in` 之外支持：
@@ -116,7 +126,7 @@ games/hicampus/data/
 ## Integration Contract
 
 - F01 -> F02：存在 `app.games.<world_id>.package.validator` 时，`GameLoader` 在 `load/reload` 中**始终**调用 `validate_world_data_package`（见 `app/game_engine/world_data_validate.py`）；无该子模块时仅对含 `world.yaml` 的数据目录做最小五文件检查
-- F02 -> F03：输出 `PackageSnapshotV2`（`spatial/entities/concepts/relationships/meta`）
+- F02 -> F03：输出 `PackageSnapshotV2`（`spatial/entities/concepts/relationships/meta`；HiCampus 另含 **`world_environment`** 单对象，见 [F09](F09_WORLD_ENVIRONMENT.md)）
 - F03 仅消费 snapshot，不直接解析 YAML
 
 ## Error Codes

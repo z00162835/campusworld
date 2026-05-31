@@ -8,6 +8,7 @@ from app.models.things.furniture import Furniture
 from app.models.things.seating import ConferenceSeating, LoungeFurniture
 from app.models.things.terminals import AccessTerminal
 from app.models.things.zones import LogicalZone
+from app.models.things.environments import WorldEnvironment
 
 
 @pytest.mark.unit
@@ -30,6 +31,13 @@ def test_npc_agent_smoke():
 def test_logical_zone_smoke():
     o = LogicalZone("z1", disable_auto_sync=True)
     assert o.get_node_type() == "logical_zone"
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_world_environment_smoke():
+    o = WorldEnvironment("env1", disable_auto_sync=True)
+    assert o.get_node_type() == "world_environment"
 
 
 @pytest.mark.unit

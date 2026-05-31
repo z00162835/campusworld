@@ -74,6 +74,68 @@ class _MiniWorldProfile:
         return m[package_type_code]
 
 
+class _MiniWorldProfileWithEnv:
+    world_package_id_prop = "graph_seed_test"
+
+    @property
+    def world_package_id(self) -> str:
+        return self.world_package_id_prop
+
+    @property
+    def strict_relationships(self) -> bool:
+        return False
+
+    @property
+    def allowed_relationship_type_codes(self) -> FrozenSet[str]:
+        return frozenset({"connects_to"})
+
+    def map_node_type(self, package_type_code: str) -> str:
+        m = {
+            "world": "world",
+            "building": "building",
+            "building_floor": "building_floor",
+            "room": "room",
+            "world_environment": "world_environment",
+        }
+        if package_type_code not in m:
+            raise GraphSeedError(
+                WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value,
+                f"unknown {package_type_code}",
+            )
+        return m[package_type_code]
+
+
+class _MiniWorldProfileWithNpc:
+    world_package_id_prop = "graph_seed_test"
+
+    @property
+    def world_package_id(self) -> str:
+        return self.world_package_id_prop
+
+    @property
+    def strict_relationships(self) -> bool:
+        return False
+
+    @property
+    def allowed_relationship_type_codes(self) -> FrozenSet[str]:
+        return frozenset({"connects_to", "located_in"})
+
+    def map_node_type(self, package_type_code: str) -> str:
+        m = {
+            "world": "world",
+            "building": "building",
+            "building_floor": "building_floor",
+            "room": "room",
+            "npc_agent": "npc_agent",
+        }
+        if package_type_code not in m:
+            raise GraphSeedError(
+                WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value,
+                f"unknown {package_type_code}",
+            )
+        return m[package_type_code]
+
+
 class _MiniWorldProfileWithLocatedIn:
     world_package_id_prop = "graph_seed_test"
 
@@ -543,3 +605,167 @@ def test_ensure_builtin_node_type_schema_envelopes_idempotent():
             if row is None:
                 continue
             assert is_json_schema_object_envelope(row[0]), f"{tc} should be envelope after ensure"
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_run_graph_seed_world_environment_location_id_and_runtime_merge():
+    _require_postgres_engine()
+    from sqlalchemy import text
+
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
+
+    ensure_graph_schema(engine)
+    ensure_graph_seed_ontology(engine)
+    world_key = "graph_seed_test"
+    _cleanup_test_graph(world_key)
+
+    profile = _MiniWorldProfileWithEnv()
+    snap = _minimal_snapshot()
+    snap["world_environment"] = {
+        "id": "gst_env",
+        "type_code": "world_environment",
+        "display_name": "Test Env",
+        "world_ref": "gst_world",
+        "attributes": {
+            "climate_profile": "subtropical_humid",
+            "weather_code": "clear",
+            "temperature_c": 26,
+            "humidity_pct": 68,
+        },
+        "tags": ["environment"],
+    }
+    try:
+        with db_session_context() as session:
+            run_graph_seed(session, world_key, snap, profile)  # type: ignore[arg-type]
+            session.commit()
+
+        with db_session_context() as session:
+            env_row = session.execute(
+                text(
+                    """
+                    SELECT n.location_id, n.attributes, w.id AS world_pk
+                    FROM nodes n
+                    JOIN nodes w ON w.id = n.location_id
+                    WHERE n.type_code = 'world_environment'
+                      AND n.attributes->>'package_node_id' = 'gst_env'
+                    """
+                )
+            ).mappings().first()
+            assert env_row is not None
+            assert int(env_row["location_id"]) == int(env_row["world_pk"])
+            attrs = dict(env_row["attributes"] or {})
+            assert attrs.get("weather_code") == "clear"
+            assert float(attrs.get("temperature_c")) == 26.0
+
+        snap["world_environment"]["attributes"]["weather_code"] = "rain"
+        snap["world_environment"]["attributes"]["temperature_c"] = 10
+        with db_session_context() as session:
+            run_graph_seed(session, world_key, snap, profile)  # type: ignore[arg-type]
+            session.commit()
+
+        with db_session_context() as session:
+            attrs2 = session.execute(
+                text(
+                    """
+                    SELECT attributes FROM nodes
+                    WHERE type_code = 'world_environment'
+                      AND attributes->>'package_node_id' = 'gst_env'
+                    """
+                )
+            ).scalar()
+            merged = dict(attrs2 or {})
+            assert merged.get("weather_code") == "clear"
+            assert float(merged.get("temperature_c")) == 26.0
+    finally:
+        _cleanup_test_graph(world_key)
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_run_graph_seed_preserves_instance_managed_on_reload():
+    _require_postgres_engine()
+    from sqlalchemy import text
+
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
+
+    ensure_graph_schema(engine)
+    ensure_graph_seed_ontology(engine)
+    world_key = "graph_seed_test"
+    _cleanup_test_graph(world_key)
+
+    profile = _MiniWorldProfileWithNpc()
+    snap = _minimal_snapshot()
+    snap["entities"] = {
+        "npcs": [
+            {
+                "id": "gst_npc_aico",
+                "world_id": world_key,
+                "type_code": "npc_agent",
+                "entity_kind": "character",
+                "display_name": "Test NPC",
+                "location_ref": "gst_r1",
+                "attributes": {"enabled": True, "service_id": "yaml-service"},
+                "presentation_domains": ["room"],
+                "access_locks": {"view": "all()", "interact": "all()"},
+                "tags": ["npc"],
+                "source_ref": "entities/npcs.yaml",
+            }
+        ],
+        "items": [],
+        "zones": [],
+    }
+    snap["relationships"] = list(snap["relationships"]) + [
+        {
+            "id": "gst_rel_npc_located_in",
+            "rel_type_code": "located_in",
+            "source_id": "gst_npc_aico",
+            "target_id": "gst_r1",
+            "directed": True,
+            "attributes": {},
+        }
+    ]
+    try:
+        with db_session_context() as session:
+            run_graph_seed(session, world_key, snap, profile)  # type: ignore[arg-type]
+            session.commit()
+
+        with db_session_context() as session:
+            session.execute(
+                text(
+                    """
+                    UPDATE nodes
+                    SET attributes = jsonb_set(
+                        COALESCE(attributes, '{}'::jsonb),
+                        '{enabled}',
+                        'false'::jsonb,
+                        true
+                    )
+                    WHERE type_code = 'npc_agent'
+                      AND attributes->>'package_node_id' = 'gst_npc_aico'
+                    """
+                )
+            )
+            session.commit()
+
+        with db_session_context() as session:
+            run_graph_seed(session, world_key, snap, profile)  # type: ignore[arg-type]
+            session.commit()
+
+        with db_session_context() as session:
+            attrs = session.execute(
+                text(
+                    """
+                    SELECT attributes FROM nodes
+                    WHERE type_code = 'npc_agent'
+                      AND attributes->>'package_node_id' = 'gst_npc_aico'
+                    """
+                )
+            ).scalar()
+            merged = dict(attrs or {})
+            assert merged.get("enabled") is False
+            assert merged.get("service_id") == "yaml-service"
+    finally:
+        _cleanup_test_graph(world_key)

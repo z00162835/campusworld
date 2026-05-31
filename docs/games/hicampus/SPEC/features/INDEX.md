@@ -20,6 +20,8 @@
   `F07_SPATIAL_DESCRIPTION_CONTENT_PACK.md`
 - `F08` Observability & Audit  
   `F08_OBSERVABILITY_AUDIT.md`
+- `F09` World Environment
+  `F09_WORLD_ENVIRONMENT.md`
 
 ## Suggested Parallel Lanes
 
@@ -27,6 +29,7 @@
 - **Lane B（系统集成）**: `F05 + F04`
 - **Lane C（质量保障）**: `F06 + F08`
 - **Lane D（内容资产）**: `F07`
+- **Lane E（环境层）**: `F09`（与 F07 内容包并列；依赖 F02/F03）
 
 ## Merge Gate
 

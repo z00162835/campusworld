@@ -25,6 +25,7 @@ rooms:
   - space:core
   - circulation
   - layer:connector
+  - environment:outdoor
 - id: hicampus_f1_01f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_01f
@@ -156,6 +157,7 @@ rooms:
   - space:core
   - plaza
   - layer:public
+  - environment:outdoor
 - id: hicampus_f1_02f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_02f

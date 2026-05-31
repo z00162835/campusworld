@@ -163,6 +163,9 @@ def return_appearance_room(room: Dict[str, Any], context: Any=None) -> str:
     if (room.get('short_description') or '').strip():
         desc_parts.append(str(room['short_description']).strip())
     desc_parts.append(str(room.get('description') or '这里没有什么特别的。').strip())
+    env_line = str(room.get('environment_summary') or '').strip()
+    if env_line:
+        desc_parts.append(env_line)
     if (room.get('ambiance') or '').strip():
         desc_parts.append(f"氛围：{str(room['ambiance']).strip()}")
     desc = '\n\n'.join((p for p in desc_parts if p))

@@ -46,6 +46,14 @@ GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, st
         "app.models.things.zones",
     ),
     (
+        "world_environment",
+        "world_thing",
+        "世界环境",
+        "app.models.things.environments.WorldEnvironment",
+        "WorldEnvironment",
+        "app.models.things.environments",
+    ),
+    (
         "network_access_point",
         "world_thing",
         "无线接入点",

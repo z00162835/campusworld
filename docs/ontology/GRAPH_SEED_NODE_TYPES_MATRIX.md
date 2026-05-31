@@ -25,6 +25,7 @@
 | `furniture` | `world_thing` | `WorldThing` | `Furniture` | `app.models.things.furniture` |
 | `npc_agent` | `world_thing` | `WorldThing` | `NpcAgent` | `app.models.things.agents` |
 | `logical_zone` | `world_thing` | `WorldThing` | `LogicalZone` | `app.models.things.zones` |
+| `world_environment` | `world_thing` | `WorldThing` | `WorldEnvironment` | `app.models.things.environments` |
 | `access_terminal` | `world_thing` | `WorldThing` | `AccessTerminal` | `app.models.things.terminals` |
 | `network_access_point` | `world_thing` | `WorldThing` | `NetworkAccessPoint` | `app.models.things.devices` |
 | `av_display` | `world_thing` | `WorldThing` | `AvDisplay` | `app.models.things.devices` |

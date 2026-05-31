@@ -7,6 +7,7 @@ import uuid as uuidlib
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Set, Tuple, Union
 from sqlalchemy.orm import Session
+from app.game_engine.graph_seed.attributes_merge import merge_attributes_on_seed_update
 from app.game_engine.graph_seed.errors import GraphSeedError
 from app.game_engine.graph_seed.ids import node_uuid
 from app.game_engine.graph_seed.profile import WorldGraphProfile
@@ -37,7 +38,7 @@ class _NodeSpec:
 
 def _snapshot_as_dict(snapshot: Any) -> Dict[str, Any]:
     if hasattr(snapshot, 'world') and hasattr(snapshot, 'spatial'):
-        return {'world': snapshot.world, 'spatial': snapshot.spatial, 'entities': snapshot.entities, 'relationships': snapshot.relationships, 'meta': getattr(snapshot, 'meta', {}) or {}}
+        return {'world': snapshot.world, 'spatial': snapshot.spatial, 'entities': snapshot.entities, 'relationships': snapshot.relationships, 'meta': getattr(snapshot, 'meta', {}) or {}, 'world_environment': getattr(snapshot, 'world_environment', None)}
     if isinstance(snapshot, dict):
         return snapshot
     raise GraphSeedError(WorldErrorCode.WORLD_DATA_INVALID.value, 'snapshot must be PackageSnapshotV2 or dict')
@@ -49,6 +50,14 @@ def _build_specs(world_id: str, snap: Mapping[str, Any], profile: WorldGraphProf
     if not wid:
         raise GraphSeedError(WorldErrorCode.GRAPH_SEED_REFERENCE_BROKEN.value, 'snapshot.world.id is required')
     specs.append(_NodeSpec(logical_id=wid, package_type_code=str(world.get('type_code') or 'world'), name=str(world.get('display_name') or wid)[:255], attributes={k: v for (k, v) in world.items() if k not in ('id', 'type_code', 'display_name', 'tags')}, tags=list(world.get('tags') or [])))
+    env_row = snap.get('world_environment')
+    if isinstance(env_row, dict) and env_row.get('id'):
+        eid = str(env_row['id'])
+        env_attrs = dict(env_row.get('attributes') or {})
+        wref = str(env_row.get('world_ref') or '').strip()
+        if wref:
+            env_attrs['world_ref'] = wref
+        specs.append(_NodeSpec(logical_id=eid, package_type_code=str(env_row.get('type_code') or 'world_environment'), name=str(env_row.get('display_name') or eid)[:255], attributes=env_attrs, tags=list(env_row.get('tags') or [])))
     spatial = snap.get('spatial') or {}
     for b in spatial.get('buildings') or []:
         if not isinstance(b, dict) or not b.get('id'):
@@ -125,7 +134,7 @@ def _validate_trait_ready_for_seed(profile: WorldGraphProfile, nt_map: Dict[str,
         raise GraphSeedError(WorldErrorCode.GRAPH_SEED_TYPE_UNKNOWN.value, f'trait profile missing for graph seed: {missing}')
 
 def _PACKAGE_TYPES_FROM_PROFILE(profile: WorldGraphProfile) -> Set[str]:
-    candidates = {'world', 'building', 'building_floor', 'room', 'npc_agent', 'access_terminal', 'world_object', 'furniture', 'network_access_point', 'av_display', 'lighting_fixture', 'conference_seating', 'lounge_furniture', 'logical_zone'}
+    candidates = {'world', 'building', 'building_floor', 'room', 'npc_agent', 'access_terminal', 'world_object', 'furniture', 'network_access_point', 'av_display', 'lighting_fixture', 'conference_seating', 'lounge_furniture', 'logical_zone', 'world_environment'}
     out: Set[str] = set()
     for c in candidates:
         try:
@@ -146,8 +155,15 @@ def _upsert_node(session: Session, world_id: str, spec: _NodeSpec, profile: Worl
     merged_attrs['world_id'] = world_id
     merged_attrs['package_node_id'] = spec.logical_id
     if existing:
+        schema_def = getattr(nt, 'schema_definition', None)
+        merged_attrs = merge_attributes_on_seed_update(
+            existing.attributes or {},
+            merged_attrs,
+            schema_def,
+            type_code=db_type,
+        )
         existing.name = spec.name
-        existing.attributes = {**(existing.attributes or {}), **merged_attrs}
+        existing.attributes = merged_attrs
         existing.tags = spec.tags
         existing.type_id = nt.id
         existing.type_code = db_type
@@ -202,6 +218,20 @@ def _sync_space_hierarchy_location_ids(session: Session, id_to_node: Dict[str, N
             parent = id_to_node.get(fid)
             if parent is not None and int(node.location_id or 0) != int(parent.id):
                 node.location_id = int(parent.id)
+    session.flush()
+
+def _sync_world_environment_location_ids(session: Session, id_to_node: Dict[str, Node]) -> None:
+    """Bind ``world_environment.location_id`` to the world node via ``attributes.world_ref``."""
+    for (_logical_id, node) in id_to_node.items():
+        if str(node.type_code or '') != 'world_environment':
+            continue
+        attrs = dict(node.attributes or {})
+        wref = str(attrs.get('world_ref') or '').strip()
+        if not wref:
+            continue
+        parent = id_to_node.get(wref)
+        if parent is not None and int(node.location_id or 0) != int(parent.id):
+            node.location_id = int(parent.id)
     session.flush()
 
 def _prune_world_topology_auto_connects(session: Session, world_node_ids: Set[int]) -> int:
@@ -298,6 +328,7 @@ def run_graph_seed(session: Session, world_id: str, snapshot: Any, profile: Worl
         else:
             rels_skipped += 1
     _sync_space_hierarchy_location_ids(session, id_to_node, world_id)
+    _sync_world_environment_location_ids(session, id_to_node)
     for (a, b) in list(connects_pairs):
         if (b, a) not in connects_pairs:
             na = id_to_node.get(a)

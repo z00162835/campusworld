@@ -87,9 +87,9 @@ def generate_spatial(*, data_root: Optional[Path]=None, package_dir: Path=_PACKA
             if rid == 'hicampus_gate':
                 base_tags.extend(['landmark', 'layer:entry'])
             elif rid == 'hicampus_bridge':
-                base_tags.extend(['circulation', 'layer:connector'])
+                base_tags.extend(['circulation', 'layer:connector', 'environment:outdoor'])
             else:
-                base_tags.extend(['plaza', 'layer:public'])
+                base_tags.extend(['plaza', 'layer:public', 'environment:outdoor'])
             copy['tags'] = merge_tags([], [], list(copy.get('tags') or []) + base_tags)
             preserved.append(copy)
     floors_out: List[Dict[str, Any]] = []

@@ -467,6 +467,52 @@ node_types:
           type: string
           value_kind: static
           mutability: package_seed
+  world_environment:
+    trait_class: ENV
+    trait_mask: 65
+    tags:
+    - graph_seed
+    - hicampus
+    schema_definition:
+      description: 世界级宏观室外环境（天气、温湿度基准）；Evennia GLOBAL Script 的图节点等价物。
+      type: object
+      title: world_environment attributes
+      properties:
+        world_ref:
+          type: string
+          value_kind: static
+          mutability: package_seed
+          x_look: omit
+        climate_profile:
+          type: string
+          value_kind: static
+          mutability: package_seed
+        weather_code:
+          type: string
+          enum:
+          - clear
+          - cloudy
+          - overcast
+          - rain
+          - fog
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        temperature_c:
+          type: number
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        humidity_pct:
+          type: integer
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        wind_mps:
+          type: number
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        sim_time:
+          type: string
+          value_kind: dynamic_snapshot
+          mutability: runtime
   world_entrance:
     trait_class: PROCESS
     trait_mask: 101

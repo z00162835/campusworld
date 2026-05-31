@@ -29,6 +29,7 @@
 - **多匹配** `_show_multiple_matches` / 单对象 `_build_object_description` 使用图与会话；错误示例 `找不到 '<target>'`（用户可见，未 i18n 的字符串在源码中）。
 - **数据 / 消歧**: 非 JSON 主路径为主；`LOOK_DISAMIGUATION_KEY` 等用于上下文字典键（`look_command.py`）。
 - **副作用**: 只读；查 DB、查图、不写用户位姿（不替代 `go` / `enter`）。
+- **户外环境摘要**（`environment:outdoor` tag）：在 room 描述正文与 `氛围：` 之间插入一行宏观天气/温湿度，数据来自 `world_environment` 节点（见 [F09](../../../games/hicampus/SPEC/features/F09_WORLD_ENVIRONMENT.md)）；室内 room 不展示；无 env 节点时静默跳过。
 
 ## 旁注
 

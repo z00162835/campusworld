@@ -12,3 +12,16 @@ world:
       interact: "perm(world.enter)"
   tags: ["world", "hicampus"]
 
+world_environment:
+  id: hicampus_environment
+  type_code: world_environment
+  display_name: HiCampus 园区大气
+  world_ref: hicampus_world
+  attributes:
+    climate_profile: subtropical_humid
+    weather_code: cloudy
+    temperature_c: 28
+    humidity_pct: 72
+    wind_mps: 3.0
+    sim_time: "2026-05-31T14:00:00+08:00"
+  tags: ["environment", "hicampus"]

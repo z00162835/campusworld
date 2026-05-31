@@ -15,7 +15,7 @@
 
 | Case ID | 类型 | 场景 | 预期 |
 |---|---|---|---|
-| F02-U-001 | unit | `validate_data_package` 正常路径 | 返回 `world/spatial/entities/concepts/relationships/meta` |
+| F02-U-001 | unit | `validate_data_package` 正常路径 | 返回 `world/spatial/entities/concepts/relationships/meta` 及 **`world_environment`** |
 | F02-U-002 | unit | `load_package_snapshot` | 生成 `PackageSnapshotV2` 且双模型字段齐全 |
 | F02-U-003 | unit | `build_migration_plan` | 返回可执行迁移计划（含 operations） |
 | F02-U-004 | unit | loader 加载 `hicampus` | `details.package.world_data_validated=true`、`snapshot_loaded=true` 且含统计 |
@@ -25,6 +25,11 @@
 | F02-U-008 | unit | 非法 `rel_type_code` | `WORLD_DATA_SEMANTIC_CONFLICT` |
 | F02-U-009 | unit | `migration_dry_run` | `operation_preview` 非空且 `post_validate` 标记当前包合法 |
 | F02-U-010 | unit | `validate_world_data_package('hicampus')` | 返回与 `validate_data_package` 等价的 payload |
+| F02-U-011 | unit | 缺 `world_environment` | `WORLD_DATA_INVALID` |
+| F02-U-012 | unit | `world_environment.world_ref` 与 `world.id` 不一致 | `WORLD_DATA_REFERENCE_BROKEN` |
+
+> **单例约束**：HiCampus `world.yaml` 仅允许一个 `world_environment:` 键（YAML 结构保证）；无独立「重复块」校验用例。实现见 `test_hicampus_world_environment_validator.py`。
+
 | F02-I-001 | integration | F01 + F02 | `load_game` 在数据包损坏时返回 `WORLD_DATA_*` |
 | F02-I-002 | integration | F02 + F03（后续） | F03 消费 `PackageSnapshotV2` 幂等落库 |
 
@@ -44,5 +49,6 @@
 cd backend
 pytest tests/game_engine/test_hicampus_data_package.py -m "game and unit" -v
 pytest tests/game_engine/test_world_package_runtime.py tests/game_engine/test_hicampus_data_package.py -m game -v
+pytest tests/games/hicampus/test_hicampus_world_environment_validator.py -q
 ```
 

@@ -12,10 +12,10 @@ from .room import Room, SingularityRoom
 from .system import BulletinBoard, SystemCommandAbility, SystemNotice, WorldRuntimeState, WorldInstallJob, TraitSyncJob, ApiKey, AgentMemoryEntry, AgentRunRecord, AgentLongTermMemory, AgentLongTermMemoryLink
 from .exit import Exit
 from .world_entrance import WorldEntrance
-from .things import AccessTerminal, AvDisplay, ConferenceSeating, Furniture, LightingFixture, LogicalZone, LoungeFurniture, NetworkAccessPoint, NpcAgent, WorldThing
+from .things import AccessTerminal, AvDisplay, ConferenceSeating, Furniture, LightingFixture, LogicalZone, LoungeFurniture, NetworkAccessPoint, NpcAgent, WorldEnvironment, WorldThing
 from .graph import Node, Relationship
 from .factory import ModelFactory, ComponentMixin, InventoryMixin, StatsMixin, CombatMixin, model_factory
-__all__ = ['DefaultObject', 'DefaultAccount', 'GraphNodeInterface', 'GraphRelationshipInterface', 'User', 'Campus', 'World', 'WorldObject', 'Room', 'SingularityRoom', 'BulletinBoard', 'SystemCommandAbility', 'SystemNotice', 'WorldRuntimeState', 'WorldInstallJob', 'TraitSyncJob', 'ApiKey', 'AgentMemoryEntry', 'AgentRunRecord', 'AgentLongTermMemory', 'AgentLongTermMemoryLink', 'Exit', 'WorldEntrance', 'AccessTerminal', 'AvDisplay', 'ConferenceSeating', 'Furniture', 'LightingFixture', 'LogicalZone', 'LoungeFurniture', 'NetworkAccessPoint', 'NpcAgent', 'WorldThing', 'Node', 'Relationship', 'ModelFactory', 'ComponentMixin', 'InventoryMixin', 'StatsMixin', 'CombatMixin', 'model_factory']
+__all__ = ['DefaultObject', 'DefaultAccount', 'GraphNodeInterface', 'GraphRelationshipInterface', 'User', 'Campus', 'World', 'WorldObject', 'Room', 'SingularityRoom', 'BulletinBoard', 'SystemCommandAbility', 'SystemNotice', 'WorldRuntimeState', 'WorldInstallJob', 'TraitSyncJob', 'ApiKey', 'AgentMemoryEntry', 'AgentRunRecord', 'AgentLongTermMemory', 'AgentLongTermMemoryLink', 'Exit', 'WorldEntrance', 'AccessTerminal', 'AvDisplay', 'ConferenceSeating', 'Furniture', 'LightingFixture', 'LogicalZone', 'WorldEnvironment', 'LoungeFurniture', 'NetworkAccessPoint', 'NpcAgent', 'WorldThing', 'Node', 'Relationship', 'ModelFactory', 'ComponentMixin', 'InventoryMixin', 'StatsMixin', 'CombatMixin', 'model_factory']
 model_factory.register_model('user', User)
 model_factory.register_model('campus', Campus)
 model_factory.register_model('world', World)
@@ -33,6 +33,7 @@ model_factory.register_model('access_terminal', AccessTerminal)
 model_factory.register_model('npc_agent', NpcAgent)
 model_factory.register_model('furniture', Furniture)
 model_factory.register_model('logical_zone', LogicalZone)
+model_factory.register_model('world_environment', WorldEnvironment)
 model_factory.register_model('conference_seating', ConferenceSeating)
 model_factory.register_model('lounge_furniture', LoungeFurniture)
 model_factory.register_model('graph_node', Node)

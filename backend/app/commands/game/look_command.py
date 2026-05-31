@@ -195,7 +195,7 @@ class LookCommand(GameCommand):
                         lower = {str(e).lower() for e in exit_labels}
                         if 'out' not in lower:
                             exit_labels = _sort_room_exit_labels(list(exit_labels) + ['out'])
-                    return {'id': str(room_node.id), 'name': rname, 'description': rdesc, 'short_description': (ra.get('room_short_description') or '').strip(), 'ambiance': (ra.get('room_ambiance') or '').strip(), 'exits': exit_labels, 'exit_entries': exit_entries, 'items': room_objects, 'content_entries': content_entries, 'appearance_template': str(ra.get('appearance_template') or '').strip(), 'room_node_attributes': dict(ra), 'extra_name_info': str(ra.get('floor_label') or ra.get('room_extra_name_info') or '').strip(), 'is_singularity': ra.get('is_root', False), 'is_home': ra.get('is_home', False)}
+                    return {'id': str(room_node.id), 'name': rname, 'description': rdesc, 'short_description': (ra.get('room_short_description') or '').strip(), 'ambiance': (ra.get('room_ambiance') or '').strip(), 'exits': exit_labels, 'exit_entries': exit_entries, 'items': room_objects, 'content_entries': content_entries, 'appearance_template': str(ra.get('appearance_template') or '').strip(), 'room_node_attributes': dict(ra), 'tags': list(room_node.tags or []), 'world_id': str(ra.get('world_id') or '').strip(), 'extra_name_info': str(ra.get('floor_label') or ra.get('room_extra_name_info') or '').strip(), 'is_singularity': ra.get('is_root', False), 'is_home': ra.get('is_home', False)}
                 return None
         except Exception as e:
             self.logger.error(f'Failed to get room info from graph data: {e}')
@@ -233,10 +233,39 @@ class LookCommand(GameCommand):
             r = dict(room)
             r['room_status'] = self._get_room_status(r)
             r['other_players'] = self._get_other_players(context, r)
+            env_line = self._outdoor_environment_summary(context, r)
+            if env_line:
+                r['environment_summary'] = env_line
             return return_appearance_room(r, context)
         except Exception as e:
             self.logger.error(f'Failed to build room description: {e}')
             return f'房间描述生成失败: {str(e)}'
+
+    def _outdoor_environment_summary(self, context: CommandContext, room: Dict[str, Any]) -> Optional[str]:
+        tags = room.get('tags') or []
+        if 'environment:outdoor' not in tags:
+            return None
+        attrs = room.get('room_node_attributes') if isinstance(room.get('room_node_attributes'), dict) else {}
+        if not attrs and isinstance(room.get('attributes'), dict):
+            attrs = room['attributes']
+        world_id = str(attrs.get('world_id') or room.get('world_id') or '').strip()
+        if not world_id:
+            return None
+        from app.game_engine.world_environment import format_environment_summary, resolve_world_environment
+        db = getattr(context, 'db_session', None)
+        if db is not None:
+            node = resolve_world_environment(db, world_id=world_id)
+            if not node:
+                return None
+            node_attrs = node.attributes if isinstance(node.attributes, dict) else {}
+            return format_environment_summary(node_attrs)
+        from app.core.database import db_session_context
+        with db_session_context() as session:
+            node = resolve_world_environment(session, world_id=world_id)
+            if not node:
+                return None
+            node_attrs = node.attributes if isinstance(node.attributes, dict) else {}
+            return format_environment_summary(node_attrs)
 
     def _search_objects(self, context: CommandContext, target: str) -> List[Dict[str, Any]]:
         """搜索目标物品/对象（优先在当前房间图内容中找，其次回退到场景内置 items）"""

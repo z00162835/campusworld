@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import FrozenSet
 from app.game_engine.graph_seed.errors import GraphSeedError
 from app.game_engine.runtime_store import WorldErrorCode
-_PACKAGE_TO_DB_NODE_TYPE = {'world': 'world', 'building': 'building', 'building_floor': 'building_floor', 'room': 'room', 'npc_agent': 'npc_agent', 'access_terminal': 'access_terminal', 'world_object': 'world_object', 'furniture': 'furniture', 'network_access_point': 'network_access_point', 'av_display': 'av_display', 'lighting_fixture': 'lighting_fixture', 'conference_seating': 'conference_seating', 'lounge_furniture': 'lounge_furniture', 'logical_zone': 'logical_zone'}
+_PACKAGE_TO_DB_NODE_TYPE = {'world': 'world', 'building': 'building', 'building_floor': 'building_floor', 'room': 'room', 'npc_agent': 'npc_agent', 'access_terminal': 'access_terminal', 'world_object': 'world_object', 'furniture': 'furniture', 'network_access_point': 'network_access_point', 'av_display': 'av_display', 'lighting_fixture': 'lighting_fixture', 'conference_seating': 'conference_seating', 'lounge_furniture': 'lounge_furniture', 'logical_zone': 'logical_zone', 'world_environment': 'world_environment'}
 
 class HiCampusGraphProfile:
     """WorldGraphProfile implementation for package `hicampus`."""

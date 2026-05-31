@@ -17,7 +17,11 @@
 
 ## 独立 type_code（Evennia 类比）
 
-`network_access_point`、`access_terminal`、`lighting_fixture` 等为 **独立本体类型**，Python 上可共享 [`WorldThing`](../../backend/app/models/things/base.py) 行为基类，但 **DB `type_code` 与 YAML 中 schema 块均按类型分立**，不合并为单一「设备大类型」。
+`network_access_point`、`access_terminal`、`lighting_fixture`、`world_environment` 等为 **独立本体类型**，Python 上可共享 [`WorldThing`](../../backend/app/models/things/base.py) 行为基类，但 **DB `type_code` 与 YAML 中 schema 块均按类型分立**，不合并为单一「设备大类型」。
+
+### `trait_class: ENV` 与 reload mutability
+
+`world_environment` 使用 `trait_class: ENV`。graph seed **update** 时：`world_environment` 按 schema 的 `mutability: runtime` 保留 DB；其他 type 仅浅合并并保留 `instance_managed` / `runtime` 键（见 [`attributes_merge.py`](../../backend/app/game_engine/graph_seed/attributes_merge.py)）。详见 [F09](../../games/hicampus/SPEC/features/F09_WORLD_ENVIRONMENT.md)。
 
 ## 类型矩阵与父类型原则
 

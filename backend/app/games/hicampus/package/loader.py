@@ -8,4 +8,4 @@ from .validator import validate_data_package
 
 def load_package_snapshot(data_root: Path) -> PackageSnapshotV2:
     payload = validate_data_package(data_root)
-    return PackageSnapshotV2(world=payload['world'], spatial=payload['spatial'], entities=payload['entities'], concepts=payload['concepts'], relationships=payload['relationships'], meta=payload['meta'])
+    return PackageSnapshotV2(world=payload['world'], spatial=payload['spatial'], entities=payload['entities'], concepts=payload['concepts'], relationships=payload['relationships'], meta=payload['meta'], world_environment=payload.get('world_environment'))

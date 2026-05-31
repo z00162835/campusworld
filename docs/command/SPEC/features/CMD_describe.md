@@ -105,6 +105,7 @@ flowchart LR
 ## SSOT 声明
 
 - `find` / `describe` 的协作关系与分工表以 [F01_FIND_COMMAND.md](F01_FIND_COMMAND.md) 为 **SSOT**；本页的 Implementation contract 补充 `describe` **独有**的行为（尤其是 `-a` 分支与 `data` 形状），不与 F01 复述的条款冲突时以 F01 为准。
+- **`world_environment` 节点**：无专用 describe UX；对图库中该 `type_code` 节点执行 `describe` / `describe -a` 时，走通用 schema 驱动属性展示（`node_types.schema_definition` + [`schema_look_desc.py`](../../../../backend/app/models/things/schema_look_desc.py)）。宏观天气在 room `look` 中的单行摘要见 [F09](../../../games/hicampus/SPEC/features/F09_WORLD_ENVIRONMENT.md)。
 
 ## Non-Goals / Open Questions
 

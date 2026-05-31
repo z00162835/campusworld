@@ -4,8 +4,8 @@
 
 ## 推荐流水线（改 YAML / 模板后刷新包）
 
-1. **`spatial_generate`**（可选）  
-   从 `spatial_profiles.yaml`、空间原型等重写 `floors.yaml`、`rooms.yaml`。  
+1. **`spatial_generate`**（可选）
+   从 `spatial_profiles.yaml`、空间原型等重写 `floors.yaml`、`rooms.yaml`。保留 landmark room（gate/bridge/plaza）时，**bridge/plaza 自动带 `environment:outdoor`**。
    ```bash
    python -m app.games.hicampus.package.spatial_generate --write
    ```
@@ -29,8 +29,9 @@
    python -m app.games.hicampus.package.entity_relationship_generate --write
    ```
 
-5. **载入图库**  
+5. **载入图库**
    内（管理员）：`world reload hicampus`；首次为 `world install hicampus`。需 `manifest.yaml` 中 `graph_seed: true` 且 PostgreSQL 可用。
+   若新增 `world_environment` 类型或修改 `world.yaml` 环境块，先执行 `python -m db.init_database migrate` 再 reload。
 
 **顺序要点**：拓扑与物品可反复调整；若刚跑过 `topology_connect_generate`，建议再跑 `entity_relationship_generate`，保证新房间上的物品有 `located_in`。
 

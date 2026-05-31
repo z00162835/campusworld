@@ -25,7 +25,7 @@
 
 ## Inputs
 
-- **必选**：`PackageSnapshotV2`（或等价 dict：`world` / `spatial` / `entities` / `relationships` / `meta`）
+- **必选**：`PackageSnapshotV2`（或等价 dict：`world` / `spatial` / `entities` / `relationships` / `meta`；可选 **`world_environment`**）
 - **必选**：`WorldGraphProfile`（世界包提供，如 `get_graph_profile()` → `HICAMPUS_GRAPH_PROFILE`）
 - **前置**：PostgreSQL + 已执行 `ensure_graph_seed_ontology`（或等价 `node_types` / `relationship_types` 行）
 
@@ -44,6 +44,15 @@
 | `strict_relationships` | 默认 `False`；为 `True` 时，snapshot 中出现不在上表中的 `rel_type_code` 则失败 |
 
 类型登记表：`F02_ENTITY_TYPE_REGISTRY.md`。
+
+### `world_environment` 与 reload 属性合并
+
+- 若 snapshot 含 `world_environment`，`_build_specs` 追加一条与 `world` 同级的节点规格（非 entities 桶）。
+- `_sync_world_environment_location_ids`：读 `attributes.world_ref`，设置 `location_id` 指向 world 节点。
+- `_upsert_node` **update** 路径：
+  - **`world_environment`**：按 schema 的 `mutability: runtime` 保留 DB 值，`package_seed` 取自 YAML。
+  - **其他 type_code**：沿用浅合并 `{**existing, **incoming}`，并额外保留 schema 声明为 **`instance_managed`** / **`runtime`** 的键，避免 reload 洗掉 agent/device/portal 实例态。
+- **create** 路径：全量采用 YAML。详见 [F09](F09_WORLD_ENVIRONMENT.md) 与 [`attributes_merge.py`](../../../../../backend/app/game_engine/graph_seed/attributes_merge.py)。
 
 ## F01 集成（manifest）
 

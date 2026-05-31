@@ -229,6 +229,27 @@ def _validate_concept_row(row: Dict[str, Any], family: str) -> None:
     if not row.get('source_ref'):
         raise DataPackageError(ERROR_WORLD_DATA_INVALID, f'concept.source_ref required: {cid}')
 
+def _validate_world_environment_row(row: Dict[str, Any], world_logical_id: str) -> None:
+    eid = row.get('id')
+    if not eid:
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, 'world_environment.id required')
+    tc = str(row.get('type_code') or '')
+    if tc != 'world_environment':
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f'world_environment.type_code must be world_environment: {eid}')
+    if not row.get('display_name'):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f'world_environment.display_name required: {eid}')
+    wref = str(row.get('world_ref') or '').strip()
+    if wref != world_logical_id:
+        raise DataPackageError(ERROR_WORLD_DATA_REFERENCE_BROKEN, f'world_environment.world_ref must match world.id: {eid} -> {wref!r}')
+    attrs = row.get('attributes')
+    if attrs is None:
+        attrs = {}
+    if not isinstance(attrs, dict):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f'world_environment.attributes must be dict: {eid}')
+    tags = row.get('tags', [])
+    if not isinstance(tags, list):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, f'world_environment.tags must be list: {eid}')
+
 def validate_data_package(data_root: Path) -> Dict[str, Any]:
     if not data_root.exists():
         raise DataPackageError(ERROR_WORLD_DATA_UNAVAILABLE, f'data directory not found: {data_root}')
@@ -252,6 +273,10 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
     world = world_doc.get('world', {})
     if not isinstance(world, dict) or not world.get('id') or (not world.get('world_id')):
         raise DataPackageError(ERROR_WORLD_DATA_INVALID, 'world.yaml.world requires id/world_id')
+    world_environment = world_doc.get('world_environment')
+    if not isinstance(world_environment, dict):
+        raise DataPackageError(ERROR_WORLD_DATA_INVALID, 'world.yaml requires world_environment for HiCampus')
+    _validate_world_environment_row(world_environment, str(world['id']))
     buildings = _require_list(buildings_doc, 'buildings', 'buildings.yaml')
     floors = _require_list(floors_doc, 'floors', 'floors.yaml')
     rooms = _require_list(rooms_doc, 'rooms', 'rooms.yaml')
@@ -362,4 +387,4 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
             missing_trait.append(db_type_code)
     if missing_trait:
         raise DataPackageError(ERROR_WORLD_DATA_SCHEMA_UNSUPPORTED, f'missing trait profile for mapped node types: {missing_trait}')
-    return {'world': world, 'spatial': {'buildings': buildings, 'floors': floors, 'rooms': rooms}, 'entities': entities, 'concepts': concepts, 'relationships': relationships, 'meta': meta_doc}
+    return {'world': world, 'world_environment': world_environment, 'spatial': {'buildings': buildings, 'floors': floors, 'rooms': rooms}, 'entities': entities, 'concepts': concepts, 'relationships': relationships, 'meta': meta_doc}
