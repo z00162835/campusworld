@@ -14,7 +14,7 @@
 | Anchored snapshot | [`../_generated/registry_snapshot.json`](../_generated/registry_snapshot.json) |
 | Last reviewed | 2026-04-26 |
 
-**Aliases（以注册表为准）**：`registry_aliases`: `l`, `lookat`。终端输入 `examine` 由 `describe` 处理。
+**Aliases（以注册表为准）**：`registry_aliases`: `l`, `lookat`。终端输入 `examine` / `ex` 由 [`describe`](CMD_describe.md) 处理；`exit` 由 [`quit`](CMD_quit.md) 处理（勿与 `ex` 混淆）。详见 [ALIAS_GOVERNANCE](ALIAS_GOVERNANCE.md)。
 
 ## Synopsis
 

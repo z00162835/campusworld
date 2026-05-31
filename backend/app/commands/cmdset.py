@@ -6,7 +6,7 @@
 from typing import Dict, List, Optional, Any, Set
 from abc import ABC, abstractmethod
 from .base import BaseCommand, CommandResult, CommandContext, CommandType
-from .registry import command_registry
+from .registry import command_registry, validate_command_token_set, collect_all_command_tokens
 from app.core.log import get_logger, LoggerNames
 
 class CmdSet(ABC):
@@ -24,12 +24,53 @@ class CmdSet(ABC):
         self.duplicates = False
         self.logger = get_logger(LoggerNames.COMMAND)
 
+    def validate_command_tokens(
+        self,
+        command: BaseCommand,
+        *,
+        reserved_tokens: Optional[Set[str]] = None,
+        forbidden_tokens: Optional[Set[str]] = None,
+    ) -> bool:
+        """Validate tokens within this CmdSet batch; optional forbidden set (e.g. registry)."""
+        err = validate_command_token_set(
+            name=command.name,
+            aliases=list(command.aliases or []),
+            commands=self.commands,
+            alias_map=self.aliases,
+            reserved_tokens=reserved_tokens,
+            allow_replace=self.duplicates,
+        )
+        if err:
+            self.logger.error(err)
+            return False
+        if forbidden_tokens:
+            overlap = {command.name, *list(command.aliases or [])} & forbidden_tokens
+            if overlap:
+                self.logger.error(
+                    f"Command '{command.name}' tokens {sorted(overlap)} forbidden (registry namespace)"
+                )
+                return False
+        return True
+
     def add_command(self, command: BaseCommand) -> bool:
         """添加命令到集合"""
         try:
             if command.name in self.commands and (not self.duplicates):
                 self.logger.warning(f"command '{command.name}' already exists, skipping add")
                 return False
+            for alias in command.aliases or []:
+                if alias in self.commands:
+                    if not self.duplicates:
+                        self.logger.warning(
+                            f"alias '{alias}' for '{command.name}' collides with command name, skipping add"
+                        )
+                        return False
+                elif alias in self.aliases and self.aliases[alias] != command.name:
+                    if not self.duplicates:
+                        self.logger.warning(
+                            f"alias '{alias}' for '{command.name}' owned by '{self.aliases[alias]}', skipping add"
+                        )
+                        return False
             self.commands[command.name] = command
             for alias in command.aliases:
                 if alias not in self.aliases:
@@ -122,8 +163,20 @@ class CharacterCmdSet(CmdSet):
     def _init_character_commands(self):
         """初始化角色命令"""
         from .character import CHARACTER_COMMANDS
+
+        forbidden = collect_all_command_tokens(command_registry.commands, command_registry.aliases)
+        batch_tokens: Set[str] = set()
         for command in CHARACTER_COMMANDS:
-            self.add_command(command)
+            if not self.validate_command_tokens(
+                command,
+                reserved_tokens=batch_tokens,
+                forbidden_tokens=forbidden,
+            ):
+                self.logger.warning(f"CharacterCmdSet skipped command '{command.name}' (token validation failed)")
+                continue
+            if self.add_command(command):
+                batch_tokens.add(command.name)
+                batch_tokens.update(command.aliases or [])
 
 class PlayerCmdSet(CmdSet):
     """

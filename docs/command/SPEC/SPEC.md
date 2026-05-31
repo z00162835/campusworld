@@ -120,6 +120,14 @@ CommandResult（成功/失败，自然语言在实现中构造）
 
 `look` 有参时首段为目标名（含数字消歧、多匹配），不解析为 `go`；移动请用方向子命令或 `go <dir>`。详见 [CMD_look](features/CMD_look.md) / [CMD_go](features/CMD_go.md)。
 
+## Alias governance
+
+Effective aliases live in `registry_snapshot.json` → `registry_aliases`. Governance rules, Evennia diffs, and validation: [ALIAS_GOVERNANCE](features/ALIAS_GOVERNANCE.md).
+
+- SSOT: live registry after `initialize_commands()`; `class_declared_aliases` may include tokens dropped by registration order (e.g. `examine` on `describe`, not `look`).
+- CharacterCmdSet tokens must not overlap registry namespace.
+- Validate locally: `python scripts/validate_command_aliases.py` from `backend/`.
+
 ## 已有命令清单（= `initialize_commands` 注册主名）
 
 下列 **「别名」** 为快照中 `registry_aliases`（可覆盖类声明的冲突名）。短描述为 locale `commands.<name>.description` 摘要；**行为契约**以 `CMD_*.md` 与实现为准。

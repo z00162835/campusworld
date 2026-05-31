@@ -60,6 +60,7 @@ CampusWorld is a world-semantic Campus OS: graph nodes model people, places, dev
 | PostgreSQL integration | `cd backend && conda run -n campusworld pytest -m postgres_integration` |
 | Frontend | `cd frontend && npm run type-check && npm run test -- --run` |
 | Config | `cd backend && python scripts/validate_config.py` |
+| Command aliases | `cd backend && python scripts/validate_command_aliases.py` (optional `--check-db`; not in CI) |
 | Docs SPEC layout | `cd backend && python scripts/validate_spec_layout.py` |
 | HiCampus package | `world validate hicampus` after DB-backed install/reload |
 

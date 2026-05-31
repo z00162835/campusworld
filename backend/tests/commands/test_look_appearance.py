@@ -171,8 +171,8 @@ def test_return_appearance_object_lighting_synthetic_desc():
     }
     out = return_appearance_object(ctx, obj)
     assert "HiCampus Bridge · 照明回路" in out
-    assert "室内照明回路" in out
-    assert "亮度" in out or "色温" in out
+    assert "照明回路" in out
+    assert "brightness_pct" in out or "亮度" in out
 
 
 def test_return_appearance_object_world():

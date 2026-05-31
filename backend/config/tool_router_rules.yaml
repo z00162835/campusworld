@@ -33,7 +33,7 @@
 # find: @find, locate
 # help: h, ?
 # leave: ooc
-# look: l, lookat, examine   # examine 与 describe 冲突时保留 describe（图查询先于场景命令注册）
+# look: l, lookat
 # primer: manual
 # task: tasks
 # type: （无别名）

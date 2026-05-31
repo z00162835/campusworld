@@ -50,10 +50,10 @@ class CharacterCommand(BaseCommand):
         return {'success': True, 'message': f'{character.name} 执行了 {action_name}'}
 
 class WalkCommand(CharacterCommand):
-    """走路命令"""
+    """Legacy walk hook command — not registered in CharacterCmdSet (use global ``go`` / ``walk``)."""
 
     def __init__(self):
-        super().__init__('walk', 'Walk to a location', ['w', 'go'])
+        super().__init__('walk', 'Walk to a location (legacy; use global go/walk)', [])
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
@@ -79,7 +79,7 @@ class RunCommand(CharacterCommand):
     """跑步命令"""
 
     def __init__(self):
-        super().__init__('run', 'Run to a location', ['r'])
+        super().__init__('run', 'Run to a location', [])
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
@@ -160,10 +160,10 @@ class TalkCommand(CharacterCommand):
         return CommandResult.success_result(f'{character.name} 说：{message}')
 
 class LookCommand(CharacterCommand):
-    """观察命令"""
+    """Legacy look hook command — not registered in CharacterCmdSet (use global ``look`` / ``l`` / ``lookat``)."""
 
     def __init__(self):
-        super().__init__('look', 'Look at something or around', ['l', 'examine'])
+        super().__init__('look', 'Look at something or around (legacy; use global look)', [])
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         character = context.caller
@@ -242,7 +242,7 @@ class CharacterStatsCommand(CharacterCommand):
     """角色状态命令"""
 
     def __init__(self):
-        super().__init__('charstats', 'Show character statistics', ['cstats', 'char'])
+        super().__init__('charstats', 'Show character statistics', ['cstats'])
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         character = context.caller
@@ -256,4 +256,4 @@ class CharacterStatsCommand(CharacterCommand):
         if hasattr(character, 'msg'):
             character.msg(stats_text)
         return CommandResult.success_result(stats_text)
-CHARACTER_COMMANDS = [WalkCommand(), RunCommand(), JumpCommand(), TalkCommand(), LookCommand(), RestCommand(), CharacterStatsCommand()]
+CHARACTER_COMMANDS = [RunCommand(), JumpCommand(), TalkCommand(), RestCommand(), CharacterStatsCommand()]

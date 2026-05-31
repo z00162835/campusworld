@@ -1,54 +1,55 @@
 {"id": 1941, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
 {"id": 2151, "type_code": "account", "name": "test_user_spawn", "aliases": []}
 {"id": 1765, "type_code": "npc_agent", "name": "AICO", "aliases": []}
+{"id": 12, "type_code": "system_command_ability", "name": "look", "aliases": ["l", "lookat"]}
 {"id": 1311, "type_code": "room", "name": "F1 办公楼 · 第2层 交通核 1", "aliases": []}
-{"id": 6, "type_code": "system_command_ability", "name": "help", "aliases": ["h", "?"]}
 {"id": 2, "type_code": "account", "name": "dev", "aliases": []}
 {"id": 2162, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
 {"id": 1699, "type_code": "account", "name": "test_user_spawn", "aliases": []}
-{"id": 22, "type_code": "system_command_ability", "name": "southwest", "aliases": ["sw"]}
+{"id": 16, "type_code": "system_command_ability", "name": "south", "aliases": ["s"]}
 {"id": 1313, "type_code": "lounge_furniture", "name": "F1 办公楼 · 第2层 交通核 1 · 沙发与等候座", "aliases": []}
 {"id": 1312, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 交通核 1 · 照明回路", "aliases": []}
 {"id": 1314, "type_code": "network_access_point", "name": "F1 办公楼 · 第2层 交通核 1 · 无线接入点", "aliases": []}
+{"id": 2239, "type_code": "system_notice", "name": "Hello World", "aliases": []}
 {"id": 1315, "type_code": "room", "name": "F1 办公楼 · 第3层 交通核 1", "aliases": []}
 {"id": 35, "type_code": "building", "name": "F1 Office Tower", "aliases": []}
-{"id": 25, "type_code": "system_command_ability", "name": "in", "aliases": []}
+{"id": 1758, "type_code": "system_command_ability", "name": "agent", "aliases": []}
 {"id": 2153, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
-{"id": 2155, "type_code": "system_command_ability", "name": "task", "aliases": ["tasks"]}
 {"id": 1702, "type_code": "account", "name": "test_user_location", "aliases": []}
 {"id": 2154, "type_code": "account", "name": "test_user_location", "aliases": []}
+{"id": 11, "type_code": "system_command_ability", "name": "whoami", "aliases": []}
 {"id": 1701, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
-{"id": 1757, "type_code": "system_command_ability", "name": "aico", "aliases": []}
-{"id": 1758, "type_code": "system_command_ability", "name": "agent", "aliases": []}
-{"id": 2052, "type_code": "system_command_ability", "name": "who", "aliases": []}
 {"id": 2042, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
 {"id": 2158, "type_code": "npc_agent", "name": "f05_test_agent", "aliases": []}
-{"id": 14, "type_code": "system_command_ability", "name": "go", "aliases": ["walk"]}
-{"id": 17, "type_code": "system_command_ability", "name": "east", "aliases": ["e"]}
 {"id": 20, "type_code": "system_command_ability", "name": "northwest", "aliases": ["nw"]}
+{"id": 22, "type_code": "system_command_ability", "name": "southwest", "aliases": ["sw"]}
 {"id": 23, "type_code": "system_command_ability", "name": "up", "aliases": ["u"]}
-{"id": 2233, "type_code": "system_command_ability", "name": "lexicon", "aliases": []}
 {"id": 2159, "type_code": "npc_agent", "name": "f05_disabled", "aliases": []}
 {"id": 27, "type_code": "system_command_ability", "name": "notice", "aliases": ["notices"]}
-{"id": 28, "type_code": "system_command_ability", "name": "world", "aliases": ["worlds"]}
-{"id": 29, "type_code": "system_command_ability", "name": "create", "aliases": ["spawn", "build", "make"]}
 {"id": 1753, "type_code": "system_command_ability", "name": "agent_capabilities", "aliases": ["agent.capabilities"]}
+{"id": 28, "type_code": "system_command_ability", "name": "world", "aliases": ["worlds"]}
+{"id": 1932, "type_code": "system_command_ability", "name": "primer", "aliases": ["manual"]}
 {"id": 2070, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
 {"id": 21, "type_code": "system_command_ability", "name": "southeast", "aliases": ["se"]}
 {"id": 24, "type_code": "system_command_ability", "name": "down", "aliases": ["d"]}
+{"id": 2052, "type_code": "system_command_ability", "name": "who", "aliases": []}
 {"id": 2058, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
 {"id": 2071, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
-{"id": 9, "type_code": "system_command_ability", "name": "quit", "aliases": ["exit", "q"]}
+{"id": 1, "type_code": "account", "name": "admin", "aliases": []}
+{"id": 18, "type_code": "system_command_ability", "name": "west", "aliases": ["w"]}
+{"id": 2233, "type_code": "system_command_ability", "name": "lexicon", "aliases": []}
 {"id": 2163, "type_code": "task", "name": "完成教室清洁", "aliases": []}
 {"id": 2164, "type_code": "room", "name": "Singularity Room", "aliases": []}
 {"id": 1090, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
 {"id": 2059, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
+{"id": 14, "type_code": "system_command_ability", "name": "go", "aliases": ["walk"]}
+{"id": 15, "type_code": "system_command_ability", "name": "north", "aliases": ["n"]}
 {"id": 7, "type_code": "system_command_ability", "name": "stats", "aliases": ["stat", "system"]}
-{"id": 1975, "type_code": "system_command_ability", "name": "find", "aliases": ["@find", "locate"]}
+{"id": 17, "type_code": "system_command_ability", "name": "east", "aliases": ["e"]}
 {"id": 2165, "type_code": "npc_agent", "name": "ltm_semantic_test", "aliases": []}
 {"id": 1305, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
-{"id": 15, "type_code": "system_command_ability", "name": "north", "aliases": ["n"]}
-{"id": 16, "type_code": "system_command_ability", "name": "south", "aliases": ["s"]}
+{"id": 1757, "type_code": "system_command_ability", "name": "aico", "aliases": []}
+{"id": 2236, "type_code": "npc_agent", "name": "f05_test_agent", "aliases": []}
 {"id": 2166, "type_code": "npc_agent", "name": "test_sys_worker_agent", "aliases": []}
 {"id": 2086, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
 {"id": 41, "type_code": "building_floor", "name": "hicampus_f1_01f", "aliases": []}
@@ -58,6 +59,7 @@
 {"id": 44, "type_code": "building_floor", "name": "hicampus_f1_04f", "aliases": []}
 {"id": 45, "type_code": "building_floor", "name": "hicampus_f1_05f", "aliases": []}
 {"id": 46, "type_code": "building_floor", "name": "hicampus_f1_06f", "aliases": []}
+{"id": 2237, "type_code": "npc_agent", "name": "f05_disabled", "aliases": []}
 {"id": 50, "type_code": "building_floor", "name": "hicampus_f1_10f", "aliases": []}
 {"id": 51, "type_code": "building_floor", "name": "hicampus_f1_11f", "aliases": []}
 {"id": 52, "type_code": "building_floor", "name": "hicampus_f1_12f", "aliases": []}
@@ -146,6 +148,7 @@
 {"id": 129, "type_code": "room", "name": "F1 办公楼 · 第8层 开放办公区 1", "aliases": []}
 {"id": 130, "type_code": "room", "name": "F1 办公楼 · 第8层 开放办公区 2", "aliases": []}
 {"id": 131, "type_code": "room", "name": "F1 办公楼 · 第8层 茶水间 1", "aliases": []}
+{"id": 2061, "type_code": "system_command_ability", "name": "type", "aliases": []}
 {"id": 132, "type_code": "room", "name": "F1 办公楼 · 第8层 卫生间 1", "aliases": []}
 {"id": 133, "type_code": "room", "name": "F1 办公楼 · 第9层 会议室 1", "aliases": []}
 {"id": 1752, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
@@ -231,8 +234,7 @@
 {"id": 209, "type_code": "room", "name": "F2 餐饮中心 · 首层 就餐区 2", "aliases": []}
 {"id": 210, "type_code": "room", "name": "F2 餐饮中心 · 首层 备餐间 1", "aliases": []}
 {"id": 211, "type_code": "room", "name": "F2 餐饮中心 · 首层 卫生间 1", "aliases": []}
-{"id": 8, "type_code": "system_command_ability", "name": "version", "aliases": ["ver"]}
-{"id": 1937, "type_code": "system_command_ability", "name": "describe", "aliases": ["examine", "ex"]}
+{"id": 6, "type_code": "system_command_ability", "name": "help", "aliases": ["h", "?"]}
 {"id": 212, "type_code": "room", "name": "F2 餐饮中心 · 首层 库房 1", "aliases": []}
 {"id": 213, "type_code": "room", "name": "F2 餐饮中心 · 第2层 就餐区 1", "aliases": []}
 {"id": 214, "type_code": "room", "name": "F2 餐饮中心 · 第2层 就餐区 2", "aliases": []}
@@ -240,7 +242,7 @@
 {"id": 216, "type_code": "room", "name": "F2 餐饮中心 · 第2层 卫生间 1", "aliases": []}
 {"id": 217, "type_code": "room", "name": "F2 餐饮中心 · 第2层 库房 1", "aliases": []}
 {"id": 218, "type_code": "room", "name": "F2 餐饮中心 · 第3层 就餐区 1", "aliases": []}
-{"id": 26, "type_code": "system_command_ability", "name": "out", "aliases": ["o"]}
+{"id": 9, "type_code": "system_command_ability", "name": "quit", "aliases": ["exit", "q"]}
 {"id": 219, "type_code": "room", "name": "F2 餐饮中心 · 第3层 就餐区 2", "aliases": []}
 {"id": 220, "type_code": "room", "name": "F2 餐饮中心 · 第3层 备餐间 1", "aliases": []}
 {"id": 221, "type_code": "room", "name": "F2 餐饮中心 · 第3层 卫生间 1", "aliases": []}
@@ -267,10 +269,9 @@
 {"id": 245, "type_code": "room", "name": "F3 培训中心 · 第5层 实验室 1", "aliases": []}
 {"id": 246, "type_code": "room", "name": "F3 培训中心 · 第5层 会议室 1", "aliases": []}
 {"id": 247, "type_code": "room", "name": "F3 培训中心 · 第5层 卫生间 1", "aliases": []}
+{"id": 1975, "type_code": "system_command_ability", "name": "find", "aliases": ["@find", "locate"]}
 {"id": 1933, "type_code": "system_command_ability", "name": "graph_find", "aliases": ["find"]}
 {"id": 1245, "type_code": "account", "name": "test_user_location", "aliases": []}
-{"id": 1932, "type_code": "system_command_ability", "name": "primer", "aliases": ["manual"]}
-{"id": 2061, "type_code": "system_command_ability", "name": "type", "aliases": []}
 {"id": 1770, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
 {"id": 248, "type_code": "room", "name": "F3 培训中心 · 第6层 教室 1", "aliases": []}
 {"id": 249, "type_code": "room", "name": "F3 培训中心 · 第6层 教室 2", "aliases": []}
@@ -287,7 +288,7 @@
 {"id": 1061, "type_code": "account", "name": "test_user_location", "aliases": []}
 {"id": 1272, "type_code": "account", "name": "test_user_spawn", "aliases": []}
 {"id": 258, "type_code": "room", "name": "F4 实验楼 · 第2层 配电间 1", "aliases": []}
-{"id": 1031, "type_code": "system_command_ability", "name": "leave", "aliases": ["ooc"]}
+{"id": 25, "type_code": "system_command_ability", "name": "in", "aliases": []}
 {"id": 1940, "type_code": "npc_agent", "name": "f05_working", "aliases": []}
 {"id": 259, "type_code": "room", "name": "F4 实验楼 · 第2层 监控室 1", "aliases": []}
 {"id": 260, "type_code": "room", "name": "F4 实验楼 · 第2层 实验准备室 1", "aliases": []}
@@ -309,7 +310,7 @@
 {"id": 271, "type_code": "room", "name": "F4 实验楼 · 第4层 实验准备室 1", "aliases": []}
 {"id": 272, "type_code": "room", "name": "F4 实验楼 · 第4层 卫生间 1", "aliases": []}
 {"id": 273, "type_code": "room", "name": "F4 实验楼 · 第5层 实验室 1", "aliases": []}
-{"id": 11, "type_code": "system_command_ability", "name": "whoami", "aliases": []}
+{"id": 1031, "type_code": "system_command_ability", "name": "leave", "aliases": ["ooc"]}
 {"id": 1303, "type_code": "account", "name": "test_user_spawn", "aliases": []}
 {"id": 274, "type_code": "room", "name": "F4 实验楼 · 第5层 实验室 2", "aliases": []}
 {"id": 275, "type_code": "room", "name": "F4 实验楼 · 第5层 实验室 3", "aliases": []}
@@ -380,7 +381,7 @@
 {"id": 321, "type_code": "room", "name": "F6 公寓 · 第5层 公共休闲区 1", "aliases": []}
 {"id": 323, "type_code": "room", "name": "F6 公寓 · 第6层 公寓单元 1", "aliases": []}
 {"id": 359, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第2层 茶水间 1 · 照明回路", "aliases": []}
-{"id": 18, "type_code": "system_command_ability", "name": "west", "aliases": ["w"]}
+{"id": 1937, "type_code": "system_command_ability", "name": "describe", "aliases": ["examine", "ex"]}
 {"id": 1211, "type_code": "account", "name": "test_user_spawn", "aliases": []}
 {"id": 324, "type_code": "room", "name": "F6 公寓 · 第6层 公寓单元 2", "aliases": []}
 {"id": 325, "type_code": "room", "name": "F6 公寓 · 第6层 公共休闲区 1", "aliases": []}
@@ -450,6 +451,7 @@
 {"id": 612, "type_code": "network_access_point", "name": "F1 办公楼 · 第20层 卫生间 1 · 无线接入点", "aliases": []}
 {"id": 613, "type_code": "furniture", "name": "F1 办公楼 · 第21层 经理室 1 · 办公家具组", "aliases": []}
 {"id": 1345, "type_code": "room", "name": "F4 实验楼 · 第3层 交通核 1", "aliases": []}
+{"id": 26, "type_code": "system_command_ability", "name": "out", "aliases": ["o"]}
 {"id": 1649, "type_code": "system_notice", "name": "Hello World!", "aliases": []}
 {"id": 614, "type_code": "lighting_fixture", "name": "F1 办公楼 · 第21层 经理室 1 · 照明回路", "aliases": []}
 {"id": 615, "type_code": "network_access_point", "name": "F1 办公楼 · 第21层 经理室 1 · 无线接入点", "aliases": []}
@@ -491,14 +493,18 @@
 {"id": 47, "type_code": "building_floor", "name": "hicampus_f1_07f", "aliases": []}
 {"id": 48, "type_code": "building_floor", "name": "hicampus_f1_08f", "aliases": []}
 {"id": 49, "type_code": "building_floor", "name": "hicampus_f1_09f", "aliases": []}
-{"id": 30, "type_code": "system_command_ability", "name": "create_info", "aliases": ["cinfo", "model_info"]}
 {"id": 1184, "type_code": "world_entrance", "name": "hicampus", "aliases": []}
-{"id": 13, "type_code": "system_command_ability", "name": "enter", "aliases": []}
 {"id": 1274, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
 {"id": 1615, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 30, "type_code": "system_command_ability", "name": "create_info", "aliases": ["cinfo", "model_info"]}
+{"id": 2155, "type_code": "system_command_ability", "name": "task", "aliases": ["tasks"]}
 {"id": 2177, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
 {"id": 1121, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
 {"id": 1181, "type_code": "system_bulletin_board", "name": "bulletin_board", "aliases": ["bulletin_board", "bulletin", "board"]}
+{"id": 8, "type_code": "system_command_ability", "name": "version", "aliases": ["ver"]}
+{"id": 13, "type_code": "system_command_ability", "name": "enter", "aliases": []}
+{"id": 29, "type_code": "system_command_ability", "name": "create", "aliases": ["spawn", "build", "make"]}
+{"id": 2147, "type_code": "system_command_ability", "name": "space", "aliases": []}
 {"id": 235, "type_code": "room", "name": "F3 培训中心 · 第3层 实验室 1", "aliases": []}
 {"id": 236, "type_code": "room", "name": "F3 培训中心 · 第3层 会议室 1", "aliases": []}
 {"id": 237, "type_code": "room", "name": "F3 培训中心 · 第3层 卫生间 1", "aliases": []}
@@ -512,11 +518,8 @@
 {"id": 1935, "type_code": "system_command_ability", "name": "primer", "aliases": ["manual"]}
 {"id": 10, "type_code": "system_command_ability", "name": "time", "aliases": ["date"]}
 {"id": 1934, "type_code": "system_command_ability", "name": "describe", "aliases": ["examine", "ex"]}
-{"id": 12, "type_code": "system_command_ability", "name": "look", "aliases": ["l", "lookat", "examine"]}
-{"id": 2147, "type_code": "system_command_ability", "name": "space", "aliases": []}
 {"id": 240, "type_code": "room", "name": "F3 培训中心 · 第4层 实验室 1", "aliases": []}
 {"id": 241, "type_code": "room", "name": "F3 培训中心 · 第4层 会议室 1", "aliases": []}
-{"id": 1, "type_code": "account", "name": "admin", "aliases": []}
 {"id": 242, "type_code": "room", "name": "F3 培训中心 · 第4层 卫生间 1", "aliases": []}
 {"id": 322, "type_code": "room", "name": "F6 公寓 · 第5层 卫生间 1", "aliases": []}
 {"id": 339, "type_code": "logical_zone", "name": "Gate Security Red Zone", "aliases": []}

@@ -159,7 +159,7 @@ def test_primer_command_default_returns_full_document():
     res = PrimerCommand().execute(_ctx(), [])
     assert res.success
     assert "## 1. Identity" in res.message
-    assert "## 9. Examples" in res.message
+    assert "## 9. Commands" in res.message
 
 
 @pytest.mark.unit

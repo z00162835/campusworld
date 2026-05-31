@@ -20,7 +20,7 @@
 describe <node_id | #<id> | node_name> [-a | --all]
 ```
 
-- `ex` / `examine` 为注册别名（`describe` 优先生效，`look.class_declared_aliases` 中的 `examine` 不会注册为 `look` 的别名）。
+- `ex` / `examine` 为注册别名（`describe` 优先生效；`look` 不注册 `examine`）。易混：`ex` vs [`quit`](CMD_quit.md) 的 alias `exit` — 见 [ALIAS_GOVERNANCE](ALIAS_GOVERNANCE.md)。
 - 位置顺序自由：`describe -a #42` 与 `describe #42 -a` 等价；`--all` 与 `-a` 完全互通。
 - 标识符解析沿用 `_resolve_node_by_id_or_name`：支持纯整数 id、`#<id>` 简写、`is_active=True` 节点的精确 `name` 命中。
 

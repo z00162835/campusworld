@@ -170,14 +170,10 @@ class Character(DefaultObject):
 
     def execute_command(self, command_string: str, **kwargs) -> Dict[str, Any]:
         """
-        执行命令 - Evennia风格
-        
-        Args:
-            command_string: 命令字符串
-            **kwargs: 其他参数
-            
-        Returns:
-            执行结果字典
+        执行命令 - Evennia风格（仅 CharacterCmdSet 内命令）。
+
+        全局命令（look、go、help 等）请通过 ``command_registry`` / SSH / HTTP；
+        本方法不委托 Registry（见 ALIAS_GOVERNANCE）。
         """
         try:
             parts = command_string.strip().split()
