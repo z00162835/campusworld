@@ -21,6 +21,11 @@ from app.commands.base import CommandContext, CommandResult, GameCommand
 from app.core.database import db_session_context
 from app.services.task.acl import evaluate_acl
 from app.services.task.errors import PublishAclDenied, TaskSystemError
+from app.services.task.task_visibility_sql import (
+    VISIBILITY_PREDICATE_SQL,
+    compute_visible_pool_ids,
+    pool_open_has_active_executor,
+)
 from app.services.task.permissions import TASK_ASSIGN, TASK_CLAIM, TASK_CREATE, TASK_PUBLISH, TASK_READ, TASK_UPDATE
 from app.services.task.task_state_machine import TransitionResult, create_task, transition
 from app.services.task.visibility import PHASE_B_SUPPORTED_VISIBILITIES, is_phase_b_supported
@@ -184,9 +189,9 @@ class TaskCommand(GameCommand):
         offset = max(0, offset)
         pool_key = parsed.flags.get('pool')
         with db_session_context() as session:
-            visible_pool_ids = self._compute_visible_pool_ids(session, actor)
+            visible_pool_ids = compute_visible_pool_ids(session, actor)
             params: Dict[str, Any] = {'pid': actor.id, 'pkind': actor.kind, 'visible_pool_ids': visible_pool_ids or [0], 'limit': limit, 'offset': offset}
-            visibility_predicate = "\n              (\n                EXISTS (\n                    SELECT 1 FROM task_assignments a\n                     WHERE a.task_node_id = n.id\n                       AND a.is_active\n                       AND a.principal_id = :pid\n                       AND a.principal_kind = :pkind\n                )\n                OR (\n                    n.attributes->>'visibility' = 'explicit'\n                    AND EXISTS (\n                        SELECT 1 FROM task_assignments a\n                         WHERE a.task_node_id = n.id\n                           AND a.principal_id = :pid\n                           AND a.principal_kind = :pkind\n                    )\n                )\n                OR (\n                    n.attributes->>'visibility' = 'pool_open'\n                    AND n.attributes->>'assignee_kind' = 'pool'\n                    AND n.attributes->>'current_state' IN ('open', 'rejected')\n                    AND (n.attributes->>'pool_id')::bigint = ANY(:visible_pool_ids)\n                )\n              )\n            "
+            visibility_predicate = VISIBILITY_PREDICATE_SQL
             narrow_clause = ''
             if 'mine' in parsed.bools:
                 narrow_clause = ' AND EXISTS (SELECT 1 FROM task_assignments a  WHERE a.task_node_id = n.id AND a.is_active    AND a.principal_id = :pid AND a.principal_kind = :pkind)'
@@ -252,23 +257,7 @@ class TaskCommand(GameCommand):
                 return {}
         return {}
 
-    def _compute_visible_pool_ids(self, session, actor) -> List[int]:
-        """Return ids of active pools whose ``consume_acl`` allows ``actor``.
-
-        Cardinality of pools is small (~tens) compared to tasks (~millions);
-        evaluating ACL once per pool here lets the task list query push
-        ``pool_id = ANY(:visible_pool_ids)`` to SQL and benefit from the
-        ``ix_task_nodes_pool_id`` JSONB expression index.
-        """
-        rows = session.execute(text('\n                SELECT id, consume_acl\n                  FROM task_pools\n                 WHERE is_active = TRUE\n                ')).all()
-        out: List[int] = []
-        for r in rows:
-            acl = self._decode_jsonb(r.consume_acl)
-            if evaluate_acl(actor, acl).allow:
-                out.append(int(r.id))
-        return out
-
-    def _can_view_pool_open_row(self, actor, row) -> bool:
+    def _can_view_pool_open_row(self, actor, row, *, session, task_id: int) -> bool:
         if str(row.assignee_kind or '') != 'pool':
             return False
         if str(row.visibility or '') != 'pool_open':
@@ -276,6 +265,8 @@ class TaskCommand(GameCommand):
         if str(row.state or '') not in {'open', 'rejected'}:
             return False
         if not bool(row.pool_is_active):
+            return False
+        if pool_open_has_active_executor(session, task_id):
             return False
         acl = self._decode_jsonb(row.pool_consume_acl)
         return evaluate_acl(actor, acl).allow
@@ -296,7 +287,7 @@ class TaskCommand(GameCommand):
         if visibility == 'explicit' and bool(row.has_any_assignment):
             return True
         if visibility == 'pool_open':
-            return self._can_view_pool_open_row(actor, row)
+            return self._can_view_pool_open_row(actor, row, session=session, task_id=int(row.id))
         return False
 
     def _dispatch_event(self, ctx: CommandContext, args: List[str], *, event: str, usage_key: str, usage_default: str) -> CommandResult:

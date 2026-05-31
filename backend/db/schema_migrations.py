@@ -1136,6 +1136,10 @@ def ensure_task_system_seed(engine) -> None:
                     ),
                 },
             )
+
+        from db.seeds.world_ui_demo_seed import ensure_world_ui_demo_tasks_engine
+
+        ensure_world_ui_demo_tasks_engine(engine)
     finally:
         conn.close()
 

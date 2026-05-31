@@ -6,6 +6,7 @@
 
 **交叉引用：**
 - 命令层：[`docs/command/SPEC/features/CMD_task.md`](../../command/SPEC/features/CMD_task.md)
+- CampusWorld 决策中心 / 用户任务队列（World UI）：[`docs/frontend/SPEC/features/F01_CAMPUSWORLD_NextUI.md`](../../frontend/SPEC/features/F01_CAMPUSWORLD_NextUI.md) §0.1；列表可见性 SQL SSOT：[`backend/app/services/task/task_visibility_sql.py`](../../../backend/app/services/task/task_visibility_sql.py)（`task list` 与 [`user_task_queue`](../../../backend/app/services/task/user_task_queue.py) 共用）
 - 数据模型层：[`docs/models/SPEC/SPEC.md`](../../models/SPEC/SPEC.md)、[`docs/models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md`](../../models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md)
 - 数据库层：[`docs/database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md`](../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)
 - 授权策略：[`docs/api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md`](../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)

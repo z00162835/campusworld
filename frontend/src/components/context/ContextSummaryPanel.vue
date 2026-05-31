@@ -1,0 +1,147 @@
+<template>
+  <aside class="context-panel">
+    <div class="region-menu">
+      <h2>{{ t('worldInteraction.context.title') }}</h2>
+      <el-button size="small" text @click="$emit('collapse')">
+        {{ t('worldInteraction.context.collapse') }}
+      </el-button>
+    </div>
+
+    <div v-if="worldSession.loading" class="empty">{{ t('worldInteraction.context.loading') }}</div>
+    <div v-else-if="worldSession.error" class="empty error">
+      <p>{{ worldSession.error }}</p>
+      <el-button size="small" @click="worldSession.loadCurrent">{{ t('common.retry') }}</el-button>
+    </div>
+    <div v-else-if="!summary" class="empty">{{ t('worldInteraction.context.noData') }}</div>
+    <div v-else class="summary-body">
+      <section>
+        <span>{{ t('worldInteraction.context.currentLocation') }}</span>
+        <h3>{{ summary.currentSpace.name }}</h3>
+        <p>{{ summary.currentSpace.oneLineSummary }}</p>
+      </section>
+
+      <section v-if="summary.activeTask">
+        <span>{{ t('worldInteraction.context.currentTask') }}</span>
+        <h3>{{ summary.activeTask.title }}</h3>
+        <p>{{ summary.activeTask.currentStep }}</p>
+        <el-progress :percentage="summary.activeTask.progress" :show-text="false" />
+      </section>
+
+      <section v-if="summary.lastHandledTask">
+        <span>{{ t('worldInteraction.context.lastHandledTask') }}</span>
+        <h3>{{ summary.lastHandledTask.title }}</h3>
+        <p>{{ lastHandledLabel }}</p>
+      </section>
+
+      <section>
+        <span>{{ t('worldInteraction.context.pendingCount', { count: summary.pendingDecisionCount }) }}</span>
+      </section>
+
+      <section>
+        <span>{{ t('worldInteraction.context.nearbyAgents') }}</span>
+        <div v-if="summary.nearbyAgents.highlighted.length" class="agent-list">
+          <div v-for="agent in summary.nearbyAgents.highlighted" :key="agent.id" class="agent-row">
+            <strong>{{ agent.name }}</strong>
+            <small>{{ agent.role }} · {{ agent.status }}</small>
+          </div>
+        </div>
+        <p v-else>{{ t('worldInteraction.context.noAgents') }}</p>
+      </section>
+    </div>
+  </aside>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useWorldSessionStore } from '@/stores/worldSession'
+
+defineEmits<{ collapse: [] }>()
+
+const { t } = useI18n()
+const worldSession = useWorldSessionStore()
+const summary = computed(() => worldSession.contextSummary)
+
+const lastHandledLabel = computed(() => {
+  const task = summary.value?.lastHandledTask
+  if (!task) return ''
+  const when = task.handledAt ? new Date(task.handledAt).toLocaleString() : ''
+  return t('worldInteraction.context.lastHandledDetail', { status: task.status, when })
+})
+</script>
+
+<style scoped>
+.context-panel {
+  min-height: 360px;
+  flex: 1;
+}
+
+.region-menu {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.region-menu h2 {
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+.summary-body {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+section {
+  border-bottom: 1px solid var(--border-color-light);
+  padding-bottom: var(--spacing-lg);
+}
+
+section:last-child {
+  border-bottom: 0;
+}
+
+span {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
+h3 {
+  margin: var(--spacing-xs) 0;
+  font-size: var(--font-size-base);
+}
+
+p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  font-size: var(--font-size-sm);
+}
+
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.agent-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+small {
+  color: var(--text-tertiary);
+}
+
+.empty {
+  padding: var(--spacing-xl);
+  color: var(--text-tertiary);
+}
+</style>

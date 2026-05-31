@@ -1,28 +1,53 @@
-# 验收检查表
+# Frontend Acceptance Checklist
 
-## 页面验收
+## CampusWorld Interaction
 
-- [ ] `/auth/login` 登录表单正常提交
-- [ ] `/auth/register` 注册表单正常提交
-- [ ] `/spaces` 显示空间列表
-- [ ] `/works` 显示工作台
-- [ ] `/agents` 显示 Agent 列表
+- [x] `/works` renders the CampusWorld world interaction view.
+- [x] Top bar keeps global anchors compact: product/world, search, view mode, session, status.
+- [x] `ProductWorldSwitcher` can enter another world and leave the current world.
+- [x] State restoration uses account `location_id` through backend aggregation.
+- [x] API, service, store, component, and type names avoid phase-specific labels.
+- [x] Decision actions are submitted as `decision_event_id + option_id`.
+- [x] `/` in the decision input opens `Command` / `AICO` mode selection.
+- [x] Command mode calls graph search / command capabilities.
+- [x] AICO mode calls the AICO command path.
+- [x] Map, decision center, context summary, and utility drawer render as separate regions.
 
-## 路由验收
+## Backend Adapter
 
-- [ ] 未登录用户访问 `/spaces` 跳转登录页
-- [ ] 已登录用户访问 `/auth/login` 跳转首页
-- [ ] `/` 显示首页
+- [x] `GET /api/v1/world-sessions/current` returns current interaction state.
+- [x] `GET /api/v1/worlds/available` returns selectable worlds.
+- [x] `POST /api/v1/world-sessions/enter-world` dispatches `enter <world_id>`.
+- [x] `POST /api/v1/world-sessions/leave-world` dispatches `leave`.
+- [x] `POST /api/v1/decision-center/actions` dispatches generated decision actions through command/task execution.
+- [x] `POST /api/v1/decision-center/query` supports command and AICO modes.
+- [x] `POST /api/v1/semantic-map/query` returns a map patch.
+- [x] `POST /api/v1/world-search` searches world entities and commands.
+- [x] `GET /api/v1/world-history/summary` returns grouped history summary.
 
-## API 集成验收
+## Verification
 
-- [ ] Axios 正确配置 baseURL
-- [ ] JWT Token 正确添加到请求头
-- [ ] 401 响应正确处理（跳转登录页）
-- [ ] 403 响应正确处理（显示权限不足）
+- [x] `cd backend && conda run -n campusworld pytest tests/api/test_world_interaction_endpoints.py tests/services/test_task_visibility_sql.py tests/services/test_user_task_queue_mapping.py -q`
+- [x] `cd frontend && npm run type-check`
+- [x] `cd frontend && npm run test -- --run`
+- [x] `cd frontend && npm run build`
+- [x] `cd backend && conda run -n campusworld pytest tests/api -q`
+- [x] `cd backend && conda run -n campusworld python scripts/validate_config.py`
+- [x] `cd backend && conda run -n campusworld python scripts/validate_command_aliases.py`
+- [ ] `cd backend && python scripts/validate_spec_layout.py`
 
-## 组件验收
+## Phase 1 Milestone (admin @ singularity room)
 
-- [ ] NavBar 正确显示
-- [ ] Sidebar 正确显示
-- [ ] Dashboard 正确显示用户状态
+- [x] Decision center cards map from user task queue (`task_visibility_sql` / `task_assignments` / pool visibility).
+- [x] `GET /world-sessions/current` aggregate fields covered by mock API test (`lastHandledTask`, `mapDefaultCollapsed`, task `decisionEvents`).
+- [x] No aggregator-side `task create` for device discovery (e.g. projector).
+- [x] Context shows current space and optional `lastHandledTask`.
+- [x] Map and context columns collapsible per `display_policy`.
+- [x] `mapDefaultCollapsed` and `contextDefaultCollapsed` in display policy payload.
+- [x] Minimal admin demo tasks seeded idempotently after task system seed.
+
+## Deferred Notes
+
+- SPEC layout validation currently fails on the pre-existing command feature filename `docs/command/SPEC/features/ALIAS_GOVERNANCE.md`.
+- Browser inspection reached the login redirect for `/works`; authenticated visual inspection still needs a valid Web UI session.
+- Phase 2+: semantic-map/focus, world-search overlay, WebSocket patches, Agent attention, EventTriage L2, HiCampus eight-step demo path.

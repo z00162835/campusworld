@@ -151,18 +151,20 @@ class RootNodeManager:
         try:
             if session is None:
                 with db_session_context() as new_session:
+                    root_node = None
                     if self._root_node_id:
                         root_node = new_session.query(Node).filter(Node.id == self._root_node_id).first()
-                    else:
+                    if not root_node:
                         root_node = self._get_existing_root_node(new_session)
                         if root_node:
                             self._root_node_id = root_node.id
                             self._root_node_uuid = str(root_node.uuid)
                     return root_node
             else:
+                root_node = None
                 if self._root_node_id:
                     root_node = session.query(Node).filter(Node.id == self._root_node_id).first()
-                else:
+                if not root_node:
                     root_node = self._get_existing_root_node(session)
                     if root_node:
                         self._root_node_id = root_node.id

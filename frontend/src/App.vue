@@ -44,7 +44,7 @@ import TabBar from '@/components/layout/TabBar.vue'
 import FooterComponent from '@/components/layout/Footer.vue'
 
 // Dynamic imports for code splitting
-const Home = defineAsyncComponent(() => import('@/views/Home.vue'))
+const WorldInteractionView = defineAsyncComponent(() => import('@/views/WorldInteractionView.vue'))
 const Spaces = defineAsyncComponent(() => import('@/views/spaces/Spaces.vue'))
 const Agents = defineAsyncComponent(() => import('@/views/agents/Agents.vue'))
 const Discovery = defineAsyncComponent(() => import('@/views/discovery/Discovery.vue'))
@@ -115,7 +115,7 @@ onBeforeUnmount(() => {
 })
 
 const componentMap: Record<string, any> = {
-  Home,
+  WorldInteractionView,
   Spaces,
   Agents,
   Discovery,

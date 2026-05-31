@@ -15,6 +15,8 @@ the command layer rejects them at write time and excludes them from the
 visibility predicate at read time. This is **not** a silent deny: callers
 hitting these visibility kinds receive
 ``commands.task.error.visibility_unsupported``.
+
+List/read SQL for Phase B kinds lives in ``task_visibility_sql.VISIBILITY_PREDICATE_SQL``.
 """
 from __future__ import annotations
 from typing import FrozenSet

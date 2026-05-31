@@ -1,60 +1,40 @@
-# TODO - 前端开发任务
+# TODO - Frontend Development Tasks
 
-## 页面开发
+Active plan: [`_generated/CAMPUSWORLD_NEXT_UI_IMPLEMENTATION_PLAN.md`](_generated/CAMPUSWORLD_NEXT_UI_IMPLEMENTATION_PLAN.md)
 
-### 高优先级
+## CampusWorld World Interaction
 
-- [ ] **登录页面完善** `/auth/login`
-  - 表单验证（邮箱格式/密码长度）
-  - 错误提示（登录失败）
-  - 登录成功后跳转
+- [x] Upgrade `/works` to render `WorldInteractionView`.
+- [x] Add stable world interaction API clients without phase-specific names.
+- [x] Add Pinia state for world session, decision center, map, context, history, commands, and connection status.
+- [x] Add `WorldTopBar` with `ProductWorldSwitcher`.
+- [x] Add semantic map, decision center, context summary, and bottom utility drawer regions.
+- [x] Add `/` mode selector for `Command` and `AICO`.
+- [x] Keep legacy works components available but remove them from the `/works` primary surface.
 
-- [ ] **空间浏览页面** `/spaces`
-  - 园区空间列表
-  - 空间详情（名称/描述/出口/物品）
-  - 空间切换
+## Backend Integration
 
-- [ ] **工作台页面** `/works`
-  - Dashboard 组件
-  - 物品管理（take/drop）
-  - 状态显示（精力/饱食度）
+- [x] Add `world-sessions` adapter endpoints.
+- [x] Add world availability endpoint.
+- [x] Add decision action, decision query, semantic map query, world search, and history summary endpoints.
+- [x] Route generated decision actions through command/task execution.
+- [x] Restore current state from account `location_id`.
 
-### 中优先级
+## Phase 1 (current milestone)
 
-- [ ] **Agent 管理页面** `/agents`
-  - Agent 列表
-  - Agent 详情
-  - Agent 创建
+- [x] Decision center driven by `user_task_queue` (Task SPEC §1.5 via `task_visibility_sql.py`, shared with `task list`).
+- [x] Remove UI-side `task create` from world interaction aggregator.
+- [x] Context `lastHandledTask` + queue-backed `pendingDecisionCount`.
+- [x] Collapsible semantic map and context panes (`mapDefaultCollapsed` / `contextDefaultCollapsed`).
+- [x] Admin demo tasks via `ensure_world_ui_demo_tasks` (direct assign).
+- [x] Logout resets `worldSession`, `worldHistory`, `connection`, `commands`.
+- [x] i18n keys under `worldInteraction.*`.
 
-- [ ] **发现页面** `/discovery`
-  - 推荐空间
-  - 热门活动
-  - 用户动态
+## Follow-Up (Phase 2+)
 
-- [ ] **历史记录页面** `/history`
-  - 操作历史
-  - 访问记录
-
-### 低优先级
-
-- [ ] **用户资料页面** `/user/profile`
-  - 个人信息
-  - 设置
-
-## 组件开发
-
-| 组件 | 说明 | 优先级 |
-|------|------|--------|
-| NavBar | 导航栏 | 高 |
-| Sidebar | 侧边栏 | 高 |
-| Dashboard | 工作台面板 | 高 |
-| ChatInput | 聊天输入 | 中 |
-| TodoList | 待办列表 | 中 |
-| AgentsActivity | Agent 动态 | 中 |
-
-## 验收检查清单
-
-- [ ] Login 页面表单验证正常
-- [ ] Spaces 页面显示空间列表
-- [ ] Works 页面显示用户状态
-- [ ] 路由守卫正常拦截未登录用户
+- [ ] `POST /api/v1/semantic-map/focus` and wire map mode refetch.
+- [ ] `GlobalCommandSearch` → `world-search` results overlay.
+- [ ] Expand real task selection once world-scoped task search is productized.
+- [ ] Add authenticated browser regression coverage for `/works`.
+- [ ] Extend WebSocket state patch handling beyond the initial adapter path.
+- [ ] Agent attention items, EventTriage L2, achievements, HiCampus full demo path.

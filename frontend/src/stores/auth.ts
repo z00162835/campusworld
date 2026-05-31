@@ -100,6 +100,18 @@ export const useAuthStore = defineStore('auth', () => {
     useTabsStore().clearTabs()
     useSpacesStore().reset()
     useUserStore().reset()
+    void import('./worldSession').then(({ useWorldSessionStore }) => {
+      useWorldSessionStore().reset()
+    })
+    void import('./worldHistory').then(({ useWorldHistoryStore }) => {
+      useWorldHistoryStore().reset()
+    })
+    void import('./connection').then(({ useConnectionStore }) => {
+      useConnectionStore().reset()
+    })
+    void import('./commands').then(({ useCommandsStore }) => {
+      useCommandsStore().reset()
+    })
   }
 
   const clearClientState = () => {

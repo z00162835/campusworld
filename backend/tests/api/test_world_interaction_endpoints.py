@@ -1,0 +1,172 @@
+from pathlib import Path
+import sys
+from unittest.mock import MagicMock
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from app.api.v1.dependencies import AuthenticatedUser, get_current_http_user
+from app.api.v1.endpoints import world_interaction
+from app.core.database import get_db
+
+
+def _test_user():
+    return AuthenticatedUser(
+        user_id="1",
+        username="tester",
+        email="tester@example.com",
+        roles=["player"],
+        permissions=["player.*"],
+        user_attrs={},
+    )
+
+
+def _app():
+    app = FastAPI()
+    app.include_router(world_interaction.world_sessions_router, prefix="/api/v1")
+    app.include_router(world_interaction.worlds_router, prefix="/api/v1")
+    app.include_router(world_interaction.decision_center_router, prefix="/api/v1")
+    app.include_router(world_interaction.semantic_map_router, prefix="/api/v1")
+    app.include_router(world_interaction.world_search_router, prefix="/api/v1")
+    app.include_router(world_interaction.world_history_router, prefix="/api/v1")
+    app.dependency_overrides[get_current_http_user] = _test_user
+    app.dependency_overrides[get_db] = lambda: MagicMock()
+    return app
+
+
+def test_world_interaction_routes_do_not_use_stage_names():
+    app = _app()
+    paths = {route.path for route in app.routes}
+    assert "/api/v1/world-sessions/current" in paths
+    assert "/api/v1/world-sessions/enter-world" in paths
+    assert "/api/v1/decision-center/actions" in paths
+    assert not any("mvp" in path or "phase" in path or "nextui" in path.lower() for path in paths)
+
+
+def test_decision_action_adapter_passes_generated_ids(monkeypatch):
+    seen = {}
+
+    def fake_execute(db, actor, decision_event_id, option_id):
+        seen["actor"] = actor
+        seen["decision_event_id"] = decision_event_id
+        seen["option_id"] = option_id
+        return {"success": True, "result": {"summary": "ok", "status": "completed"}, "state_patch": {}}
+
+    monkeypatch.setattr(world_interaction.world_interaction_service, "execute_decision_action", fake_execute)
+    client = TestClient(_app())
+
+    response = client.post(
+        "/api/v1/decision-center/actions",
+        json={"session_id": "world_1", "decision_event_id": "next_navigation", "option_id": "go_next"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert seen["actor"].user_id == "1"
+    assert seen["decision_event_id"] == "next_navigation"
+    assert seen["option_id"] == "go_next"
+
+
+def _phase1_aggregate_payload() -> dict:
+    return {
+        "session": {
+            "id": "world_1",
+            "currentWorldId": None,
+            "currentSpaceId": "10",
+            "currentSpaceKey": "singularity",
+            "updatedAt": "2026-05-31T00:00:00Z",
+        },
+        "interaction_state": {
+            "session": {
+                "id": "world_1",
+                "currentWorldId": None,
+                "currentSpaceId": "10",
+                "updatedAt": "2026-05-31T00:00:00Z",
+            },
+            "decision_center": {
+                "focus": {"title": "Singularity Room", "summary": "1 task(s) need your attention.", "severity": "warning"},
+                "decisionEvents": [
+                    {
+                        "id": "task_42",
+                        "title": "Explore CampusWorld",
+                        "type": "task",
+                        "options": [{"id": "task_start_42", "command": "task start 42"}],
+                    }
+                ],
+                "activeTask": {"id": "task_42", "title": "Explore CampusWorld", "status": "active"},
+                "nextBestAction": {"id": "task_start_42", "label": "Start task", "command": "task start 42"},
+                "quickQueries": [],
+                "loading": False,
+                "error": None,
+            },
+            "focus_map": {"mode": "focus", "nodes": [{"id": "10", "name": "Singularity Room"}], "currentSpaceId": "10"},
+            "context_summary": {
+                "currentSpace": {"id": "10", "name": "Singularity Room", "oneLineSummary": "CampusWorld hub"},
+                "pendingDecisionCount": 1,
+                "lastHandledTask": {
+                    "id": "41",
+                    "title": "Previous task",
+                    "status": "done",
+                    "handledAt": "2026-05-30T12:00:00Z",
+                },
+                "nearbyAgents": {"total": 0, "highlighted": []},
+                "suggestedQueries": [],
+            },
+            "quick_queries": [],
+        },
+        "display_policy": {
+            "maxDecisionEventsVisible": 2,
+            "maxActionsPerCard": 3,
+            "maxMapNodesVisible": 7,
+            "maxAgentsHighlighted": 3,
+            "contextDefaultCollapsed": True,
+            "mapDefaultCollapsed": False,
+            "historyDefaultCollapsed": True,
+        },
+        "available_worlds": [{"world_id": "hicampus", "name": "HiCampus", "is_recommended": True}],
+    }
+
+
+def test_current_world_session_returns_phase1_aggregate_fields(monkeypatch):
+    payload = _phase1_aggregate_payload()
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "get_current_state",
+        lambda db, actor: payload,
+    )
+    client = TestClient(_app())
+    response = client.get("/api/v1/world-sessions/current")
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["display_policy"]["mapDefaultCollapsed"] is False
+    assert body["display_policy"]["contextDefaultCollapsed"] is True
+
+    interaction = body["interaction_state"]
+    assert interaction["decision_center"]["decisionEvents"][0]["id"] == "task_42"
+    assert interaction["decision_center"]["decisionEvents"][0]["type"] == "task"
+    assert interaction["context_summary"]["lastHandledTask"]["title"] == "Previous task"
+    assert interaction["context_summary"]["pendingDecisionCount"] == 1
+    assert interaction["focus_map"]["currentSpaceId"] == "10"
+
+
+def test_decision_action_adapter_accepts_task_queue_ids(monkeypatch):
+    seen = {}
+
+    def fake_execute(db, actor, decision_event_id, option_id):
+        seen["decision_event_id"] = decision_event_id
+        seen["option_id"] = option_id
+        return {"success": True, "result": {"summary": "ok", "status": "completed"}, "state_patch": {}}
+
+    monkeypatch.setattr(world_interaction.world_interaction_service, "execute_decision_action", fake_execute)
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/decision-center/actions",
+        json={"session_id": "world_1", "decision_event_id": "task_42", "option_id": "task_start_42"},
+    )
+    assert response.status_code == 200
+    assert seen["decision_event_id"] == "task_42"
+    assert seen["option_id"] == "task_start_42"

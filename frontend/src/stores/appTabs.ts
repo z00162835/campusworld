@@ -13,7 +13,7 @@ export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
     id: 'tab-works',
     title: 'Works',
     route: '/works',
-    component: 'Home',
+    component: 'WorldInteractionView',
     closable: true,
   },
   {
