@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ActiveTaskCard: typeof import('./src/components/decision/ActiveTaskCard.vue')['default']
     AgentsActivity: typeof import('./src/components/works/AgentsActivity.vue')['default']
+    AppNavMenu: typeof import('./src/components/layout/AppNavMenu.vue')['default']
     BootSequence: typeof import('./src/components/auth/BootSequence.vue')['default']
     BottomUtilityDrawer: typeof import('./src/components/utility/BottomUtilityDrawer.vue')['default']
     BuildingCard: typeof import('./src/components/spaces/cards/BuildingCard.vue')['default']
@@ -71,7 +72,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ScanlineOverlay: typeof import('./src/components/auth/ScanlineOverlay.vue')['default']
-    Sidebar: typeof import('./src/components/layout/Sidebar.vue')['default']
     SpaceCard: typeof import('./src/components/spaces/cards/SpaceCard.vue')['default']
     SpaceContent: typeof import('./src/components/spaces/SpaceContent.vue')['default']
     SpaceDetailDrawer: typeof import('./src/components/spaces/SpaceDetailDrawer.vue')['default']

@@ -66,24 +66,3 @@
   border-color: var(--border-color-dark);
 }
 
-/* Dropdown Menu */
-:deep(.el-dropdown-menu) {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
-}
-
-:deep(.el-dropdown-menu__item) {
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
-}
-
-:deep(.el-dropdown-menu__item:hover) {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-:deep(.el-dropdown-menu__item.is-divided) {
-  border-top: 1px solid var(--border-color);
-}
-

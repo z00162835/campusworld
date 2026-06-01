@@ -63,6 +63,12 @@ export default {
       focus: 'Focus',
       map: 'Map',
     },
+    hub: {
+      defaultName: '奇点屋',
+    },
+    worlds: {
+      empty: '暂无可用世界',
+    },
     utility: {
       toggle: '命令 / 历史',
       command: '命令',

@@ -1,9 +1,17 @@
 # Frontend Acceptance Checklist
 
+## App Shell (transition)
+
+- [x] No fixed left `Sidebar`; primary app nav is CampusWorld dropdown on `NavBar` (Works → History).
+- [x] `NavBar` right **设置** keeps account profile (`/profile` tab) and logout; Guest/session not duplicated on `WorldTopBar`.
+- [x] `TabBar` spans full width below `NavBar`; default tab is Works (`/works`).
+- [x] Menu items open or activate separate tabs via `openAppTab`.
+- [x] `/works` tab content uses flush layout (no extra `tab-content` padding).
+
 ## CampusWorld Interaction
 
 - [x] `/works` renders the CampusWorld world interaction view.
-- [x] Top bar keeps global anchors compact: product/world, search, view mode, session, status.
+- [x] `WorldTopBar` keeps world anchor, search, and Focus/Map view mode (no duplicate CampusWorld brand; app brand on `NavBar`).
 - [x] `ProductWorldSwitcher` can enter another world and leave the current world.
 - [x] State restoration uses account `location_id` through backend aggregation.
 - [x] API, service, store, component, and type names avoid phase-specific labels.

@@ -63,6 +63,12 @@ export default {
       focus: 'Focus',
       map: 'Map',
     },
+    hub: {
+      defaultName: 'Singularity Room',
+    },
+    worlds: {
+      empty: 'No worlds available',
+    },
     utility: {
       toggle: 'Command / History',
       command: 'Command',

@@ -4,13 +4,15 @@
       <el-header class="app-header" v-if="showHeader">
         <nav-bar />
       </el-header>
-      <sidebar v-if="showSidebar" />
-      <tab-bar v-if="showSidebar" />
-      <div :class="['app-wrapper', { 'with-sidebar': showSidebar }]">
+      <tab-bar v-if="showAppChrome" />
+      <div class="app-wrapper">
         <el-container class="app-container">
           <el-main class="app-main">
             <router-view v-if="isAuthRoute" />
-            <div v-else-if="showSidebar" class="tab-content">
+            <div
+              v-else-if="showAppChrome"
+              :class="['tab-content', { 'tab-content--flush': isWorksTab }]"
+            >
               <component
                 v-if="activeTab"
                 :is="getComponent(activeTab.component)"
@@ -38,12 +40,10 @@ import { useTabsStore } from '@/stores/tabs'
 import { DEFAULT_APP_ROUTE, isAppTabRoute } from '@/stores/appTabs'
 import { useAppTabs } from '@/composables/useAppTabs'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
-import Sidebar from '@/components/layout/Sidebar.vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import TabBar from '@/components/layout/TabBar.vue'
 import FooterComponent from '@/components/layout/Footer.vue'
 
-// Dynamic imports for code splitting
 const WorldInteractionView = defineAsyncComponent(() => import('@/views/WorldInteractionView.vue'))
 const Spaces = defineAsyncComponent(() => import('@/views/spaces/Spaces.vue'))
 const Agents = defineAsyncComponent(() => import('@/views/agents/Agents.vue'))
@@ -56,39 +56,32 @@ const router = useRouter()
 const tabsStore = useTabsStore()
 const { syncRouteToTab } = useAppTabs()
 
-// 定义不需要显示侧边栏、头部和底部的路由
 const authRoutes = ['/login', '/register']
 
-const isAuthRoute = computed(() => {
-  return authRoutes.includes(route.path)
-})
+const isAuthRoute = computed(() => authRoutes.includes(route.path))
 
-const showSidebar = computed(() => {
-  return !isAuthRoute.value
-})
+const showAppChrome = computed(() => !isAuthRoute.value)
 
-const showHeader = computed(() => {
-  return !isAuthRoute.value
-})
+const showHeader = computed(() => !isAuthRoute.value)
 
-const showFooter = computed(() => {
-  return !isAuthRoute.value
-})
+const showFooter = computed(() => !isAuthRoute.value)
 
 const activeTab = computed(() => tabsStore.activeTab)
 
+const isWorksTab = computed(() => activeTab.value?.route === '/works')
+
 watch(
   () => route.path,
-  (newPath) => {
-    if (showSidebar.value && isAppTabRoute(newPath)) {
+  newPath => {
+    if (showAppChrome.value && isAppTabRoute(newPath)) {
       syncRouteToTab(newPath)
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 onMounted(() => {
-  if (showSidebar.value && !activeTab.value) {
+  if (showAppChrome.value && !activeTab.value) {
     syncRouteToTab(isAppTabRoute(route.path) ? route.path : DEFAULT_APP_ROUTE)
   }
 })
@@ -114,13 +107,13 @@ onBeforeUnmount(() => {
   window.removeEventListener('auth-session-ended', handleSessionExpired)
 })
 
-const componentMap: Record<string, any> = {
+const componentMap: Record<string, unknown> = {
   WorldInteractionView,
   Spaces,
   Agents,
   Discovery,
   History,
-  Profile
+  Profile,
 }
 
 const getComponent = (componentName: string) => {
@@ -129,5 +122,5 @@ const getComponent = (componentName: string) => {
 </script>
 
 <style scoped>
-/* 使用全局样式，这里只保留组件特定的样式 */
+/* App-specific overrides live in global layout.css */
 </style>

@@ -10,11 +10,6 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  transition: margin-left var(--transition-slow);
-}
-
-.app-wrapper.with-sidebar {
-  margin-left: var(--sidebar-width);
 }
 
 .app-header {
@@ -28,10 +23,6 @@
   left: 0;
   right: 0;
   z-index: var(--z-index-header);
-}
-
-.app-wrapper.with-sidebar .app-header {
-  left: var(--sidebar-width);
 }
 
 .app-main {
@@ -49,6 +40,14 @@
   overflow-y: auto;
   padding: var(--spacing-xl);
   background: var(--bg-primary);
+}
+
+.tab-content--flush {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .empty-tab {

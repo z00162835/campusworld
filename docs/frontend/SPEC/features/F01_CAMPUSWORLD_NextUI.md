@@ -35,6 +35,31 @@
 
 **延后（Phase 3+）**：Agent 主动关注项、EventTriage L2、WebSocket 实时 patch、成就 Toast、HiCampus 完整演示路径、`QuestCompletionCard`。
 
+## 0.2 App 壳层（过渡实现真源）
+
+多 Tab 产品形态下，已登录应用使用 **双层顶栏**，与 §5.1 单页 `WorldTopBar` 愿景并存；以本节与 [`ACCEPTANCE.md`](../ACCEPTANCE.md) 为准。
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ App NavBar（`NavBar.vue`）                                     │
+│  CampusWorld ▾ 应用导航          ……          设置 ▾          │
+├─────────────────────────────────────────────────────────────┤
+│ TabBar（全宽，无左侧 Sidebar）  Works │ Spaces │ …            │
+├─────────────────────────────────────────────────────────────┤
+│ Tab 内容（全宽）                                               │
+│   /works → WorldTopBar + WorldShell（三栏）                    │
+│   /spaces、/agents 等 → 各 legacy 视图                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| 区域 | 组件 | 职责 |
+|------|------|------|
+| 应用导航 | CampusWorld 下拉（`AppNavMenu`） | Works → Spaces → Agents → Discovery → History；`openAppTab(route)`；默认 Tab 为 Works（`/works`） |
+| 账号与会话 | **App NavBar 右侧「设置」** | **账号设置**（`/profile` Tab）、**退出登录**；**不**放入 CampusWorld 应用导航下拉 |
+| Guest / 当前身份 | **设置** 与 Profile 页 | §6.8 `UserSessionMenu` 能力归 **设置菜单 + Profile**；本阶段 **不** 在 `WorldTopBar` 显示 Guest ▾ |
+| 世界交互顶栏 | `WorldTopBar`（仅 `/works` Tab 内） | 世界切换、搜索/命令、Focus/Map 视图；**不** 重复「CampusWorld」品牌文案 |
+| 已废弃 | 固定左侧 `Sidebar.vue` | 由 CampusWorld 下拉替代 |
+
 ---
 
 # 1. 背景
@@ -229,10 +254,12 @@ WorldInteractionView
 
 现有规划组件可映射为：
 
-| 现有组件方向         | MVP 新组件                                      |
-| -------------- | -------------------------------------------- |
-| NavBar         | `WorldTopBar`                                |
-| Sidebar        | 不作为主导航；可转为窄屏 Global Drawer                   |
+| 现有组件方向         | MVP 新组件 / 过渡实现                              |
+| -------------- | ----------------------------------------------- |
+| NavBar         | 保留；CampusWorld 下拉应用导航 + 右侧「设置」（账号/退出）     |
+| Sidebar        | **移除**；五项导航迁入 CampusWorld 下拉（§0.2）          |
+| TabBar         | 保留；全宽；菜单项各开独立 Tab                           |
+| NavBar（愿景对照） | `/works` Tab 内另设 `WorldTopBar`（世界/搜索/视图）   |
 | Dashboard      | `DecisionCenterFlow` + `ContextSummaryPanel` |
 | ChatInput      | `DecisionQueryBox`                           |
 | TodoList       | `ActiveTaskCard` / `DecisionEventList`       |
@@ -247,18 +274,21 @@ WorldInteractionView
 
 ## 5.1 桌面默认布局
 
+**过渡实现（真源）**：见 §0.2（App NavBar + TabBar + Tab 内 `/works` 三栏）。下列单页愿景仍描述 **World 内容区** 内部结构。
+
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ WorldTopBar                                                   │
-│ CampusWorld · HiCampus       ⌘ 搜索或命令       Focus ▾ Guest │
+│ WorldTopBar（/works Tab 内）                                  │
+│ {世界/位置} ▾              ⌘ 搜索或命令       Focus ▾ Map ▾   │
 ├──────────────────────┬──────────────────────────┬────────────┤
 │ FocusSemanticMap      │ DecisionCenterFlow       │ Context    │
-│ 语义地图               │ 决策中心与任务行动流        │ Summary    │
-│                      │                          │ 状态摘要     │
+│ 地图                   │ 决策中心                   │ 摘要       │
 ├──────────────────────┴──────────────────────────┴────────────┤
-│ BottomUtilityDrawer：命令 / 历史 / 日志，默认折叠                │
+│ BottomUtilityDrawer：命令 / 历史，默认折叠                       │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+账号、Guest、退出登录在 **App NavBar → 设置**（§0.2），不在此 `WorldTopBar` 行。
 
 ## 5.2 默认区域比例
 
@@ -298,18 +328,32 @@ WorldTopBar
 
 ## 6.2 顶部职责
 
-顶部只负责 5 件事：
+分两层（§0.2）：
 
-1. 产品和世界锚点。
+**App NavBar**
+
+1. 产品锚点与应用导航（CampusWorld 下拉：Works / Spaces / …）。
+2. **用户账号与会话**（右侧「设置」：账号设置、退出登录）。
+
+**WorldTopBar**（`/works` Tab 内）
+
+1. 世界锚点（当前世界/位置，enter/leave）。
 2. 全局搜索或命令入口。
-3. 全局视图模式切换。
-4. 用户/会话入口。
-5. 异常提示。
+3. 世界视图模式（Focus / Map）。
+4. （可选）连接/异常提示；**不含** Guest ▾ / 账号设置。
 
 ## 6.3 顶部常驻元素
 
+App NavBar：
+
 ```text
-CampusWorld · HiCampus      ⌘ 搜索或命令      Focus ▾      Guest ▾      状态点
+CampusWorld ▾                    设置 ▾
+```
+
+WorldTopBar（`/works`）：
+
+```text
+{世界名/位置} ▾      ⌘ 搜索或命令      Focus ▾   Map ▾
 ```
 
 ## 6.4 顶部不展示内容
@@ -390,23 +434,22 @@ Debug
 
 ## 6.8 UserSessionMenu
 
-显示：
+**过渡实现**：挂在 **App NavBar 右侧「设置」**（`NavBar.vue`），**不**在 `WorldTopBar` 显示 Guest ▾。
+
+触发：
 
 ```text
-Guest ▾
+设置 ▾
 ```
 
-菜单：
+菜单（当前实现）：
 
 ```text
-当前身份：Guest
-当前 Session：sess_xxx
-
-操作
-- 重新开始演示
-- 清空当前会话
-- 退出登录
+账号设置          → /profile Tab
+退出登录
 ```
+
+愿景扩展（Guest、当前 Session、演示重置等）仍归 **设置** 子菜单或 Profile 页，不迁入 CampusWorld 应用导航下拉。F01 文案中的 Guest ▾ 指上述 **设置入口** 所承载的身份/会话能力，而非世界顶栏独立按钮。
 
 ## 6.9 SystemStatusIndicator
 

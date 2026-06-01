@@ -6,11 +6,11 @@
 
 /* 组件样式 */
 @import './components/layout.css';
-@import './components/sidebar.css';
 @import './components/navbar.css';
 @import './components/tabbar.css';
 @import './components/card.css';
 @import './components/button.css';
+@import './components/dropdown.css';
 @import './components/form.css';
 
 /* OS科技风格 - Cyber 组件 */

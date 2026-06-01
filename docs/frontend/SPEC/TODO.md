@@ -1,6 +1,16 @@
 # TODO - Frontend Development Tasks
 
-Active plan: [`_generated/CAMPUSWORLD_NEXT_UI_IMPLEMENTATION_PLAN.md`](_generated/CAMPUSWORLD_NEXT_UI_IMPLEMENTATION_PLAN.md)
+Active plan: [`_generated/CAMPUSWORLD_NEXT_UI_IMPLEMENTATION_PLAN.md`](_generated/CAMPUSWORLD_NEXT_UI_IMPLEMENTATION_PLAN.md)  
+App shell refactor plan: `app_shell_nav_refactor`（CampusWorld 下拉导航、全宽 Tab、设置保留账号/退出）
+
+## App Shell Nav Refactor
+
+- [x] Replace fixed `Sidebar` with `AppNavMenu` on `NavBar` (CampusWorld dropdown).
+- [x] Delete `Sidebar.vue` and `sidebar.css`; full-width `app-wrapper` / `TabBar`.
+- [x] Keep **设置** on `NavBar` for profile + logout (F01 §0.2 / §6.8).
+- [x] `WorldTopBar`: remove duplicate CampusWorld label; world/search/view only.
+- [x] `tab-content--flush` for `/works` only.
+- [x] SPEC/ACCEPTANCE updated for §0.2 app shell and settings placement.
 
 ## CampusWorld World Interaction
 

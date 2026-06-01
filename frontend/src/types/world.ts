@@ -1,3 +1,5 @@
+export const CAMPUS_HUB_WORLD_ID = '__campus_hub__' as const
+
 export type ViewMode = 'Focus' | 'Map'
 export type QueryMode = 'command' | 'aico'
 

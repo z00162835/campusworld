@@ -14,10 +14,6 @@
   z-index: calc(var(--z-index-header) - 1);
 }
 
-#app:has(.app-wrapper.with-sidebar) .tab-bar {
-  left: var(--sidebar-width);
-}
-
 .tab-bar::-webkit-scrollbar {
   height: 4px;
 }

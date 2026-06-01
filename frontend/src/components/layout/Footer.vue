@@ -1,6 +1,6 @@
 <template>
   <div class="footer-content">
-    <p>&copy; 2025 CampusWorld. All rights reserved.</p>
+    <p>&copy; 2026 CampusWorld. All rights reserved.</p>
   </div>
 </template>
 

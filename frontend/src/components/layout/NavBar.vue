@@ -1,9 +1,7 @@
 <template>
   <div class="navbar">
     <div class="navbar-left">
-      <div class="logo">
-        <span class="logo-text">CampusWorld</span>
-      </div>
+      <app-nav-menu />
     </div>
     <div class="navbar-right">
       <el-button
@@ -25,6 +23,8 @@
       <el-dropdown
         v-if="isAuthenticated"
         trigger="click"
+        effect="dark"
+        popper-class="cw-dropdown-popper"
         @command="handleCommand"
       >
         <el-button text class="cw-text-button">
@@ -32,7 +32,7 @@
           <span style="margin-left: 4px">设置</span>
         </el-button>
         <template #dropdown>
-          <el-dropdown-menu>
+          <el-dropdown-menu class="cw-settings-menu">
             <el-dropdown-item command="profile">账号设置</el-dropdown-item>
             <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
           </el-dropdown-menu>
@@ -46,6 +46,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Setting } from '@element-plus/icons-vue'
+import AppNavMenu from './AppNavMenu.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLogout } from '@/composables/useLogout'
 import { useAppTabs } from '@/composables/useAppTabs'
