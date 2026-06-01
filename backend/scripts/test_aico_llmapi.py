@@ -246,7 +246,7 @@ def run_probe(
         return 2
     api_key = _normalize_api_key(os.environ.get(api_key_env, "") or "")
     if not api_key:
-        print(f"error: environment variable {api_key_env!r} is not set or empty")
+        print("error: API key environment variable is not set or empty")
         return 2
     if not model:
         print("error: model is empty in LLM config block")
@@ -455,7 +455,7 @@ def main() -> int:
     print(f"config_dir: {config_dir}")
     print(f"ENVIRONMENT (merge): {env_name!r}")
     print(f"service_id: {args.service_id}")
-    print(f"api_key_env: {svc.get('api_key_env', '')}")
+    print(f"api_key_env: {'[set]' if svc.get('api_key_env') else '[not set]'}")
 
     return run_probe(
         cfg=svc,

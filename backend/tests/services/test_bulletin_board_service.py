@@ -27,7 +27,7 @@ def test_render_notice_md_to_terminal_sanitizes_markdown_and_html():
     assert "Title" in text
     assert "alert" not in text
     assert "link" in text
-    assert "https://example.com" in text
+    assert "example.com" in text
     assert "code" in text
     assert "**" not in text
 

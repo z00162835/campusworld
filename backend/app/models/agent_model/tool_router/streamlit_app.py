@@ -93,8 +93,15 @@ def rel_backend(path: Path) -> str:
 def abs_backend(path: str) -> Path:
     p = Path(path).expanduser()
     if p.is_absolute():
-        return p
-    return backend_root() / p
+        resolved = p.resolve()
+    else:
+        resolved = (backend_root() / p).resolve()
+    # Enforce path stays within backend_root to prevent traversal attacks
+    try:
+        resolved.relative_to(backend_root().resolve())
+    except ValueError:
+        raise ValueError(f"Path escapes backend root: {path}")
+    return resolved
 
 
 def dataset_key(mode: str, path: str) -> str:

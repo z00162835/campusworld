@@ -89,7 +89,8 @@ def validate_config():
         # 测试数据库URL生成
         try:
             db_url = config_manager.get_database_url()
-            print(f"  数据库URL: {db_url}")
+            safe_db = db_url.split('@')[-1] if '@' in db_url else db_url
+            print(f"  数据库URL: {safe_db}")
         except Exception as e:
             print(f"  ❌ 数据库URL生成失败: {e}")
             return False
@@ -97,7 +98,8 @@ def validate_config():
         # 测试Redis URL生成
         try:
             redis_url = config_manager.get_redis_url()
-            print(f"  Redis URL: {redis_url}")
+            safe_redis = redis_url.split('@')[-1] if '@' in redis_url else redis_url
+            print(f"  Redis URL: {safe_redis}")
         except Exception as e:
             print(f"  ❌ Redis URL生成失败: {e}")
             return False

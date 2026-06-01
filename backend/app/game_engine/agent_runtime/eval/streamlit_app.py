@@ -60,6 +60,16 @@ def load_dashboard_data(*, pairs_path: Path, report_path: Optional[Path]=None) -
     return {'pairs': pairs, 'report': report}
 
 
+def _validate_in_backend_root(path: Path, name: str) -> Path:
+    """Resolve path and verify it stays within BACKEND_ROOT."""
+    resolved = path.resolve()
+    try:
+        resolved.relative_to(BACKEND_ROOT.resolve())
+    except ValueError:
+        raise ValueError(f'{name} path escapes backend root: {path}')
+    return resolved
+
+
 def load_cases_rows(cases_path: Path) -> List[Dict[str, Any]]:
     return [c.to_dict() for c in load_cases_jsonl(cases_path)]
 
@@ -450,6 +460,12 @@ def run_eval_from_streamlit(
     chosen_cases_path = cases_path or resolve_cases_path_for_suite(cfg, suite)
     out_path = out_path or cfg.pairs_path
     report_path = report_path or cfg.report_path
+    if cases_path:
+        chosen_cases_path = _validate_in_backend_root(cases_path, 'cases')
+    if out_path:
+        out_path = _validate_in_backend_root(out_path, 'out')
+    if report_path:
+        report_path = _validate_in_backend_root(report_path, 'report')
     if not skip_dataset_governance:
         validate_case_governance(load_cases_jsonl(chosen_cases_path), expected_suite=suite, config=cfg)
     adapter = adapter_by_name(adapter_name, config=cfg)
@@ -744,7 +760,16 @@ def main() -> None:  # pragma: no cover - exercised manually with Streamlit.
     st.subheader('7. Case Dataset Query & Editor')
     cases_default_path = cfg.cases_by_suite.get(selected_suite, cfg.cases_path)
     cases_path_input = st.text_input('Cases JSONL path', value=str(cases_default_path), key='cases_jsonl_path')
-    cases_path = Path(cases_path_input).expanduser()
+    cases_path_raw = Path(cases_path_input).expanduser()
+    cases_path_resolved = cases_path_raw.resolve()
+    try:
+        cases_path_resolved.relative_to(BACKEND_ROOT.resolve())
+    except ValueError:
+        st.error(f'Path escapes backend root: {cases_path_input}')
+        st.session_state[f'cases::{cases_path_input}'] = []
+        st.stop()
+        cases_path = cases_path_resolved  # unreachable; satisfies type checker
+    cases_path = cases_path_resolved
     load_cases_clicked = st.button('Reload cases from disk', key='cases_load')
     state_key = f'cases::{cases_path}'
     if st.session_state.get(_CASE_EDITOR_CASES_KEY) != state_key:

@@ -334,7 +334,7 @@ class AicoSshCommandSession:
             raise RuntimeError(f'SSH-backed AICO eval requires password env var: {self._runtime.ssh_password_env}')
         timeout = float(self._runtime.ssh_command_timeout_seconds or 180.0)
         self._client = paramiko.SSHClient()
-        self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self._client.set_missing_host_key_policy(paramiko.WarningPolicy())
         self._client.connect(
             hostname=self._runtime.ssh_host,
             port=int(self._runtime.ssh_port),
