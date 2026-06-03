@@ -698,15 +698,31 @@ DecisionCenterFlow
 ## 9.3 中央区域结构
 
 ```text
-FocusSummary
-DecisionEventList
-ActiveTaskCard
-NextBestAction
-QuickQueryChips
-DecisionQueryBox
+region-menu（固定）
+task-zone（max-height ~40vh，独立滚动）
+  FocusSummary
+  DecisionEventList
+  ActiveTaskCard（始终可见）
+  NextBestAction（始终可见）
+zone-divider
+conversation-zone（flex:1，独立滚动）
+  AicoThreadToolbar（仅 AICO 模式）
+  DecisionConversationThread
+DecisionQueryBox（固定底部）
 ```
 
-## 9.4 渲染优先级
+`viewFilter` 仅过滤 **待处理事件列表**；`ActiveTaskCard` 与 `NextBestAction` 不受 Tab 切换隐藏。
+
+## 9.4 查询模式
+
+| 模式 | 传输 | 说明 |
+|------|------|------|
+| `command` | `POST /decision-center/query` 同步 | `/` 前缀走命令执行并返回 `state_patch`；纯文本走 world-search，透传 `results[]` |
+| `aico` | `POST /decision-center/query/stream` SSE | 禁止同步 `/query`（HTTP 400）；**provider 真流式** `delta`（任意产生用户向 prose 的 LLM 调用，含 Plan react 末轮）；`scope=activity` meta（`working` / `tool` / `writing` / `rewrite`），**不展示** PDCA 阶段名；`scope=tick` 仅 `start`/`complete`；响应头 `Cache-Control: no-cache`、`X-Accel-Buffering: no`；队列轮询 ≤50ms；空闲 `: ping`；前端分块 flush（≥32 字或 16ms）；`rewrite` 清空当前助手气泡；支持 **Stop** |
+
+会话消息上限 50 条（FIFO）；`logout` 将 AICO 线程与 Command 会话归档至 `POST /world-history/conversations/archive`。
+
+## 9.5 渲染优先级
 
 1. 阻塞用户行动的事件。
 2. 高优先级异常。
@@ -714,7 +730,7 @@ DecisionQueryBox
 4. Agent 明确建议。
 5. 新发现的重要信息。
 6. 普通状态变化。
-7. 快捷查询和输入框。
+7. 会话线程与输入框。
 
 ---
 
@@ -1635,6 +1651,18 @@ applyContextPatch(patch: Partial<ContextSummary>): void
 
 ## 23.4 查询决策中心
 
+### `POST /api/v1/decision-center/query/stream`（仅 `mode=aico`）
+
+SSE：`data: {json}\n\n`，`kind` 为 `meta` / `delta` / `end` / `error` / `cancelled` / `state_patch`。首条 HTTP `meta` 含 `scope=stream` 与 `stream_id`。tick 内 `meta` 含 `scope=tick`、`phase`（`plan`/`do`/`check`/`action`）、可选 `client_hint`。Act 开始前 UI 清空当前 assistant 气泡再流式终稿。响应头：`Cache-Control: no-cache`、`X-Accel-Buffering: no`。代理需关闭缓冲（Nginx `proxy_buffering off`）。
+
+### `POST /api/v1/decision-center/query/stream/cancel`
+
+请求：`{ "stream_id": "<from meta>" }`。
+
+### `POST /api/v1/world-history/conversations/archive`
+
+`logout` 前打包 `aico_threads[]` 与 `command_conversation[]`。
+
 ### `POST /api/v1/decision-center/query`
 
 请求：
@@ -2081,13 +2109,17 @@ Guest
 11. 点击 Agent 节点生成摘要卡。
 12. 地图菜单能切换 Agent / Route 模式。
 13. 状态摘要默认简洁。
-14. 快捷查询能返回解释。
-15. 搜索 F3 能返回路线动作。
-16. 历史默认折叠。
-17. 命令栏默认折叠。
-18. WebSocket 更新 Agent 状态后地图变化。
-19. 错误显示为可读卡片。
-20. 窄屏下顶部压缩为 `CampusWorld / ⌘ / ☰`。
+14. 决策中心 task-zone 与 conversation-zone 分区；会话区可独立滚动。
+15. Command 查询结果可展开（默认 120px）；展示 `results[]` 或完整 `command_result.message`。
+16. AICO 模式 HTTP SSE：**LLM provider 真流式** `delta`（Act / 符合条件的 Do 末轮）+ `scope=tick` 阶段 meta 状态行；响应头 `Cache-Control: no-cache`、`X-Accel-Buffering: no`；loading 时 **Stop** 可中止（客户端 + 服务端 cancel）。
+17. AICO 支持新对话与线程切换；Command 单线程无切换器。
+18. `logout` 后 `GET /world-history/summary` 可见归档的 AICO / Command 会话摘要。
+19. 搜索 F3 能返回路线动作（Command 同步查询路径）。
+20. 历史默认折叠。
+21. 命令栏默认折叠。
+22. WebSocket 更新 Agent 状态后地图变化（Phase 2+）。
+23. 错误显示为可读卡片。
+24. 窄屏下顶部压缩为 `CampusWorld / ⌘ / ☰`（Phase 2+）。
 
 ---
 
@@ -2098,19 +2130,21 @@ Guest
 1. `GET /api/v1/world-sessions/current` 返回首屏聚合数据（含 `focus_map`、`context_summary`、`decision_center`）。
 2. 决策中心事件来自用户任务队列，而非 UI 触发的 `task create`。
 3. `POST /api/v1/decision-center/actions` 能执行决策动作（经 command layer）。
-4. `POST /api/v1/decision-center/query` 支持 Command / AICO 模式。
-5. `POST /api/v1/semantic-map/query` 能返回地图 patch。
-6. `POST /api/v1/world-search` 能搜索空间、Agent、对象、命令等。
-7. `GET /api/v1/world-history/summary` 能返回历史分组摘要。
-8. `context_summary` 可含 `lastHandledTask`（最近 done/cancelled 过渡）。
-8. 后端命令系统仍是动作执行事实入口。
-9. UI 层不得复制命令行为。
-10. 世界包数据不得硬编码到前端。
-11. Agent 位置和状态来自后端。
-12. 任务状态来自后端。
-13. 重复事件能合并。
-14. 背景事件不进入中央区域。
-15. 错误不泄露 traceback。
+4. `POST /api/v1/decision-center/query` 支持 Command 同步查询（含 `state_patch`）；`mode=aico` 返回 400 并提示流式端点。
+5. `POST /api/v1/decision-center/query/stream` + cancel 支持 AICO SSE。
+6. `POST /api/v1/world-history/conversations/archive` 支持 logout 会话归档。
+7. `POST /api/v1/semantic-map/query` 能返回地图 patch。
+8. `POST /api/v1/world-search` 能搜索空间、Agent、对象、命令等。
+9. `GET /api/v1/world-history/summary` 能返回历史分组摘要（含归档会话）。
+10. `context_summary` 可含 `lastHandledTask`（最近 done/cancelled 过渡）。
+11. 后端命令系统仍是动作执行事实入口。
+12. UI 层不得复制命令行为。
+13. 世界包数据不得硬编码到前端。
+14. Agent 位置和状态来自后端。
+15. 任务状态来自后端。
+16. 重复事件能合并。
+17. 背景事件不进入中央区域。
+18. 错误不泄露 traceback。
 
 ---
 

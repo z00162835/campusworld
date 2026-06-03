@@ -53,6 +53,7 @@ def test_check_phase_never_streams_to_presentation_layer():
         tick_hooks=NoOpAgentTickHooks(),
     )
     ctx = FrameworkRunContext(agent_node_id=1, user_visible_stream=uvs)
+    fw._bind_presentation_anchor(ctx)
     out, entry = fw._call_llm('check', 'sys', 'user', ctx)
     assert out == 'check-internal'
     assert entry.get('streamed') is not True
@@ -67,13 +68,19 @@ def test_act_skip_skips_llm_before_presentation_stream():
     fw = LlmPDCAFramework(
         memory=_Mem(),
         llm_config=SimpleNamespace(extra={}, model=''),
-        instance_phase_llm={'act': PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip)},
+        instance_phase_llm={
+            'act': PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip),
+            'do': PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip),
+        },
         instance_mode_models={},
         llm=_StreamLlm(),
         tick_hooks=NoOpAgentTickHooks(),
     )
     ctx = FrameworkRunContext(agent_node_id=1, user_visible_stream=uvs)
-    assert fw._should_stream_user_prose(ctx, 'act') is True
+    fw._bind_presentation_anchor(ctx)
+    assert ctx.presentation_anchor_phase == 'plan'
+    assert fw._should_stream_user_prose(ctx, 'act') is False
+    assert fw._should_stream_user_prose(ctx, 'plan', stream_prose=True) is True
     out, entry = fw._call_llm('act', 'sys', 'user', ctx)
     assert entry.get('skipped') is True
     assert 'aico_stream_body_emitted' not in md

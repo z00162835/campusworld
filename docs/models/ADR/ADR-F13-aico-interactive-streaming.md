@@ -36,7 +36,7 @@ Accepted（与 [`docs/models/SPEC/features/F13_AICO_INTERACTIVE_UPGRADE.md`](../
 - `{"kind":"end","full_text":"…"}`
 - `{"kind":"error","code":"…","message":"…"}`（可选）
 
-首版可在拿到 **完整 assistant 文本** 后按块 **模拟增量** 写出 delta（provider 真流式可后续替换）。
+**Superseded (2026-05):** 呈现层与认知层（PDCA）解耦。**Stream anchor**：每 tick 仅允许一个阶段向用户流式输出 prose（Act 未 skip → Act；否则 Do 未 skip → Do；否则 Plan ReAct 末轮），与 `FrameworkRunResult.message` 来源一致；JSON `commands` 计划与 Check 阶段永不进入 `delta`。状态行用 `{"kind":"meta","scope":"activity","activity":"working|tool|writing|rewrite"}`，**不向 UI 暴露** PDCA 阶段名。tick 结束若正文已流式发出则仅 `kind:end` + `scope=tick` `phase=complete`；否则 fallback `emit_assistant_stream_ndjson`。Check 重试发 `activity=rewrite` 并清空当前助手气泡。
 
 ### D4
 

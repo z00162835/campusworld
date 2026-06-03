@@ -5,7 +5,9 @@
       v-model="query"
       type="search"
       placeholder="Search spaces, Agents, tasks, or commands"
-      @keydown.enter="submit"
+      @compositionstart="isComposing = true"
+      @compositionend="isComposing = false"
+      @keydown.enter="onEnterKeydown"
     />
   </div>
 </template>
@@ -17,12 +19,19 @@ import { useWorldSessionStore } from '@/stores/worldSession'
 
 const worldSession = useWorldSessionStore()
 const query = ref('')
+const isComposing = ref(false)
+
+function onEnterKeydown(event: KeyboardEvent) {
+  if (event.isComposing || isComposing.value) return
+  event.preventDefault()
+  void submit()
+}
 
 const submit = async () => {
   const clean = query.value.trim()
   if (!clean) return
-  await worldSession.submitQuery(clean)
   query.value = ''
+  await worldSession.submitQuery(clean)
 }
 </script>
 

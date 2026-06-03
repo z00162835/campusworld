@@ -3,6 +3,39 @@ export const CAMPUS_HUB_WORLD_ID = '__campus_hub__' as const
 export type ViewMode = 'Focus' | 'Map'
 export type QueryMode = 'command' | 'aico'
 
+export interface ConversationMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  mode: QueryMode
+  query?: string
+  answer: string
+  results?: Array<{
+    entity_id: string
+    entity_type: string
+    title: string
+    summary: string
+    actions?: DecisionOption[]
+  }>
+  commandResult?: {
+    success: boolean
+    message: string
+    data?: Record<string, unknown> | null
+    error?: string | null
+  }
+  expanded?: boolean
+  streaming?: boolean
+  cancelled?: boolean
+  /** Activity label while ``streaming`` (shown inside the assistant card). */
+  streamStatusKey?: string | null
+}
+
+export interface AicoThread {
+  id: string
+  title: string
+  messages: ConversationMessage[]
+  updatedAt: string
+}
+
 export interface DecisionOption {
   id: string
   label: string

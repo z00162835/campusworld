@@ -120,9 +120,11 @@ watch(
 
 <style scoped>
 .world-shell {
-  min-height: calc(100vh - var(--header-height) - var(--tab-bar-height));
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: #121418;
 }
 
@@ -131,8 +133,9 @@ watch(
   flex-direction: row;
   align-items: stretch;
   flex: 1;
-  min-height: 620px;
+  min-height: 0;
   min-width: 0;
+  overflow: hidden;
   background: var(--border-color-light);
   border-top: 1px solid var(--border-color);
   border-bottom: 1px solid var(--border-color);
@@ -158,10 +161,15 @@ watch(
   min-width: 0;
 }
 
+.decision-pane {
+  overflow: hidden;
+}
+
 .decision-pane :deep(.decision-panel) {
   flex: 1;
   min-height: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 .context-pane :deep(.context-panel) {

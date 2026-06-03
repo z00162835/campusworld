@@ -32,7 +32,11 @@ onMounted(async () => {
 
 <style scoped>
 .world-view {
-  min-height: calc(100vh - var(--header-height) - var(--tab-bar-height));
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: #121418;
   color: var(--text-primary);
 }

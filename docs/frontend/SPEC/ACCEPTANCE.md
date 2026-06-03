@@ -18,8 +18,17 @@
 - [x] Decision actions are submitted as `decision_event_id + option_id`.
 - [x] `/` in the decision input opens `Command` / `AICO` mode selection.
 - [x] Command mode calls graph search / command capabilities.
-- [x] AICO mode calls the AICO command path.
+- [x] AICO mode uses HTTP SSE (`POST /decision-center/query/stream`) with Stop (Abort + stream cancel).
+- [x] AICO SSE: anti-buffer headers; `scope=activity` status (`working`/`tool`/`writing`/`rewrite`); provider token deltas only from the tick **presentation anchor** phase (Act if enabled, else Do, else Plan last ReAct round); queue poll ≤50ms; `state_patch` refresh without full session reload.
+- [x] Presentation layer decoupled from PDCA: stream anchor matches `final_text` source; no Plan/Do internal or JSON tool-plan leakage; default AICO seed `act: skip` → anchor Plan; UI does not show plan/do/check/act phase names; `rewrite` on Check retry or before Act polish.
+- [x] Decision input clears immediately on submit (before SSE completes).
 - [x] Map, decision center, context summary, and utility drawer render as separate regions.
+- [x] Decision center: task-zone / conversation-zone split; session area scrolls independently.
+- [x] Active task card and next-best action always visible; `viewFilter` only filters pending events.
+- [x] Quick-query chips removed; backend `quickQueries` returns `[]`.
+- [x] Command query applies `state_patch` and shows expandable results (`results[]` / `command_result.message`).
+- [x] AICO: new conversation + thread switcher; Command single thread (50-message FIFO cap).
+- [x] Logout archives AICO threads and Command conversation via `POST /world-history/conversations/archive`.
 
 ## Backend Adapter
 
@@ -58,4 +67,4 @@
 
 - SPEC layout validation currently fails on the pre-existing command feature filename `docs/command/SPEC/features/ALIAS_GOVERNANCE.md`.
 - Browser inspection reached the login redirect for `/works`; authenticated visual inspection still needs a valid Web UI session.
-- Phase 2+: semantic-map/focus, world-search overlay, WebSocket patches, Agent attention, EventTriage L2, HiCampus eight-step demo path.
+- Phase 2+: semantic-map click linkage (§8.6), `GlobalCommandSearch` → `/world-search` overlay, bottom drawer read-only archived history, `task` type enum alignment, mobile §29 layout order, WebSocket patches, Agent attention, EventTriage L2, HiCampus eight-step demo path.

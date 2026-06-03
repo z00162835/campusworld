@@ -73,31 +73,8 @@ apiClient.interceptors.response.use(
       }
 
       originalRequest._retry = true
-      isRefreshing = true
 
-      // Create a refresh promise that all queued requests will wait for
-      refreshPromise = (async () => {
-        try {
-          // Try to refresh using cookie-based refresh endpoint
-          const { useAuthStore } = await import('@/stores/auth')
-          const authStore = useAuthStore()
-          const refreshedToken = await authStore.refreshAccessToken()
-          if (refreshedToken) return refreshedToken
-          throw new Error('No access token in refresh response')
-        } catch (refreshError) {
-          // Refresh failed, clear client state and redirect to login
-          const { useAuthStore } = await import('@/stores/auth')
-          const authStore = useAuthStore()
-          authStore.expireSession('refresh_failed')
-          router.push('/login')
-          throw refreshError
-        } finally {
-          isRefreshing = false
-          refreshPromise = null
-        }
-      })()
-
-      return refreshPromise.then((token: string) => {
+      return refreshAccessTokenOnce().then((token: string) => {
         // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${token}`
         return apiClient(originalRequest)
@@ -109,5 +86,55 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+async function refreshAccessTokenOnce(): Promise<string> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise
+  }
+  isRefreshing = true
+  refreshPromise = (async () => {
+    try {
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      const refreshedToken = await authStore.refreshAccessToken()
+      if (refreshedToken) return refreshedToken
+      throw new Error('No access token in refresh response')
+    } catch (refreshError) {
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      authStore.expireSession('refresh_failed')
+      router.push('/login')
+      throw refreshError
+    } finally {
+      isRefreshing = false
+      refreshPromise = null
+    }
+  })()
+  return refreshPromise
+}
+
+/** Same token resolution as axios (proactive refresh + shared refresh lock). */
+export async function getAccessTokenForRequest(): Promise<string | null> {
+  return getAccessToken()
+}
+
+/** ``fetch`` with Bearer token and one 401 refresh retry (for SSE streams). */
+export async function authorizedFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers)
+  if (!headers.has('Content-Type') && init.body != null) {
+    headers.set('Content-Type', 'application/json')
+  }
+  let token = await getAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  let response = await fetch(input, { ...init, headers, credentials: 'include' })
+  if (response.status !== 401 || shouldSkipRefresh(input)) {
+    return response
+  }
+
+  token = await refreshAccessTokenOnce()
+  headers.set('Authorization', `Bearer ${token}`)
+  return fetch(input, { ...init, headers, credentials: 'include' })
+}
 
 export default apiClient

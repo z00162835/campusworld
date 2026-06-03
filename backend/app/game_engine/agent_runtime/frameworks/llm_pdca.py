@@ -225,16 +225,44 @@ class LlmPDCAFramework(ThinkingFramework):
         """Narrow tool schemas for Plan only when F14 ``schema_subset`` set allowlist on payload."""
         return resolve_tool_schemas_for_pdca_phase(self._tool_schemas, ctx.payload, pdca_phase)
 
+    def _resolve_presentation_anchor_phase(self, ctx: FrameworkRunContext) -> str:
+        """Phase whose output is user-visible ``final_text`` (Act > Do > Plan; Check never)."""
+        act_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.act.value, ctx), ctx)
+        if act_spec.mode != PhaseLlmMode.skip:
+            return PDCAPhase.act.value
+        do_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.do.value, ctx), ctx)
+        if do_spec.mode != PhaseLlmMode.skip:
+            return PDCAPhase.do.value
+        return PDCAPhase.plan.value
+
+    def _bind_presentation_anchor(self, ctx: FrameworkRunContext) -> None:
+        ctx.presentation_anchor_phase = self._resolve_presentation_anchor_phase(ctx)
+
+    @staticmethod
+    def _is_presentation_safe_prose(text: str, calls: Sequence[ToolCall]) -> bool:
+        """Exclude tool JSON and non-prose tool-call payloads from the user-visible stream."""
+        if calls:
+            return False
+        stripped = (text or '').strip()
+        if not stripped:
+            return False
+        if parse_tool_invocation_plan_from_text(stripped).commands:
+            return False
+        return True
+
     @staticmethod
     def _should_stream_user_prose(ctx: FrameworkRunContext, phase: str, *, stream_prose: bool = False) -> bool:
-        """Presentation streaming is independent of ``phase_llm`` routing; only gates user-facing prose."""
+        """Stream only prose from the tick's presentation anchor (matches ``final_text`` source)."""
         if ctx.user_visible_stream is None:
             return False
-        if stream_prose:
-            return True
         if phase == PDCAPhase.check.value:
             return False
-        return phase == PDCAPhase.act.value
+        anchor = (ctx.presentation_anchor_phase or '').strip()
+        if not anchor or phase != anchor:
+            return False
+        if anchor == PDCAPhase.act.value:
+            return True
+        return stream_prose
 
     @staticmethod
     def _tick_cancelled(ctx: FrameworkRunContext) -> bool:
@@ -335,7 +363,7 @@ class LlmPDCAFramework(ThinkingFramework):
         calls: List[ToolCall] = []
         phase_tools = self._effective_tool_schemas(ctx, pdca_phase=phase)
         stream_during_call = self._should_stream_user_prose(ctx, phase, stream_prose=stream_prose) and not (
-            stream_prose and supports_tools(self._llm) and phase_tools
+            stream_prose and phase_tools
         )
         if stream_during_call:
             uvs = ctx.user_visible_stream
@@ -349,7 +377,19 @@ class LlmPDCAFramework(ThinkingFramework):
                 cancel_check=ctx.stream_cancel_check,
             )
             calls = _tool_calls_from_text(text)
-            return (text, calls, {'step': phase, 'llm_output': text, 'mode': spec.mode.value, 'channel': 'stream', 'tool_call_count': len(calls), 'streamed': True})
+            entry: Dict[str, Any] = {
+                'step': phase,
+                'llm_output': text,
+                'mode': spec.mode.value,
+                'channel': 'stream',
+                'tool_call_count': len(calls),
+            }
+            if self._is_presentation_safe_prose(text, calls):
+                entry['streamed'] = True
+            else:
+                uvs.coordinator.body_emitted = False
+                entry['channel'] = 'text'
+            return (text, calls, entry)
         if supports_tools(self._llm) and phase_tools:
             try:
                 res: CompleteWithToolsResult = complete_with_tools(self._llm, system=system, turns=turns, tools=phase_tools, call_spec=spec)
@@ -377,7 +417,7 @@ class LlmPDCAFramework(ThinkingFramework):
             'tool_call_count': len(calls),
             'dropped_tool_names': dropped,
         }
-        if stream_prose and not calls and (text or '').strip():
+        if self._should_stream_user_prose(ctx, phase, stream_prose=stream_prose) and self._is_presentation_safe_prose(text, calls):
             self._write_user_prose_to_presentation(ctx, text)
             entry['streamed'] = True
             entry['channel'] = 'presentation_prose'
@@ -500,6 +540,7 @@ class LlmPDCAFramework(ThinkingFramework):
             return self._run_inner(ctx, run_id, trace, user_msg, gather_counters, correlation)
 
     def _run_inner(self, ctx: FrameworkRunContext, run_id: uuid.UUID, trace: List[Dict[str, Any]], user_msg: str, gather_counters: ToolGatherCounters, correlation: Any) -> FrameworkRunResult:
+        self._bind_presentation_anchor(ctx)
         self._memory.start_run(run_id=run_id, correlation_id=correlation if isinstance(correlation, str) else None, phase=PDCAPhase.plan.value, command_trace=list(trace), status='running')
         base_system = (ctx.system_prompt or self._cfg.system_prompt or '').strip()
         merged_phases = _merge_phase_prompts(dict(self._cfg.phase_prompts), ctx.phase_prompts)

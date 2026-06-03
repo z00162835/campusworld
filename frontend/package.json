@@ -24,15 +24,19 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.6.7",
+    "dompurify": "^3.4.7",
     "element-plus": "^2.6.1",
     "jwt-decode": "^4.0.0",
+    "markdown-it": "^14.2.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-i18n": "^9.14.5",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.5",
     "@types/lodash-es": "^4.17.12",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^20.11.24",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",

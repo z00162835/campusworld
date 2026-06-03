@@ -55,13 +55,18 @@ def test_dual_track_last_round_with_tools_emits_prose_after_call_not_during():
     fw = LlmPDCAFramework(
         memory=_Mem(),
         llm_config=SimpleNamespace(extra={}, model=''),
-        instance_phase_llm={'plan': PhaseLlmPhaseConfig(mode=PhaseLlmMode.plan)},
+        instance_phase_llm={
+            'plan': PhaseLlmPhaseConfig(mode=PhaseLlmMode.plan),
+            'do': PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip),
+            'act': PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip),
+        },
         instance_mode_models={},
         llm=_ChunkingLlm(),
         tool_schemas=[ToolSchema(name='help', description='help')],
         tick_hooks=NoOpAgentTickHooks(),
     )
     ctx = FrameworkRunContext(agent_node_id=1, user_visible_stream=uvs, payload={'pdca_tool_schema_allowlist': ['help']})
+    fw._bind_presentation_anchor(ctx)
     text, calls, entry = fw._call_llm_dual_track(
         'plan',
         'sys',

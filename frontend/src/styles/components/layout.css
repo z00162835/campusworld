@@ -1,15 +1,24 @@
 /* App Layout */
 .app-container {
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .app-wrapper {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  overflow: hidden;
+}
+
+.app-wrapper :deep(.el-container) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .app-header {
@@ -27,12 +36,19 @@
 
 .app-main {
   flex: 1;
-  padding: 0;
+  min-height: 0;
+  padding: 0 !important;
   background: var(--bg-primary);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   margin-top: calc(var(--header-height) + var(--tab-bar-height));
+}
+
+.app-main > .tab-content,
+.app-main > .tab-content--flush {
+  flex: 1;
+  min-height: 0;
 }
 
 .tab-content {
@@ -43,11 +59,13 @@
 }
 
 .tab-content--flush {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
 .empty-tab {

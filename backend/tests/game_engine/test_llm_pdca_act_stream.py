@@ -59,6 +59,7 @@ def test_call_llm_act_phase_streams_before_return():
         tick_hooks=NoOpAgentTickHooks(),
     )
     ctx = FrameworkRunContext(agent_node_id=1, user_visible_stream=uvs)
+    fw._bind_presentation_anchor(ctx)
     out, entry = fw._call_llm('act', 'sys', 'user', ctx)
     assert out == 'abcd'
     assert entry.get('streamed') is True

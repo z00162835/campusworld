@@ -21,6 +21,8 @@ class FrameworkRunContext:
     phase_llm_overrides: Dict[str, Any] = field(default_factory=dict)
     user_visible_stream: Optional['UserVisibleStream'] = None
     stream_cancel_check: Optional[Callable[[], bool]] = None
+    # Phase whose prose becomes FrameworkRunResult.message; sole presentation stream source.
+    presentation_anchor_phase: Optional[str] = None
 
 @dataclass
 class FrameworkRunResult:

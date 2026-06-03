@@ -15,69 +15,80 @@
       </div>
     </div>
 
-    <div class="decision-scroll">
-      <div v-if="worldSession.loading" class="focus-summary">{{ t('worldInteraction.decision.loading') }}</div>
-      <div v-else-if="worldSession.error" class="error-card">
-        <p>{{ worldSession.error }}</p>
-        <el-button size="small" @click="worldSession.loadCurrent">{{ t('common.retry') }}</el-button>
+    <div v-if="showPanelLoading" class="panel-loading">{{ t('worldInteraction.decision.loading') }}</div>
+    <div v-else-if="worldSession.error" class="error-card panel-loading">
+      <p>{{ worldSession.error }}</p>
+      <el-button size="small" @click="worldSession.loadCurrent">{{ t('common.retry') }}</el-button>
+    </div>
+
+    <div v-else class="decision-body">
+      <div v-show="!taskZoneCollapsed" class="task-zone">
+        <section v-if="decisionStore.focus" class="focus-summary">
+          <div class="severity">{{ decisionStore.focus.severity }}</div>
+          <h3>{{ decisionStore.focus.title }}</h3>
+          <p>{{ decisionStore.focus.summary }}</p>
+        </section>
+
+        <decision-event-card
+          v-for="event in visibleEvents"
+          :key="event.id"
+          :event="event"
+          @execute="executeAction"
+        />
+
+        <active-task-card
+          v-if="decisionStore.activeTask"
+          :task="decisionStore.activeTask"
+          @execute="executeTaskAction"
+        />
+
+        <section
+          v-if="decisionStore.nextBestAction"
+          class="next-action clickable"
+          role="button"
+          tabindex="0"
+          @click="runNextBestAction"
+          @keyup.enter="runNextBestAction"
+        >
+          <span>{{ t('worldInteraction.decision.nextBestAction') }}</span>
+          <strong>{{ decisionStore.nextBestAction.label }}</strong>
+        </section>
       </div>
 
-      <section v-if="decisionStore.focus" class="focus-summary">
-        <div class="severity">{{ decisionStore.focus.severity }}</div>
-        <h3>{{ decisionStore.focus.title }}</h3>
-        <p>{{ decisionStore.focus.summary }}</p>
-      </section>
+      <div class="task-zone-handle">
+        <button
+          type="button"
+          class="task-zone-toggle"
+          :aria-label="taskZoneCollapsed ? t('worldInteraction.decision.expandTaskZone') : t('worldInteraction.decision.collapseTaskZone')"
+          :title="taskZoneCollapsed ? t('worldInteraction.decision.expandTaskZone') : t('worldInteraction.decision.collapseTaskZone')"
+          @click="taskZoneCollapsed = !taskZoneCollapsed"
+        >
+          <el-icon :size="14">
+            <ArrowUp v-if="!taskZoneCollapsed" />
+            <ArrowDown v-else />
+          </el-icon>
+        </button>
+      </div>
 
-      <decision-event-card
-        v-for="event in visibleEvents"
-        :key="event.id"
-        :event="event"
-        @execute="executeAction"
-      />
-
-      <active-task-card
-        v-if="decisionStore.activeTask && viewFilter !== 'pending'"
-        :task="decisionStore.activeTask"
-        @execute="executeTaskAction"
-      />
-
-      <section
-        v-if="decisionStore.nextBestAction && viewFilter !== 'pending'"
-        class="next-action clickable"
-        role="button"
-        tabindex="0"
-        @click="runNextBestAction"
-        @keyup.enter="runNextBestAction"
-      >
-        <span>{{ t('worldInteraction.decision.nextBestAction') }}</span>
-        <strong>{{ decisionStore.nextBestAction.label }}</strong>
-      </section>
-
-      <quick-query-chips
-        :queries="decisionStore.quickQueries"
-        @query="worldSession.submitQuery"
-      />
-
-      <div class="query-results">
-        <article v-for="card in worldSession.queryCards" :key="card.id" class="query-card">
-          <span>{{ card.mode }}</span>
-          <h4>{{ card.title }}</h4>
-          <p>{{ card.answer }}</p>
-        </article>
+      <div ref="conversationZoneRef" class="conversation-zone">
+        <aico-thread-toolbar />
+        <decision-conversation-thread ref="threadRef" />
       </div>
     </div>
 
-    <decision-query-box />
+    <decision-query-box @submitted="scrollConversationToBottom" />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
+import { ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import DecisionEventCard from './DecisionEventCard.vue'
 import ActiveTaskCard from './ActiveTaskCard.vue'
-import QuickQueryChips from './QuickQueryChips.vue'
 import DecisionQueryBox from './DecisionQueryBox.vue'
+import DecisionConversationThread from './DecisionConversationThread.vue'
+import AicoThreadToolbar from './AicoThreadToolbar.vue'
 import { useDecisionCenterStore } from '@/stores/decisionCenter'
 import { useWorldSessionStore } from '@/stores/worldSession'
 
@@ -85,7 +96,14 @@ const { t } = useI18n()
 const decisionStore = useDecisionCenterStore()
 const worldSession = useWorldSessionStore()
 const viewFilter = ref<'pending' | 'current'>('pending')
+const taskZoneCollapsed = ref(false)
 const hiddenEventIds = ref<Set<string>>(new Set())
+const conversationZoneRef = ref<HTMLElement>()
+const threadRef = ref<InstanceType<typeof DecisionConversationThread>>()
+
+const showPanelLoading = computed(
+  () => worldSession.loading && !worldSession.interactionState,
+)
 
 const visibleEvents = computed(() => {
   if (viewFilter.value === 'current') return []
@@ -113,16 +131,25 @@ const runNextBestAction = async () => {
 function clearResolved() {
   hiddenEventIds.value = new Set(decisionStore.decisionEvents.map(event => event.id))
 }
+
+async function scrollConversationToBottom() {
+  await nextTick()
+  await threadRef.value?.scrollToBottom()
+  const zone = conversationZoneRef.value
+  if (zone) zone.scrollTop = zone.scrollHeight
+}
 </script>
 
 <style scoped>
 .decision-panel {
   display: flex;
   flex-direction: column;
-  min-height: 620px;
+  height: 100%;
+  min-height: 0;
 }
 
 .region-menu {
+  flex-shrink: 0;
   height: 48px;
   display: flex;
   align-items: center;
@@ -143,18 +170,81 @@ function clearResolved() {
   gap: var(--spacing-xs);
 }
 
-.decision-scroll {
+.panel-loading {
+  padding: var(--spacing-lg);
+  flex-shrink: 0;
+}
+
+.decision-body {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.task-zone {
+  flex-shrink: 0;
+  max-height: 40vh;
+  overflow-y: auto;
   padding: var(--spacing-lg);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  background: #15181d;
+}
+
+.task-zone-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+  background: #15181d;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.task-zone-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #1b1f26;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.task-zone-toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: #20252d;
+}
+
+.task-zone-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.conversation-zone {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--spacing-lg);
+  background: #13161b;
+  display: flex;
+  flex-direction: column;
 }
 
 .focus-summary,
 .next-action,
-.query-card,
 .error-card {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -162,21 +252,18 @@ function clearResolved() {
   padding: var(--spacing-lg);
 }
 
-.focus-summary h3,
-.query-card h4 {
+.focus-summary h3 {
   margin: var(--spacing-xs) 0;
   font-size: var(--font-size-lg);
 }
 
-.focus-summary p,
-.query-card p {
+.focus-summary p {
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.55;
 }
 
 .severity,
-.query-card span,
 .next-action span {
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
@@ -200,11 +287,5 @@ function clearResolved() {
 .error-card {
   border-color: rgba(245, 108, 108, 0.35);
   color: var(--color-danger);
-}
-
-@media (max-width: 980px) {
-  .decision-panel {
-    min-height: 520px;
-  }
 }
 </style>
