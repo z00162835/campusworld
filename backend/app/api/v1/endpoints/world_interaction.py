@@ -2,6 +2,7 @@
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -49,6 +50,15 @@ class WorldSearchRequest(BaseModel):
     world_id: Optional[str] = None
     query: str
     types: Optional[list[str]] = None
+
+
+class StreamCancelRequest(BaseModel):
+    stream_id: str = Field(..., min_length=1)
+
+
+class ConversationArchiveRequest(BaseModel):
+    aico_threads: list[dict] = Field(default_factory=list)
+    command_conversation: list[dict] = Field(default_factory=list)
 
 
 def _actor(user: AuthenticatedUser) -> WorldActor:
@@ -99,7 +109,34 @@ def execute_decision_action(payload: DecisionActionRequest, db: Session = Depend
 
 @decision_center_router.post("/query")
 def query_decision_center(payload: DecisionQueryRequest, db: Session = Depends(get_db), current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
-    return world_interaction_service.query_decision_center(db, _actor(current_user), payload.query, payload.mode)
+    if payload.mode == "aico":
+        raise HTTPException(
+            status_code=400,
+            detail="AICO queries must use POST /decision-center/query/stream",
+        )
+    return world_interaction_service.run_command_query(db, _actor(current_user), payload.query)
+
+
+@decision_center_router.post("/query/stream")
+def stream_decision_query(payload: DecisionQueryRequest, current_user: AuthenticatedUser = Depends(get_current_http_user)):
+    if payload.mode != "aico":
+        raise HTTPException(status_code=400, detail="Only mode=aico is supported for streaming queries")
+    actor = _actor(current_user)
+    generator = world_interaction_service.stream_aico_query(actor, payload.query)
+    return StreamingResponse(
+        generator,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@decision_center_router.post("/query/stream/cancel")
+def cancel_stream_query(payload: StreamCancelRequest, current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
+    return world_interaction_service.cancel_stream(payload.stream_id)
 
 
 @semantic_map_router.post("/query")
@@ -115,3 +152,8 @@ def search_world(payload: WorldSearchRequest, db: Session = Depends(get_db), cur
 @world_history_router.get("/summary")
 def get_world_history_summary(db: Session = Depends(get_db), current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
     return world_interaction_service.history_summary(db, _actor(current_user))
+
+
+@world_history_router.post("/conversations/archive")
+def archive_conversations(payload: ConversationArchiveRequest, current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
+    return world_interaction_service.archive_conversations(_actor(current_user), payload.model_dump())

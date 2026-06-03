@@ -13,6 +13,7 @@ from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, F
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
 from app.game_engine.agent_runtime.intent_classifier_interface import IntentClassifier, RuleFallbackIntentClassifier, classify_intent
 from app.game_engine.agent_runtime.llm_client import AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC, LlmCallSpec, LlmClient, StubLlmClient, complete_with_tools, supports_tools
+from app.game_engine.agent_runtime.llm_streaming import complete_stream as llm_complete_stream
 from app.game_engine.agent_runtime.memory_port import MemoryPort
 from app.game_engine.agent_runtime.observability import AgentRuntimeObservability, NoopAgentRuntimeObservability
 from app.game_engine.agent_runtime.phase_llm_resolve import merge_phase_config, to_llm_call_spec
@@ -224,6 +225,49 @@ class LlmPDCAFramework(ThinkingFramework):
         """Narrow tool schemas for Plan only when F14 ``schema_subset`` set allowlist on payload."""
         return resolve_tool_schemas_for_pdca_phase(self._tool_schemas, ctx.payload, pdca_phase)
 
+    @staticmethod
+    def _should_stream_user_prose(ctx: FrameworkRunContext, phase: str, *, stream_prose: bool = False) -> bool:
+        """Presentation streaming is independent of ``phase_llm`` routing; only gates user-facing prose."""
+        if ctx.user_visible_stream is None:
+            return False
+        if stream_prose:
+            return True
+        if phase == PDCAPhase.check.value:
+            return False
+        return phase == PDCAPhase.act.value
+
+    @staticmethod
+    def _tick_cancelled(ctx: FrameworkRunContext) -> bool:
+        check = ctx.stream_cancel_check
+        return bool(check and check())
+
+    def _finish_tick_cancelled(
+        self,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        *,
+        correlation: Any,
+    ) -> FrameworkRunResult:
+        trace.append({'step': 'tick_cancelled'})
+        self._memory.finish_run(
+            run_id,
+            'cancelled',
+            trace,
+            'cancelled',
+            graph_ops_summary={'cancelled': True},
+        )
+        self._memory.append_raw('audit', {'framework': self.framework_id, 'run_id': str(run_id), 'ok': False, 'cancelled': True})
+        return FrameworkRunResult(ok=False, message='', final_phase='cancelled')
+
+    @staticmethod
+    def _write_user_prose_to_presentation(ctx: FrameworkRunContext, text: str) -> None:
+        uvs = ctx.user_visible_stream
+        if uvs is None:
+            return
+        prose = (text or '').strip()
+        if prose:
+            uvs.write_text(prose)
+
     def _call_llm(self, phase: str, system: str, user: str, ctx: FrameworkRunContext) -> Tuple[str, Dict[str, Any]]:
         """Single plain-text LLM call (back-compat shape for existing tests)."""
         spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx)
@@ -232,6 +276,20 @@ class LlmPDCAFramework(ThinkingFramework):
             self._observability.log_llm_call(cm, phase=phase, system=system, user=user, spec=spec, skipped=spec.mode == PhaseLlmMode.skip)
         if spec.mode == PhaseLlmMode.skip:
             return ('', {'step': phase, 'skipped': True, 'mode': spec.mode.value})
+        if self._tick_cancelled(ctx):
+            return ('', {'step': phase, 'cancelled': True, 'mode': spec.mode.value})
+        if self._should_stream_user_prose(ctx, phase):
+            uvs = ctx.user_visible_stream
+            assert uvs is not None
+            out = llm_complete_stream(
+                self._llm,
+                system=system,
+                user=user,
+                sink=uvs.coordinator.build_llm_sink(),
+                call_spec=spec,
+                cancel_check=ctx.stream_cancel_check,
+            )
+            return (out, {'step': phase, 'llm_output': out, 'mode': spec.mode.value, 'streamed': True})
         out = self._llm.complete(system=system, user=user, call_spec=spec)
         return (out, {'step': phase, 'llm_output': out, 'mode': spec.mode.value})
 
@@ -257,7 +315,7 @@ class LlmPDCAFramework(ThinkingFramework):
                 self._observability.log_tool_observations_text(cm, phase=pdca_phase, observation_text=text)
         return text
 
-    def _call_llm_dual_track(self, phase: str, system: str, turns: List[ConversationTurn], ctx: FrameworkRunContext) -> Tuple[str, List[ToolCall], Dict[str, Any]]:
+    def _call_llm_dual_track(self, phase: str, system: str, turns: List[ConversationTurn], ctx: FrameworkRunContext, *, stream_prose: bool=False) -> Tuple[str, List[ToolCall], Dict[str, Any]]:
         """Native ``complete_with_tools`` when available, JSON fallback otherwise.
 
         Returns ``(text, tool_calls, trace_entry)``. ``tool_calls`` is empty
@@ -270,10 +328,28 @@ class LlmPDCAFramework(ThinkingFramework):
             self._observability.log_llm_call(cm, phase=phase, system=system, user=user_text_for_log, spec=spec, skipped=spec.mode == PhaseLlmMode.skip)
         if spec.mode == PhaseLlmMode.skip:
             return ('', [], {'step': phase, 'skipped': True, 'mode': spec.mode.value})
+        if self._tick_cancelled(ctx):
+            return ('', [], {'step': phase, 'cancelled': True, 'mode': spec.mode.value})
         channel = 'text'
         text = ''
         calls: List[ToolCall] = []
         phase_tools = self._effective_tool_schemas(ctx, pdca_phase=phase)
+        stream_during_call = self._should_stream_user_prose(ctx, phase, stream_prose=stream_prose) and not (
+            stream_prose and supports_tools(self._llm) and phase_tools
+        )
+        if stream_during_call:
+            uvs = ctx.user_visible_stream
+            assert uvs is not None
+            text = llm_complete_stream(
+                self._llm,
+                system=system,
+                user=user_text_for_log,
+                sink=uvs.coordinator.build_llm_sink(),
+                call_spec=spec,
+                cancel_check=ctx.stream_cancel_check,
+            )
+            calls = _tool_calls_from_text(text)
+            return (text, calls, {'step': phase, 'llm_output': text, 'mode': spec.mode.value, 'channel': 'stream', 'tool_call_count': len(calls), 'streamed': True})
         if supports_tools(self._llm) and phase_tools:
             try:
                 res: CompleteWithToolsResult = complete_with_tools(self._llm, system=system, turns=turns, tools=phase_tools, call_spec=spec)
@@ -293,7 +369,19 @@ class LlmPDCAFramework(ThinkingFramework):
             (calls, dropped) = _filter_tool_calls_to_schemas(calls, phase_tools)
             if dropped:
                 _LLM_PDCA_LOG.warning('tool_call_filtered phase=%s dropped=%s', phase, dropped)
-        return (text, calls, {'step': phase, 'llm_output': text, 'mode': spec.mode.value, 'channel': channel, 'tool_call_count': len(calls), 'dropped_tool_names': dropped})
+        entry: Dict[str, Any] = {
+            'step': phase,
+            'llm_output': text,
+            'mode': spec.mode.value,
+            'channel': channel,
+            'tool_call_count': len(calls),
+            'dropped_tool_names': dropped,
+        }
+        if stream_prose and not calls and (text or '').strip():
+            self._write_user_prose_to_presentation(ctx, text)
+            entry['streamed'] = True
+            entry['channel'] = 'presentation_prose'
+        return (text, calls, entry)
 
     def _phase_react_loop(self, pdca_phase: str, system: str, initial_user: str, ctx: FrameworkRunContext, counters: ToolGatherCounters, trace: List[Dict[str, Any]]) -> Tuple[str, str, List[ToolResult], Dict[str, Any]]:
         """Run up to ``budgets.max_tool_rounds_per_phase`` reason-act-observe cycles.
@@ -313,10 +401,19 @@ class LlmPDCAFramework(ThinkingFramework):
         t_phase = time.perf_counter()
         try:
             for round_idx in range(max_rounds):
+                if self._tick_cancelled(ctx):
+                    last_entry = {'step': pdca_phase, 'cancelled': True}
+                    break
                 t_llm = time.perf_counter()
                 budget_hint = format_tool_batch_limit_hint(self._tool_budgets, counters)
                 system_for_llm = f'{system}\n\n{budget_hint}' if budget_hint else system
-                (text, calls, entry) = self._call_llm_dual_track(pdca_phase, system_for_llm, turns, ctx)
+                (text, calls, entry) = self._call_llm_dual_track(
+                    pdca_phase,
+                    system_for_llm,
+                    turns,
+                    ctx,
+                    stream_prose=(round_idx == max_rounds - 1),
+                )
                 entry = dict(entry)
                 entry['round'] = round_idx + 1
                 trace.append(entry)
@@ -350,6 +447,15 @@ class LlmPDCAFramework(ThinkingFramework):
                 assert view.executor is not None and view.tool_context is not None
                 t_gather = time.perf_counter()
                 if calls_to_run:
+                    if self._tick_cancelled(ctx):
+                        last_entry = {'step': pdca_phase, 'cancelled': True}
+                        break
+                    uvs_tool = ctx.user_visible_stream
+                    if uvs_tool is not None:
+                        from app.game_engine.agent_runtime.presentation_stream import ActivityKind
+
+                        for tc in calls_to_run:
+                            uvs_tool.coordinator.set_activity(ActivityKind.tool, detail=tc.name)
                     plan = tool_calls_to_invocation_plan(calls_to_run)
                     (obs_text, gather_entries) = gather_tool_observations(view.executor, view.tool_context, plan, budgets=view.budgets, counters=counters, phase_label=pdca_phase)
                 else:
@@ -442,8 +548,12 @@ class LlmPDCAFramework(ThinkingFramework):
             plan_user += '\n\n' + chain_criteria_text
         accumulated_tick_tool_results: List[ToolResult] = []
         self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
+        if self._tick_cancelled(ctx):
+            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         plan_sys = _phase_system(base_system, PDCAPhase.plan.value, merged_phases)
         (plan_out, plan_tools_text, plan_tool_results, plan_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan_user, ctx, gather_counters, trace)
+        if plan_entry.get('cancelled'):
+            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         accumulated_tick_tool_results.extend(plan_tool_results)
         self._memory.update_run(run_id, PDCAPhase.plan.value, trace, 'running')
         self._tick_hooks.on_after_phase(ThinkingPhaseId.plan, ctx, phase_llm_output=plan_out or '', skipped=bool(plan_entry.get('skipped')))
@@ -452,6 +562,8 @@ class LlmPDCAFramework(ThinkingFramework):
         plan_block = (plan_out or '').strip()
         tool_blocks_plan = f'\n\nTool observations (plan phase):\n{plan_tools_text}' if plan_tools_text else ''
         self._tick_hooks.on_before_phase(ThinkingPhaseId.do, ctx)
+        if self._tick_cancelled(ctx):
+            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         if plan_block:
             do_user = f"User message:\n{user_msg}\n\nPlan:\n{plan_out}\n{tool_blocks_plan}\n\nMemory:\n{mem_for_do or '(none)'}"
         else:
@@ -465,6 +577,8 @@ class LlmPDCAFramework(ThinkingFramework):
             trace.append(do_entry)
         else:
             (reply, do_tools_text, do_tool_results, do_entry) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do_user, ctx, gather_counters, trace)
+            if do_entry.get('cancelled'):
+                return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
             accumulated_tick_tool_results.extend(do_tool_results)
         self._memory.update_run(run_id, PDCAPhase.do.value, trace, 'running')
         self._tick_hooks.on_after_phase(ThinkingPhaseId.do, ctx, phase_llm_output=reply or '', skipped=bool(do_entry.get('skipped')))
@@ -484,8 +598,12 @@ class LlmPDCAFramework(ThinkingFramework):
             check_user += '\n\n' + chain_criteria_text
         check_sys = _phase_system_core(base_system, PDCAPhase.check.value, merged_phases, slim_followup)
         self._tick_hooks.on_before_phase(ThinkingPhaseId.check, ctx)
+        if self._tick_cancelled(ctx):
+            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         t_check = time.perf_counter()
         (check_out, check_entry) = self._call_llm(PDCAPhase.check.value, check_sys, check_user, ctx)
+        if check_entry.get('cancelled'):
+            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         _trace_phase_timing(trace, scope='llm', phase=PDCAPhase.check.value, elapsed_ms=(time.perf_counter() - t_check) * 1000.0)
         retry_tools = None if check_entry.get('skipped') else _parse_check_retry_signal(check_out or '')
         if check_entry.get('skipped'):
@@ -525,10 +643,15 @@ class LlmPDCAFramework(ThinkingFramework):
         self._tick_hooks.on_after_phase(ThinkingPhaseId.check, ctx, phase_llm_output=check_out or '', skipped=bool(check_entry.get('skipped')))
         final_text = reply
         if retry_tools is not None and gather_counters.commands_run < self._tool_budgets.max_commands_per_tick:
+            uvs_retry = ctx.user_visible_stream
+            if uvs_retry is not None:
+                uvs_retry.coordinator.on_rewrite()
             retry_hint = f"Check phase flagged that tool observations are required to answer. Requested tools: {', '.join(retry_tools) or '(any)'}."
             trace.append({'step': 'check_retry_triggered', 'tools': retry_tools})
             plan2_user = f'{plan_user}\n\nGuardrail note:\n{retry_hint}\nEmit a tool call plan now.'
             (plan2_out, plan2_tools_text, plan2_tool_results, plan2_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan2_user, ctx, gather_counters, trace)
+            if plan2_entry.get('cancelled'):
+                return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
             accumulated_tick_tool_results.extend(plan2_tool_results)
             if plan2_tools_text:
                 trace.append({'step': 'plan_retry_tool_observations', 'chars': len(plan2_tools_text)})
@@ -540,7 +663,9 @@ class LlmPDCAFramework(ThinkingFramework):
                 reply2 = assemble_plan_skip_do_draft(plan2_out or plan_out or '', plan2_tools_text or '')
                 trace.append({'step': PDCAPhase.do.value, 'skipped': True, 'mode': PhaseLlmMode.skip.value, 'after_check_retry': True, 'skip_do_draft_chars': len(reply2 or '')})
             else:
-                (reply2, do2_tools_text, do2_tool_results, _de2) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace)
+                (reply2, do2_tools_text, do2_tool_results, de2) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace)
+                if de2.get('cancelled'):
+                    return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
                 accumulated_tick_tool_results.extend(do2_tool_results)
             if reply2.strip():
                 final_text = reply2
@@ -558,11 +683,23 @@ class LlmPDCAFramework(ThinkingFramework):
                     trace.append({'step': 'mandatory_observation_gap', **gap_detail})
                     ctx.payload['mandatory_observation_gap'] = gap_detail
         self._tick_hooks.on_before_phase(ThinkingPhaseId.action, ctx)
+        if self._tick_cancelled(ctx):
+            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         tool_blocks_check = ''
         act_user = f'User message:\n{user_msg}\n\nDraft reply:\n{final_text}{tool_blocks_check}\n\nPolish for final user-facing text.'
         act_sys = _phase_system_core(base_system, PDCAPhase.act.value, merged_phases, slim_followup)
+        act_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.act.value, ctx), ctx)
+        uvs_act = ctx.user_visible_stream
+        if (
+            uvs_act is not None
+            and act_spec.mode != PhaseLlmMode.skip
+            and uvs_act.coordinator.body_emitted
+        ):
+            uvs_act.coordinator.on_rewrite()
         t_act = time.perf_counter()
         (act_out, act_entry) = self._call_llm(PDCAPhase.act.value, act_sys, act_user, ctx)
+        if act_entry.get('cancelled'):
+            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         _trace_phase_timing(trace, scope='llm', phase=PDCAPhase.act.value, elapsed_ms=(time.perf_counter() - t_act) * 1000.0)
         if not act_entry.get('skipped') and (act_out or '').strip():
             final_text = act_out.strip()

@@ -153,6 +153,85 @@ def test_current_world_session_returns_phase1_aggregate_fields(monkeypatch):
     assert interaction["focus_map"]["currentSpaceId"] == "10"
 
 
+def test_aico_sync_query_returns_400():
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/decision-center/query",
+        json={"session_id": "world_1", "query": "hello", "mode": "aico"},
+    )
+    assert response.status_code == 400
+
+
+def test_command_query_returns_state_patch(monkeypatch):
+    def fake_query(db, actor, query):
+        return {
+            "answer": "You see the room.",
+            "mode": "command",
+            "command_result": {"success": True, "message": "You see the room.", "data": None, "error": None},
+            "suggested_actions": [],
+            "state_patch": {"currentSpaceId": "10"},
+        }
+
+    monkeypatch.setattr(world_interaction.world_interaction_service, "run_command_query", fake_query)
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/decision-center/query",
+        json={"session_id": "world_1", "query": "/look", "mode": "command"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["state_patch"]["currentSpaceId"] == "10"
+    assert body["command_result"]["message"] == "You see the room."
+
+
+def test_archive_conversations_and_history_summary():
+    client = TestClient(_app())
+    archive = client.post(
+        "/api/v1/world-history/conversations/archive",
+        json={
+            "aico_threads": [{"id": "t1", "title": "Test", "messages": [{"id": "m1", "role": "user", "answer": "hi"}], "updatedAt": "2026-05-31T00:00:00Z"}],
+            "command_conversation": [],
+        },
+    )
+    assert archive.status_code == 200
+    assert archive.json()["archived"] is True
+
+    summary = client.get("/api/v1/world-history/summary")
+    assert summary.status_code == 200
+    groups = {group["id"]: group for group in summary.json()["groups"]}
+    assert "aico_conversations" in groups
+
+
+def test_aico_stream_response_has_anti_buffer_headers(monkeypatch):
+    def fake_stream(actor, query):
+        yield 'data: {"kind":"meta","scope":"stream","stream_id":"x"}\n\n'
+
+    monkeypatch.setattr(world_interaction.world_interaction_service, 'stream_aico_query', fake_stream)
+    client = TestClient(_app())
+    response = client.post(
+        '/api/v1/decision-center/query/stream',
+        json={'session_id': 'world_1', 'query': 'hello', 'mode': 'aico'},
+    )
+    assert response.status_code == 200
+    assert response.headers.get('cache-control') == 'no-cache'
+    assert response.headers.get('x-accel-buffering') == 'no'
+
+
+def test_stream_cancel_endpoint(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "cancel_stream",
+        lambda stream_id: {"ok": True, "stream_id": stream_id},
+    )
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/decision-center/query/stream/cancel",
+        json={"stream_id": "abc123"},
+    )
+    assert response.status_code == 200
+    assert response.json()["ok"] is True
+
+
 def test_decision_action_adapter_accepts_task_queue_ids(monkeypatch):
     seen = {}
 

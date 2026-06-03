@@ -10,7 +10,7 @@ Shared HTTP helpers: ``llm_providers/http_utils.py``.
 from __future__ import annotations
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checkable
+from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, runtime_checkable
 from app.core.settings import PhaseLlmMode
 
 @dataclass
@@ -80,6 +80,26 @@ class StubLlmClient:
         if len(u) > 400:
             u = u[:400] + '…'
         return f'[stub_llm mode={mode}] {u}'
+
+    def complete_stream(
+        self,
+        *,
+        system: str,
+        user: str,
+        sink: Any,
+        call_spec: Optional[LlmCallSpec] = None,
+        cancel_check: Optional[Callable[[], bool]] = None,
+    ) -> str:
+        full = self.complete(system=system, user=user, call_spec=call_spec)
+        chunk_size = 16
+        emitted = 0
+        for i in range(0, len(full), chunk_size):
+            if cancel_check is not None and cancel_check():
+                return full[:emitted] if emitted else ''
+            part = full[i:i + chunk_size]
+            sink.on_delta(part)
+            emitted += len(part)
+        return full
 
     def supports_tools(self) -> bool:
         return False

@@ -68,10 +68,12 @@ class AicoRuntimeProfile:
     def build_tick_hooks(self, *, config: Any):
         from app.core.log import get_logger
         from app.core.log.aico_observability import get_aico_max_phase_output_chars, is_aico_observability_enabled
-        if not is_aico_observability_enabled(config):
-            return None
-        from app.game_engine.agent_runtime.aico_observability_hooks import AicoObservabilityTickHooks
-        return AicoObservabilityTickHooks(get_logger(LoggerNames.AICO_AGENT), max_phase_output_chars=get_aico_max_phase_output_chars(config))
+        from app.game_engine.agent_runtime.aico_stream_tick_hooks import AicoStreamTickHooks
+        inner = None
+        if is_aico_observability_enabled(config):
+            from app.game_engine.agent_runtime.aico_observability_hooks import AicoObservabilityTickHooks
+            inner = AicoObservabilityTickHooks(get_logger(LoggerNames.AICO_AGENT), max_phase_output_chars=get_aico_max_phase_output_chars(config))
+        return AicoStreamTickHooks(inner=inner)
 
     def build_framework_observability(self, *, config: Any) -> AgentRuntimeObservability:
         _ = config
@@ -117,14 +119,52 @@ class AicoRuntimeProfile:
         from app.commands.aico_stream import emit_aico_error_ndjson
         emit_aico_error_ndjson(state.emit, code=code, message=message)
 
-    def emit_stream_result(self, *, state: ProfileStreamState, result: FrameworkRunResult, thread_id: Any, correlation_id: Optional[str], fallback_message: str) -> None:
+    def emit_stream_result(self, *, state: ProfileStreamState, result: FrameworkRunResult, thread_id: Any, correlation_id: Optional[str], fallback_message: str, context: Optional[CommandContext]=None) -> None:
         if not state.tick_started or state.emit is None:
             return
-        from app.commands.aico_stream import emit_aico_error_ndjson, emit_assistant_stream_ndjson, emit_tick_lifecycle_meta
+        import json
+        from app.commands.aico_stream import emit_aico_error_ndjson, emit_tick_lifecycle_meta
+        if result.final_phase == 'cancelled':
+            state.emit(json.dumps({'kind': 'cancelled'}, ensure_ascii=False))
+            emit_tick_lifecycle_meta(
+                state.emit,
+                phase='complete',
+                thread_id=thread_id,
+                correlation_id=correlation_id,
+                ok=False,
+                final_phase='cancelled',
+            )
+            return
         if not result.ok:
             fail_msg = str(result.message or '').strip() or fallback_message
             emit_aico_error_ndjson(state.emit, code='tick_failed', message=fail_msg)
             return
         assistant_reply = str(result.message or '').strip()
+        md = (context.metadata if context is not None else None) or {}
+        coordinator = md.get('_aico_presentation_coordinator')
+        if coordinator is not None:
+            coordinator.finish(
+                assistant_reply,
+                thread_id=thread_id,
+                correlation_id=correlation_id,
+                final_phase=result.final_phase,
+                empty_reply=not bool(assistant_reply),
+            )
+            return
+        from app.commands.aico_stream import emit_assistant_stream_ndjson, emit_tick_lifecycle_meta
+        import json
+
+        if md.get('aico_stream_body_emitted'):
+            state.emit(json.dumps({'kind': 'end', 'full_text': assistant_reply}, ensure_ascii=False))
+            emit_tick_lifecycle_meta(
+                state.emit,
+                phase='complete',
+                thread_id=thread_id,
+                correlation_id=correlation_id,
+                ok=True,
+                final_phase=result.final_phase,
+                empty_reply=not bool(assistant_reply),
+            )
+            return
         emit_assistant_stream_ndjson(state.emit, assistant_reply, thread_id=thread_id, correlation_id=correlation_id, allow_empty_body=True)
         emit_tick_lifecycle_meta(state.emit, phase='complete', thread_id=thread_id, correlation_id=correlation_id, ok=True, final_phase=result.final_phase, empty_reply=not bool(assistant_reply))

@@ -1,8 +1,9 @@
 """OpenAI-compatible Chat Completions API (POST /v1/chat/completions)."""
 from __future__ import annotations
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from app.game_engine.agent_runtime.llm_client import LlmCallSpec
-from app.game_engine.agent_runtime.llm_providers.http_utils import httpx_post_json
+from app.game_engine.agent_runtime.llm_providers.http_utils import httpx_post_json, httpx_stream_post_lines, parse_openai_compatible_sse_lines
+from app.game_engine.agent_runtime.llm_streaming import LlmStreamSink
 
 class OpenAiCompatibleHttpLlmClient:
     """OpenAI-compatible Chat Completions (POST {base}/chat/completions)."""
@@ -34,6 +35,27 @@ class OpenAiCompatibleHttpLlmClient:
         msg = choices[0].get('message') or {}
         content = msg.get('content')
         return str(content or '').strip()
+
+    def complete_stream(self, *, system: str, user: str, sink: LlmStreamSink, call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None) -> str:
+        spec = call_spec or LlmCallSpec()
+        model = (spec.model or self._default_model).strip() or self._default_model
+        temperature = spec.temperature if spec.temperature is not None else self._default_temperature
+        max_tokens = spec.max_tokens if spec.max_tokens is not None else self._default_max_tokens
+        timeout = spec.timeout_sec if spec.timeout_sec is not None else self._timeout
+        body: Dict[str, Any] = {
+            'model': model,
+            'messages': [{'role': 'system', 'content': system or ' '}, {'role': 'user', 'content': user or ' '}],
+            'temperature': temperature,
+            'max_tokens': max_tokens,
+            'stream': True,
+        }
+        extra = dict(spec.extra or {})
+        extra.pop('prompt_fingerprint', None)
+        body.update(extra)
+        url = f'{self._base}/chat/completions'
+        headers = {'Authorization': f'Bearer {self._api_key}', 'Content-Type': 'application/json'}
+        lines = httpx_stream_post_lines(url, headers=headers, body=body, timeout=timeout, cancel_check=cancel_check)
+        return parse_openai_compatible_sse_lines(lines, on_delta=sink.on_delta)
 
     def supports_tools(self) -> bool:
         """Native ``tools`` wiring is tracked as a follow-up.

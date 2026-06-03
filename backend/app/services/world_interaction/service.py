@@ -7,17 +7,16 @@ place.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence
 
-from sqlalchemy import and_, or_
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.commands.base import CommandContext, CommandResult
+from app.commands.base import CommandResult
 from app.commands.init_commands import ensure_commands_initialized
 from app.commands.registry import command_registry
-from app.commands.shell_words import split_command_line
 from app.core.log import get_logger, LoggerNames
 from app.game_engine.manager import game_engine_manager
 from app.models.graph import Node, Relationship
@@ -30,26 +29,10 @@ from app.services.task.user_task_queue import (
     principal_from_actor,
 )
 
-
-CAMPUS_HUB_WORLD_ID = "__campus_hub__"
-
-DISPLAY_POLICY = {
-    "maxDecisionEventsVisible": 2,
-    "maxActionsPerCard": 3,
-    "maxMapNodesVisible": 7,
-    "maxAgentsHighlighted": 3,
-    "contextDefaultCollapsed": True,
-    "mapDefaultCollapsed": False,
-    "historyDefaultCollapsed": True,
-}
-
-
-@dataclass(frozen=True)
-class WorldActor:
-    user_id: str
-    username: str
-    permissions: List[str]
-    roles: List[str]
+from .aico_stream_query import AicoStreamQueryService
+from .command_query import CommandQueryService
+from .command_runner import CommandRunner
+from .types import CAMPUS_HUB_WORLD_ID, DISPLAY_POLICY, WorldActor
 
 
 class WorldInteractionService:
@@ -57,6 +40,18 @@ class WorldInteractionService:
 
     def __init__(self) -> None:
         self.logger = get_logger(LoggerNames.GAME)
+        self._conversation_archives: Dict[str, List[Dict[str, Any]]] = {}
+        self._command_runner = CommandRunner()
+        self._command_query = CommandQueryService(
+            run_command=self._command_runner.run,
+            search=self.search,
+            build_patch=self._state_patch_after_result,
+        )
+        self._aico_stream_query = AicoStreamQueryService(
+            command_runner=self._command_runner,
+            build_patch=self._state_patch_after_result,
+            logger=self.logger,
+        )
 
     def get_current_state(self, session: Session, actor: WorldActor) -> Dict[str, Any]:
         user = self._get_user_node(session, actor.user_id, username=actor.username)
@@ -160,34 +155,32 @@ class WorldInteractionService:
                     return self._state_patch_after_result(session, actor, result, resolved_event_id=decision_event_id)
         return {"success": False, "result": {"summary": "Action is no longer available.", "status": "failed"}, "state_patch": {}}
 
+    def run_command_query(self, session: Session, actor: WorldActor, query: str) -> Dict[str, Any]:
+        return self._command_query.run(session, actor, query)
+
     def query_decision_center(self, session: Session, actor: WorldActor, query: str, mode: str) -> Dict[str, Any]:
-        clean = str(query or "").strip()
-        selected_mode = "aico" if mode == "aico" else "command"
-        if not clean:
-            return {"answer": "Enter a query or choose a mode.", "mode": selected_mode, "suggested_actions": []}
-        if selected_mode == "aico":
-            result = self.execute_command(session, actor, f"aico {clean}")
-            return {
-                "answer": result.message,
-                "mode": selected_mode,
-                "command_result": self._command_result_payload(result),
-                "suggested_actions": [],
-            }
-        if clean.startswith("/"):
-            result = self.execute_command(session, actor, clean[1:])
-            return {
-                "answer": result.message,
-                "mode": selected_mode,
-                "command_result": self._command_result_payload(result),
-                "suggested_actions": [],
-            }
-        search = self.search(session, actor, clean)
-        return {
-            "answer": search["summary"],
-            "mode": selected_mode,
-            "results": search["results"],
-            "suggested_actions": search["suggested_actions"],
+        if mode == "aico":
+            raise ValueError("AICO queries must use POST /decision-center/query/stream")
+        return self.run_command_query(session, actor, query)
+
+    def cancel_stream(self, stream_id: str) -> Dict[str, Any]:
+        return self._aico_stream_query.cancel(stream_id)
+
+    def archive_conversations(self, actor: WorldActor, payload: Dict[str, Any]) -> Dict[str, Any]:
+        user_key = str(actor.user_id)
+        entry = {
+            "id": f"archive_{uuid.uuid4().hex[:12]}",
+            "archivedAt": self._now(),
+            "aico_threads": list(payload.get("aico_threads") or []),
+            "command_conversation": payload.get("command_conversation") or [],
         }
+        has_content = bool(entry["aico_threads"]) or bool(entry["command_conversation"])
+        if has_content:
+            self._conversation_archives.setdefault(user_key, []).append(entry)
+        return {"ok": True, "archived": has_content, "archive_id": entry["id"] if has_content else None}
+
+    def stream_aico_query(self, actor: WorldActor, query: str):
+        return self._aico_stream_query.stream(actor, query)
 
     def query_semantic_map(self, session: Session, actor: WorldActor, query: str, mode: str = "auto") -> Dict[str, Any]:
         search = self.search(session, actor, query)
@@ -223,39 +216,44 @@ class WorldInteractionService:
     def history_summary(self, session: Session, actor: WorldActor) -> Dict[str, Any]:
         user = self._get_user_node(session, actor.user_id, username=actor.username)
         location = self._resolve_current_location(session, user)
-        return {
-            "groups": [
+        groups: List[Dict[str, Any]] = [
+            {
+                "id": "location",
+                "title": "Location changes",
+                "items": [{"id": f"loc_{location.id}", "summary": f"Current location: {self._display_name(location)}", "createdAt": self._now()}],
+            }
+        ]
+        for archive in self._conversation_archives.get(str(actor.user_id), []):
+            aico_items = [
                 {
-                    "id": "location",
-                    "title": "Location changes",
-                    "items": [{"id": f"loc_{location.id}", "summary": f"Current location: {self._display_name(location)}", "createdAt": self._now()}],
+                    "id": f"{archive['id']}_{thread.get('id', 'thread')}",
+                    "summary": f"AICO: {thread.get('title') or 'Conversation'} ({len(thread.get('messages') or [])} messages)",
+                    "createdAt": archive.get("archivedAt") or self._now(),
                 }
-            ],
-            "collapsed": True,
-        }
+                for thread in archive.get("aico_threads") or []
+                if thread.get("messages")
+            ]
+            if aico_items:
+                groups.append({"id": "aico_conversations", "title": "AICO conversations", "items": aico_items})
+            command_msgs = archive.get("command_conversation") or []
+            if command_msgs:
+                groups.append(
+                    {
+                        "id": "command_conversations",
+                        "title": "Command sessions",
+                        "items": [
+                            {
+                                "id": f"{archive['id']}_command",
+                                "summary": f"Command session ({len(command_msgs)} messages)",
+                                "createdAt": archive.get("archivedAt") or self._now(),
+                            }
+                        ],
+                    }
+                )
+        return {"groups": groups, "collapsed": True}
 
     def execute_command(self, session: Session, actor: WorldActor, command_line: str) -> CommandResult:
-        ensure_commands_initialized()
-        parts = split_command_line(str(command_line or "").strip())
-        if not parts:
-            return CommandResult.error_result("Command is empty", error="command.empty")
-        command_name = parts[0].lower()
-        args = parts[1:]
-        command = command_registry.get_command(command_name)
-        if not command:
-            return CommandResult.error_result(f"Command '{command_name}' not found", error="command.not_found")
-        context = CommandContext(
-            user_id=actor.user_id,
-            username=actor.username,
-            session_id=f"http_{actor.user_id}",
-            permissions=actor.permissions,
-            roles=actor.roles,
-            db_session=session,
-        )
-        decision = command_registry.authorize_command(command, context)
-        if not decision.allowed:
-            return CommandResult.error_result(f"Permission denied for command '{command_name}'", error="command.permission_denied")
-        return command.execute(context, args)
+        return self._command_runner.run(session, actor, command_line)
 
     def _build_interaction_state(self, session: Session, actor: WorldActor, user: Node, location: Node, current_world_id: Optional[str], available_worlds: List[Dict[str, Any]]) -> Dict[str, Any]:
         principal = principal_from_actor(user_id=actor.user_id, roles=actor.roles, permissions=actor.permissions)
@@ -686,15 +684,7 @@ class WorldInteractionService:
 
     @staticmethod
     def _quick_queries(current_world_id: Optional[str]) -> List[Dict[str, str]]:
-        base = [
-            {"label": "What should I handle now?", "query": "What should I handle now?", "scope": "task"},
-            {"label": "Why this suggestion?", "query": "Why this suggestion?", "scope": "task"},
-            {"label": "Where are the Agents?", "query": "Where are the Agents?", "scope": "agent"},
-            {"label": "What happened recently?", "query": "What happened recently?", "scope": "history"},
-        ]
-        if not current_world_id:
-            base[0] = {"label": "Which worlds can I enter?", "query": "available worlds", "scope": "world"}
-        return base
+        return []
 
     def _search_result_for_node(self, node: Node) -> Dict[str, Any]:
         entity_type = "agent" if node.type_code == "npc_agent" else "space" if self._world_id_for_node(node) or node.type_code in {"room", "building", "building_floor"} else "object"

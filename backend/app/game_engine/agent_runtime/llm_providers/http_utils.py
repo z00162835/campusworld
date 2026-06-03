@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional
 _MAX_ERROR_RESPONSE_CHARS = 12000
 _MAX_REQUEST_SUMMARY_CHARS = 8000
 _LLM_HTTP_MAX_ATTEMPTS = 3
@@ -137,3 +137,129 @@ def httpx_post_json(url: str, *, headers: Dict[str, str], body: Dict[str, Any], 
             time.sleep(delay)
     assert last_exc is not None
     raise last_exc
+
+
+def httpx_stream_post_lines(
+    url: str,
+    *,
+    headers: Dict[str, str],
+    body: Dict[str, Any],
+    timeout: float,
+    cancel_check: Optional[Any] = None,
+):
+    """POST JSON and yield non-empty SSE/data lines from the response body.
+
+    ``cancel_check`` is an optional callable returning True when the read loop
+    should stop (e.g. AICO stream cancel).
+    """
+    import httpx
+
+    log = logging.getLogger('app.game_engine.llm_http')
+    transient_errors = _transient_httpx_errors()
+    last_exc: Exception | None = None
+    for attempt in range(1, _LLM_HTTP_MAX_ATTEMPTS + 1):
+        t0 = time.perf_counter()
+        try:
+            with httpx.Client(timeout=timeout, trust_env=False) as client:
+                with client.stream('POST', url, headers=headers, json=body) as response:
+                    status = response.status_code
+                    if status >= 400:
+                        raw = response.read().decode('utf-8', errors='replace')
+                        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+                        _log_llm_http_error(
+                            url=url,
+                            status_code=status,
+                            elapsed_ms=elapsed_ms,
+                            body=body,
+                            response_text=raw,
+                        )
+                        response.raise_for_status()
+                    for line in response.iter_lines():
+                        if cancel_check is not None and cancel_check():
+                            break
+                        if line:
+                            yield line
+            return
+        except transient_errors as exc:
+            last_exc = exc
+            if attempt >= _LLM_HTTP_MAX_ATTEMPTS:
+                break
+            delay = _LLM_HTTP_RETRY_BASE_SEC * (2 ** (attempt - 1))
+            log.warning(
+                'llm_http_transient_error attempt=%s/%s url=%s error=%s; retry in %.1fs',
+                attempt,
+                _LLM_HTTP_MAX_ATTEMPTS,
+                url,
+                exc,
+                delay,
+            )
+            time.sleep(delay)
+    assert last_exc is not None
+    raise last_exc
+
+
+def parse_openai_compatible_sse_lines(lines, *, on_delta) -> str:
+    """Parse Chat Completions SSE lines; invoke ``on_delta`` per content chunk."""
+    import json
+
+    parts: list[str] = []
+    for raw in lines:
+        line = raw.decode('utf-8', errors='replace') if isinstance(raw, bytes) else str(raw)
+        line = line.strip()
+        if not line.startswith('data:'):
+            continue
+        payload = line[5:].strip()
+        if not payload or payload == '[DONE]':
+            continue
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        for choice in data.get('choices') or []:
+            if not isinstance(choice, dict):
+                continue
+            delta = choice.get('delta') or {}
+            content = delta.get('content')
+            if content:
+                text = str(content)
+                parts.append(text)
+                on_delta(text)
+    return ''.join(parts)
+
+
+def parse_anthropic_messages_sse_lines(lines, *, on_delta) -> str:
+    """Parse Anthropic Messages API SSE events into assistant text."""
+    import json
+
+    parts: list[str] = []
+    for raw in lines:
+        line = raw.decode('utf-8', errors='replace') if isinstance(raw, bytes) else str(raw)
+        line = line.strip()
+        if not line.startswith('data:'):
+            continue
+        payload = line[5:].strip()
+        if not payload:
+            continue
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(data, dict):
+            continue
+        event_type = data.get('type') or ''
+        if event_type == 'content_block_delta':
+            delta = data.get('delta') or {}
+            if delta.get('type') == 'text_delta':
+                text = str(delta.get('text') or '')
+                if text:
+                    parts.append(text)
+                    on_delta(text)
+        elif event_type == 'message_delta':
+            delta = data.get('delta') or {}
+            for block in delta.get('content') or []:
+                if isinstance(block, dict) and block.get('type') == 'text':
+                    text = str(block.get('text') or '')
+                    if text:
+                        parts.append(text)
+                        on_delta(text)
+    return ''.join(parts)

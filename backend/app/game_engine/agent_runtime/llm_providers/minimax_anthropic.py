@@ -6,9 +6,10 @@ conversions stay inside this module so the framework only sees the neutral
 :mod:`app.game_engine.agent_runtime.tool_calling` primitives.
 """
 from __future__ import annotations
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 from app.game_engine.agent_runtime.llm_client import LlmCallSpec
-from app.game_engine.agent_runtime.llm_providers.http_utils import httpx_post_json
+from app.game_engine.agent_runtime.llm_providers.http_utils import httpx_post_json, httpx_stream_post_lines, parse_anthropic_messages_sse_lines
+from app.game_engine.agent_runtime.llm_streaming import LlmStreamSink
 from app.game_engine.agent_runtime.tool_calling import AssistantToolUseTurn, CompleteWithToolsResult, ConversationTurn, TextTurn, ToolCall, ToolResultsTurn, ToolSchema
 
 def minimax_anthropic_messages_url(base_url: str) -> str:
@@ -76,6 +77,35 @@ class MinimaxAnthropicMessagesHttpLlmClient:
             if isinstance(block, dict) and block.get('type') == 'text':
                 parts.append(str(block.get('text') or ''))
         return '\n'.join((p.strip() for p in parts if p.strip())).strip()
+
+    def complete_stream(self, *, system: str, user: str, sink: LlmStreamSink, call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None) -> str:
+        spec = call_spec or LlmCallSpec()
+        model = (spec.model or self._default_model).strip() or self._default_model
+        max_tokens = spec.max_tokens if spec.max_tokens is not None else self._default_max_tokens
+        timeout = spec.timeout_sec if spec.timeout_sec is not None else self._timeout
+        temp = spec.temperature if spec.temperature is not None else self._default_temperature
+        temp = clamp_anthropic_temperature(float(temp))
+        url = minimax_anthropic_messages_url(self._base_url)
+        extra = dict(spec.extra or {})
+        extra.pop('prompt_fingerprint', None)
+        sys_payload = _anthropic_system_blocks(system, extra)
+        body: Dict[str, Any] = {
+            'model': model,
+            'max_tokens': int(max_tokens),
+            'system': sys_payload,
+            'messages': [{'role': 'user', 'content': [{'type': 'text', 'text': user or ' '}]}],
+            'stream': True,
+            'temperature': temp,
+        }
+        body.update(extra)
+        headers = {
+            'Authorization': f'Bearer {self._api_key}',
+            'x-api-key': self._api_key,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
+        }
+        lines = httpx_stream_post_lines(url, headers=headers, body=body, timeout=timeout, cancel_check=cancel_check)
+        return parse_anthropic_messages_sse_lines(lines, on_delta=sink.on_delta)
 
     def supports_tools(self) -> bool:
         return True

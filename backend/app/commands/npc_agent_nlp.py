@@ -143,15 +143,45 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
         if context.metadata is None:
             context.metadata = {}
         stream_state = profile.configure_streaming(context=context, thread_id=thread_id, correlation_id=corr_s or None)
+        user_visible_stream = None
+        stream_cancel_check = None
+        cancel_ev = (context.metadata or {}).get('aico_stream_cancel_event')
+        if cancel_ev is not None and hasattr(cancel_ev, 'is_set'):
+            stream_cancel_check = cancel_ev.is_set
+        if stream_state.stream_on and stream_state.emit is not None:
+            from app.game_engine.agent_runtime.presentation_stream import StreamCoordinator, UserVisibleStream
+
+            coordinator = StreamCoordinator(stream_state.emit, context.metadata, cancel_check=stream_cancel_check)
+            context.metadata['_aico_presentation_coordinator'] = coordinator
+            user_visible_stream = UserVisibleStream(coordinator)
+            coordinator.on_tick_start()
+            payload['_aico_stream_emit_fn'] = stream_state.emit
         if not stream_state.stream_on:
             profile.emit_progress(context=context)
         try:
-            res = w.tick(payload, correlation_id=context.session_id, memory_context=mem_ctx if recent_conv is None else None, recent_conversation=recent_conv, retrieved_memory=retrieved_mem if recent_conv is not None else None, memory_context_do=mem_do, phase_llm_overrides=phase_llm_overrides)
+            res = w.tick(
+                payload,
+                correlation_id=context.session_id,
+                memory_context=mem_ctx if recent_conv is None else None,
+                recent_conversation=recent_conv,
+                retrieved_memory=retrieved_mem if recent_conv is not None else None,
+                memory_context_do=mem_do,
+                phase_llm_overrides=phase_llm_overrides,
+                user_visible_stream=user_visible_stream,
+                stream_cancel_check=stream_cancel_check,
+            )
         except Exception:
             _NPC_AGENT_NLP_LOG.exception('npc_agent_nlp tick failed: service_id=%s session=%s', service_id, context.session_id)
             profile.emit_stream_error(state=stream_state, code='tick_exception', message=NPC_AGENT_LLM_FAILURE_USER_MSG)
             return FrameworkRunResult(ok=False, message=NPC_AGENT_LLM_FAILURE_USER_MSG, final_phase='error')
-        profile.emit_stream_result(state=stream_state, result=res, thread_id=thread_id, correlation_id=corr_s or None, fallback_message=NPC_AGENT_LLM_FAILURE_USER_MSG)
+        profile.emit_stream_result(
+            state=stream_state,
+            result=res,
+            thread_id=thread_id,
+            correlation_id=corr_s or None,
+            fallback_message=NPC_AGENT_LLM_FAILURE_USER_MSG,
+            context=context,
+        )
         if stm_on and caller_id is not None and res.ok:
             assistant_reply = str(res.message or '').strip()
             if scope_mode == CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE and daemon_row is not None:

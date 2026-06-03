@@ -46,7 +46,7 @@ def test_decision_center_prefers_queue_over_navigation(monkeypatch):
         assignee_kind="user",
     )
     monkeypatch.setattr(
-        "app.services.world_interaction.list_for_principal",
+        "app.services.world_interaction.service.list_for_principal",
         lambda *args, **kwargs: [row],
     )
     session = MagicMock()

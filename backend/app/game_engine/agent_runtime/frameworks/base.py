@@ -1,7 +1,10 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.game_engine.agent_runtime.presentation_stream import UserVisibleStream
 
 @dataclass
 class FrameworkRunContext:
@@ -16,6 +19,8 @@ class FrameworkRunContext:
     retrieved_memory: Optional[str] = None
     memory_context_do: Optional[str] = None
     phase_llm_overrides: Dict[str, Any] = field(default_factory=dict)
+    user_visible_stream: Optional['UserVisibleStream'] = None
+    stream_cancel_check: Optional[Callable[[], bool]] = None
 
 @dataclass
 class FrameworkRunResult:

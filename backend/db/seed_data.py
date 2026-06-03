@@ -165,8 +165,22 @@ _AICO_PREVIOUS_DEFAULT_PHASE_LLM = {
     "check": {"mode": "fast"},
     "act": {"mode": "skip"},
 }
-# Plan stays on LLM; Do skipped (SSH/API reply is Plan prose only; see AGENT_PDCA_PHASE_MERGE_TRADEOFFS.md).
+# Thin PDCA: Plan LLM + tools; Do/Check/Act skipped. User prose streams from Plan react last round.
 _AICO_DEFAULT_PHASE_LLM = {
+    "plan": {"mode": "fast"},
+    "do": {"mode": "skip"},
+    "check": {"mode": "skip"},
+    "act": {"mode": "skip"},
+}
+# Shipped briefly with act:fast for presentation streaming experiments (idempotent → act:skip default).
+_AICO_ACT_FAST_PHASE_LLM = {
+    "plan": {"mode": "fast"},
+    "do": {"mode": "skip"},
+    "check": {"mode": "skip"},
+    "act": {"mode": "fast"},
+}
+# Older seed before presentation-layer streaming (same as current default).
+_AICO_PRE_ACT_STREAMING_PHASE_LLM = {
     "plan": {"mode": "fast"},
     "do": {"mode": "skip"},
     "check": {"mode": "skip"},
@@ -193,8 +207,11 @@ def _aico_phase_llm_matches_template(phase_llm: object, template: dict) -> bool:
 
 
 def _aico_phase_llm_should_upgrade_to_current_default(phase_llm: object) -> bool:
-    return _aico_phase_llm_is_legacy(phase_llm) or _aico_phase_llm_matches_template(
-        phase_llm, _AICO_PREVIOUS_DEFAULT_PHASE_LLM
+    return (
+        _aico_phase_llm_is_legacy(phase_llm)
+        or _aico_phase_llm_matches_template(phase_llm, _AICO_PREVIOUS_DEFAULT_PHASE_LLM)
+        or _aico_phase_llm_matches_template(phase_llm, _AICO_PRE_ACT_STREAMING_PHASE_LLM)
+        or _aico_phase_llm_matches_template(phase_llm, _AICO_ACT_FAST_PHASE_LLM)
     )
 
 

@@ -22,6 +22,15 @@ def emit_aico_error_ndjson(emit: Optional[Callable[[str], None]], *, code: str, 
     payload: Dict[str, Any] = {'kind': 'error', 'code': code, 'message': message}
     emit(json.dumps(payload, ensure_ascii=False))
 
+def emit_activity_meta(emit: Optional[Callable[[str], None]], *, activity: str, detail: Optional[str]=None) -> None:
+    """``scope=activity`` meta for presentation-layer status (not PDCA phase names)."""
+    if emit is None:
+        return
+    obj: Dict[str, Any] = {'kind': 'meta', 'scope': 'activity', 'activity': activity}
+    if detail:
+        obj['detail'] = detail
+    emit(json.dumps(obj, ensure_ascii=False))
+
 def emit_tick_lifecycle_meta(emit: Optional[Callable[[str], None]], *, phase: str, thread_id: Optional[uuid.UUID]=None, correlation_id: Optional[str]=None, client_hint: Optional[str]=None, ok: Optional[bool]=None, final_phase: Optional[str]=None, empty_reply: Optional[bool]=None) -> None:
     """``scope=tick`` meta for phase=start or phase=complete (§10.5)."""
     if emit is None:

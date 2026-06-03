@@ -32,11 +32,11 @@ class AgentWorker:
         self.tool_manifest_text = tool_manifest_text or ''
         self.tool_schemas = list(tool_schemas or [])
 
-    def tick(self, payload: Dict[str, Any], correlation_id: Optional[str]=None, *, system_prompt: Optional[str]=None, phase_prompts: Optional[Dict[str, str]]=None, memory_context: Optional[str]=None, recent_conversation: Optional[str]=None, retrieved_memory: Optional[str]=None, memory_context_do: Optional[str]=None, phase_llm_overrides: Optional[Dict[str, Any]]=None):
+    def tick(self, payload: Dict[str, Any], correlation_id: Optional[str]=None, *, system_prompt: Optional[str]=None, phase_prompts: Optional[Dict[str, str]]=None, memory_context: Optional[str]=None, recent_conversation: Optional[str]=None, retrieved_memory: Optional[str]=None, memory_context_do: Optional[str]=None, phase_llm_overrides: Optional[Dict[str, Any]]=None, user_visible_stream: Optional[Any]=None, stream_cancel_check: Optional[Any]=None):
         enriched = dict(payload or {})
         if self.tool_manifest_text and (not enriched.get('tool_manifest_text')):
             enriched['tool_manifest_text'] = self.tool_manifest_text
-        ctx = FrameworkRunContext(agent_node_id=getattr(self.memory, '_agent_node_id', 0), correlation_id=correlation_id, payload=enriched, system_prompt=system_prompt, phase_prompts=dict(phase_prompts or {}), memory_context=memory_context, recent_conversation=recent_conversation, retrieved_memory=retrieved_memory, memory_context_do=memory_context_do, phase_llm_overrides=dict(phase_llm_overrides or {}))
+        ctx = FrameworkRunContext(agent_node_id=getattr(self.memory, '_agent_node_id', 0), correlation_id=correlation_id, payload=enriched, system_prompt=system_prompt, phase_prompts=dict(phase_prompts or {}), memory_context=memory_context, recent_conversation=recent_conversation, retrieved_memory=retrieved_memory, memory_context_do=memory_context_do, phase_llm_overrides=dict(phase_llm_overrides or {}), user_visible_stream=user_visible_stream, stream_cancel_check=stream_cancel_check)
         return self.framework.run(ctx)
 
 class SysSampleWorker(AgentWorker):
