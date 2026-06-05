@@ -1,0 +1,81 @@
+/* Shared accent controls for decision center (mode, send, zone toggle) */
+.decision-accent-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  min-width: var(--decision-accent-btn-size);
+  height: var(--decision-accent-btn-size);
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--decision-accent-btn-border);
+  border-radius: var(--radius-md);
+  background: var(--decision-accent-btn-bg);
+  color: var(--decision-accent-btn-color);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.decision-accent-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--decision-accent-btn-bg-hover);
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.15);
+}
+
+.decision-accent-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.decision-accent-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.decision-accent-btn--icon-only {
+  width: var(--decision-accent-btn-size);
+  min-width: var(--decision-accent-btn-size);
+  padding: 0;
+}
+
+.decision-accent-btn--primary:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.decision-accent-btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.25);
+}
+
+.decision-accent-btn--danger:not(:disabled) {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+
+.decision-accent-btn--danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.25);
+}
+
+.decision-accent-btn .el-icon {
+  font-size: var(--decision-accent-btn-icon-size);
+}
+
+.decision-accent-btn__label {
+  letter-spacing: 0.02em;
+}

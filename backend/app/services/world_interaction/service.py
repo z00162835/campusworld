@@ -179,8 +179,8 @@ class WorldInteractionService:
             self._conversation_archives.setdefault(user_key, []).append(entry)
         return {"ok": True, "archived": has_content, "archive_id": entry["id"] if has_content else None}
 
-    def stream_aico_query(self, actor: WorldActor, query: str):
-        return self._aico_stream_query.stream(actor, query)
+    def stream_aico_query(self, actor: WorldActor, query: str, *, thread_id: Optional[str] = None):
+        return self._aico_stream_query.stream(actor, query, thread_id=thread_id)
 
     def query_semantic_map(self, session: Session, actor: WorldActor, query: str, mode: str = "auto") -> Dict[str, Any]:
         search = self.search(session, actor, query)

@@ -250,6 +250,10 @@ class CommandsConfig(BaseModel):
     """commands.* — per-command tunables."""
     find: FindCommandConfig = Field(default_factory=FindCommandConfig)
 
+class WorldInteractionConfig(BaseModel):
+    """HTTP world interaction / decision-center tunables."""
+    aico_stream_worker_join_sec: float = Field(default=30.0, ge=1.0, description='Max seconds to wait for AICO stream worker exit after cancel')
+
 class Settings(BaseModel):
     """应用设置"""
     app: AppConfig = Field(default_factory=AppConfig)
@@ -270,6 +274,7 @@ class Settings(BaseModel):
     development: DevelopmentConfig = Field(default_factory=DevelopmentConfig)
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
     commands: CommandsConfig = Field(default_factory=CommandsConfig)
+    world_interaction: WorldInteractionConfig = Field(default_factory=WorldInteractionConfig)
 
     @field_validator('security')
     @classmethod

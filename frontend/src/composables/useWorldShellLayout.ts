@@ -15,7 +15,7 @@ const MODE_RATIOS: Record<ViewMode, { map: number; context: number }> = {
 type ResizeTarget = 'map' | 'context'
 
 export function useWorldShellLayout(mainRef: Ref<HTMLElement | null>, viewMode: Ref<ViewMode>) {
-  const mapCollapsed = ref(false)
+  const mapCollapsed = ref(true)
   const contextCollapsed = ref(true)
   const mapWidth = ref(360)
   const contextWidth = ref(240)
@@ -142,6 +142,10 @@ export function useWorldShellLayout(mainRef: Ref<HTMLElement | null>, viewMode: 
     }
   })
 
+  function applyMapCollapsedForViewMode() {
+    mapCollapsed.value = viewMode.value === 'Focus'
+  }
+
   return {
     mapCollapsed,
     contextCollapsed,
@@ -155,6 +159,7 @@ export function useWorldShellLayout(mainRef: Ref<HTMLElement | null>, viewMode: 
     showContextResizer,
     startResize,
     applyModeWidths,
+    applyMapCollapsedForViewMode,
     MAP_MIN_WIDTH,
     DECISION_MIN_WIDTH,
     CONTEXT_MIN_WIDTH,

@@ -13,12 +13,16 @@
 
     <div class="input-row">
       <button
-        class="mode-pill"
+        class="decision-accent-btn mode-pill"
         type="button"
+        :class="{ 'mode-pill--aico': worldSession.queryMode === 'aico' }"
         :disabled="worldSession.streamInFlight"
+        :aria-label="modeAriaLabel"
+        :title="modeAriaLabel"
         @click="openModeMenu"
       >
-        {{ modeLabel }}
+        <el-icon><ChatRound v-if="worldSession.queryMode === 'aico'" /><Monitor v-else /></el-icon>
+        <span class="decision-accent-btn__label">{{ modeLabel }}</span>
       </button>
       <input
         ref="inputRef"
@@ -30,31 +34,35 @@
         @keydown.enter="onEnterKeydown"
         @keydown.esc="showModeMenu = false"
       />
-      <el-button
+      <button
         v-if="worldSession.streamInFlight"
-        type="danger"
-        size="small"
+        type="button"
+        class="decision-accent-btn decision-accent-btn--icon-only decision-accent-btn--danger"
+        :aria-label="t('worldInteraction.decision.stop')"
+        :title="t('worldInteraction.decision.stop')"
         @click="stop"
       >
-        {{ t('worldInteraction.decision.stop') }}
-      </el-button>
-      <el-button
-        v-else
-        type="primary"
-        size="small"
-        :loading="worldSession.actionLoading"
-        :disabled="!inputText.trim() || inputText.trim() === '/'"
+        <el-icon><VideoPause /></el-icon>
+      </button>
+      <button
+        v-if="!worldSession.streamInFlight"
+        type="button"
+        class="decision-accent-btn decision-accent-btn--icon-only decision-accent-btn--primary"
+        :disabled="!inputText.trim() || inputText.trim() === '/' || (worldSession.actionLoading && !worldSession.streamInFlight)"
+        :aria-label="sendAriaLabel"
+        :title="sendTitle"
         @click="submit"
       >
-        Send
-      </el-button>
+        <el-icon v-if="worldSession.actionLoading && !worldSession.streamInFlight" class="is-loading"><Loading /></el-icon>
+        <el-icon v-else><Promotion /></el-icon>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { ChatRound, Monitor } from '@element-plus/icons-vue'
+import { ChatRound, Loading, Monitor, Promotion, VideoPause } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import type { QueryMode } from '@/types/world'
@@ -76,9 +84,21 @@ function onEnterKeydown(event: KeyboardEvent) {
 }
 
 const modeLabel = computed(() => worldSession.queryMode === 'aico' ? 'AICO' : 'Command')
+const modeAriaLabel = computed(() =>
+  worldSession.queryMode === 'aico'
+    ? t('worldInteraction.decision.modeAico')
+    : t('worldInteraction.decision.modeCommand'),
+)
 const placeholder = computed(() => worldSession.queryMode === 'aico'
   ? 'Ask AICO about the current world'
   : 'Run commands (e.g. look) or prefix search … for graph search')
+
+const sendTitle = computed(() =>
+  worldSession.streamInFlight
+    ? t('worldInteraction.decision.sendAndReplace')
+    : t('worldInteraction.decision.send'),
+)
+const sendAriaLabel = computed(() => sendTitle.value)
 
 const handleInput = () => {
   showModeMenu.value = inputText.value.trim() === '/'
@@ -104,8 +124,10 @@ const submit = async () => {
   if (!clean || clean === '/') return
   inputText.value = ''
   showModeMenu.value = false
-  await worldSession.submitQuery(clean)
+  const pending = worldSession.submitQuery(clean)
+  await nextTick()
   emit('submitted')
+  await pending
 }
 
 const stop = async () => {
@@ -117,9 +139,12 @@ const stop = async () => {
 .query-box {
   position: relative;
   flex-shrink: 0;
-  border-top: 1px solid var(--border-color);
+  margin: 0 var(--spacing-sm) var(--spacing-sm);
+  border: 1px solid var(--decision-fold-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
   padding: var(--spacing-md);
-  background: #171a20;
+  background: var(--decision-fold-interaction-bg);
 }
 
 .mode-menu {
@@ -129,7 +154,7 @@ const stop = async () => {
   width: 220px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  background: #20252d;
+  background: var(--decision-card-bg);
   box-shadow: var(--shadow-lg);
   padding: var(--spacing-sm);
   z-index: 3;
@@ -160,18 +185,18 @@ const stop = async () => {
 }
 
 .mode-pill {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: #20252d;
-  color: var(--text-secondary);
-  padding: 7px 9px;
-  cursor: pointer;
-  min-width: 84px;
+  min-width: 92px;
+}
+
+.mode-pill--aico {
+  border-color: rgba(64, 158, 255, 0.45);
+  color: var(--color-primary);
+  background: rgba(64, 158, 255, 0.1);
 }
 
 input {
   min-width: 0;
-  height: 34px;
+  height: var(--decision-accent-btn-size);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: #101318;
@@ -182,5 +207,15 @@ input {
 
 input:focus {
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.2);
+}
+
+.is-loading {
+  animation: decision-spin 0.8s linear infinite;
+}
+
+@keyframes decision-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

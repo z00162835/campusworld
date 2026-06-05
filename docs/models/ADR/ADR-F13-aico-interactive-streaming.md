@@ -38,6 +38,8 @@ Accepted（与 [`docs/models/SPEC/features/F13_AICO_INTERACTIVE_UPGRADE.md`](../
 
 **Superseded (2026-05):** 呈现层与认知层（PDCA）解耦。**Stream anchor**：每 tick 仅允许一个阶段向用户流式输出 prose（Act 未 skip → Act；否则 Do 未 skip → Do；否则 Plan ReAct 末轮），与 `FrameworkRunResult.message` 来源一致；JSON `commands` 计划与 Check 阶段永不进入 `delta`。状态行用 `{"kind":"meta","scope":"activity","activity":"working|tool|writing|rewrite"}`，**不向 UI 暴露** PDCA 阶段名。tick 结束若正文已流式发出则仅 `kind:end` + `scope=tick` `phase=complete`；否则 fallback `emit_assistant_stream_ndjson`。Check 重试发 `activity=rewrite` 并清空当前助手气泡。
 
+**2026-06:** Agent Loop 完整性门禁（`agent_loop/`）在 react loop 与 tick emit 边界拦截 deferral-only 中间态终稿；`error.code=draft_incomplete` 与 cancel/timeout 分轨。
+
 ### D4
 
 [`try_restore_conversation_thread_from_transport`](../../../backend/app/game_engine/agent_runtime/conversation_stm_service.py) **不得以 thread.transport_session_id 拒绝** 合法线程；续聊依赖 owner + agent + thread id。

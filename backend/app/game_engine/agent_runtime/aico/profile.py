@@ -137,7 +137,8 @@ class AicoRuntimeProfile:
             return
         if not result.ok:
             fail_msg = str(result.message or '').strip() or fallback_message
-            emit_aico_error_ndjson(state.emit, code='tick_failed', message=fail_msg)
+            code = str(getattr(result, 'error_code', None) or '').strip() or 'tick_failed'
+            emit_aico_error_ndjson(state.emit, code=code, message=fail_msg)
             return
         assistant_reply = str(result.message or '').strip()
         md = (context.metadata if context is not None else None) or {}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,8 +10,15 @@ from app.services.world_interaction.aico_stream_query import AicoStreamQueryServ
 from app.services.world_interaction.types import WorldActor
 
 
+@contextmanager
+def _fake_db_session():
+    yield MagicMock()
+
+
 @pytest.mark.unit
-def test_stream_finally_sets_cancel_event():
+def test_stream_finally_sets_cancel_event(monkeypatch):
+    monkeypatch.setattr('app.core.database.db_session_context', _fake_db_session)
+
     cancel_event_holder: dict = {}
 
     class _Runner:

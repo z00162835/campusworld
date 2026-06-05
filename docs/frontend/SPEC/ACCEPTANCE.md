@@ -18,12 +18,19 @@
 - [x] Decision actions are submitted as `decision_event_id + option_id`.
 - [x] `/` in the decision input opens `Command` / `AICO` mode selection.
 - [x] Command mode calls graph search / command capabilities.
-- [x] AICO mode uses HTTP SSE (`POST /decision-center/query/stream`) with Stop (Abort + stream cancel).
+- [x] AICO mode uses HTTP SSE (`POST /decision-center/query/stream`) with Stop (Abort + stream cancel); **Send during stream** stops current stream and submits new query (scheme A).
+- [x] Stream request carries optional `thread_id`; backend auto-cancels prior stream for same user+thread.
+- [x] Plan-phase blocking LLM HTTP honours stream cancel within seconds (`LlmRequestCancelled`).
+- [x] SSE `error.code=llm_timeout` maps to localized timeout copy (zh/en).
+- [x] SSE `error.code=draft_incomplete` maps to localized incomplete-answer copy (zh/en).
 - [x] AICO SSE: anti-buffer headers; `scope=activity` status (`working`/`tool`/`writing`/`rewrite`); provider token deltas only from the tick **presentation anchor** phase (Act if enabled, else Do, else Plan last ReAct round); queue poll ≤50ms; `state_patch` refresh without full session reload.
 - [x] Presentation layer decoupled from PDCA: stream anchor matches `final_text` source; no Plan/Do internal or JSON tool-plan leakage; default AICO seed `act: skip` → anchor Plan; UI does not show plan/do/check/act phase names; `rewrite` on Check retry or before Act polish.
 - [x] Decision input clears immediately on submit (before SSE completes).
 - [x] Map, decision center, context summary, and utility drawer render as separate regions.
 - [x] Decision center: task-zone / conversation-zone split; session area scrolls independently.
+- [x] Decision center: three-state task fold (collapsed / split / maximized); hinge draggable in split mode; submit from maximized restores collapsed + conversation.
+- [x] Decision center: zone headers, `zone-divider`, and surface contrast distinguish tasks vs conversation (CampusWorld workbench, not HMI).
+- [x] Works default view mode is Focus; map pane collapsed strip on Focus; Map mode expands map pane.
 - [x] Active task card and next-best action always visible; `viewFilter` only filters pending events.
 - [x] Quick-query chips removed; backend `quickQueries` returns `[]`.
 - [x] Command query applies `state_patch` and shows expandable results (`results[]` / `command_result.message`).

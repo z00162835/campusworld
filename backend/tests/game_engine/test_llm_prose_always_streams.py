@@ -25,7 +25,7 @@ class _ChunkingLlm:
     def supports_tools(self) -> bool:
         return True
 
-    def complete_with_tools(self, *, system: str, turns, tools, call_spec=None) -> CompleteWithToolsResult:
+    def complete_with_tools(self, *, system: str, turns, tools, call_spec=None, cancel_check=None) -> CompleteWithToolsResult:
         return CompleteWithToolsResult(text='user-facing answer', tool_calls=[], finish_reason='stop')
 
 

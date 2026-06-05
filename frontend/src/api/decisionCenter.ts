@@ -84,16 +84,19 @@ export const decisionCenterApi = {
 export async function queryAicoStream(
   sessionId: string,
   query: string,
-  options: { signal?: AbortSignal; onEvent: (event: StreamEvent) => void },
+  options: { signal?: AbortSignal; threadId?: string; onEvent: (event: StreamEvent) => void },
 ): Promise<void> {
   const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
   await getAccessTokenForRequest()
+
+  const body: Record<string, string> = { session_id: sessionId, query, mode: 'aico' }
+  if (options.threadId) body.thread_id = options.threadId
 
   const response = await authorizedFetch(`${baseURL}/decision-center/query/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     signal: options.signal,
-    body: JSON.stringify({ session_id: sessionId, query, mode: 'aico' }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {

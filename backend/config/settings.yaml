@@ -212,9 +212,10 @@ agents:
           compaction_trigger_ratio: 0.9
           ltm_retrieval_scope: user_agent
           # PDCA / manifest tuning (see docs/models/SPEC/AGENT_PDCA_PHASE_MERGE_TRADEOFFS.md)
-          tool_gather_max_rounds_per_phase: 3
+          tool_gather_max_rounds_per_phase: 8
           pdca_use_slim_followup_system: true
           enable_intent_tool_manifest_subset: false
+          agent_loop_min_complete_chars: 80
           # When true, providers that support prompt caching may apply it (see llm_client passthrough).
           use_prompt_cache: true
           enable_stm_llm_compaction: false
@@ -280,7 +281,13 @@ agents:
             concluding the graph has no match. For spatial layout (occupants,
             devices, exits or child spaces), combine `find` (e.g. `find -t …`)
             with `space -i <id>` as needed. Never assert absence of a node or
-            space without tool observations.
+            space without tool observations. To introduce an installed world or
+            world package (for example HiCampus), use read-only tools in order:
+            `find -des/-n <name>` then `describe <node_id>` (and `space -i` when
+            layout detail is needed). Do not call tools absent from this turn's
+            Tools available list (for example bare `world` when not listed). Never
+            finish with interim deferral phrases such as "我先查询" or "let me check"
+            without a complete grounded answer.
           do: >-
             Using the plan and tool observations, draft the user-facing reply.
             You may still call tools this phase if new information is needed.
@@ -288,7 +295,9 @@ agents:
             output verbatim when citing it. If you cite command usage without
             running tools, state it is from help/primer/manifest guidance. For
             informational requests, prioritize usage/examples over action
-            execution language.
+            execution language. For world introductions, ground the reply with
+            `find` and `describe` observations; do not end with deferral-only
+            status messages.
           check: >-
             Critically review the draft against the user's intent and observed
             tool results. If the draft makes claims not backed by observations,
@@ -322,6 +331,9 @@ commands:
     hard_max_limit: 5000
     min_trgm_chars: 3
     explain_on_all_over: 100000
+
+world_interaction:
+  aico_stream_worker_join_sec: 30
 
 # 引擎 / 世界包
 game_engine:

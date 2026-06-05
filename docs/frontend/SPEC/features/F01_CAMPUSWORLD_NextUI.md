@@ -316,6 +316,8 @@ WorldInteractionView
 Focus
 ```
 
+Focus 模式下语义地图 pane **默认收起**（44px collapsed strip）；切换到 `Map` 时前端展开地图 pane；切回 `Focus` 时再次收起。`display_policy.mapDefaultCollapsed` 为 `true`，与 `contextDefaultCollapsed` 对齐首屏侧栏收拢。
+
 ---
 
 # 6. 顶部状态栏 SPEC
@@ -699,17 +701,22 @@ DecisionCenterFlow
 
 ```text
 region-menu（固定）
-task-zone（max-height ~40vh，独立滚动）
-  FocusSummary
-  DecisionEventList
-  ActiveTaskCard（始终可见）
-  NextBestAction（始终可见）
-zone-divider
-conversation-zone（flex:1，独立滚动）
+task-zone（三态：收起标题 / 分屏可拖拽默认约 35% / 最大化隐藏对话内容）
+  task-zone-header（待办与决策 + 待处理徽标）
+  task-zone-body
+    FocusSummary（severity 左色条 + 标题 + 短摘要）
+    DecisionEventList（左色条；Impact/Recommendation 默认折叠）
+    ActiveTaskCard（进度/状态 pill，非告警色条）
+    NextBestAction（主行动；边框/hover 强调，非独立巨型 CTA）
+zone-divider / fold-hinge（区域分界 + 三态切换；分屏态可垂直拖拽，>4px 视为拖拽否则点击切换；拖至顶≈最大化、拖至底≈收起）
+conversation-zone（flex:1，独立滚动；较深背景、较低信息密度；最大化时隐藏）
+  conversation-zone-header（对话与查询 + 模式副文案）
   AicoThreadToolbar（仅 AICO 模式）
   DecisionConversationThread
 DecisionQueryBox（固定底部）
 ```
+
+样式 token（`frontend/src/styles/themes/variables.css`）：`--decision-pane-bg`、`--decision-task-surface`、`--decision-chat-well`、`--decision-divider-bg`、`--decision-severity-stripe-width` 等。视觉为 **CampusWorld 工作台** 分区，仅借鉴低阅读负担/主行动突出等交互原则，**不得**做成车机/HMI 界面。
 
 `viewFilter` 仅过滤 **待处理事件列表**；`ActiveTaskCard` 与 `NextBestAction` 不受 Tab 切换隐藏。
 
@@ -1653,7 +1660,11 @@ applyContextPatch(patch: Partial<ContextSummary>): void
 
 ### `POST /api/v1/decision-center/query/stream`（仅 `mode=aico`）
 
-SSE：`data: {json}\n\n`，`kind` 为 `meta` / `delta` / `end` / `error` / `cancelled` / `state_patch`。首条 HTTP `meta` 含 `scope=stream` 与 `stream_id`。tick 内 `meta` 含 `scope=tick`、`phase`（`plan`/`do`/`check`/`action`）、可选 `client_hint`。Act 开始前 UI 清空当前 assistant 气泡再流式终稿。响应头：`Cache-Control: no-cache`、`X-Accel-Buffering: no`。代理需关闭缓冲（Nginx `proxy_buffering off`）。
+请求体可选 **`thread_id`**（与前端 `activeAicoThreadId` 对齐）：同一 **user + thread_id** 的新 query **自动 cancel** 仍在进行的 stream（服务端 registry；前端 Stop / 发送前 cancel 为双保险）。
+
+SSE：`data: {json}\n\n`，`kind` 为 `meta` / `delta` / `end` / `error` / `cancelled` / `state_patch`。首条 HTTP `meta` 含 `scope=stream` 与 `stream_id`。tick 内 `meta` 含 `scope=tick`、`phase`（`plan`/`do`/`check`/`action`）、可选 `client_hint`。Act 开始前 UI 清空当前 assistant 气泡再流式终稿。`error.code=llm_timeout` 时前端展示 i18n 超时文案（zh「模型响应超时，请稍后重试」/ en「Model response timed out. Please try again.»）。`error.code=draft_incomplete` 时展示 i18n 未完成回答文案（zh「未能完成回答，请稍后重试或换一种问法」/ en「Could not complete the answer…»）。响应头：`Cache-Control: no-cache`、`X-Accel-Buffering: no`。代理需关闭缓冲（Nginx `proxy_buffering off`）。
+
+**Stop / 发送（方案 A）**：流式进行中 **Stop** 与 **发送** 同时可用；**发送** = 停止当前 stream 并提交新 query（不禁用发送按钮）。
 
 ### `POST /api/v1/decision-center/query/stream/cancel`
 
@@ -1823,6 +1834,7 @@ export interface DisplayPolicy {
   maxMapNodesVisible: number
   maxAgentsHighlighted: number
   contextDefaultCollapsed: boolean
+  mapDefaultCollapsed: boolean
   historyDefaultCollapsed: boolean
 }
 ```
@@ -1836,6 +1848,7 @@ export interface DisplayPolicy {
   "maxMapNodesVisible": 7,
   "maxAgentsHighlighted": 3,
   "contextDefaultCollapsed": true,
+  "mapDefaultCollapsed": true,
   "historyDefaultCollapsed": true
 }
 ```

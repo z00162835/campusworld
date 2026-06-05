@@ -12,7 +12,7 @@ DISPLAY_POLICY = {
     "maxMapNodesVisible": 7,
     "maxAgentsHighlighted": 3,
     "contextDefaultCollapsed": True,
-    "mapDefaultCollapsed": False,
+    "mapDefaultCollapsed": True,
     "historyDefaultCollapsed": True,
 }
 

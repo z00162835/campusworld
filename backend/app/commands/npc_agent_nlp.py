@@ -7,6 +7,7 @@ from app.core.log import get_logger
 from app.models.graph import Node
 _NPC_AGENT_NLP_LOG = get_logger('app.commands.npc_agent_nlp')
 NPC_AGENT_LLM_FAILURE_USER_MSG = '我这边暂时无法处理，请再描述一下你的目标。'
+NPC_AGENT_LLM_TIMEOUT_USER_MSG = '模型响应超时，请稍后重试'
 
 def _stm_llm_merge_rolling_summary(llm, cfg, previous_rs: str, transcript_excerpt: str) -> str:
     """Optional STM compaction merge via LLM; failures leave ``previous_rs`` unchanged."""
@@ -170,7 +171,16 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
                 user_visible_stream=user_visible_stream,
                 stream_cancel_check=stream_cancel_check,
             )
-        except Exception:
+        except Exception as exc:
+            import httpx
+            from app.game_engine.agent_runtime.llm_providers.http_utils import LlmRequestCancelled
+
+            if isinstance(exc, LlmRequestCancelled):
+                return FrameworkRunResult(ok=False, message='', final_phase='cancelled')
+            if isinstance(exc, httpx.ReadTimeout):
+                _NPC_AGENT_NLP_LOG.exception('npc_agent_nlp tick timed out: service_id=%s session=%s', service_id, context.session_id)
+                profile.emit_stream_error(state=stream_state, code='llm_timeout', message=NPC_AGENT_LLM_TIMEOUT_USER_MSG)
+                return FrameworkRunResult(ok=False, message=NPC_AGENT_LLM_TIMEOUT_USER_MSG, final_phase='error')
             _NPC_AGENT_NLP_LOG.exception('npc_agent_nlp tick failed: service_id=%s session=%s', service_id, context.session_id)
             profile.emit_stream_error(state=stream_state, code='tick_exception', message=NPC_AGENT_LLM_FAILURE_USER_MSG)
             return FrameworkRunResult(ok=False, message=NPC_AGENT_LLM_FAILURE_USER_MSG, final_phase='error')

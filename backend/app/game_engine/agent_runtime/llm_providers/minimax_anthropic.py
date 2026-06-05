@@ -54,7 +54,7 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         self._default_max_tokens = default_max_tokens
         self._timeout = timeout_sec
 
-    def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec]=None) -> str:
+    def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None) -> str:
         spec = call_spec or LlmCallSpec()
         model = (spec.model or self._default_model).strip() or self._default_model
         max_tokens = spec.max_tokens if spec.max_tokens is not None else self._default_max_tokens
@@ -68,7 +68,7 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         body: Dict[str, Any] = {'model': model, 'max_tokens': int(max_tokens), 'system': sys_payload, 'messages': [{'role': 'user', 'content': [{'type': 'text', 'text': user or ' '}]}], 'stream': False, 'temperature': temp}
         body.update(extra)
         headers = {'Authorization': f'Bearer {self._api_key}', 'x-api-key': self._api_key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json'}
-        data = httpx_post_json(url, headers=headers, body=body, timeout=timeout)
+        data = httpx_post_json(url, headers=headers, body=body, timeout=timeout, cancel_check=cancel_check)
         err = data.get('error')
         if isinstance(err, dict) and err.get('message'):
             raise RuntimeError(str(err.get('message')))
@@ -110,7 +110,7 @@ class MinimaxAnthropicMessagesHttpLlmClient:
     def supports_tools(self) -> bool:
         return True
 
-    def complete_with_tools(self, *, system: str, turns: Sequence[ConversationTurn], tools: Sequence[ToolSchema], call_spec: Optional[LlmCallSpec]=None) -> CompleteWithToolsResult:
+    def complete_with_tools(self, *, system: str, turns: Sequence[ConversationTurn], tools: Sequence[ToolSchema], call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None) -> CompleteWithToolsResult:
         """Anthropic-style ``tools`` + ``tool_use`` / ``tool_result`` round-trip."""
         spec = call_spec or LlmCallSpec()
         model = (spec.model or self._default_model).strip() or self._default_model
@@ -128,7 +128,7 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         body: Dict[str, Any] = {'model': model, 'max_tokens': int(max_tokens), 'system': sys_payload, 'messages': messages, 'stream': False, 'temperature': temp, 'tools': [_tool_schema_to_anthropic(t) for t in tools]}
         body.update(extra)
         headers = {'Authorization': f'Bearer {self._api_key}', 'x-api-key': self._api_key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json'}
-        data = httpx_post_json(url, headers=headers, body=body, timeout=timeout)
+        data = httpx_post_json(url, headers=headers, body=body, timeout=timeout, cancel_check=cancel_check)
         err = data.get('error')
         if isinstance(err, dict) and err.get('message'):
             raise RuntimeError(str(err.get('message')))
@@ -239,6 +239,36 @@ def _turns_to_anthropic_messages(turns: Sequence[ConversationTurn]) -> List[Dict
                 messages.append({'role': 'user', 'content': content_blocks})
     return messages
 
+def normalize_tool_use_args(raw_input: Any) -> List[str]:
+    """Normalize Anthropic ``tool_use.input`` to CampusWorld CLI argv strings."""
+    if not isinstance(raw_input, dict):
+        return []
+    maybe_args = raw_input.get('args')
+    if isinstance(maybe_args, list):
+        return [str(a) for a in maybe_args]
+    if isinstance(maybe_args, dict):
+        out: List[str] = []
+        for (k, v) in maybe_args.items():
+            key = str(k).strip()
+            if key:
+                out.append(key)
+            if v is not None and str(v).strip():
+                out.append(str(v).strip())
+        return out
+    if maybe_args is None:
+        out = []
+        for (k, v) in raw_input.items():
+            if k == 'args':
+                continue
+            key = str(k).strip()
+            if key:
+                out.append(key)
+            if isinstance(v, (str, int, float)) and str(v).strip():
+                out.append(str(v).strip())
+        return out
+    return []
+
+
 def _parse_anthropic_response(data: Dict[str, Any]) -> CompleteWithToolsResult:
     text_parts: List[str] = []
     calls: List[ToolCall] = []
@@ -251,13 +281,7 @@ def _parse_anthropic_response(data: Dict[str, Any]) -> CompleteWithToolsResult:
         elif btype == 'tool_use':
             name = str(block.get('name') or '').strip()
             raw_input = block.get('input') or {}
-            args: List[str] = []
-            if isinstance(raw_input, dict):
-                maybe_args = raw_input.get('args')
-                if isinstance(maybe_args, list):
-                    args = [str(a) for a in maybe_args]
-                else:
-                    args = [str(v) for v in raw_input.values() if isinstance(v, (str, int, float))]
+            args = normalize_tool_use_args(raw_input)
             calls.append(ToolCall(id=str(block.get('id') or ''), name=name, args=args))
     finish = str(data.get('stop_reason') or ('tool_use' if calls else 'stop'))
     return CompleteWithToolsResult(text='\n'.join((p.strip() for p in text_parts if p.strip())).strip(), tool_calls=calls, finish_reason=finish)

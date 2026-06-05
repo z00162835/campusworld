@@ -97,7 +97,7 @@ class _RecordingLlm:
         self.systems: List[str] = []
         self.calls = 0
 
-    def complete(self, *, system: str, user: str, call_spec=None) -> str:
+    def complete(self, *, system: str, user: str, call_spec=None, cancel_check=None) -> str:
         self.calls += 1
         self.systems.append(system)
         return "ok"
@@ -108,7 +108,7 @@ class _AlwaysOkRecordingLlm:
         self.calls = 0
         self.users: List[str] = []
 
-    def complete(self, *, system: str, user: str, call_spec=None) -> str:
+    def complete(self, *, system: str, user: str, call_spec=None, cancel_check=None) -> str:
         self.calls += 1
         self.users.append(user)
         return "ok"
@@ -263,7 +263,7 @@ def test_llm_pdca_mandatory_satisfied_by_do_phase_tool_observation() -> None:
         def __init__(self) -> None:
             self.calls = 0
 
-        def complete(self, *, system: str, user: str, call_spec=None) -> str:
+        def complete(self, *, system: str, user: str, call_spec=None, cancel_check=None) -> str:
             self.calls += 1
             if self.calls == 1:
                 return "plan prose"
@@ -364,7 +364,7 @@ class _PlanJsonThenStubLlm:
         self.calls = 0
         self.users: List[str] = []
 
-    def complete(self, *, system: str, user: str, call_spec=None) -> str:
+    def complete(self, *, system: str, user: str, call_spec=None, cancel_check=None) -> str:
         self.calls += 1
         self.users.append(user)
         if self.calls == 1:
@@ -483,7 +483,7 @@ def test_filter_tool_calls_drops_names_not_on_schema_surface():
 class _AllEmptyLlm:
     """Returns no visible text for every `complete` call (Plan/Do/Check/Act)."""
 
-    def complete(self, *, system: str, user: str, call_spec=None) -> str:
+    def complete(self, *, system: str, user: str, call_spec=None, cancel_check=None) -> str:
         return ""
 
     def supports_tools(self) -> bool:
@@ -599,10 +599,10 @@ def test_react_loop_nine_tool_calls_satisfies_anthropic_wire_invariant(monkeypat
         def supports_tools(self) -> bool:
             return True
 
-        def complete(self, *, system: str, user: str, call_spec=None) -> str:
+        def complete(self, *, system: str, user: str, call_spec=None, cancel_check=None) -> str:
             return 'done'
 
-        def complete_with_tools(self, *, system: str, turns, tools, call_spec=None):
+        def complete_with_tools(self, *, system: str, turns, tools, call_spec=None, cancel_check=None):
             self.calls += 1
             if self.calls == 1:
                 batch = [

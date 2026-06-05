@@ -36,6 +36,7 @@ class DecisionQueryRequest(BaseModel):
     session_id: Optional[str] = None
     query: str
     mode: str = "command"
+    thread_id: Optional[str] = None
 
 
 class MapQueryRequest(BaseModel):
@@ -122,7 +123,7 @@ def stream_decision_query(payload: DecisionQueryRequest, current_user: Authentic
     if payload.mode != "aico":
         raise HTTPException(status_code=400, detail="Only mode=aico is supported for streaming queries")
     actor = _actor(current_user)
-    generator = world_interaction_service.stream_aico_query(actor, payload.query)
+    generator = world_interaction_service.stream_aico_query(actor, payload.query, thread_id=payload.thread_id)
     return StreamingResponse(
         generator,
         media_type="text/event-stream",

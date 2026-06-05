@@ -43,7 +43,7 @@ def test_stream_yields_delta_before_worker_finishes(monkeypatch):
     gate = threading.Event()
     deltas_seen: list[str] = []
 
-    def fake_stream(actor, query):
+    def fake_stream(actor, query, *, thread_id=None):
         line_queue: list[str] = []
 
         def worker():

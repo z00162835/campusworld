@@ -56,3 +56,17 @@ Use these for **contract tests** and release review; they avoid brittle full-str
 | **Regression guard** | User-visible `final_text` must **not** contain F08 delimiters (`tool_observation begin`) nor the Plan-phase observation heading; observability belongs in trace/logs. |
 
 Phase-one performance scope **freezes** conditional “skip Do by heuristic”; only explicit **`phase_llm.do.mode: skip`** plus the D1 assembly rules above.
+
+---
+
+## Agent Loop completeness (orthogonal to PDCA phase skip)
+
+**Agent Loop** is the phase-agnostic tool-use micro-loop inside `_phase_react_loop` (Plan / Do / Check-retry Plan|Do). It is **not** a fifth PDCA phase.
+
+| Layer | Responsibility |
+|-------|----------------|
+| **AgentLoopPolicy** | Continue while `tool_use` is pending (filtered calls, dropped tools, empty executable batch). |
+| **DraftCompletenessGate** | Deterministic deferral / grounding checks before exiting a react loop or emitting SSE `end`. |
+| **Check RETRY** | Macro PDCA guardrail when Check LLM is enabled; complementary, not replaced. |
+
+Implementation: `backend/app/game_engine/agent_runtime/agent_loop/`. SSE incomplete ticks may emit `error.code=draft_incomplete` (distinct from `llm_timeout` / `cancelled`). Config: `agents.llm.by_service_id.*.extra.agent_loop_min_complete_chars` (default 80).

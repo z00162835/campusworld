@@ -53,7 +53,7 @@ def supports_tools(client: 'LlmClient') -> bool:
             return False
     return False
 
-def complete_with_tools(client: 'LlmClient', *, system: str, turns: Sequence[Any], tools: Sequence[Any], call_spec: Optional[LlmCallSpec]=None):
+def complete_with_tools(client: 'LlmClient', *, system: str, turns: Sequence[Any], tools: Sequence[Any], call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None):
     """Invoke native tool-use on a client or raise ``NotImplementedError``.
 
     ``turns`` is a sequence of :class:`ConversationTurn` instances from
@@ -65,7 +65,7 @@ def complete_with_tools(client: 'LlmClient', *, system: str, turns: Sequence[Any
     fn = getattr(client, 'complete_with_tools', None)
     if not callable(fn):
         raise NotImplementedError(f'{type(client).__name__} does not implement complete_with_tools')
-    return fn(system=system, turns=list(turns), tools=list(tools), call_spec=call_spec)
+    return fn(system=system, turns=list(turns), tools=list(tools), call_spec=call_spec, cancel_check=cancel_check)
 
 class StubLlmClient:
     """Deterministic stub when no provider is configured (tests and dev).
@@ -74,7 +74,7 @@ class StubLlmClient:
     the JSON fallback path; this keeps the JSON parser exercised in tests.
     """
 
-    def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec]=None) -> str:
+    def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None) -> str:
         u = (user or '').strip()
         mode = (call_spec.mode.value if call_spec else 'plan') if call_spec else 'plan'
         if len(u) > 400:

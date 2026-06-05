@@ -194,6 +194,10 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     const clean = query.trim()
     if (!clean) return
 
+    if (queryMode.value === 'aico' && streamInFlight.value) {
+      await stopStream()
+    }
+
     appendMessage({
       id: newId(),
       role: 'user',
@@ -315,6 +319,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
 
     try {
       await queryAicoStream(session.value.id, query, {
+        threadId,
         signal: streamAbort.signal,
         onEvent: event => {
           if (event.kind === 'meta' && event.stream_id) {
@@ -372,9 +377,15 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
           }
           if (event.kind === 'error') {
             flushPendingStreamDelta(assistantId, threadId)
+            const answer =
+              event.code === 'llm_timeout'
+                ? i18n.global.t('worldInteraction.decision.llmTimeout')
+                : event.code === 'draft_incomplete'
+                  ? i18n.global.t('worldInteraction.decision.draftIncomplete')
+                  : event.message || 'Stream failed'
             patchStreamAssistant(assistantId, threadId, {
               streaming: false,
-              answer: event.message || 'Stream failed',
+              answer,
               streamStatusKey: null,
             })
           }

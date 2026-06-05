@@ -2,8 +2,15 @@
 from __future__ import annotations
 import json
 import logging
+import threading
 import time
 from typing import Any, Callable, Dict, Optional
+
+_POLL_INTERVAL_SEC = 0.15
+
+
+class LlmRequestCancelled(Exception):
+    """LLM HTTP request was cancelled via ``cancel_check`` before completion."""
 _MAX_ERROR_RESPONSE_CHARS = 12000
 _MAX_REQUEST_SUMMARY_CHARS = 8000
 _LLM_HTTP_MAX_ATTEMPTS = 3
@@ -85,12 +92,104 @@ def _transient_httpx_errors():
     )
 
 
-def httpx_post_json(url: str, *, headers: Dict[str, str], body: Dict[str, Any], timeout: float) -> Dict[str, Any]:
+def _finalize_post_response(
+    *,
+    url: str,
+    body: Dict[str, Any],
+    r: Any,
+    elapsed_ms: float,
+) -> Dict[str, Any]:
+    status = r.status_code
+    if status >= 400:
+        try:
+            raw = r.text or ''
+        except Exception:
+            raw = ''
+        _log_llm_http_error(url=url, status_code=status, elapsed_ms=elapsed_ms, body=body, response_text=raw)
+    r.raise_for_status()
+    data = r.json()
+    if not isinstance(data, dict):
+        raise RuntimeError('LLM response JSON root must be an object')
+    try:
+        from app.core.config_manager import get_config
+        from app.game_engine.agent_runtime.observability import log_agent_runtime_http_exchange
+        log_agent_runtime_http_exchange(get_config(), url=url, status_code=status, elapsed_ms=elapsed_ms, request_body=body, response_data=data)
+    except Exception:
+        pass
+    return data
+
+
+def _httpx_post_json_cancellable_once(
+    url: str,
+    *,
+    headers: Dict[str, str],
+    body: Dict[str, Any],
+    timeout: float,
+    cancel_check: Callable[[], bool],
+) -> Dict[str, Any]:
+    """Single POST attempt with cooperative cancel via ``client.close()``."""
+    import httpx
+
+    t0 = time.perf_counter()
+    done = threading.Event()
+    holder: Dict[str, Any] = {'response': None, 'exc': None}
+    client_holder: Dict[str, Any] = {'client': None}
+
+    def worker() -> None:
+        client = httpx.Client(timeout=timeout, trust_env=False)
+        client_holder['client'] = client
+        try:
+            r = client.post(url, headers=headers, json=body)
+            holder['response'] = r
+        except Exception as exc:
+            holder['exc'] = exc
+        finally:
+            try:
+                client.close()
+            except Exception:
+                pass
+            done.set()
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    cancelled = False
+    while not done.wait(timeout=_POLL_INTERVAL_SEC):
+        if cancel_check():
+            cancelled = True
+            client = client_holder.get('client')
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            break
+    if cancelled:
+        raise LlmRequestCancelled()
+    if holder['exc'] is not None:
+        raise holder['exc']
+    r = holder['response']
+    assert r is not None
+    elapsed_ms = (time.perf_counter() - t0) * 1000.0
+    return _finalize_post_response(url=url, body=body, r=r, elapsed_ms=elapsed_ms)
+
+
+def httpx_post_json(
+    url: str,
+    *,
+    headers: Dict[str, str],
+    body: Dict[str, Any],
+    timeout: float,
+    cancel_check: Optional[Callable[[], bool]] = None,
+) -> Dict[str, Any]:
     """POST JSON to an LLM provider endpoint.
 
     Uses ``trust_env=False`` so local ``HTTP(S)_PROXY`` settings do not hijack
     outbound provider calls (a common cause of ``RemoteProtocolError`` during eval).
     Retries transient transport failures a few times before surfacing.
+
+    When ``cancel_check`` is provided, the request runs on a worker thread and
+    the caller polls every ~150ms; a True result closes the httpx client and
+    raises :class:`LlmRequestCancelled`.
     """
     import httpx
 
@@ -100,27 +199,20 @@ def httpx_post_json(url: str, *, headers: Dict[str, str], body: Dict[str, Any], 
     for attempt in range(1, _LLM_HTTP_MAX_ATTEMPTS + 1):
         t0 = time.perf_counter()
         try:
+            if cancel_check is not None:
+                return _httpx_post_json_cancellable_once(
+                    url,
+                    headers=headers,
+                    body=body,
+                    timeout=timeout,
+                    cancel_check=cancel_check,
+                )
             with httpx.Client(timeout=timeout, trust_env=False) as client:
                 r = client.post(url, headers=headers, json=body)
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
-            status = r.status_code
-            if status >= 400:
-                try:
-                    raw = r.text or ''
-                except Exception:
-                    raw = ''
-                _log_llm_http_error(url=url, status_code=status, elapsed_ms=elapsed_ms, body=body, response_text=raw)
-            r.raise_for_status()
-            data = r.json()
-            if not isinstance(data, dict):
-                raise RuntimeError('LLM response JSON root must be an object')
-            try:
-                from app.core.config_manager import get_config
-                from app.game_engine.agent_runtime.observability import log_agent_runtime_http_exchange
-                log_agent_runtime_http_exchange(get_config(), url=url, status_code=status, elapsed_ms=elapsed_ms, request_body=body, response_data=data)
-            except Exception:
-                pass
-            return data
+            return _finalize_post_response(url=url, body=body, r=r, elapsed_ms=elapsed_ms)
+        except LlmRequestCancelled:
+            raise
         except transient_errors as exc:
             last_exc = exc
             if attempt >= _LLM_HTTP_MAX_ATTEMPTS:

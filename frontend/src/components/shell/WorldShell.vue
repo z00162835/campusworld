@@ -105,16 +105,26 @@ const {
   showMapResizer,
   showContextResizer,
   startResize,
+  applyMapCollapsedForViewMode,
 } = useWorldShellLayout(mainRef, computed(() => worldSession.viewMode))
+
+function applyShellLayoutDefaults() {
+  const policy = worldSession.displayPolicy
+  if (policy) {
+    contextCollapsed.value = policy.contextDefaultCollapsed
+  }
+  applyMapCollapsedForViewMode()
+}
 
 watch(
   () => worldSession.displayPolicy,
-  policy => {
-    if (!policy) return
-    contextCollapsed.value = policy.contextDefaultCollapsed
-    mapCollapsed.value = policy.mapDefaultCollapsed
-  },
+  () => applyShellLayoutDefaults(),
   { immediate: true },
+)
+
+watch(
+  () => worldSession.viewMode,
+  () => applyMapCollapsedForViewMode(),
 )
 </script>
 

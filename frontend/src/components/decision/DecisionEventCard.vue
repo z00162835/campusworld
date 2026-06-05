@@ -1,16 +1,23 @@
 <template>
-  <article class="event-card">
+  <article class="event-card" :class="stripeClass">
     <div class="event-header">
       <h3>{{ event.title }}</h3>
       <span :class="['priority', event.priority]">{{ event.priority }}</span>
     </div>
-    <p>{{ event.summary }}</p>
-    <dl>
-      <dt>Impact</dt>
-      <dd>{{ event.impact }}</dd>
-      <dt>Recommendation</dt>
-      <dd>{{ event.recommendation }}</dd>
-    </dl>
+    <p class="event-summary">{{ event.summary }}</p>
+    <details v-if="event.impact || event.recommendation" class="event-details">
+      <summary>{{ t('worldInteraction.decision.eventDetails') }}</summary>
+      <dl>
+        <template v-if="event.impact">
+          <dt>{{ t('worldInteraction.decision.eventImpact') }}</dt>
+          <dd>{{ event.impact }}</dd>
+        </template>
+        <template v-if="event.recommendation">
+          <dt>{{ t('worldInteraction.decision.eventRecommendation') }}</dt>
+          <dd>{{ event.recommendation }}</dd>
+        </template>
+      </dl>
+    </details>
     <div class="actions">
       <el-button
         v-for="option in event.options"
@@ -27,15 +34,29 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { DecisionEvent, DecisionOption } from '@/types/world'
 
-defineProps<{
+const props = defineProps<{
   event: DecisionEvent
 }>()
 
 defineEmits<{
   execute: [eventId: string, optionId: string]
 }>()
+
+const { t } = useI18n()
+
+const stripeClass = computed(() => {
+  const map: Record<DecisionEvent['priority'], string> = {
+    urgent: 'severity-stripe--critical',
+    important: 'severity-stripe--warning',
+    normal: 'severity-stripe--info',
+    low: 'severity-stripe--normal',
+  }
+  return map[props.event.priority] ?? 'severity-stripe--info'
+})
 
 const buttonType = (style: DecisionOption['style']) => {
   if (style === 'danger') return 'danger'
@@ -49,8 +70,26 @@ const buttonType = (style: DecisionOption['style']) => {
 .event-card {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  background: #1b1f26;
+  background: var(--decision-card-bg);
   padding: var(--spacing-lg);
+  border-left-width: var(--decision-severity-stripe-width);
+  border-left-style: solid;
+}
+
+.severity-stripe--critical {
+  border-left-color: var(--decision-severity-critical);
+}
+
+.severity-stripe--warning {
+  border-left-color: var(--decision-severity-warning);
+}
+
+.severity-stripe--info {
+  border-left-color: var(--decision-severity-info);
+}
+
+.severity-stripe--normal {
+  border-left-color: var(--decision-severity-normal);
 }
 
 .event-header {
@@ -65,18 +104,38 @@ h3 {
   font-size: var(--font-size-lg);
 }
 
-p {
+.event-summary {
   margin: var(--spacing-sm) 0 var(--spacing-md);
   color: var(--text-secondary);
   line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.event-details {
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.event-details summary {
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.event-details summary:hover {
+  color: var(--text-secondary);
 }
 
 dl {
   display: grid;
   grid-template-columns: 96px 1fr;
   gap: var(--spacing-xs) var(--spacing-md);
-  margin: 0 0 var(--spacing-md);
-  font-size: var(--font-size-sm);
+  margin: var(--spacing-sm) 0 0;
 }
 
 dt {
@@ -91,6 +150,7 @@ dd {
 .priority {
   color: var(--text-tertiary);
   font-size: var(--font-size-xs);
+  text-transform: uppercase;
 }
 
 .priority.urgent {

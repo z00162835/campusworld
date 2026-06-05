@@ -13,6 +13,7 @@ from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, F
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
 from app.game_engine.agent_runtime.intent_classifier_interface import IntentClassifier, RuleFallbackIntentClassifier, classify_intent
 from app.game_engine.agent_runtime.llm_client import AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC, LlmCallSpec, LlmClient, StubLlmClient, complete_with_tools, supports_tools
+from app.game_engine.agent_runtime.llm_providers.http_utils import LlmRequestCancelled
 from app.game_engine.agent_runtime.llm_streaming import complete_stream as llm_complete_stream
 from app.game_engine.agent_runtime.memory_port import MemoryPort
 from app.game_engine.agent_runtime.observability import AgentRuntimeObservability, NoopAgentRuntimeObservability
@@ -26,6 +27,16 @@ from app.game_engine.agent_runtime.tool_router.router_result import EnforcementL
 from app.game_engine.agent_runtime.tool_gather import ToolGatherBudgets, ToolGatherCounters, ToolInvocationPlan, format_tool_batch_limit_hint, format_tool_observation_block, gather_tool_observations, max_executable_commands_this_round, parse_tool_invocation_plan_from_text, tool_gather_budgets_from_agent_extra
 from app.game_engine.agent_runtime.tool_runtime_view import resolve_tool_runtime_view
 from app.game_engine.agent_runtime.tooling import ToolExecutor
+from app.game_engine.agent_runtime.agent_loop import (
+    AgentLoopConfig,
+    DraftCompletenessVerdict,
+    build_draft_retry_user_text,
+    build_filtered_tool_continuation_turns,
+    detect_pending_tool_work,
+    should_exit_react_round,
+)
+from app.game_engine.agent_runtime.agent_loop.draft_gate import assess_draft_completeness_with_budget, is_draft_streamable
+from app.game_engine.agent_runtime.agent_loop.signals import DraftReasonContext
 _CHECK_RETRY_RE = re.compile('RETRY\\s*:\\s*need_tools\\s*=\\s*([A-Za-z0-9_.\\-]+(?:\\s*,\\s*[A-Za-z0-9_.\\-]+)*)', flags=re.IGNORECASE)
 _DEFAULT_NPC_AGENT_EMPTY_REPLY = '抱歉，我没有能力处理此问题。你可以换一个问题。'
 
@@ -89,6 +100,33 @@ def _resolve_npc_agent_empty_reply_message(cfg: AgentLlmServiceConfig) -> str:
         return raw.strip()
     return _DEFAULT_NPC_AGENT_EMPTY_REPLY
 _LLM_PDCA_LOG = logging.getLogger(__name__)
+
+def _serialize_tool_calls_for_entry(calls: Sequence[ToolCall]) -> List[Dict[str, Any]]:
+    return [{'id': c.id, 'name': c.name, 'args': list(c.args)} for c in calls]
+
+
+def _tool_calls_from_entry(raw: Any) -> List[ToolCall]:
+    if not isinstance(raw, list):
+        return []
+    out: List[ToolCall] = []
+    for item in raw:
+        if isinstance(item, ToolCall):
+            out.append(item)
+        elif isinstance(item, dict):
+            out.append(ToolCall(id=str(item.get('id') or ''), name=str(item.get('name') or ''), args=[str(a) for a in (item.get('args') or [])]))
+    return out
+
+
+def _draft_reason_context(ctx: FrameworkRunContext) -> DraftReasonContext:
+    hint = ctx.payload.get('intent_hint')
+    if isinstance(hint, dict):
+        return DraftReasonContext(intent_hint=dict(hint))
+    return DraftReasonContext()
+
+
+def _user_message_from_ctx(ctx: FrameworkRunContext) -> str:
+    return str(ctx.payload.get('message') or ctx.payload.get('text') or '').strip()
+
 
 def _filter_tool_calls_to_schemas(calls: List[ToolCall], tool_schemas: Sequence[ToolSchema]) -> Tuple[List[ToolCall], List[str]]:
     """Drop tool invocations not present on the resolved schema surface.
@@ -198,6 +236,7 @@ class LlmPDCAFramework(ThinkingFramework):
         self._tool_schemas: List[ToolSchema] = list(tool_schemas or [])
         self._intent_classifier: Optional[IntentClassifier] = intent_classifier
         self._observability: AgentRuntimeObservability = observability or NoopAgentRuntimeObservability()
+        self._agent_loop_config = AgentLoopConfig.from_agent_extra(getattr(llm_config, 'extra', None))
 
     @property
     def framework_id(self) -> str:
@@ -238,9 +277,8 @@ class LlmPDCAFramework(ThinkingFramework):
     def _bind_presentation_anchor(self, ctx: FrameworkRunContext) -> None:
         ctx.presentation_anchor_phase = self._resolve_presentation_anchor_phase(ctx)
 
-    @staticmethod
-    def _is_presentation_safe_prose(text: str, calls: Sequence[ToolCall]) -> bool:
-        """Exclude tool JSON and non-prose tool-call payloads from the user-visible stream."""
+    def _is_presentation_safe_prose(self, text: str, calls: Sequence[ToolCall], ctx: FrameworkRunContext) -> bool:
+        """Exclude tool JSON, deferral-only interim prose, and incomplete drafts from the user-visible stream."""
         if calls:
             return False
         stripped = (text or '').strip()
@@ -248,7 +286,15 @@ class LlmPDCAFramework(ThinkingFramework):
             return False
         if parse_tool_invocation_plan_from_text(stripped).commands:
             return False
-        return True
+        accumulated = ctx.payload.get('_accumulated_tool_results')
+        tool_results: List[ToolResult] = list(accumulated) if isinstance(accumulated, list) else []
+        return is_draft_streamable(
+            draft_text=text,
+            tool_results=tool_results,
+            user_message=_user_message_from_ctx(ctx),
+            config=self._agent_loop_config,
+            reason_context=_draft_reason_context(ctx),
+        )
 
     @staticmethod
     def _should_stream_user_prose(ctx: FrameworkRunContext, phase: str, *, stream_prose: bool = False) -> bool:
@@ -318,7 +364,10 @@ class LlmPDCAFramework(ThinkingFramework):
                 cancel_check=ctx.stream_cancel_check,
             )
             return (out, {'step': phase, 'llm_output': out, 'mode': spec.mode.value, 'streamed': True})
-        out = self._llm.complete(system=system, user=user, call_spec=spec)
+        try:
+            out = self._llm.complete(system=system, user=user, call_spec=spec, cancel_check=ctx.stream_cancel_check)
+        except LlmRequestCancelled:
+            return ('', {'step': phase, 'cancelled': True, 'mode': spec.mode.value})
         return (out, {'step': phase, 'llm_output': out, 'mode': spec.mode.value})
 
     def _gather_tools_after_llm(self, pdca_phase: str, llm_output: str, trace: List[Dict[str, Any]], counters: ToolGatherCounters) -> str:
@@ -384,26 +433,43 @@ class LlmPDCAFramework(ThinkingFramework):
                 'channel': 'stream',
                 'tool_call_count': len(calls),
             }
-            if self._is_presentation_safe_prose(text, calls):
+            if self._is_presentation_safe_prose(text, calls, ctx):
                 entry['streamed'] = True
             else:
                 uvs.coordinator.body_emitted = False
                 entry['channel'] = 'text'
             return (text, calls, entry)
-        if supports_tools(self._llm) and phase_tools:
-            try:
-                res: CompleteWithToolsResult = complete_with_tools(self._llm, system=system, turns=turns, tools=phase_tools, call_spec=spec)
-                channel = 'tool_use'
-                text = res.text or ''
-                calls = list(res.tool_calls or [])
-                if not calls and res.finish_reason.lower() not in ('tool_use', 'tool_calls'):
+        t_llm = time.perf_counter()
+        finish_reason = ''
+        try:
+            if supports_tools(self._llm) and phase_tools:
+                try:
+                    res: CompleteWithToolsResult = complete_with_tools(
+                        self._llm,
+                        system=system,
+                        turns=turns,
+                        tools=phase_tools,
+                        call_spec=spec,
+                        cancel_check=ctx.stream_cancel_check,
+                    )
+                    channel = 'tool_use'
+                    text = res.text or ''
+                    calls = list(res.tool_calls or [])
+                    finish_reason = str(res.finish_reason or '')
+                    if not calls and finish_reason.lower() not in ('tool_use', 'tool_calls'):
+                        calls = _tool_calls_from_text(text)
+                except NotImplementedError:
+                    text = self._llm.complete(system=system, user=user_text_for_log, call_spec=spec, cancel_check=ctx.stream_cancel_check)
                     calls = _tool_calls_from_text(text)
-            except NotImplementedError:
-                text = self._llm.complete(system=system, user=user_text_for_log, call_spec=spec)
+            else:
+                text = self._llm.complete(system=system, user=user_text_for_log, call_spec=spec, cancel_check=ctx.stream_cancel_check)
                 calls = _tool_calls_from_text(text)
-        else:
-            text = self._llm.complete(system=system, user=user_text_for_log, call_spec=spec)
-            calls = _tool_calls_from_text(text)
+        except LlmRequestCancelled:
+            return ('', [], {'step': phase, 'cancelled': True, 'mode': spec.mode.value})
+        llm_elapsed_ms = (time.perf_counter() - t_llm) * 1000.0
+        if phase == PDCAPhase.plan.value and llm_elapsed_ms >= 30000.0:
+            _LLM_PDCA_LOG.warning('AICO plan llm slow elapsed_ms=%.1f', llm_elapsed_ms)
+        pre_filter_calls = list(calls)
         dropped: List[str] = []
         if phase_tools and calls:
             (calls, dropped) = _filter_tool_calls_to_schemas(calls, phase_tools)
@@ -416,8 +482,10 @@ class LlmPDCAFramework(ThinkingFramework):
             'channel': channel,
             'tool_call_count': len(calls),
             'dropped_tool_names': dropped,
+            'finish_reason': finish_reason,
+            'pre_filter_tool_calls': _serialize_tool_calls_for_entry(pre_filter_calls),
         }
-        if self._should_stream_user_prose(ctx, phase, stream_prose=stream_prose) and self._is_presentation_safe_prose(text, calls):
+        if self._should_stream_user_prose(ctx, phase, stream_prose=stream_prose) and self._is_presentation_safe_prose(text, calls, ctx):
             self._write_user_prose_to_presentation(ctx, text)
             entry['streamed'] = True
             entry['channel'] = 'presentation_prose'
@@ -438,6 +506,8 @@ class LlmPDCAFramework(ThinkingFramework):
         all_results: List[ToolResult] = []
         last_text = ''
         last_entry: Dict[str, Any] = {'step': pdca_phase, 'skipped': False}
+        user_message = _user_message_from_ctx(ctx)
+        reason_ctx = _draft_reason_context(ctx)
         t_phase = time.perf_counter()
         try:
             for round_idx in range(max_rounds):
@@ -465,8 +535,57 @@ class LlmPDCAFramework(ThinkingFramework):
                 last_entry = entry
                 if entry.get('skipped'):
                     break
-                if not calls:
+                if entry.get('cancelled'):
                     break
+                pre_filter_calls = _tool_calls_from_entry(entry.get('pre_filter_tool_calls'))
+                pending = detect_pending_tool_work(
+                    calls=calls,
+                    dropped_names=dropped_n,
+                    finish_reason=str(entry.get('finish_reason') or ''),
+                    pre_filter_calls=pre_filter_calls,
+                )
+                if pending is not None:
+                    trace.append({'step': 'agent_loop_pending_tool_work', 'phase': pdca_phase, 'reason_codes': list(pending.reason_codes), 'dropped': list(pending.dropped_names), 'round': round_idx + 1})
+                if not should_exit_react_round(calls=calls, pending=pending):
+                    if calls:
+                        pass
+                    elif pending is not None:
+                        for turn in build_filtered_tool_continuation_turns(
+                            pre_filter_calls=pre_filter_calls,
+                            dropped_names=dropped_n or [c.name for c in pre_filter_calls],
+                            assistant_text=text or '',
+                        ):
+                            turns.append(turn)
+                        trace.append({'step': 'agent_loop_continuation_injected', 'phase': pdca_phase, 'hint_type': 'tool_filtered', 'round': round_idx + 1})
+                        continue
+                else:
+                    if not self._tool_schemas:
+                        break
+                    rounds_remaining = max(0, max_rounds - round_idx - 1)
+                    verdict = assess_draft_completeness_with_budget(
+                        user_message=user_message,
+                        draft_text=last_text,
+                        tool_results=all_results,
+                        config=self._agent_loop_config,
+                        reason_context=reason_ctx,
+                        rounds_remaining=rounds_remaining,
+                    )
+                    if verdict == DraftCompletenessVerdict.complete:
+                        break
+                    if verdict == DraftCompletenessVerdict.retry_loop:
+                        trace.append({'step': 'draft_incomplete_detected', 'phase': pdca_phase, 'reason_codes': ['deferral_or_grounding_gap'], 'draft_chars': len((last_text or '').strip()), 'round': round_idx + 1})
+                        turns.append(TextTurn(role='user', text=build_draft_retry_user_text()))
+                        trace.append({'step': 'agent_loop_continuation_injected', 'phase': pdca_phase, 'hint_type': 'draft_incomplete', 'round': round_idx + 1})
+                        continue
+                    _LLM_PDCA_LOG.warning('tick_finished_with_deferral_only phase=%s draft_chars=%s', pdca_phase, len((last_text or '').strip()))
+                    trace.append({'step': 'draft_incomplete_detected', 'phase': pdca_phase, 'reason_codes': ['budget_exhausted'], 'draft_chars': len((last_text or '').strip()), 'round': round_idx + 1})
+                    last_text = ''
+                    last_entry = dict(entry)
+                    last_entry['draft_incomplete'] = True
+                    ctx.payload['_draft_incomplete'] = True
+                    break
+                if not calls:
+                    continue
                 base_tool_ctx = self._tool_command_context
                 runtime_tool_ctx = base_tool_ctx
                 if base_tool_ctx is not None:
@@ -527,6 +646,22 @@ class LlmPDCAFramework(ThinkingFramework):
                     break
         finally:
             _trace_phase_timing(trace, scope='phase_total', phase=pdca_phase, elapsed_ms=(time.perf_counter() - t_phase) * 1000.0)
+        if (last_text or '').strip() and not last_entry.get('draft_incomplete') and not last_entry.get('cancelled') and self._tool_schemas:
+            verdict = assess_draft_completeness_with_budget(
+                user_message=user_message,
+                draft_text=last_text,
+                tool_results=all_results,
+                config=self._agent_loop_config,
+                reason_context=reason_ctx,
+                rounds_remaining=0,
+            )
+            if verdict != DraftCompletenessVerdict.complete:
+                _LLM_PDCA_LOG.warning('tick_finished_with_deferral_only phase=%s draft_chars=%s', pdca_phase, len((last_text or '').strip()))
+                trace.append({'step': 'draft_incomplete_detected', 'phase': pdca_phase, 'reason_codes': ['phase_exit_incomplete'], 'draft_chars': len((last_text or '').strip())})
+                last_text = ''
+                last_entry = dict(last_entry)
+                last_entry['draft_incomplete'] = True
+                ctx.payload['_draft_incomplete'] = True
         return (last_text, '\n\n'.join((o for o in obs_chunks if o)), all_results, last_entry)
 
     def run(self, ctx: FrameworkRunContext) -> FrameworkRunResult:
@@ -559,6 +694,8 @@ class LlmPDCAFramework(ThinkingFramework):
                 ic_extra['intent_slm_latency_ms'] = float(ic.latency_ms)
             _LLM_PDCA_LOG.info('intent_classified', extra=ic_extra)
             intent_hint = {'intent': ic.intent, 'reason_tokens': list(ic.reason_tokens or []), 'confidence': float(ic.confidence), 'source': ic.source}
+        ctx.payload['intent_hint'] = intent_hint
+        ctx.payload['_accumulated_tool_results'] = []
         ctx.payload.pop('tool_router_snapshot', None)
         ctx.payload.pop('pdca_tool_schema_allowlist', None)
         tr_cfg = parse_tool_router_config(dict(self._cfg.extra or {}))
@@ -596,6 +733,7 @@ class LlmPDCAFramework(ThinkingFramework):
         if plan_entry.get('cancelled'):
             return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         accumulated_tick_tool_results.extend(plan_tool_results)
+        ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
         self._memory.update_run(run_id, PDCAPhase.plan.value, trace, 'running')
         self._tick_hooks.on_after_phase(ThinkingPhaseId.plan, ctx, phase_llm_output=plan_out or '', skipped=bool(plan_entry.get('skipped')))
         if plan_tools_text:
@@ -621,6 +759,7 @@ class LlmPDCAFramework(ThinkingFramework):
             if do_entry.get('cancelled'):
                 return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
             accumulated_tick_tool_results.extend(do_tool_results)
+        ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
         self._memory.update_run(run_id, PDCAPhase.do.value, trace, 'running')
         self._tick_hooks.on_after_phase(ThinkingPhaseId.do, ctx, phase_llm_output=reply or '', skipped=bool(do_entry.get('skipped')))
         if do_tools_text:
@@ -694,6 +833,7 @@ class LlmPDCAFramework(ThinkingFramework):
             if plan2_entry.get('cancelled'):
                 return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
             accumulated_tick_tool_results.extend(plan2_tool_results)
+            ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
             if plan2_tools_text:
                 trace.append({'step': 'plan_retry_tool_observations', 'chars': len(plan2_tools_text)})
             do2_blocks = f'\n\nTool observations (plan retry):\n{plan2_tools_text}' if plan2_tools_text else ''
@@ -708,6 +848,7 @@ class LlmPDCAFramework(ThinkingFramework):
                 if de2.get('cancelled'):
                     return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
                 accumulated_tick_tool_results.extend(do2_tool_results)
+            ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
             if reply2.strip():
                 final_text = reply2
             if do2_tools_text:
@@ -759,7 +900,22 @@ class LlmPDCAFramework(ThinkingFramework):
         self._memory.append_raw('audit', {'framework': self.framework_id, 'run_id': str(run_id), 'ok': ok})
         self._tick_hooks.on_before_phase(ThinkingPhaseId.post, ctx)
         self._tick_hooks.on_after_phase(ThinkingPhaseId.post, ctx, phase_llm_output=final_text, skipped=False)
-        return FrameworkRunResult(ok=ok, message=final_text, final_phase=PDCAPhase.act.value)
+        tick_ok = ok
+        error_code: Optional[str] = None
+        if user_msg:
+            if ctx.payload.get('_draft_incomplete'):
+                tick_ok = False
+                error_code = 'draft_incomplete'
+            elif (final_text or '').strip():
+                from app.game_engine.agent_runtime.agent_loop.draft_gate import has_successful_grounding_obs, is_deferral_prose
+                if is_deferral_prose(final_text, config=self._agent_loop_config) and not has_successful_grounding_obs(accumulated_tick_tool_results):
+                    _LLM_PDCA_LOG.warning('draft_incomplete_detected anchor_phase=%s draft_chars=%s', ctx.presentation_anchor_phase, len((final_text or '').strip()))
+                    trace.append({'step': 'draft_incomplete_detected', 'anchor_phase': ctx.presentation_anchor_phase, 'reason_codes': ['tick_emit_deferral'], 'draft_chars': len((final_text or '').strip())})
+                    tick_ok = False
+                    error_code = 'draft_incomplete'
+        if error_code == 'draft_incomplete' and user_msg:
+            final_text = _resolve_npc_agent_empty_reply_message(self._cfg)
+        return FrameworkRunResult(ok=tick_ok, message=final_text, final_phase=PDCAPhase.act.value, error_code=error_code)
 
 def _tool_calls_from_text(text: str) -> List[ToolCall]:
     """Parse JSON ``{"commands": [...]}`` text and convert to neutral ToolCalls."""

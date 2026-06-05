@@ -5,9 +5,11 @@ from __future__ import annotations
 import pytest
 
 from app.game_engine.agent_runtime.llm_providers.minimax_anthropic import (
+    _parse_anthropic_response,
     _tool_result_content_wire,
     _turns_to_anthropic_messages,
     _validate_anthropic_tool_messages,
+    normalize_tool_use_args,
 )
 from app.game_engine.agent_runtime.tool_calling import (
     AssistantToolUseTurn,
@@ -123,3 +125,29 @@ def test_validate_rejects_unknown_tool_name():
             b["name"] = "not_registered"
     with pytest.raises(ValueError, match="not in request tools"):
         _validate_anthropic_tool_messages(msgs, allowed_tool_names={"help"})
+
+
+@pytest.mark.unit
+def test_normalize_tool_use_args_dict_flags():
+    assert normalize_tool_use_args({"args": {"-t": "world"}}) == ["-t", "world"]
+    assert normalize_tool_use_args({"args": ["-des", "hicampus"]}) == ["-des", "hicampus"]
+    assert normalize_tool_use_args({"-n": "hicampus"}) == ["-n", "hicampus"]
+
+
+@pytest.mark.unit
+def test_parse_anthropic_response_dict_args():
+    res = _parse_anthropic_response(
+        {
+            "content": [
+                {
+                    "type": "tool_use",
+                    "id": "c1",
+                    "name": "find",
+                    "input": {"args": {"-t": "world"}},
+                }
+            ],
+            "stop_reason": "tool_use",
+        }
+    )
+    assert len(res.tool_calls) == 1
+    assert res.tool_calls[0].args == ["-t", "world"]

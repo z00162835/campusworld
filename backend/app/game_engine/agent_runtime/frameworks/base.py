@@ -29,6 +29,7 @@ class FrameworkRunResult:
     ok: bool
     message: str = ''
     final_phase: Optional[str] = None
+    error_code: Optional[str] = None
 
 class ThinkingFramework(ABC):
     """Pluggable cognition main loop (PDCA, OODA, …)."""

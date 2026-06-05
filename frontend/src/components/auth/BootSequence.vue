@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import packageJson from '../../../package.json'
 
 const props = withDefaults(defineProps<{
   duration?: number
@@ -17,7 +18,7 @@ const progress = ref(0)
 
 const bootStages = [
   { stage: 'init', delay: 0, duration: 300 },
-  { stage: 'logo', delay: 300, duration: 500, message: 'CAMPUSWORLD OS v2.4.1' },
+  { stage: 'logo', delay: 300, duration: 500, message: `CAMPUSWORLD OS v${packageJson.version}` },
   { stage: 'loading', delay: 800, duration: 400, message: '[INIT] Initializing system...' },
   { stage: 'loading', delay: 1200, duration: 400, message: '[KERNEL] Loading kernel modules...' },
   { stage: 'loading', delay: 1600, duration: 400, message: '[NET] Connecting to CampusWorld...' },

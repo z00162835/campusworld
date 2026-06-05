@@ -123,7 +123,7 @@ def _phase1_aggregate_payload() -> dict:
             "maxMapNodesVisible": 7,
             "maxAgentsHighlighted": 3,
             "contextDefaultCollapsed": True,
-            "mapDefaultCollapsed": False,
+            "mapDefaultCollapsed": True,
             "historyDefaultCollapsed": True,
         },
         "available_worlds": [{"world_id": "hicampus", "name": "HiCampus", "is_recommended": True}],
@@ -142,7 +142,7 @@ def test_current_world_session_returns_phase1_aggregate_fields(monkeypatch):
     assert response.status_code == 200
     body = response.json()
 
-    assert body["display_policy"]["mapDefaultCollapsed"] is False
+    assert body["display_policy"]["mapDefaultCollapsed"] is True
     assert body["display_policy"]["contextDefaultCollapsed"] is True
 
     interaction = body["interaction_state"]
@@ -203,7 +203,7 @@ def test_archive_conversations_and_history_summary():
 
 
 def test_aico_stream_response_has_anti_buffer_headers(monkeypatch):
-    def fake_stream(actor, query):
+    def fake_stream(actor, query, *, thread_id=None):
         yield 'data: {"kind":"meta","scope":"stream","stream_id":"x"}\n\n'
 
     monkeypatch.setattr(world_interaction.world_interaction_service, 'stream_aico_query', fake_stream)

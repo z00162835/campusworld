@@ -12,6 +12,7 @@
 @import './components/button.css';
 @import './components/dropdown.css';
 @import './components/form.css';
+@import './components/decision.css';
 
 /* OS科技风格 - Cyber 组件 */
 @import './components/cyber-input.css';

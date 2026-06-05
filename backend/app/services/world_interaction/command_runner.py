@@ -20,6 +20,7 @@ class CommandRunOptions:
     stream_emit: Optional[Callable[[str], None]] = None
     supports_aico_stream: bool = False
     stream_cancel_event: Optional[Event] = None
+    aico_client_thread_id: Optional[str] = None
 
 
 class CommandRunner:
@@ -59,6 +60,10 @@ class CommandRunner:
             if context.metadata is None:
                 context.metadata = {}
             context.metadata['aico_stream_cancel_event'] = opts.stream_cancel_event
+        if opts.aico_client_thread_id:
+            if context.metadata is None:
+                context.metadata = {}
+            context.metadata['aico_client_thread_id'] = opts.aico_client_thread_id
         decision = command_registry.authorize_command(command, context)
         if not decision.allowed:
             return CommandResult.error_result(

@@ -58,7 +58,7 @@
 - **`AicoCommand`**：已实现 `-nd`、`-l`、`-cd`、裸消息；**尚未**实现 `-i`、`-d`、`-his`；响应为 **单次 `CommandResult.message`**（无 NDJSON 侧信道）。
 - **持久 transcript**：`enable_conversation_stm` 开启且 tick **`ok`** 时，`agent_conversation_stm.messages` **就地追加** user/assistant 对（见 `conversation_stm_service.append_turns_to_messages`）；passthrough **不写** STM。
 - **线程目录**：`agent_conversation_thread`；`title_snippet` 由 `touch_thread_metadata` 等在成功 tick 后更新。
-- **AICO 运行时策略**：AICO 的 NDJSON tick lifecycle、REPL progress hint 与 observability hooks 由 `AicoRuntimeProfile` 承载；wire shape 与本 SPEC 保持一致。当前实现仍是块级流式/侧信道生命周期，不新增真实 token streaming 或全链路 cancel 能力。
+- **AICO 运行时策略**：AICO 的 NDJSON tick lifecycle、REPL progress hint 与 observability hooks 由 `AicoRuntimeProfile` 承载；wire shape 与本 SPEC 保持一致。HTTP decision-center stream：**Plan 阶段 blocking LLM POST** 支持 `cancel_check`（thread + poll + `client.close()`）；同一 **user + client `thread_id`** 新 stream 自动 cancel 旧 worker；worker join 超时由 `world_interaction.aico_stream_worker_join_sec`（默认 30s）配置。
 
 ---
 

@@ -16,7 +16,7 @@ class OpenAiCompatibleHttpLlmClient:
         self._default_max_tokens = default_max_tokens
         self._timeout = timeout_sec
 
-    def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec]=None) -> str:
+    def complete(self, *, system: str, user: str, call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None) -> str:
         spec = call_spec or LlmCallSpec()
         model = (spec.model or self._default_model).strip() or self._default_model
         temperature = spec.temperature if spec.temperature is not None else self._default_temperature
@@ -28,7 +28,7 @@ class OpenAiCompatibleHttpLlmClient:
         body.update(extra)
         url = f'{self._base}/chat/completions'
         headers = {'Authorization': f'Bearer {self._api_key}', 'Content-Type': 'application/json'}
-        data = httpx_post_json(url, headers=headers, body=body, timeout=timeout)
+        data = httpx_post_json(url, headers=headers, body=body, timeout=timeout, cancel_check=cancel_check)
         choices = data.get('choices') or []
         if not choices:
             return ''
