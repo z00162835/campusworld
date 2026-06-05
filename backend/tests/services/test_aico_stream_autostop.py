@@ -80,6 +80,53 @@ def test_new_stream_on_same_thread_cancels_previous(monkeypatch):
 
 
 @pytest.mark.unit
+def test_replacement_stream_starts_without_waiting_for_prior_worker(monkeypatch):
+    monkeypatch.setattr(database_module, 'db_session_context', _fake_db_session)
+
+    started = threading.Event()
+    release = threading.Event()
+    second_meta_at: list[float] = []
+
+    class _Runner:
+        def run(self, session, actor, command_line, *, options=None):
+            if command_line == 'aico first query':
+                started.set()
+                release.wait(timeout=2.0)
+                return CommandResult.success_result('', data={'aico_stream_used': True, 'phase': 'cancelled'})
+            return CommandResult.success_result('ok', data={'aico_stream_used': True, 'phase': 'action'})
+
+    svc = AicoStreamQueryService(
+        command_runner=_Runner(),
+        build_patch=MagicMock(return_value={'state_patch': {}, 'command_result': None}),
+        logger=MagicMock(),
+    )
+    actor = WorldActor(user_id='99', username='u', permissions=[], roles=[])
+    thread_id = 'thread_a'
+
+    gen1 = svc.stream(actor, 'first query', thread_id=thread_id)
+
+    def _consume_first() -> None:
+        for _ in gen1:
+            pass
+
+    consumer = threading.Thread(target=_consume_first, daemon=True)
+    consumer.start()
+    assert started.wait(timeout=3.0)
+
+    t0 = time.perf_counter()
+    gen2 = svc.stream(actor, 'second query', thread_id=thread_id)
+    first_chunk = next(gen2)
+    second_meta_at.append(time.perf_counter() - t0)
+    assert '"stream_id"' in first_chunk
+    assert second_meta_at[0] < 0.5
+
+    release.set()
+    for _ in gen2:
+        pass
+    consumer.join(timeout=3.0)
+
+
+@pytest.mark.unit
 def test_different_threads_do_not_cancel_each_other(monkeypatch):
     monkeypatch.setattr(database_module, 'db_session_context', _fake_db_session)
 

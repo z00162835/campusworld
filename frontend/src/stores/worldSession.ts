@@ -48,6 +48,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   const activeAicoThreadId = ref<string | null>(null)
 
   const activeStreamId = ref<string | null>(null)
+  let streamGeneration = 0
   let streamAbort: AbortController | null = null
   let streamAssistantId: string | null = null
   let streamThreadId: string | null = null
@@ -195,7 +196,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     if (!clean) return
 
     if (queryMode.value === 'aico' && streamInFlight.value) {
-      await stopStream()
+      await stopStream({ handoff: true })
     }
 
     appendMessage({
@@ -297,6 +298,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
 
   async function submitAicoStream(query: string) {
     if (!session.value?.id) return
+    const generation = ++streamGeneration
     const thread = ensureActiveAicoThread()
     const threadId = thread.id
 
@@ -322,6 +324,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         threadId,
         signal: streamAbort.signal,
         onEvent: event => {
+          if (generation !== streamGeneration) return
           if (event.kind === 'meta' && event.stream_id) {
             activeStreamId.value = event.stream_id
             return
@@ -394,6 +397,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       flushPendingStreamDelta(assistantId, threadId)
       patchStreamAssistant(assistantId, threadId, { streaming: false, streamStatusKey: null })
     } catch (err: any) {
+      if (generation !== streamGeneration) return
       if (err?.name === 'AbortError') {
         patchStreamAssistant(assistantId, threadId, {
           streaming: false,
@@ -409,6 +413,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         ElMessage.error(err?.message || 'AICO stream failed')
       }
     } finally {
+      if (generation !== streamGeneration) return
       actionLoading.value = false
       streamAbort = null
       streamAssistantId = null
@@ -422,9 +427,11 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
   }
 
-  async function stopStream() {
+  async function stopStream(options?: { handoff?: boolean }) {
+    const handoff = options?.handoff ?? false
     const assistantId = streamAssistantId
     const threadId = streamThreadId
+    streamGeneration += 1
     streamAbort?.abort()
     const streamId = activeStreamId.value
     if (streamId) {
@@ -441,7 +448,18 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         streamStatusKey: null,
       })
     }
-    actionLoading.value = false
+    if (!handoff) {
+      actionLoading.value = false
+      streamAbort = null
+      streamAssistantId = null
+      streamThreadId = null
+      activeStreamId.value = null
+      pendingStreamDelta = ''
+      if (streamFlushTimer != null) {
+        clearTimeout(streamFlushTimer)
+        streamFlushTimer = null
+      }
+    }
   }
 
   async function archiveConversations(): Promise<void> {
@@ -513,6 +531,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   }
 
   function reset() {
+    streamGeneration += 1
     interactionState.value = null
     displayPolicy.value = null
     availableWorlds.value = []

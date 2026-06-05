@@ -77,19 +77,36 @@ class AicoStreamQueryService:
                 elapsed_ms,
             )
 
-    def _cancel_active_for_user_thread(self, user_id: str, thread_key: str) -> None:
+    def _signal_cancel_active_for_user_thread(
+        self, user_id: str, thread_key: str
+    ) -> Optional[_ActiveStreamHandle]:
         registry_key = (user_id, thread_key)
         with self._registry_lock:
             handle = self._active_by_user_thread.get(registry_key)
         if handle is None:
-            return
+            return None
         handle.cancel_event.set()
         self._logger.info(
             'AICO stream cancel requested stream_id=%s thread_id=%s',
             handle.stream_id,
             thread_key,
         )
-        self._wait_worker_exit(handle, thread_id=thread_key)
+        return handle
+
+    def _schedule_prior_worker_join(self, handle: _ActiveStreamHandle, *, thread_id: str) -> None:
+        threading.Thread(
+            target=self._wait_worker_exit,
+            args=(handle,),
+            kwargs={'thread_id': thread_id},
+            daemon=True,
+            name=f'aico-stream-join-{handle.stream_id[:8]}',
+        ).start()
+
+    def _cancel_active_for_user_thread(self, user_id: str, thread_key: str) -> None:
+        """Signal cancel on the prior stream for this user/thread (non-blocking)."""
+        prior = self._signal_cancel_active_for_user_thread(user_id, thread_key)
+        if prior is not None:
+            self._schedule_prior_worker_join(prior, thread_id=thread_key)
 
     def cancel(self, stream_id: str) -> Dict[str, Any]:
         clean_id = str(stream_id or "").strip()
@@ -113,7 +130,9 @@ class AicoStreamQueryService:
 
         user_id = str(actor.user_id)
         thread_key = self._thread_key(thread_id)
-        self._cancel_active_for_user_thread(user_id, thread_key)
+        prior = self._signal_cancel_active_for_user_thread(user_id, thread_key)
+        if prior is not None:
+            self._schedule_prior_worker_join(prior, thread_id=thread_key)
 
         stream_id = uuid.uuid4().hex
         cancel_event = threading.Event()
