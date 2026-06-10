@@ -10,7 +10,7 @@
         class="cw-text-button"
         @click="handleLogin"
       >
-        登录
+        {{ t('auth.login') }}
       </el-button>
       <el-button
         v-if="!isAuthenticated"
@@ -18,7 +18,7 @@
         class="cw-text-button"
         @click="handleRegister"
       >
-        注册
+        {{ t('auth.register') }}
       </el-button>
       <el-dropdown
         v-if="isAuthenticated"
@@ -29,12 +29,12 @@
       >
         <el-button text class="cw-text-button">
           <el-icon><Setting /></el-icon>
-          <span style="margin-left: 4px">设置</span>
+          <span style="margin-left: 4px">{{ t('shell.settings') }}</span>
         </el-button>
         <template #dropdown>
           <el-dropdown-menu class="cw-settings-menu">
-            <el-dropdown-item command="profile">账号设置</el-dropdown-item>
-            <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+            <el-dropdown-item command="profile">{{ t('shell.accountSettings') }}</el-dropdown-item>
+            <el-dropdown-item command="logout" divided>{{ t('shell.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Setting } from '@element-plus/icons-vue'
 import AppNavMenu from './AppNavMenu.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -52,6 +53,7 @@ import { useLogout } from '@/composables/useLogout'
 import { useAppTabs } from '@/composables/useAppTabs'
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const { logout } = useLogout()
 const { openAppTab } = useAppTabs()

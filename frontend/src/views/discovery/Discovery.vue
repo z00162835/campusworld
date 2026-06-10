@@ -3,12 +3,12 @@
     <el-card>
       <template #header>
         <div class="page-header">
-          <h2>Discovery</h2>
+          <h2>{{ t('routes.discovery') }}</h2>
         </div>
       </template>
-      <p class="page-description">发现和探索页面</p>
+      <p class="page-description">{{ t('placeholderPages.discoveryDescription') }}</p>
       <el-alert
-        title="功能开发中"
+        :title="t('common.inDevelopment')"
         type="info"
         :closable="false"
         class="page-alert"
@@ -18,6 +18,9 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 </script>
 
 <style scoped>
@@ -42,4 +45,3 @@
   margin-top: var(--spacing-xl);
 }
 </style>
-

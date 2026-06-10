@@ -3,6 +3,7 @@
  * SpaceDetailDrawer - Detail view/edit drawer for space nodes
  */
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSpacesStore } from '@/stores/spaces'
 import { ElMessage } from 'element-plus'
 import {
@@ -12,9 +13,10 @@ import {
   ROOM_TYPE_OPTIONS,
   BUILDING_STATUS_OPTIONS,
   WORLD_STATUS_OPTIONS,
+  getSelectOptionLabel,
 } from '@/types/space'
 import { spacesApi } from '@/api/spaces'
-import type { SpaceNode } from '@/types/space'
+import type { SelectOption, SpaceNode } from '@/types/space'
 
 const props = defineProps<{
   visible: boolean
@@ -27,6 +29,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useSpacesStore()
+const { t } = useI18n()
 const isEditing = ref(false)
 const isSaving = ref(false)
 const editForm = ref<any>({})
@@ -86,57 +89,63 @@ const handleSave = async () => {
     }
 
     await spacesApi.updateSpace(props.node.id, updateData)
-    ElMessage.success('更新成功')
+    ElMessage.success(t('spaces.drawer.updateSuccess'))
     isEditing.value = false
     emit('refresh')
   } catch (error) {
-    ElMessage.error('更新失败')
+    ElMessage.error(t('spaces.drawer.updateFailed'))
   } finally {
     isSaving.value = false
   }
+}
+
+const getFieldOptionLabel = (field: DetailField) => {
+  const value = editForm.value[field.prop]
+  const option = field.options?.find(o => o.value === value)
+  return option ? getSelectOptionLabel(option, t) : value
 }
 
 interface DetailField {
   label: string
   prop: string
   type?: 'select' | 'text' | 'date'
-  options?: Array<{ label: string; value: string | number }>
+  options?: SelectOption[]
 }
 
 const detailFields = computed<DetailField[]>(() => {
   if (!props.node) return []
 
   const base: DetailField[] = [
-    { label: '名称', prop: 'name' },
-    { label: '描述', prop: 'description' },
+    { label: t('spaces.fields.name'), prop: 'name' },
+    { label: t('spaces.fields.description'), prop: 'description' },
   ]
 
   switch (store.activeTab) {
     case 'world':
       return [
         ...base,
-        { label: '世界类型', prop: 'world_type', type: 'select', options: WORLD_TYPE_OPTIONS },
-        { label: '状态', prop: 'status', type: 'select', options: WORLD_STATUS_OPTIONS },
-        { label: '创建时间', prop: 'created_at', type: 'date' },
+        { label: t('spaces.fields.worldType'), prop: 'world_type', type: 'select', options: WORLD_TYPE_OPTIONS },
+        { label: t('spaces.fields.status'), prop: 'status', type: 'select', options: WORLD_STATUS_OPTIONS },
+        { label: t('spaces.fields.createdAt'), prop: 'created_at', type: 'date' },
       ]
     case 'building':
       return [
         ...base,
-        { label: '建筑类型', prop: 'building_type', type: 'select', options: BUILDING_TYPE_OPTIONS },
-        { label: '所属世界', prop: 'world_id', type: 'text' },
-        { label: '状态', prop: 'status', type: 'select', options: BUILDING_STATUS_OPTIONS },
+        { label: t('spaces.fields.buildingType'), prop: 'building_type', type: 'select', options: BUILDING_TYPE_OPTIONS },
+        { label: t('spaces.fields.world'), prop: 'world_id', type: 'text' },
+        { label: t('spaces.fields.status'), prop: 'status', type: 'select', options: BUILDING_STATUS_OPTIONS },
       ]
     case 'floor':
       return [
         ...base,
-        { label: '楼层类型', prop: 'floor_type', type: 'select', options: FLOOR_TYPE_OPTIONS },
-        { label: '所属建筑', prop: 'building_id', type: 'text' },
+        { label: t('spaces.fields.floorType'), prop: 'floor_type', type: 'select', options: FLOOR_TYPE_OPTIONS },
+        { label: t('spaces.fields.building'), prop: 'building_id', type: 'text' },
       ]
     case 'room':
       return [
         ...base,
-        { label: '房间类型', prop: 'room_type', type: 'select', options: ROOM_TYPE_OPTIONS },
-        { label: '所属楼层', prop: 'floor_id', type: 'text' },
+        { label: t('spaces.fields.roomType'), prop: 'room_type', type: 'select', options: ROOM_TYPE_OPTIONS },
+        { label: t('spaces.fields.floor'), prop: 'floor_id', type: 'text' },
       ]
     default:
       return base
@@ -147,7 +156,7 @@ const detailFields = computed<DetailField[]>(() => {
 <template>
   <el-drawer
     v-model="drawerVisible"
-    :title="isEditing ? '编辑空间' : '空间详情'"
+    :title="isEditing ? t('spaces.drawer.editTitle') : t('spaces.drawer.detailTitle')"
     size="480px"
     @close="handleClose"
   >
@@ -162,7 +171,7 @@ const detailFields = computed<DetailField[]>(() => {
           >
             <template v-if="field.type === 'select'">
               <el-tag v-if="field.options">
-                {{ field.options.find((o: any) => o.value === editForm[field.prop])?.label || editForm[field.prop] }}
+                {{ getFieldOptionLabel(field) }}
               </el-tag>
               <span v-else>{{ editForm[field.prop] }}</span>
             </template>
@@ -180,11 +189,11 @@ const detailFields = computed<DetailField[]>(() => {
       <!-- Edit Mode -->
       <template v-else>
         <el-form :model="editForm" label-width="100px">
-          <el-form-item label="名称">
+          <el-form-item :label="t('spaces.fields.name')">
             <el-input v-model="editForm.name" />
           </el-form-item>
 
-          <el-form-item label="描述">
+          <el-form-item :label="t('spaces.fields.description')">
             <el-input v-model="editForm.description" type="textarea" :rows="3" />
           </el-form-item>
 
@@ -193,11 +202,11 @@ const detailFields = computed<DetailField[]>(() => {
             :key="field.prop"
             :label="field.label"
           >
-            <el-select v-model="editForm[field.prop]" placeholder="请选择" style="width: 100%">
+            <el-select v-model="editForm[field.prop]" :placeholder="t('spaces.filters.select')" style="width: 100%">
               <el-option
                 v-for="opt in field.options"
                 :key="opt.value"
-                :label="opt.label"
+                :label="getSelectOptionLabel(opt, t)"
                 :value="opt.value"
               />
             </el-select>
@@ -205,9 +214,9 @@ const detailFields = computed<DetailField[]>(() => {
         </el-form>
 
         <div class="action-buttons">
-          <el-button @click="handleCancel">取消</el-button>
+          <el-button @click="handleCancel">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" :loading="isSaving" @click="handleSave">
-            保存
+            {{ t('common.save') }}
           </el-button>
         </div>
       </template>

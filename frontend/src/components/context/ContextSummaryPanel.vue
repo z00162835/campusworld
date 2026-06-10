@@ -8,8 +8,8 @@
     </div>
 
     <div v-if="worldSession.loading" class="empty">{{ t('worldInteraction.context.loading') }}</div>
-    <div v-else-if="worldSession.error" class="empty error">
-      <p>{{ worldSession.error }}</p>
+    <div v-else-if="loadError" class="empty error">
+      <p>{{ loadError }}</p>
       <el-button size="small" @click="worldSession.loadCurrent">{{ t('common.retry') }}</el-button>
     </div>
     <div v-else-if="!summary" class="empty">{{ t('worldInteraction.context.noData') }}</div>
@@ -61,6 +61,7 @@ defineEmits<{ collapse: [] }>()
 const { t } = useI18n()
 const worldSession = useWorldSessionStore()
 const summary = computed(() => worldSession.contextSummary)
+const loadError = computed(() => worldSession.error || (worldSession.errorKey ? t(worldSession.errorKey) : ''))
 
 const lastHandledLabel = computed(() => {
   const task = summary.value?.lastHandledTask

@@ -27,11 +27,14 @@ export interface ConversationMessage {
   cancelled?: boolean
   /** Activity label while ``streaming`` (shown inside the assistant card). */
   streamStatusKey?: string | null
+  /** i18n key for frontend fallback copy when no server/user content exists. */
+  answerKey?: string | null
 }
 
 export interface AicoThread {
   id: string
-  title: string
+  title?: string
+  titleKey?: string
   messages: ConversationMessage[]
   updatedAt: string
 }

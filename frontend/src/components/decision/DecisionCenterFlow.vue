@@ -16,8 +16,8 @@
     </div>
 
     <div v-if="showPanelLoading" class="panel-loading">{{ t('worldInteraction.decision.loading') }}</div>
-    <div v-else-if="worldSession.error" class="error-card panel-loading">
-      <p>{{ worldSession.error }}</p>
+    <div v-else-if="loadError" class="error-card panel-loading">
+      <p>{{ loadError }}</p>
       <el-button size="small" @click="worldSession.loadCurrent">{{ t('common.retry') }}</el-button>
     </div>
 
@@ -153,6 +153,7 @@ import { useWorldSessionStore } from '@/stores/worldSession'
 const { t } = useI18n()
 const decisionStore = useDecisionCenterStore()
 const worldSession = useWorldSessionStore()
+const loadError = computed(() => worldSession.error || (worldSession.errorKey ? t(worldSession.errorKey) : ''))
 const viewFilter = ref<'pending' | 'current'>('pending')
 const hiddenEventIds = ref<Set<string>>(new Set())
 const decisionFoldRef = ref<HTMLElement | null>(null)

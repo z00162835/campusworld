@@ -175,49 +175,55 @@ export interface SpaceListParams {
 
 // Select option for dropdowns
 export interface SelectOption {
-  label: string
+  label?: string
+  labelKey?: string
   value: string | number
+}
+
+export function getSelectOptionLabel(option: SelectOption, t: (key: string) => string): string {
+  if (option.labelKey) return t(option.labelKey)
+  return option.label || String(option.value)
 }
 
 // Status options
 export const WORLD_STATUS_OPTIONS: SelectOption[] = [
-  { label: '在线 (active)', value: 'active' },
-  { label: '离线 (offline)', value: 'offline' },
-  { label: '维护中 (maintenance)', value: 'maintenance' },
+  { labelKey: 'spaces.options.status.active', value: 'active' },
+  { labelKey: 'spaces.options.status.offline', value: 'offline' },
+  { labelKey: 'spaces.options.status.maintenance', value: 'maintenance' },
 ]
 
 export const WORLD_TYPE_OPTIONS: SelectOption[] = [
-  { label: '虚拟 (virtual)', value: 'virtual' },
-  { label: '物理 (physical)', value: 'physical' },
-  { label: '混合 (mixed)', value: 'mixed' },
+  { labelKey: 'spaces.options.worldType.virtual', value: 'virtual' },
+  { labelKey: 'spaces.options.worldType.physical', value: 'physical' },
+  { labelKey: 'spaces.options.worldType.mixed', value: 'mixed' },
 ]
 
 export const BUILDING_TYPE_OPTIONS: SelectOption[] = [
-  { label: '教学楼 (academic)', value: 'academic' },
-  { label: '办公楼 (administrative)', value: 'administrative' },
-  { label: '宿舍 (residential)', value: 'residential' },
-  { label: '研究楼 (research)', value: 'research' },
+  { labelKey: 'spaces.options.buildingType.academic', value: 'academic' },
+  { labelKey: 'spaces.options.buildingType.administrative', value: 'administrative' },
+  { labelKey: 'spaces.options.buildingType.residential', value: 'residential' },
+  { labelKey: 'spaces.options.buildingType.research', value: 'research' },
 ]
 
 export const FLOOR_TYPE_OPTIONS: SelectOption[] = [
-  { label: '普通 (normal)', value: 'normal' },
-  { label: '地下 (basement)', value: 'basement' },
-  { label: '夹层 (mezzanine)', value: 'mezzanine' },
-  { label: '屋顶 (rooftop)', value: 'rooftop' },
+  { labelKey: 'spaces.options.floorType.normal', value: 'normal' },
+  { labelKey: 'spaces.options.floorType.basement', value: 'basement' },
+  { labelKey: 'spaces.options.floorType.mezzanine', value: 'mezzanine' },
+  { labelKey: 'spaces.options.floorType.rooftop', value: 'rooftop' },
 ]
 
 export const ROOM_TYPE_OPTIONS: SelectOption[] = [
-  { label: '普通 (normal)', value: 'normal' },
-  { label: '主页 (home)', value: 'home' },
-  { label: '特殊 (special)', value: 'special' },
-  { label: '教室 (classroom)', value: 'classroom' },
-  { label: '办公室 (office)', value: 'office' },
-  { label: '实验室 (lab)', value: 'lab' },
-  { label: '奇点屋 (singularity)', value: 'singularity' },
+  { labelKey: 'spaces.options.roomType.normal', value: 'normal' },
+  { labelKey: 'spaces.options.roomType.home', value: 'home' },
+  { labelKey: 'spaces.options.roomType.special', value: 'special' },
+  { labelKey: 'spaces.options.roomType.classroom', value: 'classroom' },
+  { labelKey: 'spaces.options.roomType.office', value: 'office' },
+  { labelKey: 'spaces.options.roomType.lab', value: 'lab' },
+  { labelKey: 'spaces.options.roomType.singularity', value: 'singularity' },
 ]
 
 export const BUILDING_STATUS_OPTIONS: SelectOption[] = [
-  { label: '正常 (active)', value: 'active' },
-  { label: '维修中 (maintenance)', value: 'maintenance' },
-  { label: '关闭 (closed)', value: 'closed' },
+  { labelKey: 'spaces.options.status.active', value: 'active' },
+  { labelKey: 'spaces.options.status.maintenance', value: 'maintenance' },
+  { labelKey: 'spaces.options.status.closed', value: 'closed' },
 ]

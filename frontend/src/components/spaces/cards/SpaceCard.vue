@@ -4,6 +4,7 @@
  * Styled to match Works page aesthetic
  */
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Box, OfficeBuilding, List, Grid } from '@element-plus/icons-vue'
 import type { SpaceNode, SpaceTab } from '@/types/space'
 
@@ -15,6 +16,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   click: [node: SpaceNode]
 }>()
+
+const { t } = useI18n()
 
 // Icon mapping based on type
 const iconComponent = computed(() => {
@@ -55,6 +58,19 @@ const statusClass = computed(() => {
   }
 })
 
+const statusLabel = computed(() => {
+  if (!status.value) return ''
+  const statusKeys: Record<string, string> = {
+    active: 'spaces.options.status.active',
+    online: 'spaces.options.status.active',
+    maintenance: 'spaces.options.status.maintenance',
+    offline: 'spaces.options.status.offline',
+    closed: 'spaces.options.status.closed',
+  }
+  const key = statusKeys[status.value]
+  return key ? t(key) : status.value
+})
+
 // Get display description
 const displayDescription = computed(() => {
   const desc = props.node.description || ''
@@ -86,7 +102,7 @@ const handleClick = () => {
       <div class="space-card__title-wrap">
         <h3 class="space-card__title">{{ node.name }}</h3>
         <span v-if="status" class="space-card__status" :class="statusClass">
-          {{ status }}
+          {{ statusLabel }}
         </span>
       </div>
     </div>
@@ -109,7 +125,7 @@ const handleClick = () => {
 
     <div class="space-card__footer">
       <span class="space-card__id">ID: {{ node.id }}</span>
-      <span class="space-card__action">查看详情</span>
+      <span class="space-card__action">{{ t('spaces.drawer.actionDetail') }}</span>
     </div>
   </div>
 </template>

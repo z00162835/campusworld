@@ -4,7 +4,8 @@ import { getAppTabByRoute, type AppTabDefinition } from './appTabs'
 
 export interface Tab extends AppTabDefinition {
   id: string
-  title: string
+  title?: string
+  titleKey?: string
   route: string
   component: string
   closable: boolean

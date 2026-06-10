@@ -63,20 +63,20 @@ const validateForm = (): boolean => {
   let valid = true
 
   if (!credentials.username) {
-    errors.username = 'Username required'
+    errors.username = t('auth.validation.usernameRequired')
     valid = false
   } else if (credentials.username.length < 3) {
-    errors.username = 'Minimum 3 characters'
+    errors.username = t('auth.validation.usernameMin')
     valid = false
   } else {
     errors.username = ''
   }
 
   if (!credentials.password) {
-    errors.password = 'Password required'
+    errors.password = t('auth.validation.passwordRequired')
     valid = false
   } else if (credentials.password.length < 6) {
-    errors.password = 'Minimum 6 characters'
+    errors.password = t('auth.validation.passwordMin')
     valid = false
   } else {
     errors.password = ''
@@ -164,7 +164,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
           trigger="continuous"
           class="auth-logo"
         />
-        <SystemStatus status="online" label="SYSTEM ONLINE" />
+        <SystemStatus status="online" :label="t('auth.systemOnline')" />
       </div>
 
       <!-- Login Form -->
@@ -172,8 +172,8 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
         <div class="form-group">
           <CyberInput
             v-model="credentials.username"
-            label="USERNAME"
-            placeholder="Enter identifier..."
+            :label="t('auth.usernameLabel')"
+            :placeholder="t('auth.usernamePlaceholder')"
             :error="errors.username"
             :disabled="loading"
           />
@@ -182,9 +182,9 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
         <div class="form-group">
           <CyberInput
             v-model="credentials.password"
-            label="PASSWORD"
+            :label="t('auth.passwordLabel')"
             type="password"
-            placeholder="Enter passphrase..."
+            :placeholder="t('auth.passwordPlaceholder')"
             :error="errors.password"
             :disabled="loading"
           />
@@ -198,7 +198,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
 
         <!-- Submit Button -->
         <CyberButton
-          label="AUTHENTICATE"
+          :label="t('auth.authenticate')"
           :loading="loading"
           :disabled="loading || !isFormValid"
           size="large"
@@ -208,8 +208,8 @@ const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.0'
 
         <!-- Register Link -->
         <div class="auth-footer">
-          <span class="auth-footer__text">New to CampusWorld?</span>
-          <router-link to="/register" class="auth-link">CREATE ACCOUNT</router-link>
+          <span class="auth-footer__text">{{ t('auth.loginPrompt') }}</span>
+          <router-link to="/register" class="auth-link">{{ t('auth.createAccount') }}</router-link>
         </div>
       </form>
     </div>

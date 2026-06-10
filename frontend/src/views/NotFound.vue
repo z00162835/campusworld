@@ -3,17 +3,19 @@
     <el-result
       icon="warning"
       title="404"
-      sub-title="抱歉，您访问的页面不存在"
+      :sub-title="t('notFound.subtitle')"
     >
       <template #extra>
-        <el-button type="primary" @click="$router.push('/')">返回首页</el-button>
+        <el-button type="primary" @click="$router.push('/')">{{ t('common.goHome') }}</el-button>
       </template>
     </el-result>
   </div>
 </template>
 
 <script setup lang="ts">
-// 404 Not Found page
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 </script>
 
 <style scoped>

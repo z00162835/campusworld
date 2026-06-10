@@ -71,7 +71,7 @@ const roleLabel = computed(() => {
 })
 
 const displayText = computed(
-  () => props.message.commandResult?.message || props.message.answer || '',
+  () => props.message.commandResult?.message || props.message.answer || (props.message.answerKey ? t(props.message.answerKey) : ''),
 )
 
 const streamStatusLabel = computed(() => {

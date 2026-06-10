@@ -19,7 +19,7 @@
                 :key="activeTab.id"
               />
               <div v-else class="empty-tab">
-                <p>Welcome to CampusWorld</p>
+                <p>{{ t('shell.emptyTab') }}</p>
               </div>
             </div>
           </el-main>
@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch, defineAsyncComponent, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@/stores/tabs'
 import { DEFAULT_APP_ROUTE, isAppTabRoute } from '@/stores/appTabs'
 import { useAppTabs } from '@/composables/useAppTabs'
@@ -53,6 +54,7 @@ const Profile = defineAsyncComponent(() => import('@/views/user/Profile.vue'))
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const tabsStore = useTabsStore()
 const { syncRouteToTab } = useAppTabs()
 

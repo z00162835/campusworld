@@ -1,6 +1,7 @@
 export interface AppTabDefinition {
   id: string
-  title: string
+  title?: string
+  titleKey?: string
   route: string
   component: string
   closable: boolean
@@ -11,42 +12,42 @@ export const DEFAULT_APP_ROUTE = '/works'
 export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
   {
     id: 'tab-works',
-    title: 'Works',
+    titleKey: 'routes.works',
     route: '/works',
     component: 'WorldInteractionView',
     closable: true,
   },
   {
     id: 'tab-spaces',
-    title: 'Spaces',
+    titleKey: 'routes.spaces',
     route: '/spaces',
     component: 'Spaces',
     closable: true,
   },
   {
     id: 'tab-agents',
-    title: 'Agents',
+    titleKey: 'routes.agents',
     route: '/agents',
     component: 'Agents',
     closable: true,
   },
   {
     id: 'tab-discovery',
-    title: 'Discovery',
+    titleKey: 'routes.discovery',
     route: '/discovery',
     component: 'Discovery',
     closable: true,
   },
   {
     id: 'tab-history',
-    title: 'History',
+    titleKey: 'routes.history',
     route: '/history',
     component: 'History',
     closable: true,
   },
   {
     id: 'tab-profile',
-    title: '账号设置',
+    titleKey: 'routes.profile',
     route: '/profile',
     component: 'Profile',
     closable: true,

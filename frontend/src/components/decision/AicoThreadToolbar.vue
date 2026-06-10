@@ -20,7 +20,7 @@
             :key="thread.id"
             :command="thread.id"
           >
-            {{ thread.title }}
+            {{ getThreadTitle(thread) }}
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>
@@ -33,12 +33,18 @@ import { computed } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useWorldSessionStore } from '@/stores/worldSession'
+import type { AicoThread } from '@/types/world'
 
 const { t } = useI18n()
 const worldSession = useWorldSessionStore()
 
+const getThreadTitle = (thread: AicoThread) => thread.title || (thread.titleKey ? t(thread.titleKey) : '')
+
 const activeTitle = computed(
-  () => worldSession.aicoThreads.find(thread => thread.id === worldSession.activeAicoThreadId)?.title || 'New conversation',
+  () => {
+    const thread = worldSession.aicoThreads.find(row => row.id === worldSession.activeAicoThreadId)
+    return thread ? getThreadTitle(thread) : t('worldInteraction.decision.newConversation')
+  },
 )
 </script>
 

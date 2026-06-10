@@ -38,66 +38,66 @@ const isValidRedirect = (redirect: string | undefined): string | null => {
   return null
 }
 
-const routes: RouteRecordRaw[] = [
+export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
     redirect: '/works',
-    meta: { title: '首页' }
+    meta: { titleKey: 'routes.home' }
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/auth/Login.vue'),
-    meta: { title: '登录', requiresAuth: false }
+    meta: { titleKey: 'routes.login', requiresAuth: false }
   },
   {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/auth/Register.vue'),
-    meta: { title: '注册', requiresAuth: false }
+    meta: { titleKey: 'routes.register', requiresAuth: false }
   },
   {
     path: '/works',
     name: 'Works',
     component: () => import('@/views/WorldInteractionView.vue'),
-    meta: { title: 'Works', requiresAuth: true }
+    meta: { titleKey: 'routes.works', requiresAuth: true }
   },
   {
     path: '/spaces',
     name: 'Spaces',
     component: () => import('@/views/spaces/Spaces.vue'),
-    meta: { title: 'Spaces', requiresAuth: true }
+    meta: { titleKey: 'routes.spaces', requiresAuth: true }
   },
   {
     path: '/agents',
     name: 'Agents',
     component: () => import('@/views/agents/Agents.vue'),
-    meta: { title: 'Agents', requiresAuth: true }
+    meta: { titleKey: 'routes.agents', requiresAuth: true }
   },
   {
     path: '/discovery',
     name: 'Discovery',
     component: () => import('@/views/discovery/Discovery.vue'),
-    meta: { title: 'Discovery', requiresAuth: true }
+    meta: { titleKey: 'routes.discovery', requiresAuth: true }
   },
   {
     path: '/history',
     name: 'History',
     component: () => import('@/views/history/History.vue'),
-    meta: { title: 'History', requiresAuth: true }
+    meta: { titleKey: 'routes.history', requiresAuth: true }
   },
   {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/Profile.vue'),
-    meta: { title: '个人资料', requiresAuth: true }
+    meta: { titleKey: 'routes.profile', requiresAuth: true }
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),
-    meta: { title: '404' }
+    meta: { titleKey: 'routes.notFound' }
   }
 ]
 

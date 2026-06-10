@@ -7,7 +7,7 @@
         :class="['tab-item', { active: tab.id === activeTabId }]"
         @click="handleTabClick(tab.id)"
       >
-        <span class="tab-title">{{ tab.title }}</span>
+        <span class="tab-title">{{ tab.titleKey ? t(tab.titleKey) : tab.title }}</span>
         <el-icon
           v-if="tab.closable"
           class="tab-close"
@@ -22,11 +22,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppTabs } from '@/composables/useAppTabs'
 import { Close } from '@element-plus/icons-vue'
 
 const tabsStore = useTabsStore()
+const { t } = useI18n()
 const { activateAppTab, closeAppTab } = useAppTabs()
 
 const tabs = computed(() => tabsStore.tabs)

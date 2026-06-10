@@ -17,6 +17,9 @@ import type {
 } from '@/types/world'
 
 const CONVERSATION_CAP = 50
+const NEW_CONVERSATION_TITLE_KEY = 'worldInteraction.decision.newConversation'
+const LOAD_FAILED_KEY = 'worldInteraction.decision.loadFailed'
+const STREAM_FAILED_KEY = 'worldInteraction.decision.streamFailed'
 
 function newId(): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -29,7 +32,7 @@ function trimMessages(messages: ConversationMessage[]): ConversationMessage[] {
 
 function threadTitleFromQuery(query: string): string {
   const clean = query.trim()
-  return clean.length > 32 ? `${clean.slice(0, 32)}…` : clean || 'New conversation'
+  return clean.length > 32 ? `${clean.slice(0, 32)}…` : clean
 }
 
 export const useWorldSessionStore = defineStore('worldSession', () => {
@@ -39,6 +42,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   const loading = ref(false)
   const actionLoading = ref(false)
   const error = ref<string | null>(null)
+  const errorKey = ref<string | null>(null)
   const viewMode = ref<ViewMode>('Focus')
   const queryMode = ref<QueryMode>('aico')
   const historyItems = ref<Array<{ id: string; summary: string; createdAt: string }>>([])
@@ -89,7 +93,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
     const thread: AicoThread = {
       id: newId(),
-      title: 'New conversation',
+      titleKey: NEW_CONVERSATION_TITLE_KEY,
       messages: [],
       updatedAt: new Date().toISOString(),
     }
@@ -118,8 +122,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   function appendMessage(message: ConversationMessage) {
     if (queryMode.value === 'aico') {
       const thread = ensureActiveAicoThread()
-      if (message.role === 'user' && thread.title === 'New conversation') {
+      if (message.role === 'user' && thread.titleKey === NEW_CONVERSATION_TITLE_KEY) {
         thread.title = threadTitleFromQuery(message.query || message.answer)
+        thread.titleKey = undefined
       }
       thread.messages = trimMessages([...thread.messages, message])
       thread.updatedAt = new Date().toISOString()
@@ -141,6 +146,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   async function loadCurrent() {
     loading.value = true
     error.value = null
+    errorKey.value = null
     try {
       const { data } = await worldSessionsApi.getCurrent()
       interactionState.value = data.interaction_state
@@ -151,9 +157,15 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       if (typeof detail === 'string') {
         error.value = detail
       } else if (Array.isArray(detail)) {
-        error.value = detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join('; ') || 'Failed to load CampusWorld'
+        const detailText = detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join('; ')
+        if (detailText) {
+          error.value = detailText
+        } else {
+          errorKey.value = LOAD_FAILED_KEY
+        }
       } else {
-        error.value = err?.message || 'Failed to load CampusWorld'
+        error.value = err?.message || null
+        errorKey.value = err?.message ? null : LOAD_FAILED_KEY
       }
     } finally {
       loading.value = false
@@ -229,7 +241,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         await refreshInteractionState()
       }
     } catch (err: any) {
-      ElMessage.error(err?.response?.data?.detail || err?.message || 'Query failed')
+      ElMessage.error(err?.response?.data?.detail || err?.message || i18n.global.t('worldInteraction.decision.queryFailed'))
     } finally {
       actionLoading.value = false
     }
@@ -380,15 +392,18 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
           }
           if (event.kind === 'error') {
             flushPendingStreamDelta(assistantId, threadId)
-            const answer =
+            const answerKey =
               event.code === 'llm_timeout'
-                ? i18n.global.t('worldInteraction.decision.llmTimeout')
+                ? 'worldInteraction.decision.llmTimeout'
                 : event.code === 'draft_incomplete'
-                  ? i18n.global.t('worldInteraction.decision.draftIncomplete')
-                  : event.message || 'Stream failed'
+                  ? 'worldInteraction.decision.draftIncomplete'
+                  : event.message
+                    ? null
+                    : STREAM_FAILED_KEY
             patchStreamAssistant(assistantId, threadId, {
               streaming: false,
-              answer,
+              answer: event.message || '',
+              answerKey,
               streamStatusKey: null,
             })
           }
@@ -407,10 +422,11 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       } else {
         patchStreamAssistant(assistantId, threadId, {
           streaming: false,
-          answer: err?.message || 'Stream failed',
+          answer: err?.message || '',
+          answerKey: err?.message ? null : STREAM_FAILED_KEY,
           streamStatusKey: null,
         })
-        ElMessage.error(err?.message || 'AICO stream failed')
+        ElMessage.error(err?.message || i18n.global.t('worldInteraction.decision.streamFailed'))
       }
     } finally {
       if (generation !== streamGeneration) return
@@ -559,6 +575,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     loading.value = false
     actionLoading.value = false
     error.value = null
+    errorKey.value = null
     viewMode.value = 'Focus'
     queryMode.value = 'aico'
     historyItems.value = []
@@ -572,6 +589,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     loading,
     actionLoading,
     error,
+    errorKey,
     viewMode,
     queryMode,
     historyItems,

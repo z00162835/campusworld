@@ -3,7 +3,7 @@
     <div class="settings-container">
       <header class="settings-header">
         <div>
-          <h2 class="settings-title">账号设置</h2>
+          <h2 class="settings-title">{{ t('profile.title') }}</h2>
         </div>
         <el-button text class="settings-close" @click="handleClose">
           <el-icon><Close /></el-icon>
@@ -12,27 +12,27 @@
 
       <section class="settings-section">
         <div class="section-heading">
-          <h3>个人资料</h3>
-          <span>当前账号的展示信息</span>
+          <h3>{{ t('profile.detailsTitle') }}</h3>
+          <span>{{ t('profile.detailsSubtitle') }}</span>
         </div>
         <div class="profile-fields">
           <div class="field-row">
-            <span class="field-label">用户名</span>
-            <span class="field-value">{{ authStore.user?.username || '未设置' }}</span>
+            <span class="field-label">{{ t('auth.username') }}</span>
+            <span class="field-value">{{ authStore.user?.username || t('common.unset') }}</span>
           </div>
           <div class="field-row">
-            <span class="field-label">邮箱</span>
-            <span class="field-value">{{ authStore.user?.email || '未设置' }}</span>
+            <span class="field-label">{{ t('auth.email') }}</span>
+            <span class="field-value">{{ authStore.user?.email || t('common.unset') }}</span>
           </div>
         </div>
       </section>
 
       <section class="settings-section">
         <div class="section-heading">
-          <h3>账号安全</h3>
+          <h3>{{ t('profile.securityTitle') }}</h3>
         </div>
         <div class="security-actions security-actions--simple">
-          <el-button type="danger" @click="handleLogout">退出登录</el-button>
+          <el-button type="danger" @click="handleLogout">{{ t('shell.logout') }}</el-button>
         </div>
       </section>
     </div>
@@ -41,6 +41,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
@@ -48,6 +49,7 @@ import { useLogout } from '@/composables/useLogout'
 import { useAppTabs } from '@/composables/useAppTabs'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const { logout } = useLogout()
 const { closeAppTab } = useAppTabs()
 
@@ -63,7 +65,7 @@ const handleClose = async () => {
 
 const handleLogout = async () => {
   await logout()
-  ElMessage.success('已退出登录')
+  ElMessage.success(t('profile.logoutSuccess'))
 }
 </script>
 

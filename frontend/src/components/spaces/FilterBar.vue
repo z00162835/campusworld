@@ -4,6 +4,7 @@
  * Styled to match Works page aesthetic
  */
 import { ref, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSpacesStore } from '@/stores/spaces'
 import {
   WORLD_STATUS_OPTIONS,
@@ -11,9 +12,12 @@ import {
   FLOOR_TYPE_OPTIONS,
   ROOM_TYPE_OPTIONS,
   BUILDING_STATUS_OPTIONS,
+  WORLD_TYPE_OPTIONS,
+  getSelectOptionLabel,
 } from '@/types/space'
 
 const store = useSpacesStore()
+const { t } = useI18n()
 
 // Local filter state
 const localFilters = ref({ ...store.filters })
@@ -69,21 +73,21 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
     <template v-if="store.activeTab === 'world'">
       <el-select
         v-model="localFilters.world_type"
-        placeholder="世界类型"
+        :placeholder="t('spaces.fields.worldType')"
         clearable
         @change="handleFilterChange"
       >
         <el-option
-          v-for="opt in ['virtual', 'physical', 'mixed']"
-          :key="opt"
-          :label="opt"
-          :value="opt"
+          v-for="opt in WORLD_TYPE_OPTIONS"
+          :key="opt.value"
+          :label="getSelectOptionLabel(opt, t)"
+          :value="opt.value"
         />
       </el-select>
 
       <el-select
         v-model="localFilters.status"
-        placeholder="状态"
+        :placeholder="t('spaces.fields.status')"
         clearable
         multiple
         @change="handleFilterChange"
@@ -91,7 +95,7 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
         <el-option
           v-for="opt in WORLD_STATUS_OPTIONS"
           :key="opt.value"
-          :label="opt.label"
+          :label="getSelectOptionLabel(opt, t)"
           :value="opt.value"
         />
       </el-select>
@@ -101,7 +105,7 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
     <template v-else-if="store.activeTab === 'building'">
       <el-select
         v-model="localFilters.world_id"
-        placeholder="所属世界"
+        :placeholder="t('spaces.fields.world')"
         clearable
         @change="handleFilterChange"
       >
@@ -115,21 +119,21 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
 
       <el-select
         v-model="localFilters.building_type"
-        placeholder="建筑类型"
+        :placeholder="t('spaces.fields.buildingType')"
         clearable
         @change="handleFilterChange"
       >
         <el-option
           v-for="opt in BUILDING_TYPE_OPTIONS"
           :key="opt.value"
-          :label="opt.label"
+          :label="getSelectOptionLabel(opt, t)"
           :value="opt.value"
         />
       </el-select>
 
       <el-select
         v-model="localFilters.status"
-        placeholder="状态"
+        :placeholder="t('spaces.fields.status')"
         clearable
         multiple
         @change="handleFilterChange"
@@ -137,7 +141,7 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
         <el-option
           v-for="opt in BUILDING_STATUS_OPTIONS"
           :key="opt.value"
-          :label="opt.label"
+          :label="getSelectOptionLabel(opt, t)"
           :value="opt.value"
         />
       </el-select>
@@ -147,7 +151,7 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
     <template v-else-if="store.activeTab === 'floor'">
       <el-select
         v-model="localFilters.building_id"
-        placeholder="所属建筑"
+        :placeholder="t('spaces.fields.building')"
         clearable
         @change="handleFilterChange"
       >
@@ -161,14 +165,14 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
 
       <el-select
         v-model="localFilters.floor_type"
-        placeholder="楼层类型"
+        :placeholder="t('spaces.fields.floorType')"
         clearable
         @change="handleFilterChange"
       >
         <el-option
           v-for="opt in FLOOR_TYPE_OPTIONS"
           :key="opt.value"
-          :label="opt.label"
+          :label="getSelectOptionLabel(opt, t)"
           :value="opt.value"
         />
       </el-select>
@@ -178,7 +182,7 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
     <template v-else-if="store.activeTab === 'room'">
       <el-select
         v-model="localFilters.floor_id"
-        placeholder="所属楼层"
+        :placeholder="t('spaces.fields.floor')"
         clearable
         @change="handleFilterChange"
       >
@@ -192,21 +196,21 @@ const floorOptions = () => store.floors.map(f => ({ label: f.name, value: f.id }
 
       <el-select
         v-model="localFilters.room_type"
-        placeholder="房间类型"
+        :placeholder="t('spaces.fields.roomType')"
         clearable
         @change="handleFilterChange"
       >
         <el-option
           v-for="opt in ROOM_TYPE_OPTIONS"
           :key="opt.value"
-          :label="opt.label"
+          :label="getSelectOptionLabel(opt, t)"
           :value="opt.value"
         />
       </el-select>
     </template>
 
     <!-- Reset Button -->
-    <el-button @click="handleReset">重置</el-button>
+    <el-button @click="handleReset">{{ t('common.reset') }}</el-button>
   </div>
 </template>
 

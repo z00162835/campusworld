@@ -35,7 +35,7 @@ export function buildArchivePayload(
       .filter(thread => thread.messages.length > 0)
       .map(thread => ({
         id: thread.id,
-        title: thread.title,
+        title: thread.title || '',
         messages: thread.messages,
         updatedAt: thread.updatedAt,
       })),

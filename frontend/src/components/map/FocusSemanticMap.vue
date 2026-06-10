@@ -3,16 +3,24 @@
     <div class="region-menu">
       <h2>{{ t('worldInteraction.map.title') }}</h2>
       <div class="region-actions">
-        <el-button size="small" text @click="mapStore.switchMapMode('route')">Route</el-button>
-        <el-button size="small" text @click="mapStore.switchMapMode('agent')">Agent</el-button>
+        <el-button size="small" text @click="mapStore.switchMapMode('route')">
+          {{ t('worldInteraction.map.mode.route') }}
+        </el-button>
+        <el-button size="small" text @click="mapStore.switchMapMode('agent')">
+          {{ t('worldInteraction.map.mode.agent') }}
+        </el-button>
         <el-dropdown>
           <el-button size="small" text>
             <el-icon><More /></el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="mapStore.switchMapMode('focus')">Current focus</el-dropdown-item>
-              <el-dropdown-item @click="mapStore.switchMapMode('event')">Events</el-dropdown-item>
+              <el-dropdown-item @click="mapStore.switchMapMode('focus')">
+                {{ t('worldInteraction.map.mode.focus') }}
+              </el-dropdown-item>
+              <el-dropdown-item @click="mapStore.switchMapMode('event')">
+                {{ t('worldInteraction.map.mode.event') }}
+              </el-dropdown-item>
               <el-dropdown-item divided @click="resetView">{{ t('worldInteraction.map.resetView') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>

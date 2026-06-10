@@ -2,12 +2,18 @@
   <div class="entry-sequence">
     <div class="entry-title">CampusWorld</div>
     <div class="entry-steps">
-      <span>Connecting semantic world</span>
-      <span>Restoring last location</span>
-      <span>Preparing decisions</span>
+      <span>{{ t('worldInteraction.entry.connecting') }}</span>
+      <span>{{ t('worldInteraction.entry.restoring') }}</span>
+      <span>{{ t('worldInteraction.entry.preparing') }}</span>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+</script>
 
 <style scoped>
 .entry-sequence {

@@ -4,10 +4,12 @@
  * Styled to match Works page aesthetic
  */
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSpacesStore } from '@/stores/spaces'
 import type { SpaceNode } from '@/types/space'
 
 const store = useSpacesStore()
+const { t } = useI18n()
 
 const emit = defineEmits<{
   rowClick: [node: SpaceNode]
@@ -17,32 +19,32 @@ const columns = computed(() => {
   switch (store.activeTab) {
     case 'world':
       return [
-        { prop: 'name', label: '名称', width: 200 },
-        { prop: 'world_type', label: '世界类型', width: 120 },
-        { prop: 'status', label: '状态', width: 100 },
-        { prop: 'description', label: '描述' },
+        { prop: 'name', label: t('spaces.fields.name'), width: 200 },
+        { prop: 'world_type', label: t('spaces.fields.worldType'), width: 120 },
+        { prop: 'status', label: t('spaces.fields.status'), width: 100 },
+        { prop: 'description', label: t('spaces.fields.description') },
       ]
     case 'building':
       return [
-        { prop: 'name', label: '名称', width: 180 },
-        { prop: 'building_type', label: '建筑类型', width: 120 },
-        { prop: 'world_id', label: '所属世界', width: 150 },
-        { prop: 'status', label: '状态', width: 100 },
-        { prop: 'description', label: '描述' },
+        { prop: 'name', label: t('spaces.fields.name'), width: 180 },
+        { prop: 'building_type', label: t('spaces.fields.buildingType'), width: 120 },
+        { prop: 'world_id', label: t('spaces.fields.world'), width: 150 },
+        { prop: 'status', label: t('spaces.fields.status'), width: 100 },
+        { prop: 'description', label: t('spaces.fields.description') },
       ]
     case 'floor':
       return [
-        { prop: 'name', label: '名称', width: 150 },
-        { prop: 'floor_type', label: '楼层类型', width: 120 },
-        { prop: 'building_id', label: '所属建筑', width: 150 },
-        { prop: 'description', label: '描述' },
+        { prop: 'name', label: t('spaces.fields.name'), width: 150 },
+        { prop: 'floor_type', label: t('spaces.fields.floorType'), width: 120 },
+        { prop: 'building_id', label: t('spaces.fields.building'), width: 150 },
+        { prop: 'description', label: t('spaces.fields.description') },
       ]
     case 'room':
       return [
-        { prop: 'name', label: '名称', width: 150 },
-        { prop: 'room_type', label: '房间类型', width: 120 },
-        { prop: 'floor_id', label: '所属楼层', width: 150 },
-        { prop: 'description', label: '描述' },
+        { prop: 'name', label: t('spaces.fields.name'), width: 150 },
+        { prop: 'room_type', label: t('spaces.fields.roomType'), width: 120 },
+        { prop: 'floor_id', label: t('spaces.fields.floor'), width: 150 },
+        { prop: 'description', label: t('spaces.fields.description') },
       ]
     default:
       return []

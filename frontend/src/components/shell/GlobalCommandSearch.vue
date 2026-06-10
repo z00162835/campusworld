@@ -4,7 +4,7 @@
     <input
       v-model="query"
       type="search"
-      placeholder="Search spaces, Agents, tasks, or commands"
+      :placeholder="t('shell.searchPlaceholder')"
       @compositionstart="isComposing = true"
       @compositionend="isComposing = false"
       @keydown.enter="onEnterKeydown"
@@ -14,10 +14,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Search } from '@element-plus/icons-vue'
 import { useWorldSessionStore } from '@/stores/worldSession'
 
 const worldSession = useWorldSessionStore()
+const { t } = useI18n()
 const query = ref('')
 const isComposing = ref(false)
 
