@@ -84,4 +84,30 @@ describe('worldSession stream handoff', () => {
     const assistants = store.conversationMessages.filter(msg => msg.role === 'assistant')
     expect(assistants.some(msg => msg.answer === 'done')).toBe(true)
   })
+
+  it('aborts and cancels an active stream during reset', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+
+    let capturedSignal: AbortSignal | undefined
+    vi.mocked(queryAicoStream).mockImplementationOnce(async (_sessionId, _query, options) => {
+      capturedSignal = options.signal
+      options.onEvent({ kind: 'meta', stream_id: 'stream-active' })
+      await new Promise<void>((_resolve, reject) => {
+        options.signal?.addEventListener('abort', () => {
+          reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+        }, { once: true })
+      })
+    })
+
+    const request = store.submitQuery('question')
+    await vi.waitFor(() => expect(store.streamInFlight).toBe(true))
+
+    store.reset()
+    await request
+
+    expect(capturedSignal?.aborted).toBe(true)
+    expect(decisionCenterApi.cancelStream).toHaveBeenCalledWith('stream-active')
+    expect(store.streamInFlight).toBe(false)
+  })
 })

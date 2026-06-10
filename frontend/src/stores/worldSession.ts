@@ -462,6 +462,27 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
   }
 
+  function cleanupActiveStream(options: { cancelServerStream?: boolean } = {}) {
+    const cancelServerStream = options.cancelServerStream !== false
+    streamGeneration += 1
+    streamAbort?.abort()
+    const streamId = activeStreamId.value
+    if (cancelServerStream && streamId) {
+      void decisionCenterApi.cancelStream(streamId).catch(err => {
+        console.warn('Failed to cancel AICO stream on server', err)
+      })
+    }
+    streamAbort = null
+    streamAssistantId = null
+    streamThreadId = null
+    activeStreamId.value = null
+    pendingStreamDelta = ''
+    if (streamFlushTimer != null) {
+      clearTimeout(streamFlushTimer)
+      streamFlushTimer = null
+    }
+  }
+
   async function archiveConversations(): Promise<void> {
     const payload = buildArchivePayload(aicoThreads.value, commandConversation.value)
     const hasContent = payload.aico_threads.length > 0 || payload.command_conversation.length > 0
@@ -530,8 +551,8 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
   }
 
-  function reset() {
-    streamGeneration += 1
+  function reset(options: { cancelServerStream?: boolean } = {}) {
+    cleanupActiveStream(options)
     interactionState.value = null
     displayPolicy.value = null
     availableWorlds.value = []
@@ -542,8 +563,6 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     queryMode.value = 'aico'
     historyItems.value = []
     clearLocalConversations()
-    activeStreamId.value = null
-    streamAbort = null
   }
 
   return {

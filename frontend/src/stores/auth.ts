@@ -3,10 +3,14 @@ import { ref, computed } from 'vue'
 import { jwtDecode } from 'jwt-decode'
 import { authApi } from '@/api/auth'
 import { tokenApi, type TokenResponse } from '@/api/token'
-import type { User, LoginRequest } from '@/types/auth'
+import type { User, LoginRequest, RegisterRequest } from '@/types/auth'
 import { useTabsStore } from './tabs'
 import { useSpacesStore } from './spaces'
 import { useUserStore } from './user'
+import { useWorldSessionStore } from './worldSession'
+import { useWorldHistoryStore } from './worldHistory'
+import { useConnectionStore } from './connection'
+import { useCommandsStore } from './commands'
 
 const TOKEN_EXPIRE_BUFFER_SECONDS = 60 // Refresh 1 minute before actual expiration
 const ACCESS_REFRESH_BUFFER_MS = TOKEN_EXPIRE_BUFFER_SECONDS * 1000
@@ -100,18 +104,10 @@ export const useAuthStore = defineStore('auth', () => {
     useTabsStore().clearTabs()
     useSpacesStore().reset()
     useUserStore().reset()
-    void import('./worldSession').then(({ useWorldSessionStore }) => {
-      useWorldSessionStore().reset()
-    })
-    void import('./worldHistory').then(({ useWorldHistoryStore }) => {
-      useWorldHistoryStore().reset()
-    })
-    void import('./connection').then(({ useConnectionStore }) => {
-      useConnectionStore().reset()
-    })
-    void import('./commands').then(({ useCommandsStore }) => {
-      useCommandsStore().reset()
-    })
+    useWorldSessionStore().reset({ cancelServerStream: false })
+    useWorldHistoryStore().reset()
+    useConnectionStore().reset()
+    useCommandsStore().reset()
   }
 
   const clearClientState = () => {
@@ -176,6 +172,18 @@ export const useAuthStore = defineStore('auth', () => {
       setTokenData(response.data, { recordActivity: true })
       // Fetch user profile after successful login
       await fetchUser()
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, status: error.response?.status || 0 }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const register = async (credentials: RegisterRequest): Promise<{ success: boolean; status?: number }> => {
+    loading.value = true
+    try {
+      await authApi.register(credentials)
       return { success: true }
     } catch (error: any) {
       return { success: false, status: error.response?.status || 0 }
@@ -380,6 +388,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isAuthenticated,
     login,
+    register,
     logout,
     setTokenData,
     clearClientState,

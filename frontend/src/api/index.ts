@@ -2,7 +2,6 @@
  * Axios API client with interceptors
  */
 import axios from 'axios'
-import router from '@/router'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -103,7 +102,6 @@ async function refreshAccessTokenOnce(): Promise<string> {
       const { useAuthStore } = await import('@/stores/auth')
       const authStore = useAuthStore()
       authStore.expireSession('refresh_failed')
-      router.push('/login')
       throw refreshError
     } finally {
       isRefreshing = false
