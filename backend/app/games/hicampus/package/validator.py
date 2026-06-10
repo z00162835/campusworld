@@ -15,6 +15,7 @@ ALLOWED_CONCEPT_SCOPES = frozenset({'world', 'room', 'zone', 'npc', 'building', 
 ALLOWED_CONCEPT_TYPES = frozenset({'goal', 'process', 'rule', 'behavior', 'skill'})
 _BASELINE_PROFILE_PATH = Path(__file__).resolve().parent / 'baseline_profile.yaml'
 _WORLD_ENTRY_ROOM_ID = 'hicampus_gate'
+_OUTDOOR_CAMPUS_GRID_ROOM_IDS = frozenset({'hicampus_gate', 'hicampus_bridge', 'hicampus_plaza'})
 
 def _load_l4_baseline() -> tuple[Dict[str, int], Set[str]]:
     """L4 HiCampus spatial baseline: floors per building_code and required room ids."""
@@ -250,6 +251,40 @@ def _validate_world_environment_row(row: Dict[str, Any], world_logical_id: str) 
     if not isinstance(tags, list):
         raise DataPackageError(ERROR_WORLD_DATA_INVALID, f'world_environment.tags must be list: {eid}')
 
+def _map_grid_warnings(rooms: List[Dict[str, Any]]) -> List[str]:
+    """Non-fatal warnings for floor-plan grid metadata on indoor rooms."""
+    from collections import defaultdict
+
+    by_floor: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for room in rooms:
+        fid = str(room.get('floor_id') or '').strip()
+        if fid:
+            by_floor[fid].append(room)
+    warnings: List[str] = []
+    for fid, group in sorted(by_floor.items()):
+        indoor = [r for r in group if str(r.get('id') or '') not in _OUTDOOR_CAMPUS_GRID_ROOM_IDS]
+        if not indoor:
+            continue
+        missing = [str(r.get('id') or '') for r in indoor if r.get('map_grid_col') is None or r.get('map_grid_row') is None]
+        if missing:
+            warnings.append(f'floor {fid} missing map_grid_col/row on {len(missing)} room(s)')
+    return warnings
+
+def _campus_grid_warnings(buildings: List[Dict[str, Any]], rooms: List[Dict[str, Any]]) -> List[str]:
+    """Non-fatal warnings for semantic map campus layer coordinates."""
+    warnings: List[str] = []
+    for building in buildings:
+        bid = str(building.get('id') or '')
+        if building.get('campus_grid_col') is None or building.get('campus_grid_row') is None:
+            warnings.append(f'building missing campus_grid_col/row: {bid}')
+    for room in rooms:
+        rid = str(room.get('id') or '')
+        tags = [str(t).lower() for t in (room.get('tags') or [])]
+        if rid in _OUTDOOR_CAMPUS_GRID_ROOM_IDS or 'environment:outdoor' in tags:
+            if room.get('campus_grid_col') is None or room.get('campus_grid_row') is None:
+                warnings.append(f'outdoor room missing campus_grid_col/row: {rid}')
+    return warnings
+
 def validate_data_package(data_root: Path) -> Dict[str, Any]:
     if not data_root.exists():
         raise DataPackageError(ERROR_WORLD_DATA_UNAVAILABLE, f'data directory not found: {data_root}')
@@ -387,4 +422,15 @@ def validate_data_package(data_root: Path) -> Dict[str, Any]:
             missing_trait.append(db_type_code)
     if missing_trait:
         raise DataPackageError(ERROR_WORLD_DATA_SCHEMA_UNSUPPORTED, f'missing trait profile for mapped node types: {missing_trait}')
-    return {'world': world, 'world_environment': world_environment, 'spatial': {'buildings': buildings, 'floors': floors, 'rooms': rooms}, 'entities': entities, 'concepts': concepts, 'relationships': relationships, 'meta': meta_doc}
+    campus_warnings = _campus_grid_warnings(buildings, rooms)
+    map_grid_warnings = _map_grid_warnings(rooms)
+    return {
+        'world': world,
+        'world_environment': world_environment,
+        'spatial': {'buildings': buildings, 'floors': floors, 'rooms': rooms},
+        'entities': entities,
+        'concepts': concepts,
+        'relationships': relationships,
+        'meta': meta_doc,
+        'warnings': campus_warnings + map_grid_warnings,
+    }

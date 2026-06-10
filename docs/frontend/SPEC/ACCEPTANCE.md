@@ -45,6 +45,9 @@
 - [x] `POST /api/v1/world-sessions/leave-world` dispatches `leave`.
 - [x] `POST /api/v1/decision-center/actions` dispatches generated decision actions through command/task execution.
 - [x] `POST /api/v1/decision-center/query` supports command and AICO modes.
+- [x] `GET /api/v1/semantic-map/focus` returns drillable `focus_map` (`view_layer`, `anchor_id`, `mode`).
+- [x] `POST /api/v1/semantic-map/actions` supports `drill` and `select` (no map move).
+- [x] `GET /api/v1/semantic-map/space-summary` returns `space` command SSOT summary.
 - [x] `POST /api/v1/semantic-map/query` returns a map patch.
 - [x] `POST /api/v1/world-search` searches world entities and commands.
 - [x] `GET /api/v1/world-history/summary` returns grouped history summary.
@@ -74,4 +77,6 @@
 
 - SPEC layout validation currently fails on the pre-existing command feature filename `docs/command/SPEC/features/ALIAS_GOVERNANCE.md`.
 - Browser inspection reached the login redirect for `/works`; authenticated visual inspection still needs a valid Web UI session.
-- Phase 2+: semantic-map click linkage (§8.6), `GlobalCommandSearch` → `/world-search` overlay, bottom drawer read-only archived history, `task` type enum alignment, mobile §29 layout order, WebSocket patches, Agent attention, EventTriage L2, HiCampus eight-step demo path.
+- [x] Semantic map Phase A/B: north-up compass room layer; edge direction labels; map click → highlight + space summary (no default `go`); drill building/floor/campus via breadcrumb; floor grid layout when `map_grid_*` present, else list +「平面图未就绪」.
+- [x] Semantic map Phase C: campus layer uses `campus_grid_col/row`; search「F3」highlights building on campus view; minimap + mapPatch `viewLayer`/`highlightedNodeIds` via WS/state_patch.
+- Phase 2+ remainder: bottom drawer read-only archived history, `task` type enum alignment, mobile §29 layout order, Agent attention, EventTriage L2, HiCampus eight-step demo path.

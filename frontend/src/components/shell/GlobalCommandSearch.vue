@@ -16,9 +16,11 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search } from '@element-plus/icons-vue'
+import { useWorldMapStore } from '@/stores/worldMap'
 import { useWorldSessionStore } from '@/stores/worldSession'
 
 const worldSession = useWorldSessionStore()
+const mapStore = useWorldMapStore()
 const { t } = useI18n()
 const query = ref('')
 const isComposing = ref(false)
@@ -33,6 +35,7 @@ const submit = async () => {
   const clean = query.value.trim()
   if (!clean) return
   query.value = ''
+  await mapStore.searchMap(clean)
   await worldSession.submitQuery(clean)
 }
 </script>

@@ -19,6 +19,81 @@ LANDMARK_ROOM_IDS: Set[str] = {'hicampus_gate', 'hicampus_bridge', 'hicampus_pla
 _NOT_FLOOR_HUB_IDS: Set[str] = {'hicampus_bridge'}
 DIR_ORDER: List[str] = ['north', 'west', 'east', 'south', 'northeast', 'northwest', 'southeast', 'southwest']
 OPPOSITE: Dict[str, str] = {'north': 'south', 'south': 'north', 'east': 'west', 'west': 'east', 'northeast': 'southwest', 'southwest': 'northeast', 'northwest': 'southeast', 'southeast': 'northwest', 'up': 'down', 'down': 'up'}
+HUB_GRID_COL = 12
+HUB_GRID_ROW = 8
+GRID_DIR_OFFSET: Dict[str, Tuple[int, int]] = {
+    'north': (0, -2),
+    'south': (0, 2),
+    'east': (2, 0),
+    'west': (-2, 0),
+    'northeast': (2, -2),
+    'northwest': (-2, -2),
+    'southeast': (2, 2),
+    'southwest': (-2, 2),
+}
+LANDMARK_GRID: Dict[str, Tuple[int, int]] = {
+    'hicampus_gate': (6, 10),
+    'hicampus_bridge': (12, 4),
+    'hicampus_plaza': (12, 12),
+}
+
+def _set_room_grid(room: Dict[str, Any], col: int, row: int, *, floor_id: str, building_id: str) -> None:
+    room['map_grid_col'] = int(col)
+    room['map_grid_row'] = int(row)
+    room['map_grid_span_w'] = int(room.get('map_grid_span_w') or 1)
+    room['map_grid_span_h'] = int(room.get('map_grid_span_h') or 1)
+    room['map_grid_unit'] = float(room.get('map_grid_unit') or 1)
+    if floor_id:
+        room['floor_id'] = floor_id
+    if building_id:
+        room['building_id'] = building_id
+
+def _assign_floor_map_grid(
+    on_floor: List[Dict[str, Any]],
+    hub: str,
+    floor_connects: List[Dict[str, Any]],
+    floor_row: Dict[str, Any],
+    building_row: Dict[str, Any],
+) -> None:
+    """Assign map_grid_* for rooms on a floor (North-up; smaller row = north)."""
+    room_by_id = {str(r['id']): r for r in on_floor if isinstance(r, dict) and r.get('id')}
+    fid = str(floor_row.get('id') or '')
+    bid = str(floor_row.get('building_id') or building_row.get('id') or '')
+    hub_room = room_by_id.get(hub)
+    if hub_room is not None:
+        _set_room_grid(hub_room, HUB_GRID_COL, HUB_GRID_ROW, floor_id=fid, building_id=bid)
+    assigned: Dict[str, Tuple[int, int]] = {}
+    if hub_room is not None:
+        assigned[hub] = (HUB_GRID_COL, HUB_GRID_ROW)
+    for rid, pos in LANDMARK_GRID.items():
+        if rid in room_by_id:
+            _set_room_grid(room_by_id[rid], pos[0], pos[1], floor_id=fid, building_id=bid)
+            assigned[rid] = pos
+    for conn in floor_connects:
+        src = str(conn.get('source_id') or '')
+        tgt = str(conn.get('target_id') or '')
+        attrs = dict(conn.get('attributes') or {})
+        direction = str(attrs.get('direction') or '')
+        if src not in assigned and src in room_by_id:
+            assigned[src] = (HUB_GRID_COL, HUB_GRID_ROW)
+            _set_room_grid(room_by_id[src], HUB_GRID_COL, HUB_GRID_ROW, floor_id=fid, building_id=bid)
+        if tgt in assigned or tgt not in room_by_id:
+            continue
+        base = assigned.get(src, (HUB_GRID_COL, HUB_GRID_ROW))
+        dc, dr = GRID_DIR_OFFSET.get(direction, (0, 0))
+        if dc == 0 and dr == 0:
+            dc, dr = (2, 0)
+        col = base[0] + dc
+        row = base[1] + dr
+        _set_room_grid(room_by_id[tgt], col, row, floor_id=fid, building_id=bid)
+        assigned[tgt] = (col, row)
+    list_y = HUB_GRID_ROW + 4
+    for room in on_floor:
+        rid = str(room.get('id') or '')
+        if rid and rid not in assigned:
+            _set_room_grid(room, HUB_GRID_COL, list_y, floor_id=fid, building_id=bid)
+            assigned[rid] = (HUB_GRID_COL, list_y)
+            list_y += 2
 
 def _connect_pair(src: str, tgt: str, d_fwd: str) -> List[Dict[str, Any]]:
     """Return two directed connects_to rels with opposite directions."""
@@ -122,7 +197,11 @@ def _circulation_items(circ_room: Dict[str, Any], floor_row: Dict[str, Any], bui
     return [item_row('lighting_fixture_01', 'lighting_fixture', f'{base} · 照明回路', lighting_attrs, ['item', 'device', 'controllable', 'lighting']), item_row('lounge_furniture_01', 'lounge_furniture', f'{base} · 沙发与等候座', lounge_attrs, ['item', 'furniture', 'lounge']), item_row('wifi_ap_01', 'network_access_point', f'{base} · 无线接入点', wifi_attrs, ['item', 'device', 'controllable', 'network'])]
 
 def generate_topology(*, data_root: Path=_DATA_ROOT) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
-    """Returns (new_circulation_rooms, new_connects_to, new_items)."""
+    """Returns (rooms_with_map_grid, new_connects_to, new_items).
+
+    ``rooms_with_map_grid`` is the full room list (existing + new circulation rooms)
+    after ``_assign_floor_map_grid``; safe to pass directly to ``write_rooms``.
+    """
     rooms_doc = _load_yaml(data_root / 'rooms.yaml')
     floors_doc = _load_yaml(data_root / 'floors.yaml')
     bdoc = _load_yaml(data_root / 'buildings.yaml')
@@ -159,12 +238,15 @@ def generate_topology(*, data_root: Path=_DATA_ROOT) -> Tuple[List[Dict[str, Any
                 on_floor.append(nr)
                 new_items.extend(_circulation_items(nr, floor_row, building_row))
         satellites = [str(r['id']) for r in on_floor if str(r['id']) != hub and str(r['id']) not in LANDMARK_ROOM_IDS]
+        floor_connects: List[Dict[str, Any]] = []
         if fid == 'hicampus_f1_01f':
             f1_hub_id = 'hicampus_f1_01f_circulation_01'
             if f1_hub_id in existing_ids and 'hicampus_f1_01f_electrical_01' in existing_ids:
-                connects.extend(_connect_pair(f1_hub_id, 'hicampus_f1_01f_electrical_01', 'east'))
+                floor_connects.extend(_connect_pair(f1_hub_id, 'hicampus_f1_01f_electrical_01', 'east'))
         else:
-            connects.extend(_star_edges(hub, satellites))
+            floor_connects.extend(_star_edges(hub, satellites))
+        connects.extend(floor_connects)
+        _assign_floor_map_grid(on_floor, hub, floor_connects, floor_row, building_row)
 
     def hub_for_building_01f(building_id: str) -> Optional[str]:
         b_floors = [f for f in floors if str(f.get('building_id') or '') == building_id]
@@ -210,7 +292,13 @@ def generate_topology(*, data_root: Path=_DATA_ROOT) -> Tuple[List[Dict[str, Any
             (lo, hi) = (hubs[i], hubs[i + 1])
             connects.append({'id': _rel_topo_id(lo, hi, 'up'), 'rel_type_code': 'connects_to', 'source_id': lo, 'target_id': hi, 'directed': True, 'attributes': {'direction': 'up', 'topology_auto': True}})
             connects.append({'id': _rel_topo_id(hi, lo, 'down'), 'rel_type_code': 'connects_to', 'source_id': hi, 'target_id': lo, 'directed': True, 'attributes': {'direction': 'down', 'topology_auto': True}})
-    return (new_rooms, connects, new_items)
+    room_ids = {str(r['id']) for r in rooms if r.get('id')}
+    for nr in new_rooms:
+        rid = str(nr.get('id') or '')
+        if rid and rid not in room_ids:
+            rooms.append(nr)
+            room_ids.add(rid)
+    return (rooms, connects, new_items)
 
 def merge_rooms(existing: List[Dict[str, Any]], additions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     seen = {str(r['id']) for r in existing if r.get('id')}
@@ -254,17 +342,18 @@ def main(argv: Optional[List[str]]=None) -> int:
     p.add_argument('--data-root', type=Path, default=_DATA_ROOT)
     p.add_argument('--write', action='store_true')
     args = p.parse_args(argv)
-    (new_rooms, connects, new_items) = generate_topology(data_root=args.data_root)
-    rooms_doc = _load_yaml(args.data_root / 'rooms.yaml')
-    existing_rooms = list(rooms_doc.get('rooms') or [])
-    merged_rooms = merge_rooms(existing_rooms, new_rooms)
+    (rooms, connects, new_items) = generate_topology(data_root=args.data_root)
+    grid_rooms = sum(1 for r in rooms if r.get('map_grid_col') is not None)
     items_doc = _load_yaml(args.data_root / 'entities' / 'items.yaml')
     existing_items = list(items_doc.get('items') or [])
     merged_items = merge_items(existing_items, new_items)
-    print(f'new_circulation_rooms={len(new_rooms)} connects_to={len(connects)} new_items={len(new_items)} rooms_total={len(merged_rooms)} items_total={len(merged_items)}')
+    print(
+        f'connects_to={len(connects)} new_items={len(new_items)} '
+        f'rooms_total={len(rooms)} map_grid_rooms={grid_rooms} items_total={len(merged_items)}'
+    )
     if not args.write:
         return 0
-    write_rooms(args.data_root, merged_rooms)
+    write_rooms(args.data_root, rooms)
     write_relationships(args.data_root, connects)
     write_items(args.data_root, merged_items)
     print(f'Wrote rooms, relationships, items under {args.data_root}')

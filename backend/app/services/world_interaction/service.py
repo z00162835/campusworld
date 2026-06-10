@@ -6,15 +6,15 @@ place.
 """
 from __future__ import annotations
 
-import math
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence
 
-from sqlalchemy import or_
+from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session
 
 from app.commands.base import CommandResult
+from app.commands.room_connects_to_query import connects_to_exits_from_room
 from app.commands.init_commands import ensure_commands_initialized
 from app.commands.registry import command_registry
 from app.core.log import get_logger, LoggerNames
@@ -29,9 +29,16 @@ from app.services.task.user_task_queue import (
     principal_from_actor,
 )
 
+from app.services.space_summary_service import build_space_summary_data
+
 from .aico_stream_query import AicoStreamQueryService
 from .command_query import CommandQueryService
 from .command_runner import CommandRunner
+from .semantic_map_service import (
+    apply_highlight_ids_to_focus_map,
+    build_focus_map,
+    build_map_query_patch,
+)
 from .types import CAMPUS_HUB_WORLD_ID, DISPLAY_POLICY, WorldActor
 
 
@@ -184,9 +191,94 @@ class WorldInteractionService:
 
     def query_semantic_map(self, session: Session, actor: WorldActor, query: str, mode: str = "auto") -> Dict[str, Any]:
         search = self.search(session, actor, query)
-        highlighted = [item["entity_id"] for item in search["results"][: DISPLAY_POLICY["maxMapNodesVisible"]] if item.get("entity_type") in {"space", "agent", "object"}]
-        map_patch = {"mode": "agent" if "agent" in str(query).lower() else "focus", "highlightedNodeIds": highlighted, "visibleNodeIds": highlighted}
+        map_patch = build_map_query_patch(session, search["results"], query, mode=mode)
+        user = self._get_user_node(session, actor.user_id, username=actor.username)
+        location = self._resolve_current_location(session, user)
+        if map_patch.get("viewLayer"):
+            focus_map = build_focus_map(
+                session,
+                location,
+                view_layer=str(map_patch.get("viewLayer") or "room"),
+                anchor_id=map_patch.get("anchorId"),
+                mode=str(map_patch.get("mode") or "focus"),
+            )
+            focus_map = apply_highlight_ids_to_focus_map(
+                focus_map,
+                list(map_patch.get("highlightedNodeIds") or []),
+                mode=str(map_patch.get("mode") or "focus"),
+            )
+            map_patch["focus_map"] = focus_map
         return {"mode": map_patch["mode"], "answer": search["summary"], "map_patch": map_patch}
+
+    def get_semantic_map_focus(
+        self,
+        session: Session,
+        actor: WorldActor,
+        *,
+        view_layer: str = "room",
+        anchor_id: Optional[str] = None,
+        mode: str = "focus",
+        selected_entity_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        user = self._get_user_node(session, actor.user_id, username=actor.username)
+        location = self._resolve_current_location(session, user)
+        event_space_ids: Optional[List[str]] = None
+        if str(mode or "").strip().lower() == "event":
+            event_space_ids = self._decision_event_space_ids(session, actor, location)
+        focus_map = build_focus_map(
+            session,
+            location,
+            view_layer=view_layer,
+            anchor_id=anchor_id,
+            mode=mode,
+            selected_entity_id=selected_entity_id,
+            event_space_ids=event_space_ids,
+        )
+        return {"focus_map": focus_map}
+
+    def get_space_summary(self, session: Session, actor: WorldActor, node_id: int) -> Dict[str, Any]:
+        data = build_space_summary_data(session, int(node_id))
+        if not data:
+            return {"ok": False, "error": "Space node not found"}
+        return {"ok": True, "summary": data}
+
+    def execute_semantic_map_action(
+        self,
+        session: Session,
+        actor: WorldActor,
+        *,
+        action_type: str,
+        view_layer: Optional[str] = None,
+        anchor_id: Optional[str] = None,
+        mode: str = "focus",
+        selected_entity_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        clean = str(action_type or "").strip().lower()
+        if clean == "drill":
+            return self.get_semantic_map_focus(
+                session,
+                actor,
+                view_layer=view_layer or "room",
+                anchor_id=anchor_id,
+                mode=mode,
+                selected_entity_id=selected_entity_id,
+            )
+        if clean == "select":
+            user = self._get_user_node(session, actor.user_id, username=actor.username)
+            location = self._resolve_current_location(session, user)
+            focus_map = build_focus_map(
+                session,
+                location,
+                view_layer=view_layer or "room",
+                anchor_id=anchor_id,
+                mode=mode,
+                selected_entity_id=selected_entity_id,
+            )
+            summary = None
+            if selected_entity_id and str(selected_entity_id).isdigit():
+                summary = build_space_summary_data(session, int(selected_entity_id))
+            return {"focus_map": focus_map, "space_summary": summary}
+        return {"ok": False, "error": f"Unsupported map action: {action_type}"}
 
     def search(self, session: Session, actor: WorldActor, query: str) -> Dict[str, Any]:
         clean = str(query or "").strip()
@@ -196,7 +288,17 @@ class WorldInteractionService:
         nodes = (
             session.query(Node)
             .filter(Node.is_active == True)
-            .filter(or_(Node.name.ilike(like), Node.description.ilike(like), Node.type_code.ilike(like)))
+            .filter(
+                or_(
+                    Node.name.ilike(like),
+                    Node.description.ilike(like),
+                    Node.type_code.ilike(like),
+                    cast(Node.attributes["display_name"], String).ilike(like),
+                    cast(Node.attributes["building_code"], String).ilike(like),
+                    cast(Node.attributes["building_name"], String).ilike(like),
+                    cast(Node.attributes["package_node_id"], String).ilike(like),
+                )
+            )
             .limit(20)
             .all()
         )
@@ -404,57 +506,41 @@ class WorldInteractionService:
             "blockers": [],
         }
 
-    def _focus_map(self, session: Session, location: Node) -> Dict[str, Any]:
-        rels = (
-            session.query(Relationship)
-            .filter(Relationship.source_id == location.id, Relationship.type_code == "connects_to", Relationship.is_active == True)
-            .limit(12)
-            .all()
-        )
-        target_ids = [rel.target_id for rel in rels]
-        targets = {node.id: node for node in session.query(Node).filter(Node.id.in_(target_ids)).all()} if target_ids else {}
-        nodes = [self._map_node(location, "current", 50, 50)]
-        neighbor_rels = rels[: DISPLAY_POLICY["maxMapNodesVisible"] - 1]
-        neighbor_count = len(neighbor_rels)
-        for index, rel in enumerate(neighbor_rels, start=0):
-            target = targets.get(rel.target_id)
-            if not target:
-                continue
-            if neighbor_count == 1:
-                x, y = 50, 22
-            else:
-                angle = (2 * math.pi * index / neighbor_count) - math.pi / 2
-                x = int(round(50 + 32 * math.cos(angle)))
-                y = int(round(50 + 32 * math.sin(angle)))
-            nodes.append(self._map_node(target, "visible", x, y))
-        agents = self._agents_near(session, [int(node["id"]) for node in nodes if str(node["id"]).isdigit()])
-        edges = []
-        for index, rel in enumerate(rels[: DISPLAY_POLICY["maxMapNodesVisible"] - 1]):
-            target = targets.get(rel.target_id)
-            if not target:
-                continue
-            attrs = dict(rel.attributes or {})
-            edges.append(
-                {
-                    "id": str(rel.id),
-                    "from": str(rel.source_id),
-                    "to": str(rel.target_id),
-                    "label": str(attrs.get("direction") or rel.target_role or ""),
-                    "direction": str(attrs.get("direction") or rel.target_role or ""),
-                    "status": "recommended" if index == 0 else "available",
-                    "targetLabel": self._display_name(target),
-                }
+    def _decision_event_space_ids(self, session: Session, actor: WorldActor, location: Node) -> List[str]:
+        principal = principal_from_actor(user_id=actor.user_id, roles=actor.roles, permissions=actor.permissions)
+        queue = list_for_principal(session, principal, limit=DISPLAY_POLICY["maxDecisionEventsVisible"] + 3)
+        ids: List[str] = []
+        for row in queue:
+            task_node = (
+                session.query(Node)
+                .filter(Node.id == int(row.id), Node.type_code == "task", Node.is_active == True)
+                .first()
             )
-        return {
-            "mode": "focus",
-            "nodes": nodes[: DISPLAY_POLICY["maxMapNodesVisible"]],
-            "edges": edges,
-            "agentPresences": agents[: DISPLAY_POLICY["maxAgentsHighlighted"]],
-            "highlightedPath": [edges[0]["from"], edges[0]["to"]] if edges else [],
-            "currentSpaceId": str(location.id),
-            "selectedEntityId": None,
-            "loading": False,
-        }
+            if task_node and task_node.location_id:
+                ids.append(str(task_node.location_id))
+            events = [self._task_queue_event(row)]
+            for event in events:
+                for ent in event.get("relatedEntities") or []:
+                    if str(ent.get("type")) == "space":
+                        eid = str(ent.get("id") or "")
+                        if eid.isdigit():
+                            ids.append(eid)
+        if not queue:
+            for exit_row in connects_to_exits_from_room(session, int(location.id)):
+                target_id = str(exit_row.get("target_id") or "")
+                if target_id.isdigit():
+                    ids.append(target_id)
+                    break
+        deduped: List[str] = []
+        seen: set[str] = set()
+        for item in ids:
+            if item not in seen:
+                seen.add(item)
+                deduped.append(item)
+        return deduped
+
+    def _focus_map(self, session: Session, location: Node) -> Dict[str, Any]:
+        return build_focus_map(session, location, view_layer="room", mode="focus")
 
     def _context_summary(
         self,
@@ -497,8 +583,15 @@ class WorldInteractionService:
             "newDecisionEvents": interaction["decision_center"].get("decisionEvents", []),
             "mapPatch": {
                 "mode": interaction["focus_map"].get("mode"),
+                "viewLayer": interaction["focus_map"].get("viewLayer"),
                 "visibleNodeIds": [node["id"] for node in interaction["focus_map"].get("nodes", [])],
+                "highlightedNodeIds": [
+                    node["id"]
+                    for node in interaction["focus_map"].get("nodes", [])
+                    if node.get("status") in {"active", "current"}
+                ],
                 "highlightedPath": interaction["focus_map"].get("highlightedPath", []),
+                "agentPresences": list(interaction["focus_map"].get("agentPresences") or []),
             },
             "contextSummary": interaction.get("context_summary"),
             "historyAppend": [{"id": f"cmd_{datetime.utcnow().timestamp()}", "summary": result.message, "createdAt": self._now()}],

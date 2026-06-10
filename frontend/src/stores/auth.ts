@@ -8,6 +8,7 @@ import { useTabsStore } from './tabs'
 import { useSpacesStore } from './spaces'
 import { useUserStore } from './user'
 import { useWorldSessionStore } from './worldSession'
+import { useWorldMapStore } from './worldMap'
 import { useWorldHistoryStore } from './worldHistory'
 import { useConnectionStore } from './connection'
 import { useCommandsStore } from './commands'
@@ -105,6 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
     useSpacesStore().reset()
     useUserStore().reset()
     useWorldSessionStore().reset({ cancelServerStream: false })
+    useWorldMapStore().reset()
     useWorldHistoryStore().reset()
     useConnectionStore().reset()
     useCommandsStore().reset()

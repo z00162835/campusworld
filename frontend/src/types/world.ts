@@ -100,10 +100,49 @@ export interface TaskCard {
   blockers?: Array<{ id: string; reason: string; resolutionAction?: DecisionOption }>
 }
 
+export type MapViewLayer = 'room' | 'floor' | 'building' | 'campus'
+
+export interface MapBreadcrumb {
+  layer: string
+  id: string
+  name: string
+}
+
+export interface NeighborMapLink {
+  direction: string
+  targetId: string
+  targetName: string
+  summary: string
+}
+
+export interface SpaceSummaryData {
+  space_node: {
+    id: number
+    type_code: string
+    name: string
+    parent_id: number | null
+  }
+  section1_appearance: { message_fragment: string; lines: string[] }
+  section2_occupants: Array<{ id: number; name: string; type_code: string }>
+  section3_devices: Array<{ id: number; name: string; status: string }>
+  section4_next_or_adjacent: Array<{
+    id: number
+    name: string
+    direction?: string | null
+    description?: string
+  }>
+  section4_mode: string
+  section4_fallback: boolean
+}
+
 export interface SemanticMapNode {
   id: string
   name: string
-  type: 'gate' | 'bridge' | 'plaza' | 'building' | 'room' | 'service' | 'hidden'
+  type: 'gate' | 'bridge' | 'plaza' | 'building' | 'room' | 'floor' | 'outdoor' | 'service' | 'hidden' | 'cluster'
+  buildingId?: string
+  floorId?: string
+  floorNumber?: number
+  drillAnchorId?: string
   x: number
   y: number
   status: 'unknown' | 'visible' | 'discovered' | 'current' | 'active' | 'locked' | 'warning'
@@ -135,8 +174,32 @@ export interface AgentMapPresence {
   visibility: 'visible' | 'discovered' | 'hidden'
 }
 
+export interface FloorRoomListItem {
+  id: string
+  name: string
+  status: SemanticMapNode['status']
+}
+
+export interface MapPatch {
+  mode?: FocusMap['mode']
+  viewLayer?: MapViewLayer
+  anchorId?: string
+  highlightedNodeIds?: string[]
+  highlightedPath?: string[]
+  visibleNodeIds?: string[]
+  agentPresences?: AgentMapPresence[]
+  focus_map?: FocusMap
+}
+
 export interface FocusMap {
   mode: 'focus' | 'route' | 'agent' | 'event'
+  viewLayer?: MapViewLayer
+  orientation?: 'north-up'
+  layout?: 'compass' | 'grid' | 'hierarchy' | 'list'
+  breadcrumb?: MapBreadcrumb[]
+  neighborLinks?: NeighborMapLink[]
+  floorPlanReady?: boolean
+  floorRoomList?: FloorRoomListItem[]
   nodes: SemanticMapNode[]
   edges: SemanticMapEdge[]
   agentPresences: AgentMapPresence[]
@@ -231,13 +294,7 @@ export interface StatePatch {
   newDecisionEvents?: DecisionEvent[]
   activeTask?: TaskCard | null
   focusSummary?: FocusSummary
-  mapPatch?: {
-    mode?: FocusMap['mode']
-    visibleNodeIds?: string[]
-    highlightedNodeIds?: string[]
-    highlightedAgentIds?: string[]
-    highlightedPath?: string[]
-  }
+  mapPatch?: MapPatch
   contextSummary?: ContextSummary
   historyAppend?: Array<{ id: string; summary: string; createdAt: string }>
 }

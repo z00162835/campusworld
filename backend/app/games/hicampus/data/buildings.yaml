@@ -2,6 +2,8 @@ buildings:
   - id: hicampus_f1
     world_id: hicampus
     building_code: F1
+    campus_grid_col: 14
+    campus_grid_row: 10
     type_code: building
     display_name: F1 Office Tower
     floors_total: 23
@@ -21,6 +23,8 @@ buildings:
   - id: hicampus_f2
     world_id: hicampus
     building_code: F2
+    campus_grid_col: 6
+    campus_grid_row: 8
     type_code: building
     display_name: F2 Canteen
     floors_total: 3
@@ -40,6 +44,8 @@ buildings:
   - id: hicampus_f3
     world_id: hicampus
     building_code: F3
+    campus_grid_col: 22
+    campus_grid_row: 8
     type_code: building
     display_name: F3 Training Center
     floors_total: 6
@@ -58,6 +64,8 @@ buildings:
   - id: hicampus_f4
     world_id: hicampus
     building_code: F4
+    campus_grid_col: 10
+    campus_grid_row: 4
     type_code: building
     display_name: F4 Lab
     floors_total: 7
@@ -77,6 +85,8 @@ buildings:
   - id: hicampus_f5
     world_id: hicampus
     building_code: F5
+    campus_grid_col: 22
+    campus_grid_row: 14
     type_code: building
     display_name: F5 Expo Hall
     floors_total: 3
@@ -95,6 +105,8 @@ buildings:
   - id: hicampus_f6
     world_id: hicampus
     building_code: F6
+    campus_grid_col: 14
+    campus_grid_row: 18
     type_code: building
     display_name: F6 Dormitory
     floors_total: 9

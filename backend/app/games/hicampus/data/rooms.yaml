@@ -3,6 +3,8 @@ rooms:
   world_id: hicampus
   floor_id: hicampus_f1_01f
   type_code: room
+  campus_grid_col: 14
+  campus_grid_row: 16
   display_name: HiCampus Bridge
   room_name: HiCampus 连桥
   room_name_en: HiCampus Bridge
@@ -26,6 +28,12 @@ rooms:
   - circulation
   - layer:connector
   - environment:outdoor
+  map_grid_col: 12
+  map_grid_row: 4
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_01f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_01f
@@ -51,6 +59,12 @@ rooms:
   - layer:public
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_01f_electrical_01
   world_id: hicampus
   floor_id: hicampus_f1_01f
@@ -77,6 +91,12 @@ rooms:
   - space:electrical
   - function:infrastructure
   - access:staff
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_01f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_01f
@@ -103,10 +123,18 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 12
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_gate
   world_id: hicampus
   floor_id: hicampus_f1_01f
   type_code: room
+  campus_grid_col: 14
+  campus_grid_row: 22
   display_name: HiCampus Gate
   room_name: HiCampus 门户厅
   room_name_en: HiCampus Gate
@@ -131,10 +159,18 @@ rooms:
   - space:core
   - landmark
   - layer:entry
+  map_grid_col: 6
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_plaza
   world_id: hicampus
   floor_id: hicampus_f1_01f
   type_code: room
+  campus_grid_col: 14
+  campus_grid_row: 12
   display_name: HiCampus Plaza
   room_name: HiCampus 广场
   room_name_en: HiCampus Plaza
@@ -158,31 +194,12 @@ rooms:
   - plaza
   - layer:public
   - environment:outdoor
-- id: hicampus_f1_02f_circulation_01
-  world_id: hicampus
-  floor_id: hicampus_f1_02f
-  type_code: room
-  display_name: F1 办公楼 · 第2层 交通核 1
-  room_name: F1 办公楼 · 第2层 交通核 1
-  room_name_en: Circulation Core F1L02COR01
-  room_type: circulation
-  room_code: F1L02COR01
-  uns: hicampus/F1/L02/F1L02COR01
-  room_short_description: 电梯厅与楼梯间前室。
-  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
-  room_ambiance: 电梯到达提示音与脚步声。
-  room_floor: 2
-  room_building: F1 办公楼
-  room_campus: hicampus
-  tags:
-  - building
-  - f1
-  - office
-  - floor
-  - layer:standard
-  - layer_role:office_open
-  - space:circulation
-  - zone:public
+  map_grid_col: 12
+  map_grid_row: 12
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_02f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_02f
@@ -207,6 +224,12 @@ rooms:
   - layer:standard
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_02f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_02f
@@ -231,6 +254,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_02f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_02f
@@ -255,6 +284,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_02f_pantry_01
   world_id: hicampus
   floor_id: hicampus_f1_02f
@@ -279,6 +314,12 @@ rooms:
   - layer:standard
   - space:pantry
   - zone:staff
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_02f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_02f
@@ -304,6 +345,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_03f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_03f
@@ -328,6 +375,12 @@ rooms:
   - layer:standard
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_03f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_03f
@@ -352,6 +405,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_03f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_03f
@@ -376,6 +435,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_03f_pantry_01
   world_id: hicampus
   floor_id: hicampus_f1_03f
@@ -400,6 +465,12 @@ rooms:
   - layer:standard
   - space:pantry
   - zone:staff
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_03f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_03f
@@ -425,6 +496,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_04f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_04f
@@ -449,6 +526,12 @@ rooms:
   - layer:standard
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_04f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_04f
@@ -473,6 +556,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_04f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_04f
@@ -497,6 +586,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_04f_pantry_01
   world_id: hicampus
   floor_id: hicampus_f1_04f
@@ -521,6 +616,12 @@ rooms:
   - layer:standard
   - space:pantry
   - zone:staff
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_04f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_04f
@@ -546,6 +647,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_05f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_05f
@@ -570,6 +677,12 @@ rooms:
   - layer:standard
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_05f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_05f
@@ -594,6 +707,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_05f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_05f
@@ -618,6 +737,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_05f_pantry_01
   world_id: hicampus
   floor_id: hicampus_f1_05f
@@ -642,6 +767,12 @@ rooms:
   - layer:standard
   - space:pantry
   - zone:staff
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_05f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_05f
@@ -667,6 +798,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_06f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_06f
@@ -691,6 +828,12 @@ rooms:
   - layer:standard
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_06f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_06f
@@ -715,6 +858,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_06f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_06f
@@ -739,6 +888,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_06f_pantry_01
   world_id: hicampus
   floor_id: hicampus_f1_06f
@@ -763,6 +918,12 @@ rooms:
   - layer:standard
   - space:pantry
   - zone:staff
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_06f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_06f
@@ -788,6 +949,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_07f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_07f
@@ -812,6 +979,12 @@ rooms:
   - layer:standard
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_07f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_07f
@@ -836,6 +1009,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_07f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_07f
@@ -860,6 +1039,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_07f_pantry_01
   world_id: hicampus
   floor_id: hicampus_f1_07f
@@ -884,6 +1069,12 @@ rooms:
   - layer:standard
   - space:pantry
   - zone:staff
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_07f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_07f
@@ -909,6 +1100,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_08f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_08f
@@ -933,6 +1130,12 @@ rooms:
   - layer:standard
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_08f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_08f
@@ -957,6 +1160,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_08f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_08f
@@ -981,6 +1190,12 @@ rooms:
   - layer:standard
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_08f_pantry_01
   world_id: hicampus
   floor_id: hicampus_f1_08f
@@ -1005,6 +1220,12 @@ rooms:
   - layer:standard
   - space:pantry
   - zone:staff
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_08f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_08f
@@ -1030,6 +1251,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_09f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_09f
@@ -1054,6 +1281,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_09f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_09f
@@ -1078,6 +1311,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_09f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_09f
@@ -1102,6 +1341,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_09f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_09f
@@ -1126,6 +1371,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_09f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_09f
@@ -1151,6 +1402,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_10f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_10f
@@ -1175,6 +1432,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_10f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_10f
@@ -1199,6 +1462,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_10f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_10f
@@ -1223,6 +1492,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_10f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_10f
@@ -1247,6 +1522,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_10f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_10f
@@ -1272,6 +1553,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_11f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_11f
@@ -1296,6 +1583,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_11f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_11f
@@ -1320,6 +1613,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_11f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_11f
@@ -1344,6 +1643,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_11f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_11f
@@ -1368,6 +1673,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_11f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_11f
@@ -1393,6 +1704,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_12f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_12f
@@ -1417,6 +1734,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_12f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_12f
@@ -1441,6 +1764,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_12f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_12f
@@ -1465,6 +1794,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_12f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_12f
@@ -1489,6 +1824,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_12f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_12f
@@ -1514,6 +1855,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_13f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_13f
@@ -1538,6 +1885,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_13f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_13f
@@ -1562,6 +1915,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_13f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_13f
@@ -1586,6 +1945,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_13f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_13f
@@ -1610,6 +1975,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_13f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_13f
@@ -1635,6 +2006,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_14f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_14f
@@ -1659,6 +2036,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_14f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_14f
@@ -1683,6 +2066,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_14f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_14f
@@ -1707,6 +2096,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_14f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_14f
@@ -1731,6 +2126,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_14f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_14f
@@ -1756,6 +2157,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_15f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_15f
@@ -1780,6 +2187,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_15f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_15f
@@ -1804,6 +2217,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_15f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_15f
@@ -1828,6 +2247,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_15f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_15f
@@ -1852,6 +2277,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_15f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_15f
@@ -1877,6 +2308,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_16f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_16f
@@ -1901,6 +2338,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_16f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_16f
@@ -1925,6 +2368,12 @@ rooms:
   - layer:mid
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_16f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_16f
@@ -1949,6 +2398,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_16f_office_02
   world_id: hicampus
   floor_id: hicampus_f1_16f
@@ -1973,6 +2428,12 @@ rooms:
   - layer:mid
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_16f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_16f
@@ -1998,6 +2459,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_17f_manager_01
   world_id: hicampus
   floor_id: hicampus_f1_17f
@@ -2023,6 +2490,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_17f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_17f
@@ -2047,6 +2520,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_17f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_17f
@@ -2071,6 +2550,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_17f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_17f
@@ -2095,6 +2580,12 @@ rooms:
   - layer:collab
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_17f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_17f
@@ -2120,6 +2611,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_18f_manager_01
   world_id: hicampus
   floor_id: hicampus_f1_18f
@@ -2145,6 +2642,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_18f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_18f
@@ -2169,6 +2672,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_18f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_18f
@@ -2193,6 +2702,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_18f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_18f
@@ -2217,6 +2732,12 @@ rooms:
   - layer:collab
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_18f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_18f
@@ -2242,6 +2763,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_19f_manager_01
   world_id: hicampus
   floor_id: hicampus_f1_19f
@@ -2267,6 +2794,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_19f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_19f
@@ -2291,6 +2824,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_19f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_19f
@@ -2315,6 +2854,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_19f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_19f
@@ -2339,6 +2884,12 @@ rooms:
   - layer:collab
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_19f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_19f
@@ -2364,6 +2915,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_20f_manager_01
   world_id: hicampus
   floor_id: hicampus_f1_20f
@@ -2389,6 +2946,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_20f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_20f
@@ -2413,6 +2976,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_20f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_20f
@@ -2437,6 +3006,12 @@ rooms:
   - layer:collab
   - space:meeting
   - function:collaboration
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_20f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_20f
@@ -2461,6 +3036,12 @@ rooms:
   - layer:collab
   - space:office
   - function:work
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_20f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f1_20f
@@ -2486,6 +3067,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_21f_manager_01
   world_id: hicampus
   floor_id: hicampus_f1_21f
@@ -2511,6 +3098,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_21f_manager_02
   world_id: hicampus
   floor_id: hicampus_f1_21f
@@ -2536,6 +3129,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_21f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_21f
@@ -2560,6 +3159,12 @@ rooms:
   - layer:executive
   - space:meeting
   - function:collaboration
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_21f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_21f
@@ -2584,6 +3189,12 @@ rooms:
   - layer:executive
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_21f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_21f
@@ -2608,6 +3219,12 @@ rooms:
   - layer:executive
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_22f_manager_01
   world_id: hicampus
   floor_id: hicampus_f1_22f
@@ -2633,6 +3250,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_22f_manager_02
   world_id: hicampus
   floor_id: hicampus_f1_22f
@@ -2658,6 +3281,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_22f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_22f
@@ -2682,6 +3311,12 @@ rooms:
   - layer:executive
   - space:meeting
   - function:collaboration
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_22f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_22f
@@ -2706,6 +3341,12 @@ rooms:
   - layer:executive
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_22f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_22f
@@ -2730,6 +3371,12 @@ rooms:
   - layer:executive
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_23f_manager_01
   world_id: hicampus
   floor_id: hicampus_f1_23f
@@ -2755,6 +3402,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_23f_manager_02
   world_id: hicampus
   floor_id: hicampus_f1_23f
@@ -2780,6 +3433,12 @@ rooms:
   - space:office
   - function:manager
   - access:staff
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_23f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f1_23f
@@ -2804,6 +3463,12 @@ rooms:
   - layer:executive
   - space:meeting
   - function:collaboration
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_23f_meeting_02
   world_id: hicampus
   floor_id: hicampus_f1_23f
@@ -2828,6 +3493,12 @@ rooms:
   - layer:executive
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_23f_office_01
   world_id: hicampus
   floor_id: hicampus_f1_23f
@@ -2852,6 +3523,12 @@ rooms:
   - layer:executive
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f2_01f_canteen_dining_01
   world_id: hicampus
   floor_id: hicampus_f2_01f
@@ -2876,6 +3553,12 @@ rooms:
   - space:dining
   - function:canteen
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_01f_canteen_dining_02
   world_id: hicampus
   floor_id: hicampus_f2_01f
@@ -2900,6 +3583,12 @@ rooms:
   - space:dining
   - function:canteen
   - zone:public
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_01f_kitchen_01
   world_id: hicampus
   floor_id: hicampus_f2_01f
@@ -2924,6 +3613,12 @@ rooms:
   - space:kitchen
   - function:canteen
   - access:staff
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_01f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f2_01f
@@ -2948,6 +3643,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_01f_storage_01
   world_id: hicampus
   floor_id: hicampus_f2_01f
@@ -2971,6 +3672,12 @@ rooms:
   - floor
   - space:storage
   - function:logistics
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_02f_canteen_dining_01
   world_id: hicampus
   floor_id: hicampus_f2_02f
@@ -2995,6 +3702,12 @@ rooms:
   - space:dining
   - function:canteen
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_02f_canteen_dining_02
   world_id: hicampus
   floor_id: hicampus_f2_02f
@@ -3019,6 +3732,12 @@ rooms:
   - space:dining
   - function:canteen
   - zone:public
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_02f_kitchen_01
   world_id: hicampus
   floor_id: hicampus_f2_02f
@@ -3043,6 +3762,12 @@ rooms:
   - space:kitchen
   - function:canteen
   - access:staff
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_02f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f2_02f
@@ -3067,6 +3792,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_02f_storage_01
   world_id: hicampus
   floor_id: hicampus_f2_02f
@@ -3090,6 +3821,12 @@ rooms:
   - floor
   - space:storage
   - function:logistics
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_03f_canteen_dining_01
   world_id: hicampus
   floor_id: hicampus_f2_03f
@@ -3114,6 +3851,12 @@ rooms:
   - space:dining
   - function:canteen
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_03f_canteen_dining_02
   world_id: hicampus
   floor_id: hicampus_f2_03f
@@ -3138,6 +3881,12 @@ rooms:
   - space:dining
   - function:canteen
   - zone:public
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_03f_kitchen_01
   world_id: hicampus
   floor_id: hicampus_f2_03f
@@ -3162,6 +3911,12 @@ rooms:
   - space:kitchen
   - function:canteen
   - access:staff
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_03f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f2_03f
@@ -3186,6 +3941,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_03f_storage_01
   world_id: hicampus
   floor_id: hicampus_f2_03f
@@ -3209,6 +3970,12 @@ rooms:
   - floor
   - space:storage
   - function:logistics
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f3_01f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f3_01f
@@ -3233,6 +4000,12 @@ rooms:
   - layer:entry
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_01f_classroom_01
   world_id: hicampus
   floor_id: hicampus_f3_01f
@@ -3257,6 +4030,12 @@ rooms:
   - layer:entry
   - space:classroom
   - function:training
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_01f_classroom_02
   world_id: hicampus
   floor_id: hicampus_f3_01f
@@ -3281,6 +4060,12 @@ rooms:
   - layer:entry
   - space:classroom
   - function:training
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_01f_office_01
   world_id: hicampus
   floor_id: hicampus_f3_01f
@@ -3305,6 +4090,12 @@ rooms:
   - layer:entry
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_01f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f3_01f
@@ -3330,6 +4121,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_02f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f3_02f
@@ -3354,6 +4151,12 @@ rooms:
   - layer:entry
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_02f_classroom_01
   world_id: hicampus
   floor_id: hicampus_f3_02f
@@ -3378,6 +4181,12 @@ rooms:
   - layer:entry
   - space:classroom
   - function:training
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_02f_classroom_02
   world_id: hicampus
   floor_id: hicampus_f3_02f
@@ -3402,6 +4211,12 @@ rooms:
   - layer:entry
   - space:classroom
   - function:training
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_02f_office_01
   world_id: hicampus
   floor_id: hicampus_f3_02f
@@ -3426,6 +4241,12 @@ rooms:
   - layer:entry
   - space:office
   - function:work
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_02f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f3_02f
@@ -3451,6 +4272,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_03f_classroom_01
   world_id: hicampus
   floor_id: hicampus_f3_03f
@@ -3475,6 +4302,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_03f_classroom_02
   world_id: hicampus
   floor_id: hicampus_f3_03f
@@ -3499,6 +4332,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_03f_lab_01
   world_id: hicampus
   floor_id: hicampus_f3_03f
@@ -3523,6 +4362,12 @@ rooms:
   - layer:upper
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_03f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f3_03f
@@ -3547,6 +4392,12 @@ rooms:
   - layer:upper
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_03f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f3_03f
@@ -3572,6 +4423,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_04f_classroom_01
   world_id: hicampus
   floor_id: hicampus_f3_04f
@@ -3596,6 +4453,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_04f_classroom_02
   world_id: hicampus
   floor_id: hicampus_f3_04f
@@ -3620,6 +4483,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_04f_lab_01
   world_id: hicampus
   floor_id: hicampus_f3_04f
@@ -3644,6 +4513,12 @@ rooms:
   - layer:upper
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_04f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f3_04f
@@ -3668,6 +4543,12 @@ rooms:
   - layer:upper
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_04f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f3_04f
@@ -3693,6 +4574,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_05f_classroom_01
   world_id: hicampus
   floor_id: hicampus_f3_05f
@@ -3717,6 +4604,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_05f_classroom_02
   world_id: hicampus
   floor_id: hicampus_f3_05f
@@ -3741,6 +4634,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_05f_lab_01
   world_id: hicampus
   floor_id: hicampus_f3_05f
@@ -3765,6 +4664,12 @@ rooms:
   - layer:upper
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_05f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f3_05f
@@ -3789,6 +4694,12 @@ rooms:
   - layer:upper
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_05f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f3_05f
@@ -3814,6 +4725,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_06f_classroom_01
   world_id: hicampus
   floor_id: hicampus_f3_06f
@@ -3838,6 +4755,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_06f_classroom_02
   world_id: hicampus
   floor_id: hicampus_f3_06f
@@ -3862,6 +4785,12 @@ rooms:
   - layer:upper
   - space:classroom
   - function:training
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_06f_lab_01
   world_id: hicampus
   floor_id: hicampus_f3_06f
@@ -3886,6 +4815,12 @@ rooms:
   - layer:upper
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_06f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f3_06f
@@ -3910,6 +4845,12 @@ rooms:
   - layer:upper
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_06f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f3_06f
@@ -3935,6 +4876,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f4_01f_electrical_01
   world_id: hicampus
   floor_id: hicampus_f4_01f
@@ -3960,6 +4907,12 @@ rooms:
   - space:electrical
   - function:infrastructure
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_01f_monitoring_01
   world_id: hicampus
   floor_id: hicampus_f4_01f
@@ -3985,6 +4938,12 @@ rooms:
   - space:monitoring
   - function:security
   - access:staff
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_01f_prep_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_01f
@@ -4009,6 +4968,12 @@ rooms:
   - layer:service
   - space:lab
   - function:prep
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_01f_prep_lab_02
   world_id: hicampus
   floor_id: hicampus_f4_01f
@@ -4033,6 +4998,12 @@ rooms:
   - layer:service
   - space:lab
   - function:prep
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_01f_storage_01
   world_id: hicampus
   floor_id: hicampus_f4_01f
@@ -4057,6 +5028,12 @@ rooms:
   - layer:service
   - space:storage
   - function:logistics
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_02f_electrical_01
   world_id: hicampus
   floor_id: hicampus_f4_02f
@@ -4082,6 +5059,12 @@ rooms:
   - space:electrical
   - function:infrastructure
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_02f_monitoring_01
   world_id: hicampus
   floor_id: hicampus_f4_02f
@@ -4107,6 +5090,12 @@ rooms:
   - space:monitoring
   - function:security
   - access:staff
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_02f_prep_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_02f
@@ -4131,6 +5120,12 @@ rooms:
   - layer:service
   - space:lab
   - function:prep
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_02f_prep_lab_02
   world_id: hicampus
   floor_id: hicampus_f4_02f
@@ -4155,6 +5150,12 @@ rooms:
   - layer:service
   - space:lab
   - function:prep
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_02f_storage_01
   world_id: hicampus
   floor_id: hicampus_f4_02f
@@ -4179,6 +5180,12 @@ rooms:
   - layer:service
   - space:storage
   - function:logistics
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_03f_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_03f
@@ -4203,6 +5210,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_03f_lab_02
   world_id: hicampus
   floor_id: hicampus_f4_03f
@@ -4227,6 +5240,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_03f_lab_03
   world_id: hicampus
   floor_id: hicampus_f4_03f
@@ -4251,6 +5270,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_03f_prep_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_03f
@@ -4275,6 +5300,12 @@ rooms:
   - layer:research
   - space:lab
   - function:prep
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_03f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f4_03f
@@ -4300,6 +5331,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_04f_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_04f
@@ -4324,6 +5361,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_04f_lab_02
   world_id: hicampus
   floor_id: hicampus_f4_04f
@@ -4348,6 +5391,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_04f_lab_03
   world_id: hicampus
   floor_id: hicampus_f4_04f
@@ -4372,6 +5421,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_04f_prep_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_04f
@@ -4396,6 +5451,12 @@ rooms:
   - layer:research
   - space:lab
   - function:prep
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_04f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f4_04f
@@ -4421,6 +5482,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_05f_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_05f
@@ -4445,6 +5512,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_05f_lab_02
   world_id: hicampus
   floor_id: hicampus_f4_05f
@@ -4469,6 +5542,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_05f_lab_03
   world_id: hicampus
   floor_id: hicampus_f4_05f
@@ -4493,6 +5572,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_05f_prep_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_05f
@@ -4517,6 +5602,12 @@ rooms:
   - layer:research
   - space:lab
   - function:prep
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_05f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f4_05f
@@ -4542,6 +5633,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_06f_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_06f
@@ -4566,6 +5663,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_06f_lab_02
   world_id: hicampus
   floor_id: hicampus_f4_06f
@@ -4590,6 +5693,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_06f_lab_03
   world_id: hicampus
   floor_id: hicampus_f4_06f
@@ -4614,6 +5723,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_06f_prep_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_06f
@@ -4638,6 +5753,12 @@ rooms:
   - layer:research
   - space:lab
   - function:prep
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_06f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f4_06f
@@ -4663,6 +5784,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_07f_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_07f
@@ -4687,6 +5814,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_07f_lab_02
   world_id: hicampus
   floor_id: hicampus_f4_07f
@@ -4711,6 +5844,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_07f_lab_03
   world_id: hicampus
   floor_id: hicampus_f4_07f
@@ -4735,6 +5874,12 @@ rooms:
   - layer:research
   - space:lab
   - function:research
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_07f_prep_lab_01
   world_id: hicampus
   floor_id: hicampus_f4_07f
@@ -4759,6 +5904,12 @@ rooms:
   - layer:research
   - space:lab
   - function:prep
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_07f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f4_07f
@@ -4784,6 +5935,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f5_01f_av_room_01
   world_id: hicampus
   floor_id: hicampus_f5_01f
@@ -4808,6 +5965,12 @@ rooms:
   - space:av
   - function:events
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_01f_expo_hall_01
   world_id: hicampus
   floor_id: hicampus_f5_01f
@@ -4831,6 +5994,12 @@ rooms:
   - floor
   - space:expo
   - function:exhibition
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_01f_expo_hall_02
   world_id: hicampus
   floor_id: hicampus_f5_01f
@@ -4854,6 +6023,12 @@ rooms:
   - floor
   - space:expo
   - function:exhibition
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_01f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f5_01f
@@ -4877,6 +6052,12 @@ rooms:
   - floor
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_01f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f5_01f
@@ -4901,6 +6082,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_02f_av_room_01
   world_id: hicampus
   floor_id: hicampus_f5_02f
@@ -4925,6 +6112,12 @@ rooms:
   - space:av
   - function:events
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_02f_expo_hall_01
   world_id: hicampus
   floor_id: hicampus_f5_02f
@@ -4948,6 +6141,12 @@ rooms:
   - floor
   - space:expo
   - function:exhibition
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_02f_expo_hall_02
   world_id: hicampus
   floor_id: hicampus_f5_02f
@@ -4971,6 +6170,12 @@ rooms:
   - floor
   - space:expo
   - function:exhibition
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_02f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f5_02f
@@ -4994,6 +6199,12 @@ rooms:
   - floor
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_02f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f5_02f
@@ -5018,6 +6229,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_03f_av_room_01
   world_id: hicampus
   floor_id: hicampus_f5_03f
@@ -5042,6 +6259,12 @@ rooms:
   - space:av
   - function:events
   - access:staff
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_03f_expo_hall_01
   world_id: hicampus
   floor_id: hicampus_f5_03f
@@ -5065,6 +6288,12 @@ rooms:
   - floor
   - space:expo
   - function:exhibition
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_03f_expo_hall_02
   world_id: hicampus
   floor_id: hicampus_f5_03f
@@ -5088,6 +6317,12 @@ rooms:
   - floor
   - space:expo
   - function:exhibition
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_03f_meeting_01
   world_id: hicampus
   floor_id: hicampus_f5_03f
@@ -5111,6 +6346,12 @@ rooms:
   - floor
   - space:meeting
   - function:collaboration
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_03f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f5_03f
@@ -5135,6 +6376,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f6_01f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_01f
@@ -5159,6 +6406,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_01f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_01f
@@ -5183,6 +6436,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_01f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_01f
@@ -5207,6 +6466,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_01f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_01f
@@ -5232,6 +6497,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_02f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_02f
@@ -5256,6 +6527,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_02f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_02f
@@ -5280,6 +6557,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_02f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_02f
@@ -5304,6 +6587,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_02f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_02f
@@ -5329,6 +6618,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_03f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_03f
@@ -5353,6 +6648,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_03f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_03f
@@ -5377,6 +6678,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_03f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_03f
@@ -5401,6 +6708,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_03f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_03f
@@ -5426,6 +6739,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_04f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_04f
@@ -5450,6 +6769,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_04f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_04f
@@ -5474,6 +6799,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_04f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_04f
@@ -5498,6 +6829,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_04f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_04f
@@ -5523,6 +6860,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_05f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_05f
@@ -5547,6 +6890,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_05f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_05f
@@ -5571,6 +6920,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_05f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_05f
@@ -5595,6 +6950,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_05f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_05f
@@ -5620,6 +6981,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_06f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_06f
@@ -5644,6 +7011,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_06f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_06f
@@ -5668,6 +7041,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_06f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_06f
@@ -5692,6 +7071,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_06f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_06f
@@ -5717,6 +7102,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_07f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_07f
@@ -5741,6 +7132,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_07f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_07f
@@ -5765,6 +7162,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_07f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_07f
@@ -5789,6 +7192,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_07f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_07f
@@ -5814,6 +7223,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_08f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_08f
@@ -5838,6 +7253,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_08f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_08f
@@ -5862,6 +7283,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_08f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_08f
@@ -5886,6 +7313,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_08f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_08f
@@ -5911,6 +7344,12 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_09f_dorm_unit_01
   world_id: hicampus
   floor_id: hicampus_f6_09f
@@ -5935,6 +7374,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 12
+  map_grid_row: 6
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_09f_dorm_unit_02
   world_id: hicampus
   floor_id: hicampus_f6_09f
@@ -5959,6 +7404,12 @@ rooms:
   - layer:residential
   - space:dorm
   - function:residential
+  map_grid_col: 10
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_09f_lounge_01
   world_id: hicampus
   floor_id: hicampus_f6_09f
@@ -5983,6 +7434,12 @@ rooms:
   - layer:residential
   - space:lounge
   - zone:public
+  map_grid_col: 14
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_09f_restroom_01
   world_id: hicampus
   floor_id: hicampus_f6_09f
@@ -6008,6 +7465,42 @@ rooms:
   - space:restroom
   - function:sanitary
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 10
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
+- id: hicampus_f1_02f_circulation_01
+  world_id: hicampus
+  floor_id: hicampus_f1_02f
+  type_code: room
+  display_name: F1 办公楼 · 第2层 交通核 1
+  room_name: F1 办公楼 · 第2层 交通核 1
+  room_name_en: Circulation Core F1L02COR01
+  room_type: circulation
+  room_code: F1L02COR01
+  uns: hicampus/F1/L02/F1L02COR01
+  room_short_description: 电梯厅与楼梯间前室。
+  room_description: 连接垂直交通与走廊；导向标识指向防火分区与疏散楼梯。
+  room_ambiance: 电梯到达提示音与脚步声。
+  room_floor: 2
+  room_building: F1 办公楼
+  room_campus: hicampus
+  tags:
+  - building
+  - f1
+  - office
+  - floor
+  - layer:standard
+  - space:circulation
+  - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_03f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_03f
@@ -6032,6 +7525,12 @@ rooms:
   - layer:standard
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_04f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_04f
@@ -6056,6 +7555,12 @@ rooms:
   - layer:standard
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_05f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_05f
@@ -6080,6 +7585,12 @@ rooms:
   - layer:standard
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_06f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_06f
@@ -6104,6 +7615,12 @@ rooms:
   - layer:standard
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_07f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_07f
@@ -6128,6 +7645,12 @@ rooms:
   - layer:standard
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_08f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_08f
@@ -6152,6 +7675,12 @@ rooms:
   - layer:standard
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_09f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_09f
@@ -6176,6 +7705,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_10f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_10f
@@ -6200,6 +7735,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_11f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_11f
@@ -6224,6 +7765,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_12f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_12f
@@ -6248,6 +7795,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_13f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_13f
@@ -6272,6 +7825,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_14f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_14f
@@ -6296,6 +7855,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_15f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_15f
@@ -6320,6 +7885,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_16f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_16f
@@ -6344,6 +7915,12 @@ rooms:
   - layer:mid
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_17f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_17f
@@ -6368,6 +7945,12 @@ rooms:
   - layer:collab
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_18f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_18f
@@ -6392,6 +7975,12 @@ rooms:
   - layer:collab
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_19f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_19f
@@ -6416,6 +8005,12 @@ rooms:
   - layer:collab
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_20f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_20f
@@ -6440,6 +8035,12 @@ rooms:
   - layer:collab
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_21f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_21f
@@ -6464,6 +8065,12 @@ rooms:
   - layer:executive
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_22f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_22f
@@ -6488,6 +8095,12 @@ rooms:
   - layer:executive
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f1_23f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f1_23f
@@ -6512,6 +8125,12 @@ rooms:
   - layer:executive
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f1
 - id: hicampus_f2_01f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f2_01f
@@ -6535,6 +8154,12 @@ rooms:
   - floor
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_02f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f2_02f
@@ -6558,6 +8183,12 @@ rooms:
   - floor
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f2_03f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f2_03f
@@ -6581,6 +8212,12 @@ rooms:
   - floor
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f2
 - id: hicampus_f3_03f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f3_03f
@@ -6605,6 +8242,12 @@ rooms:
   - layer:upper
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_04f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f3_04f
@@ -6629,6 +8272,12 @@ rooms:
   - layer:upper
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_05f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f3_05f
@@ -6653,6 +8302,12 @@ rooms:
   - layer:upper
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f3_06f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f3_06f
@@ -6677,6 +8332,12 @@ rooms:
   - layer:upper
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f3
 - id: hicampus_f4_01f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f4_01f
@@ -6701,6 +8362,12 @@ rooms:
   - layer:service
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_02f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f4_02f
@@ -6725,6 +8392,12 @@ rooms:
   - layer:service
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_03f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f4_03f
@@ -6749,6 +8422,12 @@ rooms:
   - layer:research
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_04f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f4_04f
@@ -6773,6 +8452,12 @@ rooms:
   - layer:research
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_05f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f4_05f
@@ -6797,6 +8482,12 @@ rooms:
   - layer:research
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_06f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f4_06f
@@ -6821,6 +8512,12 @@ rooms:
   - layer:research
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f4_07f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f4_07f
@@ -6845,6 +8542,12 @@ rooms:
   - layer:research
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f4
 - id: hicampus_f5_01f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f5_01f
@@ -6868,6 +8571,12 @@ rooms:
   - floor
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_02f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f5_02f
@@ -6891,6 +8600,12 @@ rooms:
   - floor
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f5_03f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f5_03f
@@ -6914,6 +8629,12 @@ rooms:
   - floor
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f5
 - id: hicampus_f6_01f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_01f
@@ -6938,6 +8659,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_02f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_02f
@@ -6962,6 +8689,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_03f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_03f
@@ -6986,6 +8719,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_04f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_04f
@@ -7010,6 +8749,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_05f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_05f
@@ -7034,6 +8779,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_06f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_06f
@@ -7058,6 +8809,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_07f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_07f
@@ -7082,6 +8839,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_08f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_08f
@@ -7106,6 +8869,12 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6
 - id: hicampus_f6_09f_circulation_01
   world_id: hicampus
   floor_id: hicampus_f6_09f
@@ -7130,3 +8899,9 @@ rooms:
   - layer:residential
   - space:circulation
   - zone:public
+  map_grid_col: 12
+  map_grid_row: 8
+  map_grid_span_w: 1
+  map_grid_span_h: 1
+  map_grid_unit: 1.0
+  building_id: hicampus_f6

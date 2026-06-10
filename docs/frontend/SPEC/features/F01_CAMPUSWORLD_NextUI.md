@@ -27,7 +27,10 @@
 | 进入/离开世界 | `POST /api/v1/world-sessions/enter-world` / `leave-world` |
 | 决策动作 | `POST /api/v1/decision-center/actions` |
 | 决策查询 | `POST /api/v1/decision-center/query` |
-| 语义地图查询 | `POST /api/v1/semantic-map/query`（Phase 2：`semantic-map/focus`） |
+| 语义地图焦点 | `GET /api/v1/semantic-map/focus` |
+| 语义地图动作 | `POST /api/v1/semantic-map/actions`（`drill` / `select`） |
+| 空间摘要 | `GET /api/v1/semantic-map/space-summary` |
+| 语义地图查询 | `POST /api/v1/semantic-map/query` |
 | 全局搜索 | `POST /api/v1/world-search` |
 | 历史摘要 | `GET /api/v1/world-history/summary` |
 
@@ -582,7 +585,11 @@ FocusSemanticMap
 
 ## 8.5 地图数据结构
 
+真源：`frontend/src/types/world.ts` 与 `backend/app/services/world_interaction/semantic_map_service.py` 返回的 `focus_map` / `map_patch`。
+
 ```ts
+export type MapViewLayer = 'room' | 'floor' | 'building' | 'campus'
+
 export interface SemanticMapNode {
   id: string
   name: string
@@ -592,6 +599,9 @@ export interface SemanticMapNode {
     | 'plaza'
     | 'building'
     | 'room'
+    | 'floor'
+    | 'outdoor'
+    | 'cluster'
     | 'service'
     | 'hidden'
   x: number
@@ -608,6 +618,11 @@ export interface SemanticMapNode {
   activeAgentIds: string[]
   activeEventIds: string[]
   objectIds: string[]
+  buildingId?: string
+  floorId?: string
+  floorNumber?: number
+  drillAnchorId?: string   // cluster 钻取锚点
+  overflowCount?: number   // floor cluster 溢出房间数
 }
 
 export interface SemanticMapEdge {
@@ -617,12 +632,13 @@ export interface SemanticMapEdge {
   label?: string
   direction?: string
   status: 'available' | 'locked' | 'recommended' | 'visited'
+  targetLabel?: string
 }
 
 export interface AgentMapPresence {
   agentId: string
   name: string
-  role: 'guide' | 'service' | 'security' | 'maintenance' | 'teaching' | 'system'
+  role: string
   currentSpaceId: string
   status: 'idle' | 'waiting' | 'talking' | 'moving' | 'working' | 'offline'
   currentIntent?: string
@@ -630,20 +646,53 @@ export interface AgentMapPresence {
   lastSeenAt: string
   visibility: 'visible' | 'discovered' | 'hidden'
 }
+
+export interface FocusMap {
+  mode: 'focus' | 'route' | 'agent' | 'event'
+  viewLayer?: MapViewLayer
+  orientation?: 'north-up'
+  layout?: 'compass' | 'grid' | 'hierarchy' | 'list'
+  breadcrumb?: Array<{ layer: string; id: string; name: string }>
+  neighborLinks?: Array<{ direction: string; targetId: string; targetName: string; summary: string }>
+  floorPlanReady?: boolean
+  floorRoomList?: Array<{ id: string; name: string; status: SemanticMapNode['status'] }>
+  nodes: SemanticMapNode[]
+  edges: SemanticMapEdge[]
+  agentPresences: AgentMapPresence[]
+  highlightedPath: string[]
+  currentSpaceId: string | null
+  selectedEntityId: string | null
+  loading: boolean
+}
+
+export interface MapPatch {
+  mode?: FocusMap['mode']
+  viewLayer?: MapViewLayer
+  anchorId?: string
+  highlightedNodeIds?: string[]
+  highlightedPath?: string[]
+  visibleNodeIds?: string[]
+  focus_map?: FocusMap
+}
 ```
+
+`DISPLAY_POLICY` 扩展：`maxFloorNodesVisible`（默认 24，超出以 `cluster` 节点聚合）、`maxCampusNodesVisible`（默认 40，超出按楼栋 cluster）、`maxEventHotspotsHighlighted`（event 模式高亮上限）。
 
 ## 8.6 地图点击行为
 
 | 点击对象  | 响应             |
 | ----- | -------------- |
-| 当前空间  | 中央显示空间摘要       |
-| 可达空间  | 生成移动或路线决策      |
-| Agent | 中央显示 Agent 摘要卡 |
+| 当前空间  | 中央显示空间摘要（与 `space` 命令四段一致） |
+| 可达空间  | 高亮目标 + 中央显示连接与空间摘要；**不**默认触发移动或「前往」 |
+| 楼栋/楼层/cluster | 钻取切换 `viewLayer`（`POST /semantic-map/actions` `drill`）；不改玩家 `location_id` |
+| Agent | 地图模式高亮；必要时中央显示 Agent 摘要卡 |
 | 对象    | 中央显示对象发现卡      |
 | 事件热点  | 中央显示事件决策卡      |
-| 聚合标记  | 局部展开或切换地图模式    |
+| 聚合标记  | 钻取到对应楼栋层      |
 
-地图点击不得跳传统详情页。
+地图点击不得跳传统详情页。玩家移动仅由决策中心任务推荐或命令栏 `go` 触发。
+
+`focus_map` 扩展字段：`viewLayer`、`orientation: north-up`、`breadcrumb`、`neighborLinks`、`floorPlanReady`（floor 层无 grid 时为 false）。
 
 ## 8.7 地图与中央联动
 

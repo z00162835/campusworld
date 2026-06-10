@@ -103,6 +103,24 @@ games/hicampus/data/
 
 - `package_meta.schema_version` 必须为当前工具链支持的整数集合（HiCampus 实现为 `2`）；不兼容时返回 `WORLD_DATA_SCHEMA_UNSUPPORTED`。
 
+## 语义地图网格坐标（HiCampus）
+
+HiCampus 为 CampusWorld 语义地图提供两层显式坐标，写入图节点 `attributes`（经 `world reload` / graph seed 落库）：
+
+| 层级 | 属性 | 写入来源 | 用途 |
+|------|------|----------|------|
+| floor 平面图 | `map_grid_col`, `map_grid_row`；可选 `map_grid_span_w`, `map_grid_span_h` | `topology_connect_generate --write` 为层内 room 赋值 | `viewLayer=floor` 网格布局与层内 `connects_to` 边 |
+| campus 鸟瞰 | `campus_grid_col`, `campus_grid_row`；可选 `campus_grid_span_w`, `campus_grid_span_h` | `buildings.yaml` 楼栋条目；`rooms.yaml` 户外锚点（`hicampus_gate` / `hicampus_bridge` / `hicampus_plaza`） | `viewLayer=campus` 楼栋与户外地标定位 |
+
+约定：
+
+- **D6**：floor 内 `map_grid_*` 由拓扑生成器维护，手工 YAML 勿与生成结果冲突。
+- **D9**：campus 层 `campus_grid_*` 由数据包作者维护相对位置；缺失时 semantic map 回退水平排布。
+- 户外地标间 `connects_to`（gate ↔ bridge ↔ plaza）来自 `relationships.yaml`，在 campus 层渲染为 spine 边。
+- `geom_geojson` 由 graph seed pipeline 从 `map_grid_*` 同步（室内 room）；campus 层仅消费 `campus_grid_*`。
+
+校验：`world validate hicampus` 应对 campus 层坐标缺失给出警告（实现逐步补齐）。
+
 ## 程序化生成（`package/`）
 
 空间层、拓扑连边与部分实体/关系可由 `games/hicampus/package/` 下模块重写 YAML。**命令顺序、保留的手工关系 id、与 `world reload` 的配合**以仓库内真源为准：

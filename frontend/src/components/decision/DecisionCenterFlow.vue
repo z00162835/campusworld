@@ -51,6 +51,11 @@
         </header>
 
         <div v-show="showTaskBody" class="task-zone-body">
+          <map-space-summary-card
+            v-if="mapStore.selectedSpaceSummary"
+            :summary="mapStore.selectedSpaceSummary"
+          />
+
           <section
             v-if="decisionStore.focus"
             class="focus-summary"
@@ -143,16 +148,19 @@ import { ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import DecisionEventCard from './DecisionEventCard.vue'
 import ActiveTaskCard from './ActiveTaskCard.vue'
+import MapSpaceSummaryCard from '@/components/map/MapSpaceSummaryCard.vue'
 import DecisionQueryBox from './DecisionQueryBox.vue'
 import DecisionConversationThread from './DecisionConversationThread.vue'
 import AicoThreadToolbar from './AicoThreadToolbar.vue'
 import { useDecisionFoldLayout } from '@/composables/useDecisionFoldLayout'
 import { useDecisionCenterStore } from '@/stores/decisionCenter'
 import { useWorldSessionStore } from '@/stores/worldSession'
+import { useWorldMapStore } from '@/stores/worldMap'
 
 const { t } = useI18n()
 const decisionStore = useDecisionCenterStore()
 const worldSession = useWorldSessionStore()
+const mapStore = useWorldMapStore()
 const loadError = computed(() => worldSession.error || (worldSession.errorKey ? t(worldSession.errorKey) : ''))
 const viewFilter = ref<'pending' | 'current'>('pending')
 const hiddenEventIds = ref<Set<string>>(new Set())

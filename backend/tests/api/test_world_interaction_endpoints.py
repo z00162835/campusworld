@@ -249,3 +249,97 @@ def test_decision_action_adapter_accepts_task_queue_ids(monkeypatch):
     assert response.status_code == 200
     assert seen["decision_event_id"] == "task_42"
     assert seen["option_id"] == "task_start_42"
+
+
+def test_semantic_map_focus_route_registered():
+    paths = {route.path for route in _app().routes}
+    assert "/api/v1/semantic-map/focus" in paths
+    assert "/api/v1/semantic-map/space-summary" in paths
+    assert "/api/v1/semantic-map/actions" in paths
+
+
+def test_get_semantic_map_focus_returns_focus_map(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "get_semantic_map_focus",
+        lambda db, actor, **kwargs: {
+            "focus_map": {"viewLayer": "room", "orientation": "north-up", "nodes": [], "edges": []},
+        },
+    )
+    client = TestClient(_app())
+    response = client.get("/api/v1/semantic-map/focus?view_layer=room")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["focus_map"]["viewLayer"] == "room"
+
+
+def test_post_semantic_map_select_returns_summary(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "execute_semantic_map_action",
+        lambda db, actor, **kwargs: {
+            "focus_map": {"viewLayer": "room", "selectedEntityId": "2", "nodes": [], "edges": []},
+            "space_summary": {"space_node": {"id": 2, "name": "North Room"}},
+        },
+    )
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/semantic-map/actions",
+        json={"action_type": "select", "selected_entity_id": "2"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["focus_map"]["selectedEntityId"] == "2"
+    assert body["space_summary"]["space_node"]["id"] == 2
+
+
+def test_post_semantic_map_drill_returns_focus_map(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "execute_semantic_map_action",
+        lambda db, actor, **kwargs: {
+            "focus_map": {"viewLayer": "building", "nodes": [{"id": "20", "type": "floor"}], "edges": []},
+        },
+    )
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/semantic-map/actions",
+        json={"action_type": "drill", "view_layer": "building", "anchor_id": "20"},
+    )
+    assert response.status_code == 200
+    assert response.json()["focus_map"]["viewLayer"] == "building"
+
+
+def test_post_semantic_map_unsupported_action(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "execute_semantic_map_action",
+        lambda db, actor, **kwargs: {"ok": False, "error": "Unsupported map action: move"},
+    )
+    client = TestClient(_app())
+    response = client.post("/api/v1/semantic-map/actions", json={"action_type": "move"})
+    assert response.status_code == 200
+    assert response.json()["ok"] is False
+
+
+def test_semantic_map_query_returns_map_patch(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "query_semantic_map",
+        lambda db, actor, query, mode="auto": {
+            "mode": "focus",
+            "answer": "Found 1 result(s) for F3.",
+            "map_patch": {
+                "mode": "focus",
+                "viewLayer": "campus",
+                "highlightedNodeIds": ["20"],
+                "focus_map": {"viewLayer": "campus", "nodes": [], "edges": []},
+            },
+        },
+    )
+    client = TestClient(_app())
+    response = client.post("/api/v1/semantic-map/query", json={"query": "F3"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["map_patch"]["viewLayer"] == "campus"
+    assert body["map_patch"]["highlightedNodeIds"] == ["20"]

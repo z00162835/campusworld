@@ -46,6 +46,14 @@ class MapQueryRequest(BaseModel):
     mode: str = "auto"
 
 
+class SemanticMapActionRequest(BaseModel):
+    action_type: str = Field(..., min_length=1)
+    view_layer: Optional[str] = None
+    anchor_id: Optional[str] = None
+    mode: str = "focus"
+    selected_entity_id: Optional[str] = None
+
+
 class WorldSearchRequest(BaseModel):
     session_id: Optional[str] = None
     world_id: Optional[str] = None
@@ -138,6 +146,51 @@ def stream_decision_query(payload: DecisionQueryRequest, current_user: Authentic
 @decision_center_router.post("/query/stream/cancel")
 def cancel_stream_query(payload: StreamCancelRequest, current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
     return world_interaction_service.cancel_stream(payload.stream_id)
+
+
+@semantic_map_router.get("/focus")
+def get_semantic_map_focus(
+    view_layer: str = "room",
+    anchor_id: Optional[str] = None,
+    mode: str = "focus",
+    selected_entity_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+) -> Dict[str, Any]:
+    return world_interaction_service.get_semantic_map_focus(
+        db,
+        _actor(current_user),
+        view_layer=view_layer,
+        anchor_id=anchor_id,
+        mode=mode,
+        selected_entity_id=selected_entity_id,
+    )
+
+
+@semantic_map_router.get("/space-summary")
+def get_semantic_map_space_summary(
+    node_id: int,
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+) -> Dict[str, Any]:
+    return world_interaction_service.get_space_summary(db, _actor(current_user), node_id)
+
+
+@semantic_map_router.post("/actions")
+def execute_semantic_map_action(
+    payload: SemanticMapActionRequest,
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+) -> Dict[str, Any]:
+    return world_interaction_service.execute_semantic_map_action(
+        db,
+        _actor(current_user),
+        action_type=payload.action_type,
+        view_layer=payload.view_layer,
+        anchor_id=payload.anchor_id,
+        mode=payload.mode,
+        selected_entity_id=payload.selected_entity_id,
+    )
 
 
 @semantic_map_router.post("/query")

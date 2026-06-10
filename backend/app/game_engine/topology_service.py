@@ -32,7 +32,15 @@ class WorldTopologyService:
 
     def validate_topology(self, world_id: str) -> Dict[str, Any]:
         issues = self._collect_issues(world_id)
-        return {'world_id': world_id, 'ok': len(issues) == 0, 'issues': [x.to_dict() for x in issues], 'issue_count': len(issues)}
+        warnings = self._collect_campus_grid_warnings(world_id)
+        return {
+            'world_id': world_id,
+            'ok': len(issues) == 0,
+            'issues': [x.to_dict() for x in issues],
+            'issue_count': len(issues),
+            'warnings': warnings,
+            'warning_count': len(warnings),
+        }
 
     def repair_topology(self, world_id: str, *, dry_run: bool=True, force: bool=False) -> Dict[str, Any]:
         issues = self._collect_issues(world_id)
@@ -89,6 +97,31 @@ class WorldTopologyService:
                 continue
             issues.append(TopologyIssue(code='UNAUTHORIZED_CROSS_WORLD_RELATIONSHIP', message='cross-world relationship without authorized bridge', details={'relationship_id': int(r.id), 'source_id': int(r.source_id), 'target_id': int(r.target_id), 'source_world': node_world_id(sn), 'target_world': node_world_id(tn), 'world_id': str(world_id)}))
         return issues
+
+    def _collect_campus_grid_warnings(self, world_id: str) -> List[Dict[str, Any]]:
+        """Warn when campus-layer grid coordinates are missing (semantic map D9)."""
+        wid = str(world_id or '').strip().lower()
+        if wid != 'hicampus':
+            return []
+        outdoor_ids = {'hicampus_gate', 'hicampus_bridge', 'hicampus_plaza'}
+        warnings: List[Dict[str, Any]] = []
+        with db_session_context() as session:
+            nodes = session.query(Node).filter(Node.attributes['world_id'].astext == wid, Node.is_active == True).all()
+        for node in nodes:
+            attrs = dict(node.attributes or {})
+            pkg = str(attrs.get('package_node_id') or '')
+            type_code = str(node.type_code or '')
+            if type_code != 'building' and pkg not in outdoor_ids:
+                continue
+            if attrs.get('campus_grid_col') is None or attrs.get('campus_grid_row') is None:
+                warnings.append(
+                    {
+                        'code': 'CAMPUS_GRID_MISSING',
+                        'message': f'missing campus_grid_col/row: {pkg or node.id}',
+                        'details': {'node_id': int(node.id), 'package_node_id': pkg, 'type_code': type_code},
+                    }
+                )
+        return warnings
 
     def _collect_issues(self, world_id: str) -> List[TopologyIssue]:
         profile = self._get_profile(world_id)

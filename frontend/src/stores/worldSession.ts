@@ -5,6 +5,7 @@ import i18n from '@/locales'
 import { worldSessionsApi, type ActionResponse } from '@/api/worldSessions'
 import { decisionCenterApi, queryAicoStream } from '@/api/decisionCenter'
 import { buildArchivePayload, worldHistoryApi } from '@/api/worldHistory'
+import { useWorldMapStore } from './worldMap'
 import type {
   AicoThread,
   ConversationMessage,
@@ -152,6 +153,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       interactionState.value = data.interaction_state
       displayPolicy.value = data.display_policy
       availableWorlds.value = data.available_worlds
+      useWorldMapStore().clearMapSelection()
     } catch (err: any) {
       const detail = err?.response?.data?.detail
       if (typeof detail === 'string') {
@@ -545,14 +547,8 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         interactionState.value.decision_center.decisionEvents.filter(event => !resolved.has(event.id))
     }
     if (patch.contextSummary) interactionState.value.context_summary = patch.contextSummary
-    if (patch.mapPatch?.mode) interactionState.value.focus_map.mode = patch.mapPatch.mode
-    if (patch.mapPatch?.highlightedPath) interactionState.value.focus_map.highlightedPath = patch.mapPatch.highlightedPath
-    if (patch.mapPatch?.visibleNodeIds?.length && interactionState.value.focus_map.nodes.length) {
-      const visible = new Set(patch.mapPatch.visibleNodeIds)
-      interactionState.value.focus_map.nodes = interactionState.value.focus_map.nodes.map(node => ({
-        ...node,
-        status: visible.has(node.id) ? node.status : 'visible',
-      }))
+    if (patch.mapPatch) {
+      useWorldMapStore().applyMapPatch(patch.mapPatch)
     }
     if (patch.historyAppend) historyItems.value = [...patch.historyAppend, ...historyItems.value].slice(0, 20)
     if (patch.currentSpaceId) interactionState.value.session.currentSpaceId = patch.currentSpaceId

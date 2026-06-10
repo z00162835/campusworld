@@ -144,6 +144,16 @@ def _PACKAGE_TYPES_FROM_PROFILE(profile: WorldGraphProfile) -> Set[str]:
             continue
     return out
 
+def _sync_geom_geojson_from_grid(node: Node) -> None:
+    from app.services.world_interaction.map_geometry import geom_from_room_attrs
+
+    if str(node.type_code or '') != 'room':
+        return
+    geom = geom_from_room_attrs(dict(node.attributes or {}))
+    if geom is not None:
+        node.geom_geojson = geom
+
+
 def _upsert_node(session: Session, world_id: str, spec: _NodeSpec, profile: WorldGraphProfile, nt_map: Dict[str, NodeType]) -> Tuple[Node, str]:
     db_type = profile.map_node_type(spec.package_type_code)
     nt = nt_map.get(db_type)
@@ -169,10 +179,12 @@ def _upsert_node(session: Session, world_id: str, spec: _NodeSpec, profile: Worl
         existing.type_code = db_type
         existing.trait_class = nt.trait_class
         existing.trait_mask = nt.trait_mask
+        _sync_geom_geojson_from_grid(existing)
         return (existing, 'skipped')
     node = Node(uuid=nuuid, type_id=nt.id, type_code=db_type, name=spec.name, description=None, is_active=True, is_public=True, access_level='normal', trait_class=nt.trait_class, trait_mask=nt.trait_mask, attributes=merged_attrs, tags=spec.tags)
     session.add(node)
     session.flush()
+    _sync_geom_geojson_from_grid(node)
     return (node, 'created')
 
 def _ensure_relationship(session: Session, rt_map: Dict[str, RelationshipType], source: Node, target: Node, type_code: str, attributes: Optional[Dict[str, Any]]=None) -> str:

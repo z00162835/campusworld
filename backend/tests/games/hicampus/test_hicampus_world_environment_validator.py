@@ -44,6 +44,7 @@ def test_hicampus_package_includes_world_environment():
     assert isinstance(env, dict)
     assert env.get("id") == "hicampus_environment"
     assert env.get("world_ref") == snap["world"]["id"]
+    assert snap.get("warnings") == []
 
 
 @pytest.mark.unit

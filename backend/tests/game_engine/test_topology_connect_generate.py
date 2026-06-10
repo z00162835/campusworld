@@ -56,3 +56,19 @@ def test_generate_topology_never_connects_bridge_to_electrical():
         and str(c.get("target_id") or "") == "hicampus_f1_01f_electrical_01"
     ]
     assert bad == []
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_generate_topology_assigns_map_grid_to_all_indoor_floor_rooms():
+    rooms, _, _ = generate_topology()
+    by_floor: dict[str, list[dict]] = {}
+    for room in rooms:
+        fid = str(room.get("floor_id") or "")
+        if fid:
+            by_floor.setdefault(fid, []).append(room)
+    sample_floor = "hicampus_f3_03f"
+    floor_rooms = by_floor.get(sample_floor, [])
+    assert len(floor_rooms) >= 2
+    assert all(room.get("map_grid_col") is not None for room in floor_rooms)
+    assert all(room.get("map_grid_row") is not None for room in floor_rooms)
