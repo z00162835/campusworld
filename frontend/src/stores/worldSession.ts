@@ -185,14 +185,14 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
 
   async function enterWorld(worldId: string) {
     const { data } = await runAction(() => worldSessionsApi.enterWorld(worldId))
-    applyActionResponse(data)
+    await applyActionResponse(data)
     clearActiveAicoThreads()
     await loadCurrent()
   }
 
   async function leaveWorld() {
     const { data } = await runAction(() => worldSessionsApi.leaveWorld())
-    applyActionResponse(data)
+    await applyActionResponse(data)
     clearActiveAicoThreads()
     await loadCurrent()
   }
@@ -200,7 +200,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   async function executeDecisionAction(decisionEventId: string, optionId: string) {
     if (!session.value?.id) return
     const { data } = await runAction(() => decisionCenterApi.executeAction(session.value!.id, decisionEventId, optionId))
-    applyActionResponse(data)
+    await applyActionResponse(data)
     await loadCurrent()
   }
 
@@ -239,7 +239,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         commandResult: data.command_result,
       })
       if (data.state_patch) {
-        applyStatePatch(data.state_patch)
+        await applyStatePatch(data.state_patch)
         await refreshInteractionState()
       }
     } catch (err: any) {
@@ -381,8 +381,11 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
           }
           if (event.kind === 'state_patch' && event.state_patch) {
             flushPendingStreamDelta(assistantId, threadId)
-            applyStatePatch(event.state_patch)
-            void refreshInteractionState()
+            void applyStatePatch(event.state_patch)
+              .then(() => refreshInteractionState())
+              .catch(err => {
+                console.warn('[worldSession] state_patch apply failed:', err)
+              })
           }
           if (event.kind === 'cancelled') {
             flushPendingStreamDelta(assistantId, threadId)
@@ -527,16 +530,16 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
   }
 
-  function applyActionResponse(response: ActionResponse) {
+  async function applyActionResponse(response: ActionResponse) {
     if (!response.success) {
       ElMessage.warning(response.result.summary)
     } else if (response.result.summary) {
       ElMessage.success(response.result.summary)
     }
-    applyStatePatch(response.state_patch)
+    await applyStatePatch(response.state_patch)
   }
 
-  function applyStatePatch(patch?: StatePatch) {
+  async function applyStatePatch(patch?: StatePatch) {
     if (!patch || !interactionState.value) return
     if (patch.focusSummary) interactionState.value.decision_center.focus = patch.focusSummary
     if (patch.activeTask !== undefined) interactionState.value.decision_center.activeTask = patch.activeTask
@@ -548,7 +551,11 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
     if (patch.contextSummary) interactionState.value.context_summary = patch.contextSummary
     if (patch.mapPatch) {
-      useWorldMapStore().applyMapPatch(patch.mapPatch)
+      try {
+        await useWorldMapStore().applyMapPatch(patch.mapPatch)
+      } catch (err) {
+        console.warn('[worldSession] applyMapPatch failed:', err)
+      }
     }
     if (patch.historyAppend) historyItems.value = [...patch.historyAppend, ...historyItems.value].slice(0, 20)
     if (patch.currentSpaceId) interactionState.value.session.currentSpaceId = patch.currentSpaceId

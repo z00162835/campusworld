@@ -172,9 +172,17 @@ export const useWorldMapStore = defineStore('worldMap', () => {
   }
 
   async function searchMap(query: string) {
-    const { data } = await semanticMapApi.query(query.trim())
-    await applyMapPatch(data.map_patch)
-    return data
+    mapLoading.value = true
+    try {
+      const { data } = await semanticMapApi.query(query.trim())
+      await applyMapPatch(data.map_patch)
+      return data
+    } catch (err) {
+      console.warn('[worldMap] searchMap failed:', err)
+      throw err
+    } finally {
+      mapLoading.value = false
+    }
   }
 
   function clearMapSelection() {

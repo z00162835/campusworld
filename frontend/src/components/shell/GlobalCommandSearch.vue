@@ -34,9 +34,13 @@ function onEnterKeydown(event: KeyboardEvent) {
 const submit = async () => {
   const clean = query.value.trim()
   if (!clean) return
-  query.value = ''
-  await mapStore.searchMap(clean)
+
+  void mapStore.searchMap(clean).catch(err => {
+    console.warn('[GlobalCommandSearch] map search failed:', err)
+  })
+
   await worldSession.submitQuery(clean)
+  query.value = ''
 }
 </script>
 
