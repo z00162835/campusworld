@@ -9,6 +9,16 @@ from app.game_engine.direction_util import normalize_direction
 CENTER_X = 50
 CENTER_Y = 50
 COMPASS_RADIUS = 28
+# Inner ring for occupants/items/devices — keeps compass ring for directional exits.
+_INNER_RING = 14
+
+# Logical room zones (hub-and-spoke; industry IF/MUD pattern).
+_LOGICAL_ZONE_ANCHORS: Dict[str, Tuple[int, int]] = {
+    "occupant": (CENTER_X, CENTER_Y - _INNER_RING),
+    "device": (CENTER_X + _INNER_RING, CENTER_Y),
+    "item": (CENTER_X - _INNER_RING, CENTER_Y),
+    "exit": (CENTER_X, CENTER_Y + _INNER_RING),
+}
 
 # Screen Y decreases toward North (North-up).
 _PLANAR_OFFSETS: Dict[str, Tuple[int, int]] = {
@@ -68,6 +78,15 @@ def assign_neighbor_positions(
     return positions
 
 
+def floor_grid_compass_position(anchor_x: int, anchor_y: int, direction: str) -> Tuple[int, int]:
+    """Offset a floor-plan anchor by a planar compass direction."""
+    norm = normalize_direction(str(direction or "").strip().lower())
+    if norm in _PLANAR_OFFSETS:
+        dx, dy = _PLANAR_OFFSETS[norm]
+        return (anchor_x + dx, anchor_y + dy)
+    return circular_fallback_position(0, 1)
+
+
 def vertical_stack_positions(count: int, *, center_x: int = CENTER_X, start_y: int = 18, step: int = 14) -> List[Tuple[int, int]]:
     """Stack nodes vertically (building floors, list fallback)."""
     if count <= 0:
@@ -75,11 +94,32 @@ def vertical_stack_positions(count: int, *, center_x: int = CENTER_X, start_y: i
     return [(center_x, start_y + index * step) for index in range(count)]
 
 
-def campus_grid_position(col: int, row: int, *, cell_px: int = 12, origin_x: int = 10, origin_y: int = 10) -> Tuple[int, int]:
-    """Campus-layer explicit grid (North-up)."""
-    return (origin_x + col * cell_px, origin_y + row * cell_px)
+def campus_grid_position(col: int, row: int, *, max_col: int = 24, max_row: int = 20) -> Tuple[int, int]:
+    """Campus-layer grid mapped into semantic 0–100 space (North-up)."""
+    mc = max(1, int(max_col))
+    mr = max(1, int(max_row))
+    x = 12 + int((int(col) / mc) * 76)
+    y = 12 + int((int(row) / mr) * 76)
+    return (x, y)
 
 
 def horizontal_row_positions(count: int, *, start_x: int = 14, y: int = 50, step: int = 16) -> List[Tuple[int, int]]:
     """Simple row layout when campus grid metadata is absent."""
+    if count <= 0:
+        return []
     return [(start_x + index * step, y) for index in range(count)]
+
+
+def logical_zone_positions(count: int, zone: str) -> List[Tuple[int, int]]:
+    """Place nodes in a logical room zone around the center hub."""
+    if count <= 0:
+        return []
+    anchor_x, anchor_y = _LOGICAL_ZONE_ANCHORS.get(zone, (CENTER_X, CENTER_Y))
+    if zone in {"occupant", "exit"}:
+        step = 14
+        span = max(0, (count - 1) * step)
+        start_x = anchor_x - span // 2
+        return [(start_x + index * step, anchor_y) for index in range(count)]
+    step = 12
+    start_y = anchor_y - (count - 1) * step // 2
+    return [(anchor_x, start_y + index * step) for index in range(count)]

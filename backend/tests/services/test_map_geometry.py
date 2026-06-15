@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from app.services.world_interaction.map_geometry import (
     geom_from_room_attrs,
+    grid_tile_bounds,
     grid_to_geom_geojson,
     grid_to_map_coords,
     room_has_map_grid,
@@ -17,6 +18,11 @@ def test_grid_to_map_coords_uses_cell_centers():
     x, y = grid_to_map_coords(4, 2, span_w=2, span_h=2, cell_px=4, origin_x=10, origin_y=10)
     assert x == 10 + 5 * 4
     assert y == 10 + 3 * 4
+
+
+def test_grid_tile_bounds_returns_top_left_and_size():
+    x, y, w, h = grid_tile_bounds(4, 2, span_w=2, span_h=1, cell_px=4, origin_x=10, origin_y=10)
+    assert (x, y, w, h) == (26, 18, 8, 4)
 
 
 def test_geom_from_room_attrs_returns_feature_polygon():

@@ -769,3 +769,70 @@ def test_run_graph_seed_preserves_instance_managed_on_reload():
             assert merged.get("service_id") == "yaml-service"
     finally:
         _cleanup_test_graph(world_key)
+
+
+@pytest.mark.game
+@pytest.mark.integration
+def test_run_graph_seed_floor_display_name_and_building_world_location_id():
+    _require_postgres_engine()
+    from sqlalchemy import text
+
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
+
+    ensure_graph_schema(engine)
+    ensure_graph_seed_ontology(engine)
+    world_key = "graph_seed_test"
+    _cleanup_test_graph(world_key)
+
+    profile = _MiniWorldProfileWithLocatedIn()
+    snap = _minimal_snapshot()
+    snap["spatial"]["floors"][0]["display_name"] = "B1 · 1F"
+    snap["spatial"]["floors"][0]["floor_name"] = "1F"
+
+    try:
+        with db_session_context() as session:
+            run_graph_seed(session, world_key, snap, profile)  # type: ignore[arg-type]
+            session.commit()
+
+        with db_session_context() as session:
+            world_row = session.execute(
+                text(
+                    """
+                    SELECT id FROM nodes
+                    WHERE type_code = 'world'
+                      AND attributes->>'world_id' = :wid
+                    """
+                ),
+                {"wid": world_key},
+            ).mappings().first()
+            building_row = session.execute(
+                text(
+                    """
+                    SELECT id, name, location_id, attributes
+                    FROM nodes
+                    WHERE type_code = 'building'
+                      AND attributes->>'package_node_id' = 'gst_b1'
+                    """
+                )
+            ).mappings().first()
+            floor_row = session.execute(
+                text(
+                    """
+                    SELECT id, name, attributes
+                    FROM nodes
+                    WHERE type_code = 'building_floor'
+                      AND attributes->>'package_node_id' = 'gst_f1'
+                    """
+                )
+            ).mappings().first()
+
+        assert world_row is not None
+        assert building_row is not None
+        assert floor_row is not None
+        assert int(building_row["location_id"]) == int(world_row["id"])
+        assert str(floor_row["name"]) == "B1 · 1F"
+        floor_attrs = dict(floor_row["attributes"] or {})
+        assert str(floor_attrs.get("display_name") or "") == "B1 · 1F"
+    finally:
+        _cleanup_test_graph(world_key)

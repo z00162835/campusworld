@@ -266,11 +266,15 @@ class WorldInteractionService:
         if clean == "select":
             user = self._get_user_node(session, actor.user_id, username=actor.username)
             location = self._resolve_current_location(session, user)
+            layer = str(view_layer or "room").strip().lower()
+            resolved_anchor = anchor_id
+            if layer == "room" and selected_entity_id and str(selected_entity_id).isdigit():
+                resolved_anchor = selected_entity_id
             focus_map = build_focus_map(
                 session,
                 location,
-                view_layer=view_layer or "room",
-                anchor_id=anchor_id,
+                view_layer=layer,
+                anchor_id=resolved_anchor,
                 mode=mode,
                 selected_entity_id=selected_entity_id,
             )

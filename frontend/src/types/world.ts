@@ -100,12 +100,13 @@ export interface TaskCard {
   blockers?: Array<{ id: string; reason: string; resolutionAction?: DecisionOption }>
 }
 
-export type MapViewLayer = 'room' | 'floor' | 'building' | 'campus'
+export type MapViewLayer = 'room' | 'floor' | 'building' | 'campus' | 'world'
 
 export interface MapBreadcrumb {
   layer: string
   id: string
   name: string
+  role?: 'hub' | 'world' | 'campus_spot' | 'building' | 'floor' | 'room' | string
 }
 
 export interface NeighborMapLink {
@@ -138,11 +139,28 @@ export interface SpaceSummaryData {
 export interface SemanticMapNode {
   id: string
   name: string
-  type: 'gate' | 'bridge' | 'plaza' | 'building' | 'room' | 'floor' | 'outdoor' | 'service' | 'hidden' | 'cluster'
+  type:
+    | 'gate'
+    | 'bridge'
+    | 'plaza'
+    | 'building'
+    | 'room'
+    | 'floor'
+    | 'outdoor'
+    | 'world'
+    | 'hub'
+    | 'object'
+    | 'device'
+    | 'agent'
+    | 'service'
+    | 'hidden'
+    | 'cluster'
   buildingId?: string
   floorId?: string
   floorNumber?: number
   drillAnchorId?: string
+  logicalZone?: 'hub' | 'occupant' | 'device' | 'item' | 'exit'
+  crossBuilding?: boolean
   x: number
   y: number
   status: 'unknown' | 'visible' | 'discovered' | 'current' | 'active' | 'locked' | 'warning'
@@ -150,6 +168,13 @@ export interface SemanticMapNode {
   activeAgentIds: string[]
   activeEventIds: string[]
   objectIds: string[]
+  groupMembers?: RoomContentGroupMember[]
+  overflowCount?: number
+  mapGridCol?: number
+  mapGridRow?: number
+  mapGridSpanW?: number
+  mapGridSpanH?: number
+  roomType?: string
 }
 
 export interface SemanticMapEdge {
@@ -158,8 +183,9 @@ export interface SemanticMapEdge {
   to: string
   label?: string
   direction?: string
-  status: 'available' | 'locked' | 'recommended' | 'visited'
+  status: 'available' | 'locked' | 'recommended' | 'visited' | 'cross-building'
   targetLabel?: string
+  crossBuilding?: boolean
 }
 
 export interface AgentMapPresence {
@@ -180,6 +206,37 @@ export interface FloorRoomListItem {
   status: SemanticMapNode['status']
 }
 
+export interface FloorStackItem {
+  id: string
+  name: string
+  floorNumber?: number
+  status: SemanticMapNode['status']
+}
+
+export interface FloorGridBounds {
+  minCol: number
+  minRow: number
+  maxCol: number
+  maxRow: number
+  cellPx: number
+  originX: number
+  originY: number
+}
+
+export interface RoomOccupantListItem {
+  id: string
+  name: string
+  type: SemanticMapNode['type']
+  status: SemanticMapNode['status']
+}
+
+export interface RoomContentGroupMember {
+  id: string
+  name: string
+  type: SemanticMapNode['type']
+  status: SemanticMapNode['status']
+}
+
 export interface MapPatch {
   mode?: FocusMap['mode']
   viewLayer?: MapViewLayer
@@ -195,11 +252,14 @@ export interface FocusMap {
   mode: 'focus' | 'route' | 'agent' | 'event'
   viewLayer?: MapViewLayer
   orientation?: 'north-up'
-  layout?: 'compass' | 'grid' | 'hierarchy' | 'list'
+  layout?: 'compass' | 'grid' | 'hierarchy' | 'list' | 'logical'
   breadcrumb?: MapBreadcrumb[]
   neighborLinks?: NeighborMapLink[]
   floorPlanReady?: boolean
   floorRoomList?: FloorRoomListItem[]
+  floorStack?: FloorStackItem[]
+  floorGridBounds?: FloorGridBounds | null
+  roomOccupants?: RoomOccupantListItem[]
   nodes: SemanticMapNode[]
   edges: SemanticMapEdge[]
   agentPresences: AgentMapPresence[]

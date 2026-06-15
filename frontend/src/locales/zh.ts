@@ -227,7 +227,24 @@ export default {
       backToRoom: '回到当前房间',
       floorPlanNotReady: '平面图未就绪，当前以房间列表展示。',
       floorRoomListLabel: '本层房间列表',
+      floorStackLabel: '楼层',
+      floorStackYouAreHere: '当前位置',
       layersLabel: '地图层级',
+      logicalZones: {
+        occupants: '占用者',
+        devices: '设备',
+        items: '物品',
+        exits: '出口 · 侧栏',
+      },
+      contentGroups: {
+        occupant: '人员 · {count}',
+        device: '设备 · {count}',
+        item: '物品 · {count}',
+      },
+      roomOccupants: {
+        title: '在场人员',
+      },
+      roomContentPanelsLabel: '房间内容',
       mode: {
         focus: '当前焦点',
         route: '路线',
@@ -246,6 +263,9 @@ export default {
         up: '上行',
         down: '下行',
       },
+      edgeLockedHint: '楼层竖向连接仅作示意，请通过房间出口导航',
+      crossBuildingExit: '跨楼出口：{target}',
+      crossBuildingExitGeneric: '跨楼出口',
       spaceSummary: {
         close: '关闭',
         appearance: '外观',

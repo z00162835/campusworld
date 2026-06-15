@@ -12,6 +12,24 @@ def room_has_map_grid(attrs: Dict[str, Any]) -> bool:
     return attrs.get("map_grid_col") is not None and attrs.get("map_grid_row") is not None
 
 
+def grid_tile_bounds(
+    col: int,
+    row: int,
+    *,
+    span_w: int = 1,
+    span_h: int = 1,
+    cell_px: int = MAP_GRID_CELL_PX,
+    origin_x: int = MAP_GRID_ORIGIN_X,
+    origin_y: int = MAP_GRID_ORIGIN_Y,
+) -> Tuple[int, int, int, int]:
+    """Top-left (x, y) and (width, height) in semantic map units (North-up)."""
+    x = int(origin_x + int(col) * cell_px)
+    y = int(origin_y + int(row) * cell_px)
+    width = int(max(1, span_w) * cell_px)
+    height = int(max(1, span_h) * cell_px)
+    return (x, y, width, height)
+
+
 def grid_to_map_coords(
     col: int,
     row: int,

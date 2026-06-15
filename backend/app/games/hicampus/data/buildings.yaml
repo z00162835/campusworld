@@ -105,7 +105,7 @@ buildings:
   - id: hicampus_f6
     world_id: hicampus
     building_code: F6
-    campus_grid_col: 14
+    campus_grid_col: 6
     campus_grid_row: 18
     type_code: building
     display_name: F6 Dormitory

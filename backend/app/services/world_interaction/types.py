@@ -12,6 +12,7 @@ DISPLAY_POLICY = {
     "maxMapNodesVisible": 7,
     "maxFloorNodesVisible": 24,
     "maxCampusNodesVisible": 40,
+    "maxWorldNodesVisible": 24,
     "maxAgentsHighlighted": 3,
     "maxEventHotspotsHighlighted": 2,
     "contextDefaultCollapsed": True,

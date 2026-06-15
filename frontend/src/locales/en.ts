@@ -227,7 +227,24 @@ export default {
       backToRoom: 'Back to current room',
       floorPlanNotReady: 'Floor plan is not ready. Showing room list.',
       floorRoomListLabel: 'Rooms on this floor',
+      floorStackLabel: 'Floors',
+      floorStackYouAreHere: 'You are here',
       layersLabel: 'Map layers',
+      logicalZones: {
+        occupants: 'Occupants',
+        devices: 'Devices',
+        items: 'Items',
+        exits: 'Exits on map',
+      },
+      contentGroups: {
+        occupant: 'People · {count}',
+        device: 'Devices · {count}',
+        item: 'Items · {count}',
+      },
+      roomOccupants: {
+        title: 'People here',
+      },
+      roomContentPanelsLabel: 'Room contents',
       mode: {
         focus: 'Current focus',
         route: 'Route',
@@ -246,6 +263,9 @@ export default {
         up: 'Up',
         down: 'Down',
       },
+      edgeLockedHint: 'Vertical floor links are illustrative only; use room exits to navigate',
+      crossBuildingExit: 'Cross-building exit: {target}',
+      crossBuildingExitGeneric: 'Cross-building exit',
       spaceSummary: {
         close: 'Close',
         appearance: 'Appearance',

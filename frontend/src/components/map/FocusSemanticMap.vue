@@ -3,7 +3,7 @@
     <div class="region-menu">
       <h2>{{ t('worldInteraction.map.title') }}</h2>
       <div class="region-actions">
-        <el-button size="small" text @click="mapStore.drillTo('campus')">
+        <el-button size="small" text @click="mapStore.drillTo('world')">
           {{ t('worldInteraction.map.openFullMap') }}
         </el-button>
         <el-button size="small" text @click="mapStore.drillToCurrentRoom()">
@@ -41,7 +41,7 @@
           type="button"
           class="breadcrumb-item"
           :class="{ active: index === mapStore.breadcrumb.length - 1 }"
-          @click="mapStore.drillTo(crumb.layer as MapViewLayer, crumb.id)"
+          @click="mapStore.navigateBreadcrumb(crumb)"
         >
           {{ crumb.name }}
         </button>
@@ -59,6 +59,12 @@
     </div>
     <div v-else class="map-body">
       <p
+        v-if="mapStore.map?.layout === 'logical'"
+        class="logical-zone-hint"
+      >
+        {{ logicalZoneHint }}
+      </p>
+      <p
         v-if="mapStore.viewLayer === 'floor' && !mapStore.floorPlanReady"
         class="floor-plan-hint"
       >
@@ -74,7 +80,7 @@
             type="button"
             class="floor-room-item"
             :class="room.status"
-            @click="mapStore.selectMapTarget(room.id)"
+            @click="mapStore.drillTo('room', room.id)"
           >
             {{ room.name }}
           </button>
@@ -84,7 +90,13 @@
         v-if="mapStore.nodes.length"
         ref="canvasRef"
         class="map-canvas"
-      :class="{ 'is-panning': isPanning, [`mode-${mapStore.mode}`]: true }"
+      :class="{
+        'is-panning': isPanning,
+        'is-loading': mapStore.mapLoading,
+        [`mode-${mapStore.mode}`]: true,
+        'layout-logical': mapStore.map?.layout === 'logical',
+        'layout-grid': mapStore.map?.layout === 'grid',
+      }"
       @wheel.prevent="onWheel"
       @mousedown="onPanStart"
     >
@@ -124,47 +136,169 @@
         <span class="zoom-label">{{ zoomPercent }}%</span>
       </div>
 
+      <aside
+        v-if="mapStore.viewLayer === 'floor' && mapStore.floorStack.length > 1"
+        class="floor-stack-panel"
+        :aria-label="t('worldInteraction.map.floorStackLabel')"
+        @mousedown.stop
+      >
+        <h3 class="floor-stack-title">{{ t('worldInteraction.map.floorStackLabel') }}</h3>
+        <ul class="floor-stack-list">
+          <li v-for="floor in mapStore.floorStack" :key="floor.id">
+            <button
+              type="button"
+              class="floor-stack-item"
+              :class="floor.status"
+              @click="mapStore.drillTo('floor', floor.id)"
+            >
+              <span class="floor-stack-name">{{ floor.name }}</span>
+              <span v-if="floor.status === 'current'" class="floor-stack-badge">
+                {{ t('worldInteraction.map.floorStackYouAreHere') }}
+              </span>
+            </button>
+          </li>
+        </ul>
+      </aside>
+
+      <aside
+        v-if="mapStore.viewLayer === 'room' && roomContentPanelGroups.length"
+        class="room-content-panels"
+        :aria-label="t('worldInteraction.map.roomContentPanelsLabel')"
+        @mousedown.stop
+      >
+        <section
+          v-for="group in roomContentPanelGroups"
+          :key="group.id"
+          class="room-content-panel"
+          :class="[group.status, group.logicalZone]"
+        >
+          <h3 class="room-content-panel-title">{{ group.displayName }}</h3>
+          <ul class="group-member-list">
+            <li v-for="member in group.groupMembers ?? []" :key="member.id">
+              <button
+                type="button"
+                class="group-member-item"
+                :class="member.status"
+                @click.stop="mapStore.selectMapTarget(member.id, { viewLayer: 'room' })"
+              >
+                {{ member.name }}
+              </button>
+            </li>
+          </ul>
+        </section>
+      </aside>
+
+      <aside
+        v-if="mapStore.viewLayer === 'room' && mapStore.roomOccupants.length"
+        class="room-occupants-panel"
+        :aria-label="t('worldInteraction.map.roomOccupants.title')"
+        @mousedown.stop
+      >
+        <h3 class="room-occupants-title">{{ t('worldInteraction.map.roomOccupants.title') }}</h3>
+        <ul class="room-occupants-list">
+          <li v-for="person in mapStore.roomOccupants" :key="person.id">
+            <button
+              type="button"
+              class="room-occupant-item"
+              :class="person.status"
+              @click="mapStore.selectMapTarget(person.id, { viewLayer: 'room' })"
+            >
+              {{ person.name }}
+            </button>
+          </li>
+        </ul>
+      </aside>
+
       <div class="map-viewport" :style="viewportStyle">
-        <div class="map-content" :style="contentStyle">
+        <div class="map-content" :class="{ 'floor-plan': isFloorPlanLayout }" :style="contentStyle">
+          <svg
+            v-if="isFloorPlanLayout && floorGridSvgLines.length"
+            class="floor-grid-layer"
+            :viewBox="svgViewBox"
+            preserveAspectRatio="none"
+          >
+            <line
+              v-for="(line, index) in floorGridSvgLines"
+              :key="`grid-${index}`"
+              :x1="line.x1"
+              :y1="line.y1"
+              :x2="line.x2"
+              :y2="line.y2"
+            />
+          </svg>
+
+          <svg
+            v-if="isFloorPlanLayout && renderFloorPlanTiles.length"
+            class="floor-tile-layer"
+            :viewBox="svgViewBox"
+            preserveAspectRatio="none"
+          >
+            <g
+              v-for="tile in renderFloorPlanTiles"
+              :key="tile.id"
+              class="floor-tile-group"
+              :class="[tile.status, tile.type, tile.roomType, { outdoor: tile.semanticTags?.includes('environment:outdoor') }]"
+              role="button"
+              tabindex="0"
+              @click.stop="mapStore.handleNodeClick(tile)"
+              @keydown.enter.prevent="mapStore.handleNodeClick(tile)"
+            >
+              <polygon :points="tile.sideSouthPoints" class="floor-tile-side floor-tile-side-south" />
+              <polygon :points="tile.sideEastPoints" class="floor-tile-side floor-tile-side-east" />
+              <polygon :points="tile.topPoints" class="floor-tile-top" />
+              <text
+                :x="tile.labelX"
+                :y="tile.labelY"
+                class="floor-tile-label"
+                text-anchor="middle"
+                dominant-baseline="middle"
+              >
+                {{ tile.displayName }}
+              </text>
+            </g>
+          </svg>
+
           <svg class="path-layer" :viewBox="svgViewBox" preserveAspectRatio="none">
             <line
-              v-for="edge in mapStore.edges"
+              v-for="edge in renderEdges"
               :key="edge.id"
-              :x1="nodePx(edge.from).x"
-              :y1="nodePx(edge.from).y"
-              :x2="nodePx(edge.to).x"
-              :y2="nodePx(edge.to).y"
-              :class="['edge', edge.status, edgeClass(edge)]"
+              :x1="edge.x1"
+              :y1="edge.y1"
+              :x2="edge.x2"
+              :y2="edge.y2"
+              :class="['edge', edge.status, edge.className]"
+              :title="edge.title"
             />
             <text
-              v-for="edge in mapStore.edges"
+              v-for="edge in labeledRenderEdges"
               :key="`label-${edge.id}`"
-              :x="edgeLabelPx(edge).x"
-              :y="edgeLabelPx(edge).y"
+              :x="edge.labelX"
+              :y="edge.labelY"
               class="edge-label"
               text-anchor="middle"
               dominant-baseline="middle"
             >
-              {{ directionLabel(edge.direction || edge.label) }}
+              {{ edge.directionText }}
             </text>
           </svg>
 
           <button
-            v-for="node in mapStore.nodes"
-            :key="node.id"
-            :class="['space-node', node.status, node.type]"
-            :style="nodeStyle(node)"
+            v-for="node in renderNodes"
+            :key="`node-${node.id}`"
+            v-show="!isRoomContentGroup(node) && !isFloorPlanTile(node, mapStore.map?.layout)"
+            :class="['space-node', node.status, node.type, node.logicalZone, { 'cross-building': node.crossBuilding }]"
+            :style="{ left: node.left, top: node.top }"
             type="button"
             @click.stop="mapStore.handleNodeClick(node)"
           >
             <span class="node-dot"></span>
-            <span class="node-name">{{ node.name }}</span>
+            <span class="node-name">{{ node.displayName }}</span>
           </button>
 
           <div
-            v-for="agent in mapStore.agentPresences"
+            v-for="agent in renderAgents"
             :key="agent.agentId"
-            :class="['agent-node', { 'agent-node--floating': !agentAnchor(agent) }]"
+            :class="['agent-node', { 'agent-node--floating': agent.floating }]"
             :style="agentStyle(agent)"
             :title="agent.name"
           >
@@ -173,13 +307,17 @@
         </div>
       </div>
 
+      <div v-if="mapStore.mapLoading" class="map-loading-overlay" aria-live="polite">
+        {{ t('worldInteraction.map.loading') }}
+      </div>
+
       <div class="map-minimap" :title="t('worldInteraction.map.minimap')" @mousedown.stop>
         <svg :width="MINIMAP_W" :height="MINIMAP_H" :viewBox="`0 0 ${MINIMAP_W} ${MINIMAP_H}`">
           <rect
-            v-for="node in mapStore.nodes"
+            v-for="node in minimapNodes"
             :key="`mini-${node.id}`"
-            :x="toMinimap(node.x, node.y).x - 2"
-            :y="toMinimap(node.x, node.y).y - 2"
+            :x="node.miniX - 2"
+            :y="node.miniY - 2"
             width="4"
             height="4"
             :class="['minimap-node', node.status, node.type]"
@@ -211,10 +349,12 @@ import {
   ZoomOut,
 } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
+import { computeFloorPlanBounds, computeMapBounds, isFloorPlanTile, isRoomContentGroup, roomContentGroupLabel, useSemanticMapRender } from '@/composables/useSemanticMapRender'
+import { gridCornerToIso } from '@/utils/mapLayout'
 import { useWorldMapStore } from '@/stores/worldMap'
 import { useWorldSessionStore } from '@/stores/worldSession'
-import { COMPASS_ROSE_SIZE, edgeMidpoint, formatDirectionLabel } from '@/utils/mapLayout'
-import type { AgentMapPresence, MapViewLayer, SemanticMapEdge, SemanticMapNode } from '@/types/world'
+import { COMPASS_ROSE_SIZE } from '@/utils/mapLayout'
+import type { RenderedMapAgent } from '@/composables/useSemanticMapRender'
 
 const COORD_UNIT_PX = 10
 const BOUNDS_PAD = 14
@@ -239,23 +379,99 @@ let panStartY = 0
 let panOriginX = 0
 let panOriginY = 0
 
+const ROOM_CONTENT_ZONE_ORDER: Record<string, number> = { device: 0, item: 1 }
+
+const spatialNodes = computed(() => {
+  if (mapStore.map?.layout === 'logical') {
+    return mapStore.nodes.filter(node => !isRoomContentGroup(node))
+  }
+  return mapStore.nodes
+})
+
+const spatialEdges = computed(() => {
+  if (mapStore.map?.layout === 'logical') {
+    return mapStore.edges.filter(edge => !String(edge.id).startsWith('logical_group_'))
+  }
+  return mapStore.edges
+})
+
 const bounds = computed(() => {
-  const nodes = mapStore.nodes
-  if (!nodes.length) {
-    return { minX: 0, minY: 0, width: 100, height: 100 }
+  if (mapStore.map?.layout === 'grid') {
+    return computeFloorPlanBounds(mapStore.nodes, BOUNDS_PAD)
   }
-  const xs = nodes.map(node => node.x)
-  const ys = nodes.map(node => node.y)
-  const minX = Math.min(...xs) - BOUNDS_PAD
-  const minY = Math.min(...ys) - BOUNDS_PAD
-  const maxX = Math.max(...xs) + BOUNDS_PAD
-  const maxY = Math.max(...ys) + BOUNDS_PAD
-  return {
-    minX,
-    minY,
-    width: Math.max(80, maxX - minX),
-    height: Math.max(80, maxY - minY),
+  return computeMapBounds(spatialNodes.value, BOUNDS_PAD)
+})
+
+const mapLayout = computed(() => mapStore.map?.layout)
+const isFloorPlanLayout = computed(() => mapLayout.value === 'grid')
+const isLogicalRoomLayout = computed(() => mapLayout.value === 'logical')
+
+const {
+  renderNodes,
+  renderFloorPlanTiles,
+  renderEdges,
+  labeledRenderEdges,
+  renderAgents,
+  minimapNodes,
+  minimapScale,
+} = useSemanticMapRender({
+  nodes: spatialNodes,
+  edges: spatialEdges,
+  agentPresences: computed(() => mapStore.agentPresences),
+  bounds,
+  coordUnitPx: COORD_UNIT_PX,
+  minimapW: MINIMAP_W,
+  minimapH: MINIMAP_H,
+  minimapPad: MINIMAP_PAD,
+  layout: mapLayout,
+  t,
+})
+
+const roomContentPanelGroups = computed(() => {
+  if (!isLogicalRoomLayout.value) return []
+  return mapStore.nodes
+    .filter(node => isRoomContentGroup(node))
+    .map(node => ({
+      ...node,
+      displayName: roomContentGroupLabel(node, t),
+    }))
+    .sort((a, b) => {
+      const left = ROOM_CONTENT_ZONE_ORDER[a.logicalZone ?? ''] ?? 9
+      const right = ROOM_CONTENT_ZONE_ORDER[b.logicalZone ?? ''] ?? 9
+      return left - right
+    })
+})
+
+const floorGridSvgLines = computed(() => {
+  const grid = mapStore.floorGridBounds
+  if (!grid || !isFloorPlanLayout.value) {
+    return [] as Array<{ x1: number; y1: number; x2: number; y2: number }>
   }
+  const { minX, minY } = bounds.value
+  const scale = COORD_UNIT_PX
+  const { minCol, maxCol, minRow, maxRow } = grid
+  const lines: Array<{ x1: number; y1: number; x2: number; y2: number }> = []
+  const toPx = (point: { x: number; y: number }) => ({
+    x: (point.x - minX) * scale,
+    y: (point.y - minY) * scale,
+  })
+  for (let col = minCol; col <= maxCol; col += 1) {
+    const a = toPx(gridCornerToIso(col, minRow))
+    const b = toPx(gridCornerToIso(col, maxRow))
+    lines.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y })
+  }
+  for (let row = minRow; row <= maxRow; row += 1) {
+    const a = toPx(gridCornerToIso(minCol, row))
+    const b = toPx(gridCornerToIso(maxCol, row))
+    lines.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y })
+  }
+  return lines
+})
+
+const mapLayoutKey = computed(() => {
+  const nodes = spatialNodes.value
+  if (!nodes.length) return ''
+  return `${mapStore.viewLayer}:${nodes.length}:${nodes.map(node => `${node.id}@${node.x},${node.y}`).join('|')}`
 })
 
 const contentWidthPx = computed(() => bounds.value.width * COORD_UNIT_PX)
@@ -276,15 +492,13 @@ const viewportStyle = computed(() => ({
 
 const zoomPercent = computed(() => Math.round(userZoom.value * 100))
 
-const minimapScale = computed(() => {
-  const bw = Math.max(1, bounds.value.width)
-  const bh = Math.max(1, bounds.value.height)
-  return Math.min((MINIMAP_W - MINIMAP_PAD * 2) / bw, (MINIMAP_H - MINIMAP_PAD * 2) / bh)
-})
-
-const toMinimap = (x: number, y: number) => ({
-  x: MINIMAP_PAD + (x - bounds.value.minX) * minimapScale.value,
-  y: MINIMAP_PAD + (y - bounds.value.minY) * minimapScale.value,
+const logicalZoneHint = computed(() => {
+  const zones = t('worldInteraction.map.logicalZones')
+  if (typeof zones !== 'object' || zones === null) return ''
+  const dev = (zones as Record<string, string>).devices
+  const items = (zones as Record<string, string>).items
+  const exits = (zones as Record<string, string>).exits
+  return `${items} · ${dev} · ${exits}`
 })
 
 const minimapViewport = computed(() => {
@@ -305,51 +519,11 @@ const minimapViewport = computed(() => {
   }
 })
 
-const toLocal = (x: number, y: number) => ({
-  x: (x - bounds.value.minX) * COORD_UNIT_PX,
-  y: (y - bounds.value.minY) * COORD_UNIT_PX,
-})
-
-const nodePx = (id: string) => {
-  const node = mapStore.nodes.find(item => item.id === id)
-  if (!node) return { x: 0, y: 0 }
-  return toLocal(node.x, node.y)
-}
-
-const edgeLabelPx = (edge: SemanticMapEdge) => {
-  const from = nodePx(edge.from)
-  const to = nodePx(edge.to)
-  return edgeMidpoint(from, to)
-}
-
-const directionLabel = (direction?: string) => formatDirectionLabel(direction, t)
-
-const edgeClass = (edge: SemanticMapEdge) => {
-  const dir = String(edge.direction || '').toLowerCase()
-  return dir === 'up' || dir === 'down' ? 'edge-vertical' : ''
-}
-
-const nodeStyle = (node: SemanticMapNode) => {
-  const point = toLocal(node.x, node.y)
-  return {
-    left: `${point.x}px`,
-    top: `${point.y}px`,
+const agentStyle = (agent: RenderedMapAgent) => {
+  if (agent.floating) {
+    return { right: agent.right, bottom: agent.bottom }
   }
-}
-
-const agentAnchor = (agent: AgentMapPresence) =>
-  mapStore.nodes.find(node => node.id === agent.currentSpaceId)
-
-const agentStyle = (agent: AgentMapPresence) => {
-  const anchor = agentAnchor(agent)
-  if (!anchor) {
-    return { right: '12px', bottom: '12px' }
-  }
-  const point = toLocal(anchor.x, anchor.y)
-  return {
-    left: `${point.x + 28}px`,
-    top: `${point.y - 18}px`,
-  }
+  return { left: agent.left, top: agent.top }
 }
 
 const clampUserZoom = (value: number) => Math.min(3, Math.max(0.35, value))
@@ -416,13 +590,12 @@ const onPanEnd = () => {
 }
 
 watch(
-  () => [mapStore.nodes, mapStore.edges, worldSession.loading],
-  () => {
-    if (!worldSession.loading && mapStore.nodes.length) {
+  () => [mapLayoutKey.value, worldSession.loading, mapStore.mapLoading] as const,
+  ([layoutKey, sessionLoading, mapLoading]) => {
+    if (!sessionLoading && !mapLoading && layoutKey) {
       nextTick(() => resetView())
     }
   },
-  { deep: true },
 )
 
 onMounted(() => {
@@ -577,6 +750,23 @@ onBeforeUnmount(() => {
   cursor: grabbing;
 }
 
+.map-canvas.is-loading {
+  pointer-events: none;
+}
+
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 24, 29, 0.55);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  pointer-events: none;
+}
+
 .map-toolbar {
   position: absolute;
   top: var(--spacing-sm);
@@ -590,6 +780,102 @@ onBeforeUnmount(() => {
   background: rgba(23, 26, 32, 0.92);
   border: 1px solid var(--border-color);
   backdrop-filter: blur(6px);
+}
+
+.room-occupants-panel {
+  position: absolute;
+  top: calc(48px + var(--spacing-sm));
+  right: var(--spacing-sm);
+  z-index: 3;
+  min-width: 148px;
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(23, 26, 32, 0.92);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(6px);
+}
+
+.room-occupants-title {
+  margin: 0 0 6px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.room-occupants-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.room-occupant-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.room-occupant-item.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.room-occupant-item:hover {
+  border-color: rgba(230, 162, 60, 0.65);
+  color: var(--text-primary);
+}
+
+.room-content-panels {
+  position: absolute;
+  top: calc(48px + var(--spacing-sm));
+  left: var(--spacing-sm);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 148px;
+  max-width: 200px;
+  max-height: calc(100% - 72px);
+  overflow-y: auto;
+}
+
+.room-content-panel {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(23, 26, 32, 0.92);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(6px);
+}
+
+.room-content-panel.device {
+  border-color: rgba(103, 194, 58, 0.55);
+}
+
+.room-content-panel.item {
+  border-color: rgba(144, 147, 153, 0.55);
+}
+
+.room-content-panel.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.35);
+}
+
+.room-content-panel-title {
+  margin: 0 0 6px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
 }
 
 .zoom-label {
@@ -607,6 +893,163 @@ onBeforeUnmount(() => {
   will-change: transform;
 }
 
+.map-content.floor-plan {
+  background: radial-gradient(ellipse at 50% 20%, rgba(64, 158, 255, 0.06), transparent 55%), #14181d;
+}
+
+.floor-grid-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floor-grid-layer line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.floor-tile-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 1;
+}
+
+.floor-tile-group {
+  cursor: pointer;
+}
+
+.floor-tile-side {
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 0.5;
+}
+
+.floor-tile-side-south {
+  fill: rgba(18, 22, 28, 0.95);
+}
+
+.floor-tile-side-east {
+  fill: rgba(26, 31, 38, 0.95);
+}
+
+.floor-tile-top {
+  fill: rgba(34, 40, 48, 0.96);
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 1;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
+.floor-tile-group.circulation .floor-tile-top {
+  fill: rgba(30, 36, 44, 0.82);
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-dasharray: 4 3;
+}
+
+.floor-tile-group.outdoor .floor-tile-top,
+.floor-tile-group.plaza .floor-tile-top,
+.floor-tile-group.gate .floor-tile-top,
+.floor-tile-group.bridge .floor-tile-top {
+  fill: rgba(32, 58, 78, 0.88);
+  stroke: rgba(103, 194, 255, 0.5);
+}
+
+.floor-tile-group.current .floor-tile-top,
+.floor-tile-group.active .floor-tile-top {
+  fill: rgba(40, 62, 92, 0.95);
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+}
+
+.floor-tile-group:hover .floor-tile-top {
+  fill: rgba(48, 56, 66, 0.98);
+  stroke: rgba(255, 255, 255, 0.38);
+}
+
+.floor-tile-label {
+  fill: var(--text-secondary);
+  font-size: 9px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.floor-tile-group.current .floor-tile-label,
+.floor-tile-group.active .floor-tile-label {
+  fill: var(--color-primary);
+  font-weight: 600;
+}
+
+.floor-stack-panel {
+  position: absolute;
+  top: calc(48px + var(--spacing-sm));
+  left: calc(36px + var(--spacing-md));
+  z-index: 3;
+  min-width: 132px;
+  max-width: 180px;
+  max-height: calc(100% - 72px);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(23, 26, 32, 0.92);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
+}
+
+.floor-stack-title {
+  margin: 0 0 6px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.floor-stack-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.floor-stack-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  padding: 5px 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.floor-stack-item.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.floor-stack-item.current {
+  border-color: rgba(230, 162, 60, 0.65);
+}
+
+.floor-stack-item:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: var(--text-primary);
+}
+
+.floor-stack-badge {
+  font-size: 9px;
+  color: rgba(230, 162, 60, 0.9);
+}
+
 .map-content {
   position: relative;
   background:
@@ -621,6 +1064,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 2;
 }
 
 .edge {
@@ -638,6 +1082,18 @@ onBeforeUnmount(() => {
   stroke: rgba(255, 196, 64, 0.75);
 }
 
+.edge.locked {
+  stroke-dasharray: 4 4;
+  stroke: rgba(255, 255, 255, 0.14);
+  opacity: 0.55;
+}
+
+.edge.cross-building,
+.edge.edge-cross-building {
+  stroke-dasharray: 5 3;
+  stroke: rgba(103, 194, 255, 0.85);
+}
+
 .edge-label {
   fill: rgba(255, 255, 255, 0.78);
   font-size: 10px;
@@ -649,8 +1105,73 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 1px rgba(230, 162, 60, 0.45);
 }
 
+.map-canvas.layout-logical .space-node.cluster {
+  min-width: 96px;
+  justify-content: center;
+  font-weight: var(--font-weight-semibold);
+}
+
+.map-canvas.layout-logical .space-node.cluster.occupant {
+  border-color: rgba(230, 162, 60, 0.7);
+}
+
+.map-canvas.layout-logical .space-node.cluster.device {
+  border-color: rgba(103, 194, 58, 0.65);
+}
+
+.map-canvas.layout-logical .space-node.cluster.item {
+  border-color: rgba(144, 147, 153, 0.65);
+}
+
+.group-title {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.group-member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.group-member-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.3;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.group-member-item.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.group-member-item:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
 .space-node.cluster {
   border-style: dashed;
+}
+
+.space-node.cross-building {
+  border-color: rgba(103, 194, 255, 0.75);
+  box-shadow: 0 0 0 1px rgba(103, 194, 255, 0.35);
 }
 
 .map-minimap {
@@ -760,6 +1281,35 @@ onBeforeUnmount(() => {
 
 .empty.error {
   color: var(--color-danger);
+}
+
+.logical-zone-hint {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.map-canvas.layout-logical .space-node.room {
+  border-color: rgba(64, 158, 255, 0.65);
+  font-weight: 600;
+}
+
+.map-canvas.layout-logical .space-node.object {
+  border-color: rgba(144, 147, 153, 0.55);
+  background: rgba(38, 42, 48, 0.95);
+}
+
+.map-canvas.layout-logical .space-node.device {
+  border-color: rgba(103, 194, 58, 0.55);
+}
+
+.map-canvas.layout-logical .space-node.agent {
+  border-color: rgba(230, 162, 60, 0.65);
+}
+
+.map-canvas.layout-logical .space-node.world,
+.map-canvas.layout-logical .space-node.hub {
+  border-color: rgba(64, 158, 255, 0.75);
 }
 
 @media (max-width: 980px) {

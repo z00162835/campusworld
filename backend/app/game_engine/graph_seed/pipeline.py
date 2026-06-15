@@ -68,7 +68,8 @@ def _build_specs(world_id: str, snap: Mapping[str, Any], profile: WorldGraphProf
         if not isinstance(f, dict) or not f.get('id'):
             continue
         fid = str(f['id'])
-        specs.append(_NodeSpec(logical_id=fid, package_type_code=str(f.get('type_code') or 'building_floor'), name=fid[:255], attributes={k: v for (k, v) in f.items() if k not in ('id', 'type_code', 'display_name', 'tags')}, tags=list(f.get('tags') or [])))
+        floor_name = str(f.get('display_name') or f.get('floor_name') or fid)[:255]
+        specs.append(_NodeSpec(logical_id=fid, package_type_code=str(f.get('type_code') or 'building_floor'), name=floor_name, attributes={k: v for (k, v) in f.items() if k not in ('id', 'type_code', 'tags')}, tags=list(f.get('tags') or [])))
     for r in spatial.get('rooms') or []:
         if not isinstance(r, dict) or not r.get('id'):
             continue
@@ -204,6 +205,22 @@ def _effective_strict_relationships(profile: WorldGraphProfile, strict_relations
         return strict_relationships
     return bool(getattr(profile, 'strict_relationships', False))
 
+def _resolve_world_parent(id_to_node: Dict[str, Node], world_slug: str) -> Optional[Node]:
+    """Resolve world node when package slug (e.g. hicampus) differs from logical id (hicampus_world)."""
+    slug = str(world_slug or '').strip()
+    if not slug:
+        return None
+    direct = id_to_node.get(slug)
+    if direct is not None and str(direct.type_code or '') == 'world':
+        return direct
+    for (_logical_id, node) in id_to_node.items():
+        if str(node.type_code or '') != 'world':
+            continue
+        attrs = dict(node.attributes or {})
+        if str(attrs.get('world_id') or '').strip() == slug:
+            return node
+    return None
+
 def _sync_space_hierarchy_location_ids(session: Session, id_to_node: Dict[str, Node], world_id: str) -> None:
     """
     Set ``Node.location_id`` for SPACE types so child.parent forms a single chain:
@@ -217,7 +234,7 @@ def _sync_space_hierarchy_location_ids(session: Session, id_to_node: Dict[str, N
         attrs = dict(node.attributes or {})
         if tc == 'building':
             wid = str(attrs.get('world_id') or world_id).strip()
-            parent = id_to_node.get(wid)
+            parent = _resolve_world_parent(id_to_node, wid)
             if parent is not None and int(node.location_id or 0) != int(parent.id):
                 node.location_id = int(parent.id)
         elif tc == 'building_floor':
