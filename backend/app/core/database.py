@@ -86,6 +86,12 @@ def get_db() -> Generator[Session, None, None]:
         db.rollback()
         raise
     except Exception as e:
+        # Re-raise FastAPI HTTPException so FastAPI converts it to a proper response
+        # instead of mislabeling it as a "database session exception".
+        from fastapi import HTTPException as FastAPIHTTPException
+        if isinstance(e, FastAPIHTTPException):
+            db.rollback()
+            raise
         logger.error(f'Database session exception: {e}')
         db.rollback()
         raise
@@ -207,6 +213,12 @@ def db_session_context() -> Session:
         session.rollback()
         raise
     except Exception as e:
+        # Re-raise FastAPI HTTPException so FastAPI converts it to a proper response
+        # instead of mislabeling it as a "database session exception".
+        from fastapi import HTTPException as FastAPIHTTPException
+        if isinstance(e, FastAPIHTTPException):
+            session.rollback()
+            raise
         logger.error(f'Database session exception, rolling back transaction: {e}')
         session.rollback()
         raise

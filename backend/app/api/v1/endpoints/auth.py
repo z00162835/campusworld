@@ -28,18 +28,30 @@ limiter = Limiter(key_func=get_remote_address)
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
 
-def _is_secure_cookie() -> bool:
+def _is_secure_cookie(request: Request = None) -> bool:
     """Determine if cookies should have Secure flag.
 
     In production, Secure should be True (requires HTTPS).
     In development, False allows HTTP for local testing.
+
+    Also checks the actual request scheme (or X-Forwarded-Proto header)
+    so that __Host- prefixed cookies are not silently rejected by the
+    browser when running on HTTP even if app.debug=false.
     """
     from app.core.config_manager import get_setting
     debug = get_setting('app.debug', False)
-    return not debug
+    if debug:
+        return False
+    # Check the actual request scheme to avoid setting __Host- cookies
+    # on non-HTTPS connections (browsers reject them silently).
+    if request is not None:
+        scheme = request.headers.get('X-Forwarded-Proto') or request.url.scheme
+        if scheme.lower() != 'https':
+            return False
+    return True
 
-def _refresh_cookie_name() -> str:
-    if _is_secure_cookie():
+def _refresh_cookie_name(request: Request = None) -> str:
+    if _is_secure_cookie(request):
         return '__Host-refresh_token'
     return 'refresh_token'
 
@@ -57,14 +69,16 @@ def _set_session_termination_headers(response: Response) -> None:
     _set_no_store(response)
     response.headers['Clear-Site-Data'] = '"cache", "storage"'
 
-def _clear_auth_cookies(response: Response) -> None:
-    response.delete_cookie(key='access_token', httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
+def _clear_auth_cookies(response: Response, request: Request = None) -> None:
+    # Always try to delete both cookie names regardless of secure flag,
+    # since we may not know which variant was set.
+    response.delete_cookie(key='access_token', httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
     for cookie_name in ('refresh_token', '__Host-refresh_token'):
-        response.delete_cookie(key=cookie_name, httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
+        response.delete_cookie(key=cookie_name, httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
 
-def _refresh_unauthorized_response(detail: str) -> JSONResponse:
+def _refresh_unauthorized_response(detail: str, request: Request = None) -> JSONResponse:
     response = JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': detail}, headers={'WWW-Authenticate': 'Bearer'})
-    _clear_auth_cookies(response)
+    _clear_auth_cookies(response, request)
     _set_session_termination_headers(response)
     return response
 
@@ -169,7 +183,7 @@ def login(request: Request, response: Response, form_data: OAuth2PasswordRequest
     access_token = tokens['access_token']
     _set_no_store(response)
     if tokens.get('refresh_token'):
-        response.set_cookie(key=_refresh_cookie_name(), value=tokens['refresh_token'], max_age=tokens.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
+        response.set_cookie(key=_refresh_cookie_name(request), value=tokens['refresh_token'], max_age=tokens.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
     db.commit()
     return {'access_token': access_token, 'token_type': 'bearer', 'expires_in': tokens['expires_in'], 'idle_expires_in': tokens['idle_expires_in']}
 
@@ -188,19 +202,19 @@ def refresh_token(request: Request, response: Response, db: Session=Depends(get_
     _set_no_store(response)
     refresh_token = _get_refresh_token_from_request(request)
     if not refresh_token:
-        return _refresh_unauthorized_response('Refresh token required')
+        return _refresh_unauthorized_response('Refresh token required', request)
     device = user_agent or 'unknown'
     validation = AuthService.validate_refresh_token(db, refresh_token)
     if not validation['valid']:
         error_messages = {'token_revoked': 'Refresh token has been revoked', 'token_reused': 'Refresh token has already been used', 'token_expired': 'Refresh token has expired', 'idle_timeout': 'Session idle timeout'}
-        return _refresh_unauthorized_response(error_messages.get(validation['error'], 'Invalid refresh token'))
+        return _refresh_unauthorized_response(error_messages.get(validation['error'], 'Invalid refresh token'), request)
     result = AuthService.rotate_refresh_token(db=db, user_id=validation['user_id'], old_jti=validation['jti'], old_family_id=validation['family_id'], device=device, expected_access_token=None)
     if 'error' in result:
         error_messages = {'user_not_found': 'User not found', 'account_inactive': 'Account is inactive', 'account_locked': 'Account is locked'}
-        return _refresh_unauthorized_response(error_messages.get(result['error'], 'Token rotation failed'))
+        return _refresh_unauthorized_response(error_messages.get(result['error'], 'Token rotation failed'), request)
     access_token = result['access_token']
     if result.get('refresh_token'):
-        response.set_cookie(key=_refresh_cookie_name(), value=result['refresh_token'], max_age=result.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(), path='/')
+        response.set_cookie(key=_refresh_cookie_name(request), value=result['refresh_token'], max_age=result.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
     return {'access_token': access_token, 'token_type': 'bearer', 'expires_in': result['expires_in'], 'idle_expires_in': result.get('idle_expires_in', validation.get('idle_expires_in'))}
 
 @router.post('/logout')
@@ -217,7 +231,7 @@ def logout(request: Request, response: Response, db: Session=Depends(get_db), x_
         validation = AuthService.validate_refresh_token(db, refresh_token)
         if validation['valid']:
             AuthService.revoke_refresh_token(db, validation['user_id'], validation['jti'])
-    _clear_auth_cookies(response)
+    _clear_auth_cookies(response, request)
     _set_session_termination_headers(response)
     return {'message': 'Logged out successfully'}
 

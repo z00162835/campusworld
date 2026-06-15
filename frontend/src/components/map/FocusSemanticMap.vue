@@ -362,7 +362,7 @@ const MINIMAP_W = 132
 const MINIMAP_H = 88
 const MINIMAP_PAD = 6
 
-const { t } = useI18n()
+const { t, tm } = useI18n()
 const mapStore = useWorldMapStore()
 const worldSession = useWorldSessionStore()
 const loadError = computed(() => worldSession.error || (worldSession.errorKey ? t(worldSession.errorKey) : ''))
@@ -493,7 +493,7 @@ const viewportStyle = computed(() => ({
 const zoomPercent = computed(() => Math.round(userZoom.value * 100))
 
 const logicalZoneHint = computed(() => {
-  const zones = t('worldInteraction.map.logicalZones')
+  const zones = tm('worldInteraction.map.logicalZones')
   if (typeof zones !== 'object' || zones === null) return ''
   const dev = (zones as Record<string, string>).devices
   const items = (zones as Record<string, string>).items
