@@ -284,11 +284,15 @@ export function useSemanticMapRender(options: {
     const { minX, minY } = options.bounds.value
     const pad = options.minimapPad
     const scale = minimapScale.value
-    return options.nodes.value.map(node => ({
-      ...node,
-      miniX: pad + (node.x - minX) * scale,
-      miniY: pad + (node.y - minY) * scale,
-    }))
+    const layout = options.layout?.value
+    return options.nodes.value.map(node => {
+      const semantic = semanticMapPosition(node, layout)
+      return {
+        ...node,
+        miniX: pad + (semantic.x - minX) * scale,
+        miniY: pad + (semantic.y - minY) * scale,
+      }
+    })
   })
 
   const renderFloorPlanTiles = computed<RenderedFloorPlanTile[]>(() => {
