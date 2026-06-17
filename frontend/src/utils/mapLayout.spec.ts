@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  anchorOnBoundary,
   edgeMidpoint,
   formatDirectionLabel,
   gridCellToIsoCenter,
   gridCornerToIso,
   gridSpanToIsoCorners,
   gridSpanToIsoTile,
+  LOGICAL_HUB_ANCHOR_RX,
   pointsToSvgPoints,
+  trimLogicalRoomEdge,
 } from './mapLayout'
 
 describe('mapLayout', () => {
@@ -33,6 +36,19 @@ describe('mapLayout', () => {
     expect(tile.sideSouth).toHaveLength(4)
     expect(tile.sortKey).toBe(6)
     expect(pointsToSvgPoints(tile.top).split(' ')).toHaveLength(4)
+  })
+
+  it('anchors logical hub edges on hub rim instead of center', () => {
+    const hub = { x: 50, y: 50 }
+    const westExit = { x: 22, y: 50 }
+    const anchored = anchorOnBoundary(hub, westExit, LOGICAL_HUB_ANCHOR_RX, 5)
+    expect(anchored.x).toBeCloseTo(38, 0)
+    expect(anchored.y).toBe(50)
+
+    const trimmed = trimLogicalRoomEdge(hub, westExit, { fromHub: true, toExit: true })
+    expect(trimmed.from.x).toBeLessThan(hub.x)
+    expect(trimmed.to.x).toBeGreaterThan(westExit.x)
+    expect(trimmed.from.y).toBe(trimmed.to.y)
   })
 
   it('centers iso tile within its corner bounds', () => {

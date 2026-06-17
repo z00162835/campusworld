@@ -259,6 +259,14 @@
           </svg>
 
           <svg class="path-layer" :viewBox="svgViewBox" preserveAspectRatio="none">
+            <ellipse
+              v-if="logicalHubRing"
+              :cx="logicalHubRing.cx"
+              :cy="logicalHubRing.cy"
+              :rx="logicalHubRing.rx"
+              :ry="logicalHubRing.ry"
+              class="logical-hub-ring"
+            />
             <line
               v-for="edge in renderEdges"
               :key="edge.id"
@@ -414,6 +422,7 @@ const {
   renderAgents,
   minimapNodes,
   minimapScale,
+  logicalHubRing,
 } = useSemanticMapRender({
   nodes: spatialNodes,
   edges: spatialEdges,
@@ -1100,6 +1109,12 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.logical-hub-ring {
+  fill: rgba(64, 158, 255, 0.05);
+  stroke: rgba(64, 158, 255, 0.2);
+  stroke-width: 1.5;
+}
+
 .space-node.active {
   border-color: #e6a23c;
   box-shadow: 0 0 0 1px rgba(230, 162, 60, 0.45);
@@ -1309,7 +1324,22 @@ onBeforeUnmount(() => {
 
 .map-canvas.layout-logical .space-node.world,
 .map-canvas.layout-logical .space-node.hub {
+  z-index: 3;
+  min-width: 96px;
+  padding: 10px 12px;
   border-color: rgba(64, 158, 255, 0.75);
+  background: rgba(29, 34, 41, 0.96);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.12);
+}
+
+.map-canvas.layout-logical .space-node.hub .node-dot {
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.18);
+}
+
+.map-canvas.layout-logical .space-node.exit {
+  z-index: 2;
 }
 
 @media (max-width: 980px) {

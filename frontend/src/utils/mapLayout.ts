@@ -127,3 +127,48 @@ export function isoTileBoundsPoints(
   const faces = gridSpanToIsoTile(col, row, spanW, spanH)
   return [...faces.top, ...faces.sideEast, ...faces.sideSouth]
 }
+
+/** Hub pill anchor radii in semantic map units (room logical layout). */
+export const LOGICAL_HUB_ANCHOR_RX = 12
+export const LOGICAL_HUB_ANCHOR_RY = 5
+export const LOGICAL_EXIT_ANCHOR_R = 4.5
+
+/** Point on an axis-aligned ellipse boundary toward ``toward``. */
+export function anchorOnBoundary(
+  center: MapPoint,
+  toward: MapPoint,
+  rx: number,
+  ry: number = rx,
+): MapPoint {
+  const dx = toward.x - center.x
+  const dy = toward.y - center.y
+  if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) {
+    return { ...center }
+  }
+  const denom = Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry))
+  if (denom < 1e-6) {
+    return { ...center }
+  }
+  const scale = 1 / denom
+  return {
+    x: center.x + dx * scale,
+    y: center.y + dy * scale,
+  }
+}
+
+/** Trim hub-to-exit edges so connectors attach at node rims, not centers. */
+export function trimLogicalRoomEdge(
+  from: MapPoint,
+  to: MapPoint,
+  options: { fromHub?: boolean; toExit?: boolean },
+): { from: MapPoint; to: MapPoint } {
+  let trimmedFrom = from
+  let trimmedTo = to
+  if (options.fromHub) {
+    trimmedFrom = anchorOnBoundary(from, to, LOGICAL_HUB_ANCHOR_RX, LOGICAL_HUB_ANCHOR_RY)
+  }
+  if (options.toExit) {
+    trimmedTo = anchorOnBoundary(to, from, LOGICAL_EXIT_ANCHOR_R)
+  }
+  return { from: trimmedFrom, to: trimmedTo }
+}

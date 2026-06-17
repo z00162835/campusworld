@@ -6,7 +6,10 @@ import {
   gridCellToIsoCenter,
   gridSpanToIsoTile,
   isoTileBoundsPoints,
+  LOGICAL_HUB_ANCHOR_RX,
+  LOGICAL_HUB_ANCHOR_RY,
   pointsToSvgPoints,
+  trimLogicalRoomEdge,
   type MapPoint,
 } from '@/utils/mapLayout'
 import type { AgentMapPresence, SemanticMapEdge, SemanticMapNode } from '@/types/world'
@@ -223,10 +226,28 @@ export function useSemanticMapRender(options: {
   })
 
   const renderEdges = computed<RenderedMapEdge[]>(() => {
-    const positions = nodePositionById.value
+    const { minX, minY } = options.bounds.value
+    const scale = options.coordUnitPx
+    const layout = options.layout?.value
+    const nodeById = new Map(options.nodes.value.map(node => [node.id, node]))
+
     return options.edges.value.map(edge => {
-      const from = positions.get(edge.from) ?? { x: 0, y: 0 }
-      const to = positions.get(edge.to) ?? { x: 0, y: 0 }
+      const fromNode = nodeById.get(edge.from)
+      const toNode = nodeById.get(edge.to)
+      let fromSemantic = fromNode ? semanticMapPosition(fromNode, layout) : { x: 0, y: 0 }
+      let toSemantic = toNode ? semanticMapPosition(toNode, layout) : { x: 0, y: 0 }
+
+      if (layout === 'logical') {
+        const trimmed = trimLogicalRoomEdge(fromSemantic, toSemantic, {
+          fromHub: fromNode?.logicalZone === 'hub',
+          toExit: toNode?.logicalZone === 'exit',
+        })
+        fromSemantic = trimmed.from
+        toSemantic = trimmed.to
+      }
+
+      const from = toViewportPoint(fromSemantic, minX, minY, scale)
+      const to = toViewportPoint(toSemantic, minX, minY, scale)
       const labelPos = edgeMidpoint(from, to)
       return {
         ...edge,
@@ -241,6 +262,25 @@ export function useSemanticMapRender(options: {
         directionText: formatDirectionLabel(edge.direction || edge.label, options.t),
       }
     })
+  })
+
+  const logicalHubRing = computed(() => {
+    if (options.layout?.value !== 'logical') {
+      return null
+    }
+    const hub = options.nodes.value.find(node => node.logicalZone === 'hub')
+    if (!hub) {
+      return null
+    }
+    const { minX, minY } = options.bounds.value
+    const scale = options.coordUnitPx
+    const center = toViewportPoint(semanticMapPosition(hub, 'logical'), minX, minY, scale)
+    return {
+      cx: center.x,
+      cy: center.y,
+      rx: LOGICAL_HUB_ANCHOR_RX * scale,
+      ry: LOGICAL_HUB_ANCHOR_RY * scale,
+    }
   })
 
   const labeledRenderEdges = computed(() =>
@@ -341,5 +381,6 @@ export function useSemanticMapRender(options: {
     renderAgents,
     minimapNodes,
     minimapScale,
+    logicalHubRing,
   }
 }
