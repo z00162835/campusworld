@@ -155,6 +155,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       availableWorlds.value = data.available_worlds
       useWorldMapStore().clearMapSelection()
     } catch (err: any) {
+      if (err?.response?.status === 401) {
+        return
+      }
       const detail = err?.response?.data?.detail
       if (typeof detail === 'string') {
         error.value = detail

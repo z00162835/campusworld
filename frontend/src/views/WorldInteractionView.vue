@@ -20,7 +20,11 @@ const showEntrySequence = computed(() => booting.value || worldSession.loading)
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
-    await authStore.restoreSession()
+    const restored = await authStore.restoreSession()
+    if (!restored) {
+      booting.value = false
+      return
+    }
   }
   try {
     await worldSession.loadCurrent()

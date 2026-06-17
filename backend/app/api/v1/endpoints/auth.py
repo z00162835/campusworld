@@ -2,6 +2,8 @@
 Authentication endpoints
 包含注册、登录、刷新令牌、登出等功能
 """
+import logging
+import secrets
 from typing import Optional, List
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Header
@@ -12,7 +14,7 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from app.core.database import get_db
+from app.core.database import get_db, db_session_context
 from app.core.config_manager import get_setting
 from app.core.security import get_password_hash, _get_refresh_token_expire_days, build_api_key_record
 from app.core.auth_service import AuthService
@@ -23,6 +25,8 @@ from app.schemas.auth import Token, UserCreate, RegisterResponse
 from app.schemas.account import RefreshTokenResponse
 from app.ssh.game_handler import game_handler
 from app.api.v1.dependencies import bearer_scheme, get_current_http_user, AuthenticatedUser
+
+logger = logging.getLogger(__name__)
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 MAX_LOGIN_ATTEMPTS = 5
@@ -55,6 +59,9 @@ def _refresh_cookie_name(request: Request = None) -> str:
         return '__Host-refresh_token'
     return 'refresh_token'
 
+def _csrf_cookie_name() -> str:
+    return 'csrf_token'
+
 def _refresh_cookie_max_age_seconds() -> int:
     return _get_refresh_token_expire_days() * 24 * 60 * 60
 
@@ -75,6 +82,10 @@ def _clear_auth_cookies(response: Response, request: Request = None) -> None:
     response.delete_cookie(key='access_token', httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
     for cookie_name in ('refresh_token', '__Host-refresh_token'):
         response.delete_cookie(key=cookie_name, httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
+    response.delete_cookie(key=_csrf_cookie_name(), httponly=False, samesite='lax', secure=_is_secure_cookie(request), path='/')
+
+def _set_csrf_cookie(response: Response, csrf_token: str, request: Request = None, max_age: Optional[int] = None) -> None:
+    response.set_cookie(key=_csrf_cookie_name(), value=csrf_token, max_age=max_age or _refresh_cookie_max_age_seconds(), httponly=False, samesite='lax', secure=_is_secure_cookie(request), path='/')
 
 def _refresh_unauthorized_response(detail: str, request: Request = None) -> JSONResponse:
     response = JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'detail': detail}, headers={'WWW-Authenticate': 'Bearer'})
@@ -82,12 +93,41 @@ def _refresh_unauthorized_response(detail: str, request: Request = None) -> JSON
     _set_session_termination_headers(response)
     return response
 
+def _log_refresh_rejected(
+    request: Request,
+    *,
+    reason: str,
+    has_cookie: bool,
+    validation: Optional[dict] = None,
+    user_agent: Optional[str] = None,
+) -> None:
+    validation = validation or {}
+    client = request.client.host if request and request.client else 'unknown'
+    agent = user_agent or (request.headers.get('user-agent') if request else None) or 'unknown'
+    log = logger.debug if reason == 'missing_cookie' else logger.info
+    log(
+        'Refresh token rejected reason=%s has_cookie=%s user_id=%s jti=%s family_id=%s stored_tokens=%s client=%s user_agent=%s',
+        reason,
+        has_cookie,
+        validation.get('user_id'),
+        validation.get('jti'),
+        validation.get('family_id'),
+        validation.get('token_count'),
+        client,
+        agent,
+    )
+
 def _get_refresh_token_from_request(request: Request) -> Optional[str]:
     return request.cookies.get('__Host-refresh_token') or request.cookies.get('refresh_token')
 
 def _validate_auth_ajax_header(x_requested_with: Optional[str]) -> None:
     if x_requested_with != 'XMLHttpRequest':
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Missing required auth request header')
+
+def _validate_auth_csrf_token(request: Request, expected_token: Optional[str]) -> None:
+    supplied_token = request.headers.get('X-CSRF-Token')
+    if not expected_token or not supplied_token or not secrets.compare_digest(supplied_token, expected_token):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid CSRF token')
 
 def _allowed_auth_origins() -> List[str]:
     origins = get_setting('cors.allowed_origins', [])
@@ -180,11 +220,25 @@ def login(request: Request, response: Response, form_data: OAuth2PasswordRequest
         account.attributes.pop('locked_at', None)
     AuthService.cleanup_expired_tokens(db, user_id)
     tokens = AuthService.issue_tokens(db=db, user_id=user_id, username=username, device=device)
+    if 'error' in tokens:
+        logger.error('Failed to issue auth session user_id=%s reason=%s', user_id, tokens['error'])
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Unable to issue auth session')
     access_token = tokens['access_token']
     _set_no_store(response)
     if tokens.get('refresh_token'):
         response.set_cookie(key=_refresh_cookie_name(request), value=tokens['refresh_token'], max_age=tokens.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
+    if tokens.get('csrf_token'):
+        _set_csrf_cookie(response, tokens['csrf_token'], request, tokens.get('refresh_max_age', _refresh_cookie_max_age_seconds()))
     db.commit()
+    logger.info(
+        'Auth session issued user_id=%s jti=%s family_id=%s refresh_cookie=%s csrf_cookie=%s client=%s',
+        user_id,
+        tokens.get('jti'),
+        tokens.get('family_id'),
+        bool(tokens.get('refresh_token')),
+        bool(tokens.get('csrf_token')),
+        client_ip,
+    )
     return {'access_token': access_token, 'token_type': 'bearer', 'expires_in': tokens['expires_in'], 'idle_expires_in': tokens['idle_expires_in']}
 
 @router.post('/refresh', response_model=RefreshTokenResponse)
@@ -202,19 +256,45 @@ def refresh_token(request: Request, response: Response, db: Session=Depends(get_
     _set_no_store(response)
     refresh_token = _get_refresh_token_from_request(request)
     if not refresh_token:
+        _log_refresh_rejected(request, reason='missing_cookie', has_cookie=False, user_agent=user_agent)
         return _refresh_unauthorized_response('Refresh token required', request)
     device = user_agent or 'unknown'
     validation = AuthService.validate_refresh_token(db, refresh_token)
     if not validation['valid']:
         error_messages = {'token_revoked': 'Refresh token has been revoked', 'token_reused': 'Refresh token has already been used', 'token_expired': 'Refresh token has expired', 'idle_timeout': 'Session idle timeout'}
+        _log_refresh_rejected(
+            request,
+            reason=validation.get('error') or 'invalid_refresh_token',
+            has_cookie=True,
+            validation=validation,
+            user_agent=user_agent,
+        )
         return _refresh_unauthorized_response(error_messages.get(validation['error'], 'Invalid refresh token'), request)
+    _validate_auth_csrf_token(request, validation.get('csrf_token'))
     result = AuthService.rotate_refresh_token(db=db, user_id=validation['user_id'], old_jti=validation['jti'], old_family_id=validation['family_id'], device=device, expected_access_token=None)
     if 'error' in result:
         error_messages = {'user_not_found': 'User not found', 'account_inactive': 'Account is inactive', 'account_locked': 'Account is locked'}
+        _log_refresh_rejected(
+            request,
+            reason=f"rotate:{result['error']}",
+            has_cookie=True,
+            validation=validation,
+            user_agent=user_agent,
+        )
         return _refresh_unauthorized_response(error_messages.get(result['error'], 'Token rotation failed'), request)
     access_token = result['access_token']
     if result.get('refresh_token'):
         response.set_cookie(key=_refresh_cookie_name(request), value=result['refresh_token'], max_age=result.get('refresh_max_age', _refresh_cookie_max_age_seconds()), httponly=True, samesite='lax', secure=_is_secure_cookie(request), path='/')
+    if result.get('csrf_token'):
+        _set_csrf_cookie(response, result['csrf_token'], request, result.get('refresh_max_age', _refresh_cookie_max_age_seconds()))
+    logger.debug(
+        'Refresh token rotated user_id=%s old_jti=%s new_jti=%s family_id=%s client=%s',
+        validation['user_id'],
+        validation['jti'],
+        result.get('jti'),
+        result.get('family_id', validation['family_id']),
+        request.client.host if request and request.client else 'unknown',
+    )
     return {'access_token': access_token, 'token_type': 'bearer', 'expires_in': result['expires_in'], 'idle_expires_in': result.get('idle_expires_in', validation.get('idle_expires_in'))}
 
 @router.post('/logout')
@@ -230,6 +310,7 @@ def logout(request: Request, response: Response, db: Session=Depends(get_db), x_
     if refresh_token:
         validation = AuthService.validate_refresh_token(db, refresh_token)
         if validation['valid']:
+            _validate_auth_csrf_token(request, validation.get('csrf_token'))
             AuthService.revoke_refresh_token(db, validation['user_id'], validation['jti'])
     _clear_auth_cookies(response, request)
     _set_session_termination_headers(response)
@@ -240,6 +321,14 @@ async def record_activity(request: Request, response: Response, credentials: Opt
     _validate_auth_request_origin(request)
     _validate_auth_ajax_header(x_requested_with)
     _set_no_store(response)
+    refresh_token = _get_refresh_token_from_request(request)
+    if not refresh_token:
+        return _refresh_unauthorized_response('Refresh token required', request)
+    with db_session_context() as db:
+        validation = AuthService.validate_refresh_token(db, refresh_token)
+        if not validation['valid']:
+            return _refresh_unauthorized_response('Invalid refresh token', request)
+        _validate_auth_csrf_token(request, validation.get('csrf_token'))
     current_user = await get_current_http_user(credentials)
     return {'message': 'Activity recorded', 'idle_expires_in': _get_session_idle_timeout_seconds(), 'user_id': current_user.user_id}
 

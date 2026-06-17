@@ -106,25 +106,55 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard - check authentication
-router.beforeEach(async (to, _from, next) => {
-  const authStore = useAuthStore()
+type AuthNavigationStore = {
+  isAuthenticated: boolean
+  sessionRestoreChecked: boolean
+  restoreSession: () => Promise<boolean>
+}
+
+type AuthNavigationTarget = {
+  path: string
+  fullPath: string
+  meta: {
+    requiresAuth?: boolean
+  }
+  query: {
+    redirect?: unknown
+  }
+}
+
+export async function resolveAuthNavigation(
+  to: AuthNavigationTarget,
+  authStore: AuthNavigationStore,
+): Promise<string | null> {
   const requiresAuth = to.meta.requiresAuth !== false
   let hasSession = authStore.isAuthenticated
 
-  if (!hasSession && requiresAuth) {
+  if (!hasSession && (requiresAuth || to.path === '/login') && !authStore.sessionRestoreChecked) {
     hasSession = await authStore.restoreSession()
   }
 
   if (requiresAuth && !hasSession) {
-    // Store the attempted URL for redirecting after login
     const fullPath = to.fullPath !== '/login' ? `?redirect=${encodeURIComponent(to.fullPath)}` : ''
-    next(`/login${fullPath}`)
-  } else if (to.path === '/login' && hasSession) {
-    // Already logged in, redirect to safe destination only
+    return `/login${fullPath}`
+  }
+
+  if (to.path === '/login' && hasSession) {
     const redirect = to.query.redirect as string | undefined
     const safeRedirect = isValidRedirect(redirect)
-    next(safeRedirect || '/works')
+    return safeRedirect || '/works'
+  }
+
+  return null
+}
+
+// Navigation guard - check authentication
+router.beforeEach(async (to, _from, next) => {
+  const authStore = useAuthStore()
+  const redirect = await resolveAuthNavigation(to, authStore)
+
+  if (redirect) {
+    next(redirect)
   } else {
     next()
   }

@@ -5,9 +5,11 @@
 被 HTTP API endpoints 和 WebSocket handler 共用。
 """
 import uuid
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from fastapi import HTTPException
 from app.core.security import create_access_token, create_refresh_token, verify_token, _get_token_expire_minutes, _get_refresh_token_expire_days
 
@@ -87,7 +89,7 @@ class AuthService:
         refresh_tokens = attrs.get('refresh_tokens', {})
         token_info = refresh_tokens.get(jti, {})
         if not token_info:
-            return {'valid': False, 'user_id': user_id, 'jti': jti, 'family_id': family_id, 'error': 'invalid_token'}
+            return {'valid': False, 'user_id': user_id, 'jti': jti, 'family_id': family_id, 'token_count': len(refresh_tokens), 'error': 'invalid_token'}
         if token_info.get('revoked'):
             return {'valid': False, 'user_id': user_id, 'jti': jti, 'family_id': family_id, 'error': 'token_revoked'}
         if token_info.get('replaced_by'):
@@ -104,7 +106,7 @@ class AuthService:
         if last_activity_at and last_activity_at + idle_timeout < now:
             return {'valid': False, 'user_id': user_id, 'jti': jti, 'family_id': family_id, 'error': 'idle_timeout'}
         stored_family_id = token_info.get('family_id', family_id)
-        return {'valid': True, 'user_id': user_id, 'jti': jti, 'family_id': stored_family_id, 'idle_expires_in': _idle_expires_in(last_activity_at or now), 'error': None}
+        return {'valid': True, 'user_id': user_id, 'jti': jti, 'family_id': stored_family_id, 'idle_expires_in': _idle_expires_in(last_activity_at or now), 'csrf_token': token_info.get('csrf_token'), 'error': None}
 
     @staticmethod
     def issue_tokens(db: Session, user_id: int, username: str, device: str, family_id: Optional[str]=None, family_issued_at: Optional[datetime]=None, family_expires_at: Optional[datetime]=None, last_activity_at: Optional[datetime]=None) -> dict:
@@ -129,20 +131,23 @@ class AuthService:
         refresh_expires_delta = session_family_expires_at - now
         if refresh_expires_delta.total_seconds() <= 0:
             return {'error': 'token_expired'}
+        user_node = db.query(Node).filter(Node.type_code == 'account', Node.id == user_id).first()
+        if not user_node:
+            return {'error': 'user_not_found'}
         jti = _get_refresh_token_jti()
         new_family_id = family_id or _get_token_family_id()
         access_token = create_access_token(subject=str(user_id), username=username, family_id=new_family_id, session_jti=jti)
         expires_in = _get_token_expire_seconds()
         refresh_token = create_refresh_token(subject=str(user_id), expires_delta=refresh_expires_delta, jti=jti, family_id=new_family_id)
-        user_node = db.query(Node).filter(Node.type_code == 'account', Node.id == user_id).first()
-        if user_node:
-            attrs = dict(user_node.attributes or {})
-            refresh_tokens = attrs.get('refresh_tokens', {})
-            refresh_tokens[jti] = {'jti': jti, 'family_id': new_family_id, 'device': device, 'issued_at': now.isoformat(), 'family_issued_at': session_family_issued_at.isoformat(), 'family_expires_at': session_family_expires_at.isoformat(), 'last_activity_at': session_last_activity_at.isoformat(), 'expires_at': session_family_expires_at.isoformat(), 'revoked': False, 'replaced_by': None}
-            attrs['refresh_tokens'] = refresh_tokens
-            user_node.attributes = attrs
-            db.commit()
-        return {'access_token': access_token, 'refresh_token': refresh_token, 'expires_in': expires_in, 'jti': jti, 'family_id': new_family_id, 'refresh_expires_at': session_family_expires_at, 'refresh_max_age': _seconds_until(session_family_expires_at), 'idle_expires_in': _idle_expires_in(session_last_activity_at)}
+        csrf_token = secrets.token_urlsafe(32)
+        attrs = dict(user_node.attributes or {})
+        refresh_tokens = attrs.get('refresh_tokens', {})
+        refresh_tokens[jti] = {'jti': jti, 'family_id': new_family_id, 'device': device, 'issued_at': now.isoformat(), 'family_issued_at': session_family_issued_at.isoformat(), 'family_expires_at': session_family_expires_at.isoformat(), 'last_activity_at': session_last_activity_at.isoformat(), 'expires_at': session_family_expires_at.isoformat(), 'csrf_token': csrf_token, 'revoked': False, 'replaced_by': None}
+        attrs['refresh_tokens'] = refresh_tokens
+        user_node.attributes = attrs
+        flag_modified(user_node, 'attributes')
+        db.commit()
+        return {'access_token': access_token, 'refresh_token': refresh_token, 'csrf_token': csrf_token, 'expires_in': expires_in, 'jti': jti, 'family_id': new_family_id, 'refresh_expires_at': session_family_expires_at, 'refresh_max_age': _seconds_until(session_family_expires_at), 'idle_expires_in': _idle_expires_in(session_last_activity_at)}
 
     @staticmethod
     def rotate_refresh_token(db: Session, user_id: int, old_jti: str, old_family_id: str, device: str, expected_access_token: Optional[str]=None) -> dict:
@@ -201,8 +206,9 @@ class AuthService:
                 token_data['replaced_by'] = new_tokens['jti']
         attrs['refresh_tokens'] = refresh_tokens
         user_node.attributes = attrs
+        flag_modified(user_node, 'attributes')
         db.commit()
-        return {'access_token': new_tokens['access_token'], 'refresh_token': new_tokens['refresh_token'], 'expires_in': new_tokens['expires_in'], 'refresh_expires_at': new_tokens['refresh_expires_at'], 'refresh_max_age': new_tokens['refresh_max_age'], 'idle_expires_in': new_tokens['idle_expires_in']}
+        return {'access_token': new_tokens['access_token'], 'refresh_token': new_tokens['refresh_token'], 'csrf_token': new_tokens['csrf_token'], 'expires_in': new_tokens['expires_in'], 'jti': new_tokens['jti'], 'family_id': old_family_id, 'refresh_expires_at': new_tokens['refresh_expires_at'], 'refresh_max_age': new_tokens['refresh_max_age'], 'idle_expires_in': new_tokens['idle_expires_in']}
 
     @staticmethod
     def revoke_refresh_token(db: Session, user_id: int, jti: str) -> None:
@@ -224,6 +230,7 @@ class AuthService:
             refresh_tokens[jti]['revoked'] = True
             attrs['refresh_tokens'] = refresh_tokens
             user_node.attributes = attrs
+            flag_modified(user_node, 'attributes')
             db.commit()
 
     @staticmethod
@@ -245,6 +252,7 @@ class AuthService:
             refresh_tokens[token_key]['revoked'] = True
         attrs['refresh_tokens'] = refresh_tokens
         user_node.attributes = attrs
+        flag_modified(user_node, 'attributes')
         db.commit()
 
     @staticmethod
@@ -273,5 +281,6 @@ class AuthService:
             del refresh_tokens[key]
         attrs['refresh_tokens'] = refresh_tokens
         user_node.attributes = attrs
+        flag_modified(user_node, 'attributes')
         db.commit()
         return len(keys_to_remove)

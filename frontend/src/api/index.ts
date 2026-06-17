@@ -2,6 +2,7 @@
  * Axios API client with interceptors
  */
 import axios from 'axios'
+import { authSessionConfig } from '@/config/authSession'
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -23,6 +24,24 @@ const shouldSkipRefresh = (url?: string): boolean => {
   return AUTH_ENDPOINTS.some(endpoint => url.includes(endpoint))
 }
 
+export const canAttemptRefreshAfter401 = (authState: {
+  token: string | null
+  sessionRestoreChecked: boolean
+}): boolean => Boolean(authState.token || !authState.sessionRestoreChecked)
+
+async function shouldAttemptRefreshAfter401(): Promise<boolean> {
+  try {
+    const { useAuthStore } = await import('@/stores/auth')
+    const authStore = useAuthStore()
+    return canAttemptRefreshAfter401({
+      token: authStore.token,
+      sessionRestoreChecked: authStore.sessionRestoreChecked,
+    })
+  } catch {
+    return true
+  }
+}
+
 // Helper to get access token from authStore (memory)
 const getAccessToken = async (): Promise<string | null> => {
   try {
@@ -31,8 +50,12 @@ const getAccessToken = async (): Promise<string | null> => {
     const authStore = useAuthStore()
     if (!authStore.token) return null
     const now = Math.floor(Date.now() / 1000)
-    if (authStore.tokenExpiresAt && authStore.tokenExpiresAt <= now + 60) {
-      return authStore.refreshAccessToken()
+    if (authStore.tokenExpiresAt && authStore.tokenExpiresAt <= now + authSessionConfig.accessRefreshBufferSeconds) {
+      try {
+        return await authStore.refreshAccessToken()
+      } catch {
+        return authStore.tokenExpiresAt > now ? authStore.token : null
+      }
     }
     return authStore.token
   } catch {
@@ -60,6 +83,9 @@ apiClient.interceptors.response.use(
 
     // Handle 401 - attempt token refresh or redirect to login
     if (error.response?.status === 401 && !originalRequest._retry && !shouldSkipRefresh(originalRequest.url)) {
+      if (!(await shouldAttemptRefreshAfter401())) {
+        return Promise.reject(error)
+      }
       if (isRefreshing && refreshPromise) {
         // Already refreshing, wait for the refresh to complete
         return refreshPromise.then((token: string) => {
@@ -99,9 +125,6 @@ async function refreshAccessTokenOnce(): Promise<string> {
       if (refreshedToken) return refreshedToken
       throw new Error('No access token in refresh response')
     } catch (refreshError) {
-      const { useAuthStore } = await import('@/stores/auth')
-      const authStore = useAuthStore()
-      authStore.expireSession('refresh_failed')
       throw refreshError
     } finally {
       isRefreshing = false
@@ -127,6 +150,9 @@ export async function authorizedFetch(input: string, init: RequestInit = {}): Pr
 
   let response = await fetch(input, { ...init, headers, credentials: 'include' })
   if (response.status !== 401 || shouldSkipRefresh(input)) {
+    return response
+  }
+  if (!(await shouldAttemptRefreshAfter401())) {
     return response
   }
 

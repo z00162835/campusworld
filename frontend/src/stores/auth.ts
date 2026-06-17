@@ -2,7 +2,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { jwtDecode } from 'jwt-decode'
 import { authApi } from '@/api/auth'
-import { tokenApi, type TokenResponse } from '@/api/token'
+import { isRefreshAuthInvalidationError, tokenApi, type TokenResponse } from '@/api/token'
+import { readCsrfToken } from '@/api/csrf'
+import { authSessionConfig } from '@/config/authSession'
 import type { User, LoginRequest, RegisterRequest } from '@/types/auth'
 import { useTabsStore } from './tabs'
 import { useSpacesStore } from './spaces'
@@ -13,11 +15,24 @@ import { useWorldHistoryStore } from './worldHistory'
 import { useConnectionStore } from './connection'
 import { useCommandsStore } from './commands'
 
-const TOKEN_EXPIRE_BUFFER_SECONDS = 60 // Refresh 1 minute before actual expiration
-const ACCESS_REFRESH_BUFFER_MS = TOKEN_EXPIRE_BUFFER_SECONDS * 1000
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000
-const ACTIVITY_SYNC_INTERVAL_MS = 60 * 1000
 const SESSION_BROADCAST_KEY = 'campusworld:auth-session-ended'
+const REFRESH_LOCK_KEY = 'campusworld:auth-refresh-lock'
+const REFRESH_CHANNEL_NAME = 'campusworld-auth-refresh'
+const TAB_ID = `${Date.now()}_${Math.random().toString(36).slice(2)}`
+
+type RefreshLock = {
+  owner: string
+  expiresAt: number
+}
+
+type RefreshBroadcastMessage =
+  | { type: 'success'; tokenData: TokenResponse }
+  | { type: 'failure'; reason: string }
+  | { type: 'transient_failure' }
+
+type RefreshFailureOptions = {
+  expireOnFailure?: boolean
+}
 
 // Error message mapping for login failures
 export const AUTH_ERROR_MESSAGES: Record<number, string> = {
@@ -42,7 +57,27 @@ export function getRegisterErrorMessage(status: number): string {
   return REGISTER_ERROR_MESSAGES[status] || 'auth.errors.registerFailed'
 }
 
-// Clears only readable fallback cookies. httpOnly auth cookies are cleared by the backend.
+export function parseRefreshLock(raw: string | null): RefreshLock | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as Partial<RefreshLock>
+    if (typeof parsed.owner !== 'string' || typeof parsed.expiresAt !== 'number') return null
+    return { owner: parsed.owner, expiresAt: parsed.expiresAt }
+  } catch {
+    return null
+  }
+}
+
+export function canAcquireRefreshLock(raw: string | null, now = Date.now(), owner = TAB_ID): boolean {
+  const lock = parseRefreshLock(raw)
+  return !lock || lock.owner === owner || lock.expiresAt <= now
+}
+
+export function buildRefreshLock(owner = TAB_ID, now = Date.now()): string {
+  return JSON.stringify({ owner, expiresAt: now + authSessionConfig.refreshLockTtlMs })
+}
+
+// Clears only readable client-side session hints. httpOnly auth cookies are backend-owned.
 const clearTokenCookie = (name: string) => {
   document.cookie = `${name}=; Max-Age=0; path=/`
 }
@@ -51,6 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(null)
   const tokenExpiresAt = ref<number | null>(null)
+  const idleExpiresAt = ref<number | null>(null)
   const loading = ref(false)
   const sessionRestoreChecked = ref(false)
   const lastActivityAt = ref(Date.now())
@@ -63,12 +99,18 @@ export const useAuthStore = defineStore('auth', () => {
   let lastActivitySyncAt = 0
   let broadcastChannel: BroadcastChannel | null = null
 
+  const canUseRefreshCoordination = () => (
+    typeof window !== 'undefined'
+    && typeof localStorage !== 'undefined'
+    && 'BroadcastChannel' in window
+  )
+
   const isAuthenticated = computed(() => {
     if (!token.value) return false
     // Check if token is expired
     if (tokenExpiresAt.value) {
       const now = Math.floor(Date.now() / 1000)
-      return tokenExpiresAt.value > now + TOKEN_EXPIRE_BUFFER_SECONDS
+      return tokenExpiresAt.value > now + authSessionConfig.accessRefreshBufferSeconds
     }
     return true
   })
@@ -83,10 +125,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const applyServerIdleRemaining = (idleExpiresIn?: number) => {
-    if (typeof idleExpiresIn !== 'number') return
-    const elapsedMs = Math.max(0, IDLE_TIMEOUT_MS - idleExpiresIn * 1000)
-    lastActivityAt.value = Date.now() - elapsedMs
+  const applyIdleDeadline = (idleExpiresIn?: number) => {
+    if (typeof idleExpiresIn === 'number') {
+      idleExpiresAt.value = Date.now() + Math.max(0, idleExpiresIn * 1000)
+      return
+    }
+    if (!idleExpiresAt.value) {
+      idleExpiresAt.value = Date.now() + authSessionConfig.idleFallbackMs
+    }
   }
 
   const setTokenData = (tokenData: TokenResponse, options: { recordActivity?: boolean } = {}) => {
@@ -95,9 +141,8 @@ export const useAuthStore = defineStore('auth', () => {
     sessionRestoreChecked.value = true
     if (options.recordActivity !== false) {
       lastActivityAt.value = Date.now()
-    } else {
-      applyServerIdleRemaining(tokenData.idle_expires_in)
     }
+    applyIdleDeadline(tokenData.idle_expires_in)
     startSessionTimers()
   }
 
@@ -112,16 +157,18 @@ export const useAuthStore = defineStore('auth', () => {
     useCommandsStore().reset()
   }
 
-  const clearClientState = () => {
+  const clearClientState = (options: { clearSessionHintCookies?: boolean } = {}) => {
     stopSessionTimers()
     token.value = null
     user.value = null
     tokenExpiresAt.value = null
+    idleExpiresAt.value = null
     lastActivitySyncAt = 0
     sessionRestoreChecked.value = true
-    clearTokenCookie('access_token')
-    clearTokenCookie('refresh_token')
-    clearTokenCookie('__Host-refresh_token')
+    if (options.clearSessionHintCookies !== false) {
+      clearTokenCookie('access_token')
+      clearTokenCookie('csrf_token')
+    }
     clearWorkspaceState()
   }
 
@@ -152,6 +199,115 @@ export const useAuthStore = defineStore('auth', () => {
     if (options.broadcast !== false) {
       broadcastSessionEnded(reason)
     }
+  }
+
+  const tryAcquireRefreshLock = () => {
+    if (!canUseRefreshCoordination()) return true
+    try {
+      if (!canAcquireRefreshLock(localStorage.getItem(REFRESH_LOCK_KEY), Date.now(), TAB_ID)) return false
+      localStorage.setItem(REFRESH_LOCK_KEY, buildRefreshLock(TAB_ID))
+      return parseRefreshLock(localStorage.getItem(REFRESH_LOCK_KEY))?.owner === TAB_ID
+    } catch {
+      return true
+    }
+  }
+
+  const releaseRefreshLock = () => {
+    if (!canUseRefreshCoordination()) return
+    try {
+      if (parseRefreshLock(localStorage.getItem(REFRESH_LOCK_KEY))?.owner === TAB_ID) {
+        localStorage.removeItem(REFRESH_LOCK_KEY)
+      }
+    } catch {
+      // Storage may be unavailable in private mode.
+    }
+  }
+
+  const publishRefreshResult = (message: RefreshBroadcastMessage) => {
+    if (!canUseRefreshCoordination()) return
+    try {
+      const channel = new BroadcastChannel(REFRESH_CHANNEL_NAME)
+      channel.postMessage(message)
+      channel.close()
+    } catch {
+      // Waiting tabs will time out and handle the session locally.
+    }
+  }
+
+  const waitForRefreshResult = () => new Promise<TokenResponse | null | undefined>((resolve) => {
+    if (!canUseRefreshCoordination()) {
+      resolve(undefined)
+      return
+    }
+
+    let settled = false
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let channel: BroadcastChannel | null = null
+
+    const settle = (tokenData: TokenResponse | null | undefined) => {
+      if (settled) return
+      settled = true
+      if (timeoutId) clearTimeout(timeoutId)
+      channel?.close()
+      resolve(tokenData)
+    }
+
+    try {
+      channel = new BroadcastChannel(REFRESH_CHANNEL_NAME)
+      channel.onmessage = (event) => {
+        const message = event.data as RefreshBroadcastMessage
+        if (message?.type === 'success') settle(message.tokenData)
+        if (message?.type === 'failure') settle(null)
+        if (message?.type === 'transient_failure') settle(undefined)
+      }
+      timeoutId = setTimeout(() => settle(undefined), authSessionConfig.refreshWaitTimeoutMs)
+    } catch {
+      settle(undefined)
+    }
+  })
+
+  const handleRefreshFailure = (expireReason: string, options: RefreshFailureOptions = {}) => {
+    if (options.expireOnFailure === false) {
+      clearClientState()
+      return
+    }
+    expireSession(expireReason)
+  }
+
+  const refreshWithCookieAndBroadcast = async (
+    expireReason: string,
+    options: RefreshFailureOptions = {},
+  ) => {
+    try {
+      const tokenData = await tokenApi.refreshWithCookie()
+      publishRefreshResult({ type: 'success', tokenData })
+      return tokenData
+    } catch (error) {
+      if (!isRefreshAuthInvalidationError(error)) {
+        publishRefreshResult({ type: 'transient_failure' })
+        throw error
+      }
+      publishRefreshResult({ type: 'failure', reason: expireReason })
+      handleRefreshFailure(expireReason, options)
+      return null
+    } finally {
+      releaseRefreshLock()
+    }
+  }
+
+  const refreshTokenDataWithCoordination = async (
+    expireReason = 'refresh_failed',
+    options: RefreshFailureOptions = {},
+  ) => {
+    if (!tryAcquireRefreshLock()) {
+      const tokenData = await waitForRefreshResult()
+      if (tokenData !== undefined) return tokenData
+      if (!tryAcquireRefreshLock()) {
+        throw new Error('Refresh coordination unavailable')
+      }
+    }
+
+    return refreshWithCookieAndBroadcast(expireReason, options)
   }
 
   // Fetch user profile from API
@@ -195,12 +351,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = async (): Promise<{ success: boolean; error?: string }> => {
+    const csrfToken = readCsrfToken()
     expireSession('logout')
 
     // Wrap API call in timeout to prevent hanging
-    const logoutPromise = authApi.logout()
+    const logoutPromise = authApi.logout(csrfToken)
     const timeoutPromise = new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 3000)
+      setTimeout(() => resolve(), authSessionConfig.logoutTimeoutMs)
     })
 
     try {
@@ -215,18 +372,23 @@ export const useAuthStore = defineStore('auth', () => {
   const restoreSession = async (): Promise<boolean> => {
     if (isAuthenticated.value) return true
     if (sessionRestoreChecked.value) return false
+    if (!readCsrfToken()) {
+      sessionRestoreChecked.value = true
+      return false
+    }
 
     if (restorePromise) return restorePromise
 
     restorePromise = (async () => {
       sessionRestoreChecked.value = true
       try {
-        const tokenData = await tokenApi.refreshWithCookie()
+        const tokenData = await refreshTokenDataWithCoordination('restore_failed', { expireOnFailure: false })
+        if (!tokenData) return false
         setTokenData(tokenData, { recordActivity: false })
         await fetchUser()
         return isAuthenticated.value
       } catch {
-        expireSession('restore_failed')
+        clearClientState({ clearSessionHintCookies: false })
         return false
       } finally {
         restorePromise = null
@@ -240,10 +402,11 @@ export const useAuthStore = defineStore('auth', () => {
   const initTokenExpiration = () => {
     token.value = null
     tokenExpiresAt.value = null
+    idleExpiresAt.value = null
   }
 
   const isIdleExpired = () => {
-    return Date.now() - lastActivityAt.value >= IDLE_TIMEOUT_MS
+    return Boolean(idleExpiresAt.value && Date.now() >= idleExpiresAt.value)
   }
 
   const refreshAccessToken = async (): Promise<string | null> => {
@@ -255,17 +418,13 @@ export const useAuthStore = defineStore('auth', () => {
     if (refreshPromise) return refreshPromise
 
     refreshPromise = (async () => {
-      try {
-        const tokenData = await tokenApi.refreshWithCookie()
-        setTokenData(tokenData, { recordActivity: false })
-        return tokenData.access_token
-      } catch {
-        expireSession('refresh_failed')
-        return null
-      } finally {
-        refreshPromise = null
-      }
-    })()
+      const tokenData = await refreshTokenDataWithCoordination()
+      if (!tokenData) return null
+      setTokenData(tokenData, { recordActivity: false })
+      return tokenData.access_token
+    })().finally(() => {
+      refreshPromise = null
+    })
 
     return refreshPromise
   }
@@ -288,17 +447,19 @@ export const useAuthStore = defineStore('auth', () => {
     clearAccessRefreshTimer()
     if (!token.value || !tokenExpiresAt.value) return
 
-    const refreshInMs = tokenExpiresAt.value * 1000 - Date.now() - ACCESS_REFRESH_BUFFER_MS
+    const refreshInMs = tokenExpiresAt.value * 1000 - Date.now() - authSessionConfig.accessRefreshBufferMs
     accessRefreshTimer = setTimeout(() => {
-      refreshAccessToken()
+      refreshAccessToken().catch(() => {
+        // Keep the current in-memory token on transient refresh failures.
+      })
     }, Math.max(refreshInMs, 0))
   }
 
   const scheduleIdleTimeout = () => {
     clearIdleTimer()
-    if (!token.value) return
+    if (!token.value || !idleExpiresAt.value) return
 
-    const expiresInMs = IDLE_TIMEOUT_MS - (Date.now() - lastActivityAt.value)
+    const expiresInMs = idleExpiresAt.value - Date.now()
     idleTimer = setTimeout(() => {
       expireSession('idle_timeout')
     }, Math.max(expiresInMs, 0))
@@ -307,17 +468,17 @@ export const useAuthStore = defineStore('auth', () => {
   const recordActivity = () => {
     if (!token.value) return
     lastActivityAt.value = Date.now()
-    scheduleIdleTimeout()
     syncActivityWithServer()
+    scheduleIdleTimeout()
   }
 
   const syncActivityWithServer = () => {
     const now = Date.now()
-    if (now - lastActivitySyncAt < ACTIVITY_SYNC_INTERVAL_MS) return
+    if (now - lastActivitySyncAt < authSessionConfig.activitySyncIntervalMs) return
     lastActivitySyncAt = now
     authApi.recordActivity()
       .then(({ data }) => {
-        applyServerIdleRemaining(data.idle_expires_in)
+        applyIdleDeadline(data.idle_expires_in)
         scheduleIdleTimeout()
       })
       .catch(() => {
@@ -387,7 +548,9 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     tokenExpiresAt,
+    idleExpiresAt,
     loading,
+    sessionRestoreChecked,
     isAuthenticated,
     login,
     register,

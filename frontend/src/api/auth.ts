@@ -2,6 +2,7 @@
  * Authentication API endpoints
  */
 import apiClient from './index'
+import { csrfHeaders } from './csrf'
 import type { ActivityResponse, Token, LoginRequest, RegisterRequest, RegisterResponse, User } from '@/types/auth'
 
 // OAuth2 requires form-urlencoded format
@@ -35,10 +36,11 @@ export const authApi = {
   /**
    * Logout current user
    */
-  logout: () =>
+  logout: (csrfToken?: string | null) =>
     apiClient.post('/auth/logout', {}, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
+        ...csrfHeaders(csrfToken),
       },
     }),
 
@@ -46,6 +48,7 @@ export const authApi = {
     apiClient.post<ActivityResponse>('/auth/activity', {}, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
+        ...csrfHeaders(),
       },
     }),
 

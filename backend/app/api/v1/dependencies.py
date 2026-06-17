@@ -8,6 +8,7 @@ from datetime import datetime
 from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
+from sqlalchemy.orm.attributes import flag_modified
 from app.core.security import verify_token, verify_api_key, resolve_api_key_principal, ALGORITHM
 from app.core.database import db_session_context
 from app.models.graph import Node
@@ -70,6 +71,7 @@ def _touch_refresh_session_activity(user_node: Node, attrs: Dict[str, Any], payl
     if changed:
         attrs['refresh_tokens'] = refresh_tokens
         user_node.attributes = attrs
+        flag_modified(user_node, 'attributes')
         db_session.commit()
     return changed
 
