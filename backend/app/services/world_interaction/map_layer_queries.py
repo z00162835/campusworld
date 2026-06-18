@@ -20,10 +20,24 @@ def _room_tags(node: Node) -> set[str]:
 
 
 def is_circulation_hub_room(room: Node) -> bool:
-    """Indoor circulation / elevator lobby — used as floor-map anchor fallback."""
+    """Circulation / elevator lobby room (indoor or outdoor)."""
     tags = _room_tags(room)
     attrs = _attrs(room)
     return "space:circulation" in tags or str(attrs.get("room_type") or "").strip().lower() == "circulation"
+
+
+def is_campus_connector_room(room: Node) -> bool:
+    """Outdoor spine or layer connector — never a building floor circulation hub."""
+    if is_outdoor_landmark_room(room):
+        return True
+    return "layer:connector" in _room_tags(room)
+
+
+def is_indoor_circulation_hub_room(room: Node) -> bool:
+    """Indoor building circulation core for floor/campus hub resolution."""
+    if is_campus_connector_room(room):
+        return False
+    return is_circulation_hub_room(room)
 
 
 def has_campus_grid_position(room: Node) -> bool:
@@ -160,10 +174,11 @@ def rooms_on_floor(session: Session, floor: Node) -> List[Node]:
 
 
 def _default_floor_map_anchor(floor_rooms: List[Node]) -> Optional[Node]:
-    for room in floor_rooms:
-        if is_circulation_hub_room(room):
+    indoor_rooms = [room for room in floor_rooms if not is_campus_connector_room(room)]
+    for room in indoor_rooms:
+        if is_indoor_circulation_hub_room(room):
             return room
-    return floor_rooms[0] if floor_rooms else None
+    return indoor_rooms[0] if indoor_rooms else None
 
 
 def resolve_floor_map_anchor(floor_rooms: List[Node], location: Node) -> Optional[Node]:

@@ -9,6 +9,9 @@ import {
   gridSpanToIsoTile,
   LOGICAL_HUB_ANCHOR_RX,
   pointsToSvgPoints,
+  campusEdgeRoute,
+  deriveCampusSpineColumn,
+  trimCampusGridEdge,
   trimLogicalRoomEdge,
 } from './mapLayout'
 
@@ -49,6 +52,47 @@ describe('mapLayout', () => {
     expect(trimmed.from.x).toBeLessThan(hub.x)
     expect(trimmed.to.x).toBeGreaterThan(westExit.x)
     expect(trimmed.from.y).toBe(trimmed.to.y)
+  })
+
+  it('trims campus grid edges at building and outdoor node rims', () => {
+    const building = { x: 60, y: 46 }
+    const plaza = { x: 60, y: 53 }
+    const trimmed = trimCampusGridEdge(building, plaza, {
+      fromType: 'building',
+      toType: 'room',
+    })
+    expect(trimmed.from.y).toBeGreaterThan(building.y)
+    expect(trimmed.to.y).toBeLessThan(plaza.y)
+  })
+
+  it('bends inter-building chords around the outdoor spine column', () => {
+    const spine = deriveCampusSpineColumn([
+      { x: 60, y: 53 },
+      { x: 60, y: 67 },
+      { x: 60, y: 88 },
+    ])
+    expect(spine).not.toBeNull()
+    const route = campusEdgeRoute(
+      { x: 78, y: 60 },
+      { x: 40, y: 74 },
+      { spine, edgeKind: 'inter-building' },
+    )
+    expect(route.curved).toBe(true)
+    expect(route.control?.x).toBeLessThan(60)
+    expect(route.labelPoint.x).toBeLessThan(65)
+  })
+
+  it('keeps spine and connector edges straight', () => {
+    const spine = deriveCampusSpineColumn([
+      { x: 60, y: 53 },
+      { x: 60, y: 67 },
+    ])
+    const spineRoute = campusEdgeRoute(
+      { x: 60, y: 81 },
+      { x: 60, y: 70 },
+      { spine, edgeKind: 'spine' },
+    )
+    expect(spineRoute.curved).toBe(false)
   })
 
   it('centers iso tile within its corner bounds', () => {

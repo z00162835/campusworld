@@ -133,6 +133,19 @@ export const LOGICAL_HUB_ANCHOR_RX = 12
 export const LOGICAL_HUB_ANCHOR_RY = 5
 export const LOGICAL_EXIT_ANCHOR_R = 4.5
 
+/** Campus-grid node anchor radii in semantic map units. */
+export const CAMPUS_BUILDING_ANCHOR_RX = 11
+export const CAMPUS_BUILDING_ANCHOR_RY = 5.5
+export const CAMPUS_OUTDOOR_ANCHOR_RX = 8
+export const CAMPUS_OUTDOOR_ANCHOR_RY = 3.5
+export const CAMPUS_SPINE_BULGE = 14
+
+export type CampusSpineColumn = {
+  x: number
+  yMin: number
+  yMax: number
+}
+
 /** Point on an axis-aligned ellipse boundary toward ``toward``. */
 export function anchorOnBoundary(
   center: MapPoint,
@@ -171,4 +184,122 @@ export function trimLogicalRoomEdge(
     trimmedTo = anchorOnBoundary(to, from, LOGICAL_EXIT_ANCHOR_R)
   }
   return { from: trimmedFrom, to: trimmedTo }
+}
+
+/** Trim campus-grid edges so connectors attach at building/outdoor node rims. */
+export function trimCampusGridEdge(
+  from: MapPoint,
+  to: MapPoint,
+  options: { fromType?: string; toType?: string },
+): { from: MapPoint; to: MapPoint } {
+  let trimmedFrom = from
+  let trimmedTo = to
+  if (options.fromType === 'building') {
+    trimmedFrom = anchorOnBoundary(from, to, CAMPUS_BUILDING_ANCHOR_RX, CAMPUS_BUILDING_ANCHOR_RY)
+  } else if (options.fromType === 'room') {
+    trimmedFrom = anchorOnBoundary(from, to, CAMPUS_OUTDOOR_ANCHOR_RX, CAMPUS_OUTDOOR_ANCHOR_RY)
+  }
+  if (options.toType === 'building') {
+    trimmedTo = anchorOnBoundary(to, from, CAMPUS_BUILDING_ANCHOR_RX, CAMPUS_BUILDING_ANCHOR_RY)
+  } else if (options.toType === 'room') {
+    trimmedTo = anchorOnBoundary(to, from, CAMPUS_OUTDOOR_ANCHOR_RX, CAMPUS_OUTDOOR_ANCHOR_RY)
+  }
+  return { from: trimmedFrom, to: trimmedTo }
+}
+
+/** Outdoor spine column for routing edges around gate / bridge / plaza stacks. */
+export function deriveCampusSpineColumn(
+  outdoorNodes: Array<{ x: number; y: number }>,
+): CampusSpineColumn | null {
+  if (outdoorNodes.length < 2) {
+    return null
+  }
+  const xs = outdoorNodes.map(node => node.x)
+  const ys = outdoorNodes.map(node => node.y)
+  if (Math.max(...xs) - Math.min(...xs) > 4) {
+    return null
+  }
+  return {
+    x: xs.reduce((sum, value) => sum + value, 0) / xs.length,
+    yMin: Math.min(...ys) - CAMPUS_OUTDOOR_ANCHOR_RY,
+    yMax: Math.max(...ys) + CAMPUS_OUTDOOR_ANCHOR_RY,
+  }
+}
+
+function segmentCrossesVerticalCorridor(
+  from: MapPoint,
+  to: MapPoint,
+  spine: CampusSpineColumn,
+  padding: number,
+): boolean {
+  const minX = Math.min(from.x, to.x)
+  const maxX = Math.max(from.x, to.x)
+  if (spine.x < minX - padding || spine.x > maxX + padding) {
+    return false
+  }
+  const dx = to.x - from.x
+  if (Math.abs(dx) < 1e-6) {
+    return Math.abs(from.x - spine.x) <= padding + CAMPUS_OUTDOOR_ANCHOR_RX
+  }
+  const t = (spine.x - from.x) / dx
+  if (t <= 0.02 || t >= 0.98) {
+    return false
+  }
+  const y = from.y + t * (to.y - from.y)
+  return y >= spine.yMin - padding && y <= spine.yMax + padding
+}
+
+function quadraticBezierPoint(
+  start: MapPoint,
+  control: MapPoint,
+  end: MapPoint,
+  t = 0.5,
+): MapPoint {
+  const u = 1 - t
+  return {
+    x: u * u * start.x + 2 * u * t * control.x + t * t * end.x,
+    y: u * u * start.y + 2 * u * t * control.y + t * t * end.y,
+  }
+}
+
+/** Route campus edges on node rims; bend inter-building chords around the outdoor spine. */
+export type CampusEdgeRoute = {
+  curved: boolean
+  control?: MapPoint
+  labelPoint: MapPoint
+}
+
+export function campusEdgeRoute(
+  from: MapPoint,
+  to: MapPoint,
+  options: {
+    spine?: CampusSpineColumn | null
+    edgeKind?: string
+  } = {},
+): CampusEdgeRoute {
+  const spine = options.spine
+  const shouldBend =
+    options.edgeKind === 'inter-building'
+    && spine != null
+    && segmentCrossesVerticalCorridor(from, to, spine, 2)
+
+  if (!shouldBend) {
+    return {
+      curved: false,
+      labelPoint: edgeMidpoint(from, to),
+    }
+  }
+
+  const mx = (from.x + to.x) / 2
+  const my = (from.y + to.y) / 2
+  const bulgeSide = mx >= spine.x ? 1 : -1
+  const control = {
+    x: spine.x + bulgeSide * CAMPUS_SPINE_BULGE,
+    y: my,
+  }
+  return {
+    curved: true,
+    control,
+    labelPoint: quadraticBezierPoint(from, control, to, 0.5),
+  }
 }

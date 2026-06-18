@@ -9,7 +9,11 @@ import {
   LOGICAL_HUB_ANCHOR_RX,
   LOGICAL_HUB_ANCHOR_RY,
   pointsToSvgPoints,
+  trimCampusGridEdge,
   trimLogicalRoomEdge,
+  campusEdgeRoute,
+  deriveCampusSpineColumn,
+  type CampusSpineColumn,
   type MapPoint,
 } from '@/utils/mapLayout'
 import type { AgentMapPresence, SemanticMapEdge, SemanticMapNode } from '@/types/world'
@@ -37,8 +41,16 @@ export function hasFloorPlanGrid(node: SemanticMapNode): boolean {
   return node.mapGridCol != null && node.mapGridRow != null
 }
 
+export function isFloorPlanLayoutValue(layout?: string): boolean {
+  return layout === 'grid'
+}
+
+export function isCampusGridLayoutValue(layout?: string): boolean {
+  return layout === 'campus-grid'
+}
+
 export function isFloorPlanTile(node: SemanticMapNode, layout?: string): boolean {
-  return layout === 'grid' && hasFloorPlanGrid(node)
+  return isFloorPlanLayoutValue(layout) && hasFloorPlanGrid(node)
 }
 
 export type RenderedFloorPlanTile = SemanticMapNode & {
@@ -52,7 +64,7 @@ export type RenderedFloorPlanTile = SemanticMapNode & {
 }
 
 function semanticMapPosition(node: SemanticMapNode, layout?: string): MapPoint {
-  if (layout === 'grid' && hasFloorPlanGrid(node)) {
+  if (isFloorPlanLayoutValue(layout) && hasFloorPlanGrid(node)) {
     return gridCellToIsoCenter(
       node.mapGridCol!,
       node.mapGridRow!,
@@ -125,6 +137,7 @@ export type RenderedMapEdge = SemanticMapEdge & {
   y1: number
   x2: number
   y2: number
+  pathD?: string
   className: string
   title: string
   labelX: number
@@ -171,6 +184,15 @@ function edgeClassName(edge: SemanticMapEdge): string {
   }
   if (edge.crossBuilding || edge.status === 'cross-building') {
     classes.push('edge-cross-building')
+  }
+  if (edge.campusEdgeKind === 'spine') {
+    classes.push('edge-campus-spine')
+  }
+  if (edge.campusEdgeKind === 'inter-building') {
+    classes.push('edge-campus-inter-building')
+  }
+  if (edge.campusEdgeKind === 'connector') {
+    classes.push('edge-campus-connector')
   }
   return classes.join(' ')
 }
@@ -225,11 +247,22 @@ export function useSemanticMapRender(options: {
     })
   })
 
+  const campusSpineColumn = computed<CampusSpineColumn | null>(() => {
+    if (options.layout?.value !== 'campus-grid') {
+      return null
+    }
+    const outdoorNodes = options.nodes.value
+      .filter(node => node.type === 'room')
+      .map(node => semanticMapPosition(node, 'campus-grid'))
+    return deriveCampusSpineColumn(outdoorNodes)
+  })
+
   const renderEdges = computed<RenderedMapEdge[]>(() => {
     const { minX, minY } = options.bounds.value
     const scale = options.coordUnitPx
     const layout = options.layout?.value
     const nodeById = new Map(options.nodes.value.map(node => [node.id, node]))
+    const spine = campusSpineColumn.value
 
     return options.edges.value.map(edge => {
       const fromNode = nodeById.get(edge.from)
@@ -244,17 +277,39 @@ export function useSemanticMapRender(options: {
         })
         fromSemantic = trimmed.from
         toSemantic = trimmed.to
+      } else if (layout === 'campus-grid') {
+        const trimmed = trimCampusGridEdge(fromSemantic, toSemantic, {
+          fromType: fromNode?.type,
+          toType: toNode?.type,
+        })
+        fromSemantic = trimmed.from
+        toSemantic = trimmed.to
       }
 
       const from = toViewportPoint(fromSemantic, minX, minY, scale)
       const to = toViewportPoint(toSemantic, minX, minY, scale)
-      const labelPos = edgeMidpoint(from, to)
+      let labelPos = edgeMidpoint(from, to)
+      let pathD: string | undefined
+
+      if (layout === 'campus-grid') {
+        const route = campusEdgeRoute(fromSemantic, toSemantic, {
+          spine,
+          edgeKind: edge.campusEdgeKind,
+        })
+        labelPos = toViewportPoint(route.labelPoint, minX, minY, scale)
+        if (route.curved && route.control) {
+          const control = toViewportPoint(route.control, minX, minY, scale)
+          pathD = `M ${from.x} ${from.y} Q ${control.x} ${control.y} ${to.x} ${to.y}`
+        }
+      }
+
       return {
         ...edge,
         x1: from.x,
         y1: from.y,
         x2: to.x,
         y2: to.y,
+        pathD,
         className: edgeClassName(edge),
         title: edgeTitle(edge, options.t),
         labelX: labelPos.x,
@@ -336,7 +391,7 @@ export function useSemanticMapRender(options: {
   })
 
   const renderFloorPlanTiles = computed<RenderedFloorPlanTile[]>(() => {
-    if (options.layout?.value !== 'grid') {
+    if (!isFloorPlanLayoutValue(options.layout?.value)) {
       return []
     }
     const { minX, minY } = options.bounds.value

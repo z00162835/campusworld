@@ -52,7 +52,39 @@ def test_hicampus_campus_layer_has_outdoor_landmarks_and_spine_edges():
         assert str(gate.id) in node_ids
         assert str(bridge.id) in node_ids
         assert str(plaza.id) in node_ids
-        assert len(focus_map.get("edges") or []) >= 2
+        assert len(focus_map.get("edges") or []) >= 10
+        inter_building = [
+            edge
+            for edge in focus_map.get("edges") or []
+            if edge.get("campusEdgeKind") == "inter-building"
+        ]
+        assert len(inter_building) >= 5
+        f1 = next(
+            (
+                node
+                for node in focus_map.get("nodes") or []
+                if node.get("type") == "building"
+                and "F1" in str(node.get("name") or "")
+            ),
+            None,
+        )
+        assert f1 is not None
+        f1_edges = [
+            edge
+            for edge in inter_building
+            if edge.get("from") == f1["id"] or edge.get("to") == f1["id"]
+        ]
+        assert len(f1_edges) >= 3
+        connector_edges = [
+            edge
+            for edge in focus_map.get("edges") or []
+            if edge.get("campusEdgeKind") == "connector"
+        ]
+        assert len(connector_edges) >= 1
+        assert any(
+            edge.get("from") == str(plaza.id) or edge.get("to") == str(plaza.id)
+            for edge in connector_edges
+        )
     finally:
         session.close()
 

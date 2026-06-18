@@ -798,7 +798,7 @@ def test_build_campus_focus_map_uses_campus_grid_coordinates():
         payload = build_campus_focus_map(session, location, world)
 
     assert payload["viewLayer"] == "campus"
-    assert payload["layout"] == "grid"
+    assert payload["layout"] == "campus-grid"
     node = payload["nodes"][0]
     assert node["x"] == 88
     assert node["y"] == 88

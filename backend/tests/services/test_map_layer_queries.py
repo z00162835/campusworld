@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from app.services.world_interaction.map_layer_queries import (
     _circulation_hub_rooms_by_building,
+    _default_floor_map_anchor,
     floor_map_look_exits,
     rooms_for_floor_map,
 )
@@ -246,3 +247,65 @@ def test_circulation_hub_rooms_by_building_uses_tags_not_package_suffix():
 
     assert hub_ids == {101}
     assert room_to_building[101] == "tower_a"
+
+
+def test_default_floor_map_anchor_skips_outdoor_connector_circulation():
+    bridge = _room(
+        92,
+        package_node_id="world_bridge",
+        room_type="circulation",
+        tags=["environment:outdoor", "space:core", "layer:connector"],
+    )
+    circulation = _room(
+        93,
+        package_node_id="tower_a_01f_circulation_01",
+        tags=["space:circulation"],
+        room_type="circulation",
+    )
+    hub = _default_floor_map_anchor([bridge, circulation])
+    assert hub is not None
+    assert int(hub.id) == 93
+
+
+def test_circulation_hub_rooms_by_building_skips_outdoor_connector_on_first_floor():
+    building_a = SimpleNamespace(
+        id=20,
+        type_code="building",
+        attributes={"package_node_id": "tower_a", "world_id": "demo_world"},
+        tags=[],
+    )
+    first_floor = SimpleNamespace(
+        id=11,
+        type_code="building_floor",
+        attributes={"package_node_id": "tower_a_01f", "floor_number": 1},
+        tags=[],
+    )
+    bridge = _room(
+        92,
+        package_node_id="world_bridge",
+        room_type="circulation",
+        tags=["environment:outdoor", "space:core", "layer:connector"],
+    )
+    circulation = _room(
+        93,
+        package_node_id="tower_a_01f_circulation_01",
+        tags=["space:circulation"],
+        room_type="circulation",
+    )
+    session = MagicMock()
+
+    with patch(
+        "app.services.world_interaction.map_layer_queries.floors_in_building",
+        return_value=[first_floor],
+    ), patch(
+        "app.services.world_interaction.map_layer_queries.rooms_on_floor",
+        return_value=[bridge, circulation],
+    ):
+        hub_ids, room_to_building = _circulation_hub_rooms_by_building(
+            session,
+            world_id="demo_world",
+            building_nodes=[building_a],
+        )
+
+    assert hub_ids == {93}
+    assert room_to_building[93] == "tower_a"

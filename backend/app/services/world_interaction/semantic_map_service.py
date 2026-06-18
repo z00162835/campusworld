@@ -1228,6 +1228,20 @@ def build_campus_focus_map(
         _, building, _ = resolve_ancestors(session, node)
         return str(building.id) if building else None
 
+    outdoor_id_strs = {str(node_id) for node_id in outdoor_ids}
+    building_id_strs = {str(int(node.id)) for node in buildings}
+
+    def _campus_edge_kind(src_id: str, tgt_id: str) -> str:
+        src_out = src_id in outdoor_id_strs
+        tgt_out = tgt_id in outdoor_id_strs
+        src_bld = src_id in building_id_strs
+        tgt_bld = tgt_id in building_id_strs
+        if src_out and tgt_out:
+            return "spine"
+        if src_bld and tgt_bld:
+            return "inter-building"
+        return "connector"
+
     def _append_campus_edge(rel: Relationship, source_node: Node, target_node: Node) -> None:
         src_id = _campus_endpoint_id(source_node)
         tgt_id = _campus_endpoint_id(target_node)
@@ -1238,6 +1252,10 @@ def build_campus_focus_map(
             return
         seen_edge_pairs.add(pair)
         direction = _edge_direction(rel, target_node)
+        edge_kind = _campus_edge_kind(src_id, tgt_id)
+        edge_status = "available"
+        if edge_kind == "inter-building":
+            edge_status = "cross-building"
         edges.append(
             {
                 "id": str(rel.id),
@@ -1245,8 +1263,10 @@ def build_campus_focus_map(
                 "to": tgt_id,
                 "label": direction,
                 "direction": direction,
-                "status": "available",
+                "status": edge_status,
                 "targetLabel": _display_name(target_node),
+                "campusEdgeKind": edge_kind,
+                "crossBuilding": edge_kind == "inter-building",
             }
         )
 
@@ -1286,7 +1306,7 @@ def build_campus_focus_map(
         "mode": "focus",
         "viewLayer": "campus",
         "orientation": "north-up",
-        "layout": "grid" if has_campus_grid and len(entries) <= max_visible else "hierarchy",
+        "layout": "campus-grid" if has_campus_grid and len(entries) <= max_visible else "hierarchy",
         "breadcrumb": _breadcrumb_chain(
             session,
             view_layer="campus",

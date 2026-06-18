@@ -186,6 +186,7 @@ export interface SemanticMapEdge {
   status: 'available' | 'locked' | 'recommended' | 'visited' | 'cross-building'
   targetLabel?: string
   crossBuilding?: boolean
+  campusEdgeKind?: 'spine' | 'inter-building' | 'connector'
 }
 
 export interface AgentMapPresence {
@@ -252,7 +253,7 @@ export interface FocusMap {
   mode: 'focus' | 'route' | 'agent' | 'event'
   viewLayer?: MapViewLayer
   orientation?: 'north-up'
-  layout?: 'compass' | 'grid' | 'hierarchy' | 'list' | 'logical'
+  layout?: 'compass' | 'grid' | 'campus-grid' | 'hierarchy' | 'list' | 'logical'
   breadcrumb?: MapBreadcrumb[]
   neighborLinks?: NeighborMapLink[]
   floorPlanReady?: boolean

@@ -95,7 +95,8 @@
         'is-loading': mapStore.mapLoading,
         [`mode-${mapStore.mode}`]: true,
         'layout-logical': mapStore.map?.layout === 'logical',
-        'layout-grid': mapStore.map?.layout === 'grid',
+        'layout-grid': isFloorPlanLayout,
+        'layout-campus-grid': isCampusGridLayout,
       }"
       @wheel.prevent="onWheel"
       @mousedown="onPanStart"
@@ -267,8 +268,18 @@
               :ry="logicalHubRing.ry"
               class="logical-hub-ring"
             />
+            <path
+              v-for="edge in renderEdges"
+              v-show="edge.pathD"
+              :key="`path-${edge.id}`"
+              :d="edge.pathD"
+              fill="none"
+              :class="['edge', edge.status, edge.className]"
+              :title="edge.title"
+            />
             <line
               v-for="edge in renderEdges"
+              v-show="!edge.pathD"
               :key="edge.id"
               :x1="edge.x1"
               :y1="edge.y1"
@@ -357,7 +368,7 @@ import {
   ZoomOut,
 } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
-import { computeFloorPlanBounds, computeMapBounds, isFloorPlanTile, isRoomContentGroup, roomContentGroupLabel, useSemanticMapRender } from '@/composables/useSemanticMapRender'
+import { computeFloorPlanBounds, computeMapBounds, isCampusGridLayoutValue, isFloorPlanLayoutValue, isFloorPlanTile, isRoomContentGroup, roomContentGroupLabel, useSemanticMapRender } from '@/composables/useSemanticMapRender'
 import { gridCornerToIso } from '@/utils/mapLayout'
 import { useWorldMapStore } from '@/stores/worldMap'
 import { useWorldSessionStore } from '@/stores/worldSession'
@@ -404,14 +415,15 @@ const spatialEdges = computed(() => {
 })
 
 const bounds = computed(() => {
-  if (mapStore.map?.layout === 'grid') {
+  if (isFloorPlanLayout.value) {
     return computeFloorPlanBounds(mapStore.nodes, BOUNDS_PAD)
   }
   return computeMapBounds(spatialNodes.value, BOUNDS_PAD)
 })
 
 const mapLayout = computed(() => mapStore.map?.layout)
-const isFloorPlanLayout = computed(() => mapLayout.value === 'grid')
+const isFloorPlanLayout = computed(() => isFloorPlanLayoutValue(mapLayout.value))
+const isCampusGridLayout = computed(() => isCampusGridLayoutValue(mapLayout.value))
 const isLogicalRoomLayout = computed(() => mapLayout.value === 'logical')
 
 const {
@@ -1101,6 +1113,58 @@ onBeforeUnmount(() => {
 .edge.edge-cross-building {
   stroke-dasharray: 5 3;
   stroke: rgba(103, 194, 255, 0.85);
+}
+
+.edge.edge-campus-spine {
+  stroke: rgba(103, 194, 255, 0.72);
+  stroke-width: 2.5;
+}
+
+.edge.edge-campus-inter-building {
+  stroke-dasharray: 6 4;
+  stroke: rgba(230, 162, 60, 0.82);
+  stroke-width: 2.5;
+}
+
+.edge.edge-campus-connector {
+  stroke: rgba(103, 194, 58, 0.78);
+  stroke-width: 2.5;
+}
+
+.map-canvas.layout-campus-grid .path-layer {
+  z-index: 1;
+}
+
+.map-canvas.layout-campus-grid .space-node {
+  z-index: 3;
+}
+
+.map-canvas.layout-campus-grid .map-content {
+  background-size: 32px 32px;
+}
+
+.map-canvas.layout-campus-grid .space-node.building {
+  z-index: 3;
+  min-width: 92px;
+  font-weight: 600;
+  border-color: rgba(230, 162, 60, 0.65);
+  background: rgba(29, 34, 41, 0.96);
+}
+
+.map-canvas.layout-campus-grid .space-node.room {
+  z-index: 4;
+  min-width: 84px;
+  border-color: rgba(103, 194, 255, 0.6);
+  background: rgba(26, 32, 40, 0.98);
+  box-shadow: 0 0 0 1px rgba(103, 194, 255, 0.15);
+}
+
+.map-canvas.layout-campus-grid .edge-label {
+  fill: rgba(255, 255, 255, 0.88);
+  font-size: 9px;
+  paint-order: stroke;
+  stroke: rgba(17, 20, 24, 0.85);
+  stroke-width: 2px;
 }
 
 .edge-label {
