@@ -631,8 +631,10 @@ export interface SemanticMapEdge {
   to: string
   label?: string
   direction?: string
-  status: 'available' | 'locked' | 'recommended' | 'visited'
+  status: 'available' | 'locked' | 'recommended' | 'visited' | 'cross-building'
   targetLabel?: string
+  crossBuilding?: boolean
+  campusEdgeKind?: 'spine' | 'inter-building' | 'connector'  // viewLayer=campus only
 }
 
 export interface AgentMapPresence {
@@ -651,7 +653,7 @@ export interface FocusMap {
   mode: 'focus' | 'route' | 'agent' | 'event'
   viewLayer?: MapViewLayer
   orientation?: 'north-up'
-  layout?: 'compass' | 'grid' | 'hierarchy' | 'list'
+  layout?: 'compass' | 'grid' | 'campus-grid' | 'hierarchy' | 'list' | 'logical'
   breadcrumb?: Array<{ layer: string; id: string; name: string }>
   neighborLinks?: Array<{ direction: string; targetId: string; targetName: string; summary: string }>
   floorPlanReady?: boolean
@@ -664,7 +666,21 @@ export interface FocusMap {
   selectedEntityId: string | null
   loading: boolean
 }
+```
 
+`layout` 与 `viewLayer` 组合约定（North-up）：
+
+| `layout` | 典型 `viewLayer` | 含义 |
+| -------- | ---------------- | ---- |
+| `compass` | `room` | 焦点邻域罗盘 |
+| `logical` | `room` | 房间 hub-and-spoke |
+| `grid` | `floor` | 楼层 `map_grid_*` 等距平面 |
+| `campus-grid` | `campus` | 园区 `campus_grid_*` 鸟瞰（与 floor `grid` 分离） |
+| `hierarchy` / `list` | `building` / fallback | 竖排或列表回退 |
+
+Campus 层边：`campusEdgeKind=spine`（户外脊线）、`inter-building`（楼栋间）、`connector`（广场/户外 ↔ 楼栋）。
+
+```ts
 export interface MapPatch {
   mode?: FocusMap['mode']
   viewLayer?: MapViewLayer
