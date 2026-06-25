@@ -223,7 +223,13 @@ def _map_node_type(node: Node) -> str:
         return "device"
     if trait == "ITEM":
         return "object"
-    if trait == "AGENT" or type_code in {"npc_agent", "account"}:
+    if type_code == "npc_agent":
+        return "agent"
+    if type_code == "account":
+        return "service"
+    if trait in {"AGENT", "PERSON"} and type_code != "npc_agent":
+        return "service"
+    if trait == "AGENT":
         return "agent"
     return "service"
 

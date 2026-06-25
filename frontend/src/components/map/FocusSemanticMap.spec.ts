@@ -199,7 +199,7 @@ describe('FocusSemanticMap', () => {
         },
       ],
       edges: [],
-      roomOccupants: [{ id: '11', name: 'admin', type: 'agent', status: 'visible' }],
+      roomOccupants: [{ id: '11', name: 'admin', type: 'service', status: 'visible' }],
       agentPresences: [],
       highlightedPath: [],
       currentSpaceId: '1',

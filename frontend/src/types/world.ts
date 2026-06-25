@@ -136,6 +136,27 @@ export interface SpaceSummaryData {
   section4_fallback: boolean
 }
 
+export interface EntityInspectData {
+  entity: {
+    id: string
+    name: string
+    type_code: string
+    map_node_type: string
+  }
+  entity_kind: 'person' | 'object' | 'device' | 'agent'
+  appearance: { lines: string[] }
+  status?: Array<{ label: string; value: string }> | null
+  attributes_preview?: Array<{ key: string; value: string }> | null
+  location?: { id: string; name: string } | null
+  actions: DecisionOption[]
+  source: 'look' | 'space'
+}
+
+export type MapInspectSelection =
+  | { entityId: string; entityKind: 'space'; inspect: SpaceSummaryData }
+  | { entityId: string; entityKind: 'person' | 'object' | 'device' | 'agent'; inspect: EntityInspectData }
+
+
 export interface SemanticMapNode {
   id: string
   name: string

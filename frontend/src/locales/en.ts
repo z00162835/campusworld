@@ -266,9 +266,22 @@ export default {
       edgeLockedHint: 'Vertical floor links are illustrative only; use room exits to navigate',
       crossBuildingExit: 'Cross-building exit: {target}',
       crossBuildingExitGeneric: 'Cross-building exit',
+      inspect: {
+        close: 'Close',
+        loading: 'Loading inspect…',
+        confirmAction: 'Run "{label}"?',
+        appearance: 'Description',
+        status: 'Status',
+        kind: {
+          person: 'Person',
+          object: 'Object',
+          device: 'Device',
+          agent: 'Agent',
+        },
+      },
       spaceSummary: {
         close: 'Close',
-        appearance: 'Appearance',
+        appearance: 'Description',
         occupants: 'Occupants',
         devices: 'Devices',
         exits: 'Connections',

@@ -11,6 +11,7 @@ vi.mock('@/api/semanticMap', () => ({
     getFocus: vi.fn(),
     executeAction: vi.fn(),
     getSpaceSummary: vi.fn(),
+    getEntityInspect: vi.fn(),
   },
 }))
 
@@ -136,6 +137,11 @@ describe('worldMap store', () => {
   })
 
   it('searchMap applies focus_map from query response', async () => {
+    vi.mocked(semanticMapApi.executeAction).mockResolvedValue({
+      data: { space_summary: null, entity_inspect: null },
+    } as any)
+    vi.mocked(semanticMapApi.getSpaceSummary).mockResolvedValue({ data: { ok: false } } as any)
+    vi.mocked(semanticMapApi.getEntityInspect).mockResolvedValue({ data: { ok: false } } as any)
     vi.mocked(semanticMapApi.query).mockResolvedValue({
       data: {
         mode: 'focus',
@@ -346,7 +352,7 @@ describe('worldMap store', () => {
 
     expect(semanticMapApi.executeAction).toHaveBeenCalledWith(
       expect.objectContaining({
-        action_type: 'drill',
+        action_type: 'select',
         view_layer: 'building',
         anchor_id: IDS.building,
       }),
@@ -487,5 +493,60 @@ describe('worldMap store', () => {
     )
     expect(semanticMapApi.getSpaceSummary).toHaveBeenCalledWith(IDS.outdoorSpot)
     expect(store.selectedSpaceSummary).not.toBeNull()
+  })
+})
+
+
+describe('selectedInspect mutual exclusion', () => {
+  it('replaces inspect when selecting a new entity', async () => {
+    const store = useWorldMapStore()
+    vi.mocked(semanticMapApi.executeAction).mockResolvedValueOnce({
+      data: {
+        focus_map: useWorldSessionStore().interactionState!.focus_map!,
+        entity_inspect: {
+          entity: { id: '1', name: 'Person', type_code: 'character', map_node_type: 'agent' },
+          entity_kind: 'person',
+          appearance: { lines: ['Hello'] },
+          actions: [],
+          source: 'look',
+        },
+      },
+    } as any)
+    await store.selectEntity('1')
+    expect(store.selectedInspect?.entityKind).toBe('person')
+
+    vi.mocked(semanticMapApi.executeAction).mockResolvedValueOnce({
+      data: {
+        focus_map: useWorldSessionStore().interactionState!.focus_map!,
+        entity_inspect: {
+          entity: { id: '2', name: 'Lamp', type_code: 'item', map_node_type: 'device' },
+          entity_kind: 'device',
+          appearance: { lines: ['Bright'] },
+          actions: [],
+          source: 'look',
+        },
+      },
+    } as any)
+    await store.selectEntity('2')
+    expect(store.selectedInspect?.entityId).toBe('2')
+    expect(store.selectedInspect?.entityKind).toBe('device')
+  })
+
+  it('clears inspect on drill', async () => {
+    const store = useWorldMapStore()
+    store.selectedInspect = {
+      entityId: '1',
+      entityKind: 'object',
+      inspect: {
+        entity: { id: '1', name: 'Box', type_code: 'item', map_node_type: 'object' },
+        entity_kind: 'object',
+        appearance: { lines: [] },
+        actions: [],
+        source: 'look',
+      },
+    }
+    vi.mocked(semanticMapApi.executeAction).mockResolvedValueOnce({ data: { focus_map: useWorldSessionStore().interactionState!.focus_map! } } as any)
+    await store.drillTo('building')
+    expect(store.selectedInspect).toBeNull()
   })
 })

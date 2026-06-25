@@ -266,9 +266,22 @@ export default {
       edgeLockedHint: '楼层竖向连接仅作示意，请通过房间出口导航',
       crossBuildingExit: '跨楼出口：{target}',
       crossBuildingExitGeneric: '跨楼出口',
+      inspect: {
+        close: '关闭',
+        loading: '加载详情…',
+        confirmAction: '确认执行「{label}」？',
+        appearance: '描述',
+        status: '状态',
+        kind: {
+          person: '人物',
+          object: '物品',
+          device: '设备',
+          agent: 'Agent',
+        },
+      },
       spaceSummary: {
         close: '关闭',
-        appearance: '外观',
+        appearance: '描述',
         occupants: '占用者',
         devices: '设备',
         exits: '连接',

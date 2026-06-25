@@ -176,6 +176,23 @@ def get_semantic_map_space_summary(
     return world_interaction_service.get_space_summary(db, _actor(current_user), node_id)
 
 
+@semantic_map_router.get("/entity-inspect")
+def get_semantic_map_entity_inspect(
+    node_id: Optional[int] = None,
+    agent_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+) -> Dict[str, Any]:
+    if node_id is None and not agent_id:
+        raise HTTPException(status_code=400, detail="node_id or agent_id is required")
+    return world_interaction_service.get_entity_inspect(
+        db,
+        _actor(current_user),
+        node_id=node_id,
+        agent_id=agent_id,
+    )
+
+
 @semantic_map_router.post("/actions")
 def execute_semantic_map_action(
     payload: SemanticMapActionRequest,

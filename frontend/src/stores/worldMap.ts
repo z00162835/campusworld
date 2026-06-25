@@ -2,7 +2,16 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { semanticMapApi } from '@/api/semanticMap'
 import { useWorldSessionStore } from './worldSession'
-import type { FocusMap, MapBreadcrumb, MapPatch, MapViewLayer, SemanticMapNode, SpaceSummaryData } from '@/types/world'
+import type {
+  EntityInspectData,
+  FocusMap,
+  MapBreadcrumb,
+  MapInspectSelection,
+  MapPatch,
+  MapViewLayer,
+  SemanticMapNode,
+  SpaceSummaryData,
+} from '@/types/world'
 
 const OUTDOOR_SPOT_NODE_TYPES = new Set<SemanticMapNode['type']>(['gate', 'bridge', 'plaza'])
 
@@ -14,9 +23,18 @@ function isFloorDrillableRoom(node: SemanticMapNode): boolean {
   )
 }
 
+function spaceSelection(entityId: string, inspect: SpaceSummaryData): MapInspectSelection {
+  return { entityId, entityKind: 'space', inspect }
+}
+
+function entitySelection(entityId: string, inspect: EntityInspectData): MapInspectSelection {
+  return { entityId, entityKind: inspect.entity_kind, inspect }
+}
+
 export const useWorldMapStore = defineStore('worldMap', () => {
   const worldSession = useWorldSessionStore()
-  const selectedSpaceSummary = ref<SpaceSummaryData | null>(null)
+  const selectedInspect = ref<MapInspectSelection | null>(null)
+  const loadingInspect = ref(false)
   const mapLoading = ref(false)
   let mapRequestSeq = 0
 
@@ -51,10 +69,33 @@ export const useWorldMapStore = defineStore('worldMap', () => {
   const neighborLinks = computed(() => map.value?.neighborLinks || [])
   const selectedEntityId = computed(() => map.value?.selectedEntityId || null)
 
+  /** @deprecated use selectedInspect */
+  const selectedSpaceSummary = computed(() =>
+    selectedInspect.value?.entityKind === 'space' ? selectedInspect.value.inspect : null,
+  )
+
   function applyFocusMap(focusMap: FocusMap) {
     if (worldSession.interactionState) {
       worldSession.interactionState.focus_map = focusMap
     }
+  }
+
+  function applySelectResponse(
+    entityId: string,
+    data: {
+      space_summary?: SpaceSummaryData | null
+      entity_inspect?: EntityInspectData | null
+    },
+  ) {
+    if (data.space_summary) {
+      selectedInspect.value = spaceSelection(entityId, data.space_summary)
+      return
+    }
+    if (data.entity_inspect) {
+      selectedInspect.value = entitySelection(entityId, data.entity_inspect)
+      return
+    }
+    selectedInspect.value = null
   }
 
   async function fetchFocus(options?: {
@@ -80,7 +121,8 @@ export const useWorldMapStore = defineStore('worldMap', () => {
 
   async function drillTo(layer: MapViewLayer, anchorId?: string) {
     const seq = beginMapRequest()
-    selectedSpaceSummary.value = null
+    selectedInspect.value = null
+    loadingInspect.value = false
     try {
       const { data } = await semanticMapApi.executeAction({
         action_type: 'drill',
@@ -139,29 +181,54 @@ export const useWorldMapStore = defineStore('worldMap', () => {
     await drillTo('room')
   }
 
-  async function loadSpaceSummary(nodeId: string) {
+  async function refreshSelectedInspect() {
+    const current = selectedInspect.value
+    if (!current) return
+    loadingInspect.value = true
     try {
-      const summaryRes = await semanticMapApi.getSpaceSummary(nodeId)
+      const res = await semanticMapApi.getEntityInspect({ node_id: current.entityId })
+      if (res.data.ok && res.data.inspect) {
+        selectedInspect.value = entitySelection(current.entityId, res.data.inspect)
+        return
+      }
+      const summaryRes = await semanticMapApi.getSpaceSummary(current.entityId)
       if (summaryRes.data.ok && summaryRes.data.summary) {
-        selectedSpaceSummary.value = summaryRes.data.summary
+        selectedInspect.value = spaceSelection(current.entityId, summaryRes.data.summary)
       }
     } catch (err) {
-      console.warn('[worldMap] loadSpaceSummary failed:', err)
+      console.warn('[worldMap] refreshSelectedInspect failed:', err)
+    } finally {
+      loadingInspect.value = false
     }
   }
 
   async function drillToOutdoorSpot(nodeId: string) {
-    selectedSpaceSummary.value = null
+    selectedInspect.value = null
     await drillTo('room', nodeId)
-    await loadSpaceSummary(nodeId)
+    loadingInspect.value = true
+    try {
+      const summaryRes = await semanticMapApi.getSpaceSummary(nodeId)
+      if (summaryRes.data.ok && summaryRes.data.summary) {
+        selectedInspect.value = spaceSelection(nodeId, summaryRes.data.summary)
+      }
+    } catch (err) {
+      console.warn('[worldMap] drillToOutdoorSpot summary failed:', err)
+    } finally {
+      loadingInspect.value = false
+    }
   }
 
   async function switchMapMode(nextMode: FocusMap['mode']) {
     await fetchFocus({ viewLayer: viewLayer.value, mode: nextMode })
   }
 
-  async function selectMapTarget(nodeId: string, options?: { viewLayer?: MapViewLayer; anchorId?: string }) {
+  async function selectEntity(
+    nodeId: string,
+    options?: { viewLayer?: MapViewLayer; anchorId?: string; agentId?: string },
+  ) {
     const seq = beginMapRequest()
+    loadingInspect.value = true
+    selectedInspect.value = null
     const layer = options?.viewLayer ?? viewLayer.value
     let anchorId = options?.anchorId
     if (!anchorId && layer === 'room') {
@@ -182,17 +249,36 @@ export const useWorldMapStore = defineStore('worldMap', () => {
       if (data.focus_map) {
         applyFocusMap(data.focus_map)
       }
-      selectedSpaceSummary.value = data.space_summary ?? null
-      if (!data.space_summary) {
-        const summaryRes = await semanticMapApi.getSpaceSummary(nodeId)
-        if (!isCurrentMapRequest(seq)) return
-        if (summaryRes.data.ok && summaryRes.data.summary) {
-          selectedSpaceSummary.value = summaryRes.data.summary
+      applySelectResponse(nodeId, data)
+      if (!selectedInspect.value && !data.space_summary && !data.entity_inspect) {
+        if (options?.agentId) {
+          const agentRes = await semanticMapApi.getEntityInspect({ agent_id: options.agentId })
+          if (!isCurrentMapRequest(seq)) return
+          if (agentRes?.data?.ok && agentRes.data.inspect) {
+            selectedInspect.value = entitySelection(nodeId, agentRes.data.inspect)
+          }
+        } else {
+          const summaryRes = await semanticMapApi.getSpaceSummary(nodeId)
+          if (!isCurrentMapRequest(seq)) return
+          if (summaryRes?.data?.ok && summaryRes.data.summary) {
+            selectedInspect.value = spaceSelection(nodeId, summaryRes.data.summary)
+            return
+          }
+          const inspectRes = await semanticMapApi.getEntityInspect({ node_id: nodeId })
+          if (!isCurrentMapRequest(seq)) return
+          if (inspectRes?.data?.ok && inspectRes.data.inspect) {
+            selectedInspect.value = entitySelection(nodeId, inspectRes.data.inspect)
+          }
         }
       }
     } finally {
+      loadingInspect.value = false
       endMapRequest(seq)
     }
+  }
+
+  async function selectMapTarget(nodeId: string, options?: { viewLayer?: MapViewLayer; anchorId?: string }) {
+    await selectEntity(nodeId, options)
   }
 
   async function handleNodeClick(node: SemanticMapNode) {
@@ -200,7 +286,7 @@ export const useWorldMapStore = defineStore('worldMap', () => {
       if (node.id.startsWith('cluster:room:')) {
         const memberId = node.objectIds?.[0] ?? node.activeAgentIds?.[0]
         if (memberId) {
-          await selectMapTarget(memberId, { viewLayer: 'room' })
+          await selectEntity(memberId, { viewLayer: 'room' })
         }
         return
       }
@@ -232,11 +318,11 @@ export const useWorldMapStore = defineStore('worldMap', () => {
       return
     }
     if (node.type === 'building') {
-      await drillTo('building', node.id)
+      await selectEntity(node.id, { viewLayer: 'building', anchorId: node.id })
       return
     }
     if (node.type === 'floor') {
-      await drillTo('floor', node.id)
+      await selectEntity(node.id, { viewLayer: 'floor', anchorId: node.id })
       return
     }
     if (
@@ -255,20 +341,32 @@ export const useWorldMapStore = defineStore('worldMap', () => {
       return
     }
     if (node.type === 'object' || node.type === 'device' || node.type === 'agent') {
-      await selectMapTarget(node.id, { viewLayer: 'room' })
+      await selectEntity(node.id, { viewLayer: 'room' })
       return
     }
     if (viewLayer.value === 'room' && node.logicalZone === 'exit') {
       await drillTo('room', node.id)
       return
     }
-    await selectMapTarget(node.id)
+    if (node.type === 'room' || node.type === 'outdoor' || node.type === 'gate' || node.type === 'bridge' || node.type === 'plaza') {
+      await selectEntity(node.id)
+      return
+    }
+    await selectEntity(node.id)
+  }
+
+  async function selectAgent(agentId: string) {
+    await selectEntity(agentId, { viewLayer: 'room', agentId })
   }
 
   async function applyMapPatch(patch?: MapPatch) {
     if (!patch) return
     if (patch.focus_map) {
       applyFocusMap(patch.focus_map)
+      const highlightId = patch.highlightedNodeIds?.[0]
+      if (highlightId) {
+        await selectEntity(highlightId)
+      }
       return
     }
     if (patch.viewLayer) {
@@ -287,6 +385,7 @@ export const useWorldMapStore = defineStore('worldMap', () => {
           : (node.id === focus.currentSpaceId ? 'current' : 'visible'),
       }))
       focus.selectedEntityId = patch.highlightedNodeIds[0] ?? null
+      await selectEntity(patch.highlightedNodeIds[0])
     }
     if (patch.highlightedPath) {
       focus.highlightedPath = patch.highlightedPath
@@ -319,7 +418,8 @@ export const useWorldMapStore = defineStore('worldMap', () => {
   }
 
   function clearMapSelection() {
-    selectedSpaceSummary.value = null
+    selectedInspect.value = null
+    loadingInspect.value = false
     if (worldSession.interactionState?.focus_map) {
       worldSession.interactionState.focus_map.selectedEntityId = null
       for (const node of worldSession.interactionState.focus_map.nodes) {
@@ -331,7 +431,8 @@ export const useWorldMapStore = defineStore('worldMap', () => {
   }
 
   function reset() {
-    selectedSpaceSummary.value = null
+    selectedInspect.value = null
+    loadingInspect.value = false
     mapRequestSeq += 1
     mapLoading.value = false
   }
@@ -351,6 +452,8 @@ export const useWorldMapStore = defineStore('worldMap', () => {
     agentPresences,
     neighborLinks,
     selectedEntityId,
+    selectedInspect,
+    loadingInspect,
     selectedSpaceSummary,
     mapLoading,
     applyFocusMap,
@@ -360,9 +463,11 @@ export const useWorldMapStore = defineStore('worldMap', () => {
     navigateBreadcrumb,
     drillToCurrentRoom,
     drillToOutdoorSpot,
-    loadSpaceSummary,
+    refreshSelectedInspect,
     switchMapMode,
+    selectEntity,
     selectMapTarget,
+    selectAgent,
     handleNodeClick,
     applyMapPatch,
     searchMap,

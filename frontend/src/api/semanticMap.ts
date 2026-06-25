@@ -1,5 +1,5 @@
 import apiClient from './index'
-import type { FocusMap, MapPatch, SpaceSummaryData } from '@/types/world'
+import type { EntityInspectData, FocusMap, MapPatch, SpaceSummaryData } from '@/types/world'
 
 export const semanticMapApi = {
   getFocus: (params?: {
@@ -9,6 +9,12 @@ export const semanticMapApi = {
     selected_entity_id?: string
   }) =>
     apiClient.get<{ focus_map: FocusMap }>('/semantic-map/focus', { params }),
+
+  getEntityInspect: (params: { node_id?: string | number; agent_id?: string }) =>
+    apiClient.get<{ ok: boolean; inspect?: EntityInspectData; error?: string }>(
+      '/semantic-map/entity-inspect',
+      { params },
+    ),
 
   getSpaceSummary: (nodeId: string | number) =>
     apiClient.get<{ ok: boolean; summary?: SpaceSummaryData; error?: string }>(
@@ -26,6 +32,7 @@ export const semanticMapApi = {
     apiClient.post<{
       focus_map?: FocusMap
       space_summary?: SpaceSummaryData | null
+      entity_inspect?: EntityInspectData | null
       ok?: boolean
       error?: string
     }>('/semantic-map/actions', body),

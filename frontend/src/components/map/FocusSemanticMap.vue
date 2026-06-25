@@ -86,6 +86,7 @@
           </button>
         </li>
       </ul>
+      <div ref="mapStageRef" class="map-stage">
       <div
         v-if="mapStore.nodes.length"
         ref="canvasRef"
@@ -100,6 +101,7 @@
       }"
       @wheel.prevent="onWheel"
       @mousedown="onPanStart"
+      @mouseup="onCanvasMouseUp"
     >
       <div class="compass-rose" aria-hidden="true" @mousedown.stop>
         <svg :width="COMPASS_ROSE_SIZE" :height="COMPASS_ROSE_SIZE" viewBox="0 0 36 36">
@@ -314,17 +316,22 @@
             <span class="node-name">{{ node.displayName }}</span>
           </button>
 
-          <div
+          <button
             v-for="agent in renderAgents"
             :key="agent.agentId"
+            type="button"
             :class="['agent-node', { 'agent-node--floating': agent.floating }]"
             :style="agentStyle(agent)"
             :title="agent.name"
+            @click.stop="mapStore.selectAgent(agent.agentId)"
           >
             {{ agent.name.slice(0, 1).toUpperCase() }}
-          </div>
+          </button>
         </div>
       </div>
+    </div>
+
+      <map-entity-inspect-sheet />
 
       <div v-if="mapStore.mapLoading" class="map-loading-overlay" aria-live="polite">
         {{ t('worldInteraction.map.loading') }}
@@ -350,13 +357,13 @@
           />
         </svg>
       </div>
-    </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import {
   ArrowDown,
   ArrowLeft,
@@ -370,6 +377,7 @@ import {
 import { useI18n } from 'vue-i18n'
 import { computeFloorPlanBounds, computeMapBounds, isCampusGridLayoutValue, isFloorPlanLayoutValue, isFloorPlanTile, isRoomContentGroup, roomContentGroupLabel, useSemanticMapRender } from '@/composables/useSemanticMapRender'
 import { gridCornerToIso } from '@/utils/mapLayout'
+import MapEntityInspectSheet from '@/components/map/MapEntityInspectSheet.vue'
 import { useWorldMapStore } from '@/stores/worldMap'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import { COMPASS_ROSE_SIZE } from '@/utils/mapLayout'
@@ -381,12 +389,14 @@ const MINIMAP_W = 132
 const MINIMAP_H = 88
 const MINIMAP_PAD = 6
 
-const { t, tm } = useI18n()
+const { t } = useI18n()
 const mapStore = useWorldMapStore()
 const worldSession = useWorldSessionStore()
 const loadError = computed(() => worldSession.error || (worldSession.errorKey ? t(worldSession.errorKey) : ''))
 
 const canvasRef = ref<HTMLElement | null>(null)
+const mapStageRef = ref<HTMLElement | null>(null)
+provide('mapStageRef', mapStageRef)
 const panX = ref(0)
 const panY = ref(0)
 const userZoom = ref(1)
@@ -514,11 +524,9 @@ const viewportStyle = computed(() => ({
 const zoomPercent = computed(() => Math.round(userZoom.value * 100))
 
 const logicalZoneHint = computed(() => {
-  const zones = tm('worldInteraction.map.logicalZones')
-  if (typeof zones !== 'object' || zones === null) return ''
-  const dev = (zones as Record<string, string>).devices
-  const items = (zones as Record<string, string>).items
-  const exits = (zones as Record<string, string>).exits
+  const items = t('worldInteraction.map.logicalZones.items')
+  const dev = t('worldInteraction.map.logicalZones.devices')
+  const exits = t('worldInteraction.map.logicalZones.exits')
   return `${items} · ${dev} · ${exits}`
 })
 
@@ -588,8 +596,13 @@ const onWheel = (event: WheelEvent) => {
   zoomBy(event.deltaY < 0 ? 1.12 : 0.9)
 }
 
+let panGestureMoved = false
+
 const onPanStart = (event: MouseEvent) => {
   if (event.button !== 0) return
+  const target = event.target
+  if (target instanceof Element && target.closest('[data-testid="map-inspect-sheet"]')) return
+  panGestureMoved = false
   isPanning.value = true
   panStartX = event.clientX
   panStartY = event.clientY
@@ -600,8 +613,18 @@ const onPanStart = (event: MouseEvent) => {
 }
 
 const onPanMove = (event: MouseEvent) => {
+  if (Math.abs(event.clientX - panStartX) > 4 || Math.abs(event.clientY - panStartY) > 4) {
+    panGestureMoved = true
+  }
   panX.value = panOriginX + (event.clientX - panStartX)
   panY.value = panOriginY + (event.clientY - panStartY)
+}
+
+const onCanvasMouseUp = (event: MouseEvent) => {
+  if (event.button !== 0 || panGestureMoved) return
+  if (event.target === canvasRef.value) {
+    mapStore.clearMapSelection()
+  }
 }
 
 const onPanEnd = () => {
@@ -699,6 +722,14 @@ onBeforeUnmount(() => {
 }
 
 .map-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.map-stage {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1285,6 +1316,8 @@ onBeforeUnmount(() => {
 }
 
 .map-canvas.mode-agent .agent-node {
+  border: 0;
+  cursor: pointer;
   box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.55);
 }
 
@@ -1329,6 +1362,8 @@ onBeforeUnmount(() => {
 }
 
 .agent-node {
+  border: 0;
+  cursor: pointer;
   position: absolute;
   width: 32px;
   height: 32px;

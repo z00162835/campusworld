@@ -303,7 +303,7 @@ def test_build_room_focus_map_groups_content_with_single_edges():
         {"id": "31", "name": "Bench", "type": "object", "status": "visible"},
     ]
     assert payload["roomOccupants"] == [
-        {"id": "11", "name": "admin", "type": "agent", "status": "visible"},
+        {"id": "11", "name": "admin", "type": "service", "status": "visible"},
     ]
 
 

@@ -79,4 +79,7 @@
 - Browser inspection reached the login redirect for `/works`; authenticated visual inspection still needs a valid Web UI session.
 - [x] Semantic map Phase A/B: north-up compass room layer; edge direction labels; map click → highlight + space summary (no default `go`); drill building/floor/campus via breadcrumb; floor grid layout when `map_grid_*` present, else list +「平面图未就绪」.
 - [x] Semantic map Phase C: campus layer uses `campus_grid_col/row` and `layout: campus-grid` (distinct from floor `grid`); search「F3」highlights building on campus view; minimap + mapPatch `viewLayer`/`highlightedNodeIds` via WS/state_patch.
+- [x] Frontend semantic map rendering contract documented in [`features/F02_SEMANTIC_MAP_FRONTEND.md`](features/F02_SEMANTIC_MAP_FRONTEND.md) (store, layouts, viewport, patch application).
 - Phase 2+ remainder: bottom drawer read-only archived history, `task` type enum alignment, mobile §29 layout order, Agent attention, EventTriage L2, HiCampus eight-step demo path.
+
+- [ ] 地图内 `MapEntityInspectSheet`：点击人/物/设备/Agent/空间互斥展示 inspect；决策中心无 `MapSpaceSummaryCard`。

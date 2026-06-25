@@ -521,6 +521,20 @@ Debug
 
 # 8. 地图区域 SPEC
 
+> **前端渲染 SSOT**：组件实现、布局算法、store 动作、viewport 与 `map_patch` 细则见 [`F02_SEMANTIC_MAP_FRONTEND.md`](F02_SEMANTIC_MAP_FRONTEND.md)。本节保留产品级布局与联动约束；TypeScript 字段真源为 `frontend/src/types/world.ts`。
+
+## 8.0 设计原则
+
+语义地图实现**语义世界的可视化**，在同一视图中融合 **空间、人、物、事**；设计参考游戏地图的信息分层与钻取，**不追求显示特效**，追求语义**可理解**与**易用**。完整语义模型与四层空间约定见 [`F02_SEMANTIC_MAP_FRONTEND.md` §0](F02_SEMANTIC_MAP_FRONTEND.md#0-设计原则与语义模型)。
+
+| 原则 | 约定 |
+|------|------|
+| 空间四层 | 仅 **世界 → 楼栋 → 楼层 → 房间**；Hub/outdoor 为连接与导航，不增加第五层 |
+| 世界层 | 入口可见楼栋及楼栋间连接空间（门、桥、广场等） |
+| 楼栋层 | 进入楼栋**默认首层**，可切换其他楼层 |
+| 房间层 | 展示人、物、设备及空间连通的其他空间；选中摘要进决策中心，不默认 `go` |
+| 人 / 物 / 事 | Agent、occupant、object/device、任务/事件通过节点、mode 与决策中心联动，不另开空间层 |
+
 ## 8.1 组件名称
 
 ```text
@@ -698,11 +712,11 @@ export interface MapPatch {
 
 | 点击对象  | 响应             |
 | ----- | -------------- |
-| 当前空间  | 中央显示空间摘要（与 `space` 命令四段一致） |
-| 可达空间  | 高亮目标 + 中央显示连接与空间摘要；**不**默认触发移动或「前往」 |
+| 当前空间  | 地图内 Inspect sheet 显示空间摘要（与 `space` 四段一致） |
+| 可达空间  | 高亮 + 地图 Inspect sheet；**不**默认触发移动 |
 | 楼栋/楼层/cluster | 钻取切换 `viewLayer`（`POST /semantic-map/actions` `drill`）；不改玩家 `location_id` |
-| Agent | 地图模式高亮；必要时中央显示 Agent 摘要卡 |
-| 对象    | 中央显示对象发现卡      |
+| Agent | 地图 Inspect sheet 只读摘要（对话 action deferred） |
+| 对象/设备 | 地图 Inspect sheet（look 对齐；capability-gated actions） |
 | 事件热点  | 中央显示事件决策卡      |
 | 聚合标记  | 钻取到对应楼栋层      |
 
@@ -723,7 +737,7 @@ export interface MapPatch {
 
 1. 地图切换 Agent 模式。
 2. 状态摘要更新关键 Agent。
-3. 中央区域只在必要时显示提示，不刷屏。
+3. 实体详情在地图 Inspect sheet 展示；决策中心保留任务/事件卡，不重复实体详情。
 
 ---
 
@@ -1487,14 +1501,9 @@ frontend/src/components/
 │   ├── DecisionQueryBox.vue
 │   └── ResolvedEventsDrawer.vue
 ├── map/
-│   ├── FocusSemanticMap.vue
-│   ├── MapRegionMenu.vue
-│   ├── SpaceNode.vue
-│   ├── AgentAvatarNode.vue
-│   ├── ObjectMarker.vue
-│   ├── EventPulse.vue
-│   ├── PathOverlay.vue
-│   └── MiniMapLegend.vue
+│   ├── FocusSemanticMap.vue      # 含 region menu、canvas、minimap、侧栏（内联渲染）
+│   ├── MapEntityInspectSheet.vue # 地图内实体 inspect sheet
+│   └── MapSpaceSummaryCard.vue   # space 四段（嵌入 inspect sheet）
 ├── context/
 │   ├── ContextSummaryPanel.vue
 │   ├── ContextSummaryMenu.vue
@@ -1542,29 +1551,25 @@ frontend/src/stores/
 
 ```text
 frontend/src/api/
-├── client.ts
+├── index.ts
+├── auth.ts
+├── token.ts
+├── accounts.ts
+├── worldSession.ts
 ├── decisionCenter.ts
-├── world.ts
-├── map.ts
-├── search.ts
-├── history.ts
-├── commands.ts
-└── session.ts
+├── semanticMap.ts
+├── worldSearch.ts
+├── worldHistory.ts
+└── commands.ts
 ```
 
 ## 21.5 Types
 
 ```text
 frontend/src/types/
-├── decision.ts
-├── map.ts
-├── context.ts
-├── agent.ts
-├── task.ts
-├── search.ts
-├── history.ts
-├── command.ts
-└── common.ts
+├── index.ts
+├── auth.ts
+└── world.ts          # decision + map + session 聚合类型
 ```
 
 ---
@@ -1774,14 +1779,12 @@ SSE：`data: {json}\n\n`，`kind` 为 `meta` / `delta` / `end` / `error` / `canc
 
 ## 23.5 查询地图
 
-### `POST /api/v1/map/query`
+### `POST /api/v1/semantic-map/query`
 
 请求：
 
 ```json
 {
-  "session_id": "sess_001",
-  "world_id": "hicampus",
   "query": "Agent 都在哪里？",
   "mode": "auto"
 }
@@ -1796,14 +1799,16 @@ SSE：`data: {json}\n\n`，`kind` 为 `meta` / `delta` / `end` / `error` / `canc
     "mode": "agent",
     "answer": "当前已发现 4 个 Agent：AICO 在大门，地图精灵在中心广场，培训服务 Agent 在 F3，报修 Agent 在 F6。",
     "map_patch": {
-      "focus_mode": "agent",
-      "highlighted_agent_ids": ["aico", "map_spirit", "training_bot", "repair_bot"],
-      "visible_space_ids": ["hicampus_gate", "central_plaza", "f3_training_center", "f6_service_center"]
+      "mode": "agent",
+      "highlightedNodeIds": ["hicampus_gate", "central_plaza", "f3_training_center", "f6_service_center"],
+      "viewLayer": "campus"
     }
   },
   "error": null
 }
 ```
+
+字段与 patch 语义见 [`F02_SEMANTIC_MAP_FRONTEND.md`](F02_SEMANTIC_MAP_FRONTEND.md) §11 与 `frontend/src/types/world.ts`。
 
 ## 23.6 搜索
 

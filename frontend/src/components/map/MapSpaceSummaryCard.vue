@@ -1,5 +1,5 @@
 <template>
-  <section class="map-space-summary">
+  <section class="map-space-summary" :class="{ embedded }">
     <header class="summary-header">
       <h3>{{ summary.space_node.name }}</h3>
       <el-button size="small" text @click="mapStore.clearMapSelection()">
@@ -30,7 +30,9 @@
       <h4>{{ t('worldInteraction.map.spaceSummary.exits') }}</h4>
       <ul>
         <li v-for="row in summary.section4_next_or_adjacent" :key="`exit-${row.id}`">
-          <span v-if="row.direction">{{ directionLabel(row.direction) }} · </span>{{ row.name }}
+          <button type="button" class="exit-link" @click="mapStore.selectEntity(String(row.id))">
+            <span v-if="row.direction">{{ directionLabel(row.direction) }} · </span>{{ row.name }}
+          </button>
         </li>
       </ul>
     </div>
@@ -45,6 +47,7 @@ import type { SpaceSummaryData } from '@/types/world'
 
 defineProps<{
   summary: SpaceSummaryData
+  embedded?: boolean
 }>()
 
 const { t } = useI18n()
@@ -54,6 +57,22 @@ const directionLabel = (direction?: string | null) => formatDirectionLabel(direc
 </script>
 
 <style scoped>
+.map-space-summary.embedded {
+  margin-bottom: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.exit-link {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
 .map-space-summary {
   margin-bottom: var(--spacing-md);
   padding: var(--spacing-md);

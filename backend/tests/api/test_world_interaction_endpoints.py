@@ -255,6 +255,7 @@ def test_semantic_map_focus_route_registered():
     paths = {route.path for route in _app().routes}
     assert "/api/v1/semantic-map/focus" in paths
     assert "/api/v1/semantic-map/space-summary" in paths
+    assert "/api/v1/semantic-map/entity-inspect" in paths
     assert "/api/v1/semantic-map/actions" in paths
 
 
@@ -309,6 +310,42 @@ def test_post_semantic_map_drill_returns_focus_map(monkeypatch):
     assert response.status_code == 200
     assert response.json()["focus_map"]["viewLayer"] == "building"
 
+
+
+
+def test_get_entity_inspect_returns_payload(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "get_entity_inspect",
+        lambda db, actor, **kwargs: {
+            "ok": True,
+            "inspect": {"entity": {"id": "5", "name": "Lamp"}, "entity_kind": "device", "actions": []},
+        },
+    )
+    client = TestClient(_app())
+    response = client.get("/api/v1/semantic-map/entity-inspect?node_id=5")
+    assert response.status_code == 200
+    assert response.json()["inspect"]["entity_kind"] == "device"
+
+
+def test_post_semantic_map_select_returns_entity_inspect(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "execute_semantic_map_action",
+        lambda db, actor, **kwargs: {
+            "focus_map": {"viewLayer": "room", "selectedEntityId": "9", "nodes": [], "edges": []},
+            "space_summary": None,
+            "entity_inspect": {"entity": {"id": "9", "name": "NPC"}, "entity_kind": "agent", "actions": []},
+        },
+    )
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/semantic-map/actions",
+        json={"action_type": "select", "selected_entity_id": "9"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["entity_inspect"]["entity_kind"] == "agent"
 
 def test_post_semantic_map_unsupported_action(monkeypatch):
     monkeypatch.setattr(

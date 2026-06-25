@@ -242,6 +242,31 @@ class WorldInteractionService:
             return {"ok": False, "error": "Space node not found"}
         return {"ok": True, "summary": data}
 
+    def get_entity_inspect(
+        self,
+        session: Session,
+        actor: WorldActor,
+        *,
+        node_id: Optional[int] = None,
+        agent_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        from app.services.entity_inspect_service import build_entity_inspect_data, visible_node_ids_from_focus_map
+
+        user = self._get_user_node(session, actor.user_id, username=actor.username)
+        location = self._resolve_current_location(session, user)
+        focus_map = build_focus_map(session, location, view_layer="room", mode="focus")
+        visible_ids = visible_node_ids_from_focus_map(focus_map)
+        data = build_entity_inspect_data(
+            session,
+            actor,
+            node_id=node_id,
+            agent_id=agent_id,
+            visible_node_ids=visible_ids,
+        )
+        if not data:
+            return {"ok": False, "error": "Entity not found or not inspectable"}
+        return {"ok": True, "inspect": data}
+
     def execute_semantic_map_action(
         self,
         session: Session,
@@ -279,9 +304,25 @@ class WorldInteractionService:
                 selected_entity_id=selected_entity_id,
             )
             summary = None
+            entity_inspect = None
             if selected_entity_id and str(selected_entity_id).isdigit():
-                summary = build_space_summary_data(session, int(selected_entity_id))
-            return {"focus_map": focus_map, "space_summary": summary}
+                nid = int(selected_entity_id)
+                summary = build_space_summary_data(session, nid)
+                if summary is None:
+                    from app.services.entity_inspect_service import build_entity_inspect_data, visible_node_ids_from_focus_map
+
+                    visible_ids = visible_node_ids_from_focus_map(focus_map)
+                    entity_inspect = build_entity_inspect_data(
+                        session,
+                        actor,
+                        node_id=nid,
+                        visible_node_ids=visible_ids,
+                    )
+            return {
+                "focus_map": focus_map,
+                "space_summary": summary,
+                "entity_inspect": entity_inspect,
+            }
         return {"ok": False, "error": f"Unsupported map action: {action_type}"}
 
     def search(self, session: Session, actor: WorldActor, query: str) -> Dict[str, Any]:

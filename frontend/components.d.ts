@@ -67,6 +67,7 @@ declare module 'vue' {
     GlitchText: typeof import('./src/components/auth/GlitchText.vue')['default']
     GlobalCommandSearch: typeof import('./src/components/shell/GlobalCommandSearch.vue')['default']
     GlobalSearch: typeof import('./src/components/spaces/GlobalSearch.vue')['default']
+    MapEntityInspectSheet: typeof import('./src/components/map/MapEntityInspectSheet.vue')['default']
     MapSpaceSummaryCard: typeof import('./src/components/map/MapSpaceSummaryCard.vue')['default']
     MarkdownContent: typeof import('./src/components/decision/MarkdownContent.vue')['default']
     NavBar: typeof import('./src/components/layout/NavBar.vue')['default']
