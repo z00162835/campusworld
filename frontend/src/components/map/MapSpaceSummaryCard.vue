@@ -1,6 +1,6 @@
 <template>
   <section class="map-space-summary" :class="{ embedded }">
-    <header class="summary-header">
+    <header v-if="!embedded" class="summary-header">
       <h3>{{ summary.space_node.name }}</h3>
       <el-button size="small" text @click="mapStore.clearMapSelection()">
         {{ t('worldInteraction.map.spaceSummary.close') }}

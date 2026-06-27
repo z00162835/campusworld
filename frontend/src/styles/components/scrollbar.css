@@ -1,0 +1,87 @@
+/* Dark-theme scrollbars aligned with map / decision surfaces */
+
+.cw-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.cw-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.cw-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cw-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.cw-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.map-panel :is(
+  .floor-room-list,
+  .room-occupants-list,
+  .room-content-panels,
+  .floor-stack-panel,
+  .group-member-list
+),
+.map-inspect-sheet .inspect-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.map-panel,
+.map-inspect-sheet {
+  color-scheme: dark;
+}
+
+.map-panel :is(
+  .floor-room-list,
+  .room-occupants-list,
+  .room-content-panels,
+  .floor-stack-panel,
+  .group-member-list
+)::-webkit-scrollbar,
+.map-inspect-sheet .inspect-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.map-panel :is(
+  .floor-room-list,
+  .room-occupants-list,
+  .room-content-panels,
+  .floor-stack-panel,
+  .group-member-list
+)::-webkit-scrollbar-track,
+.map-inspect-sheet .inspect-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.map-panel :is(
+  .floor-room-list,
+  .room-occupants-list,
+  .room-content-panels,
+  .floor-stack-panel,
+  .group-member-list
+)::-webkit-scrollbar-thumb,
+.map-inspect-sheet .inspect-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.map-panel :is(
+  .floor-room-list,
+  .room-occupants-list,
+  .room-content-panels,
+  .floor-stack-panel,
+  .group-member-list
+)::-webkit-scrollbar-thumb:hover,
+.map-inspect-sheet .inspect-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}

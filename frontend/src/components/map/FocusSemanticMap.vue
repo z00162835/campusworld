@@ -9,28 +9,6 @@
         <el-button size="small" text @click="mapStore.drillToCurrentRoom()">
           {{ t('worldInteraction.map.backToRoom') }}
         </el-button>
-        <el-button size="small" text @click="mapStore.switchMapMode('route')">
-          {{ t('worldInteraction.map.mode.route') }}
-        </el-button>
-        <el-button size="small" text @click="mapStore.switchMapMode('agent')">
-          {{ t('worldInteraction.map.mode.agent') }}
-        </el-button>
-        <el-dropdown>
-          <el-button size="small" text>
-            <el-icon><More /></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="mapStore.switchMapMode('focus')">
-                {{ t('worldInteraction.map.mode.focus') }}
-              </el-dropdown-item>
-              <el-dropdown-item @click="mapStore.switchMapMode('event')">
-                {{ t('worldInteraction.map.mode.event') }}
-              </el-dropdown-item>
-              <el-dropdown-item divided @click="resetView">{{ t('worldInteraction.map.resetView') }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
       </div>
     </div>
 
@@ -131,9 +109,6 @@
           </el-button>
           <el-button :title="t('worldInteraction.map.zoomIn')" @click="zoomBy(1.18)">
             <el-icon><ZoomIn /></el-icon>
-          </el-button>
-          <el-button :title="t('worldInteraction.map.resetView')" @click="resetView">
-            <el-icon><Refresh /></el-icon>
           </el-button>
         </el-button-group>
         <span class="zoom-label">{{ zoomPercent }}%</span>
@@ -369,8 +344,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  More,
-  Refresh,
   ZoomIn,
   ZoomOut,
 } from '@element-plus/icons-vue'
