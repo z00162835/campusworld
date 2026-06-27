@@ -7,14 +7,22 @@
         :class="['tab-item', { active: tab.id === activeTabId }]"
         @click="handleTabClick(tab.id)"
       >
-        <span class="tab-title">{{ tab.titleKey ? t(tab.titleKey) : tab.title }}</span>
-        <el-icon
+        <span class="tab-leading">
+          <app-icon
+            class="tab-icon"
+            :name="tab.iconKey"
+            :size="16"
+          />
+          <span class="tab-title">{{ tab.titleKey ? t(tab.titleKey) : tab.title }}</span>
+        </span>
+        <button
           v-if="tab.closable"
+          type="button"
           class="tab-close"
           @click.stop="handleTabClose(tab.id)"
         >
-          <Close />
-        </el-icon>
+          <app-icon name="close" :size="14" />
+        </button>
       </div>
     </div>
   </div>
@@ -23,9 +31,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useTabsStore } from '@/stores/tabs'
 import { useAppTabs } from '@/composables/useAppTabs'
-import { Close } from '@element-plus/icons-vue'
 
 const tabsStore = useTabsStore()
 const { t } = useI18n()
@@ -44,5 +52,5 @@ const handleTabClose = async (tabId: string) => {
 </script>
 
 <style scoped>
-/* 使用全局样式，这里只保留组件特定的样式 */
+/* Component-specific overrides only; shared styles live in tabbar.css */
 </style>

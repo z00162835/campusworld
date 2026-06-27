@@ -201,11 +201,12 @@ export default {
       empty: 'No worlds available',
     },
     utility: {
-      toggle: 'Command / History',
+      toggle: 'History',
+      conversation: 'Conversation',
       command: 'Command',
-      history: 'History',
-      commandHint: 'Commands are available through the decision input mode selector.',
-      historyEmpty: 'No recent history in this view.',
+      conversationEmpty: 'No conversations yet.',
+      commandEmpty: 'No commands yet.',
+      messageCount: '{count} messages',
     },
     map: {
       title: 'Map',

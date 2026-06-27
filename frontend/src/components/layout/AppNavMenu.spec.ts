@@ -73,12 +73,8 @@ describe('AppNavMenu.vue', () => {
           ElDropdownMenu: ElDropdownMenuStub,
           ElDropdownItem: ElDropdownItemStub,
           ElIcon: ElIconStub,
+          AppIcon: true,
           ArrowDown: true,
-          Document: true,
-          FolderOpened: true,
-          User: true,
-          Search: true,
-          Clock: true,
         },
       },
     })

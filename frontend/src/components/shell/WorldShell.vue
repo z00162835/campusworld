@@ -13,22 +13,31 @@
         :style="mapPaneStyle"
       >
         <div v-if="mapCollapsed" class="pane-collapsed-strip">
-          <span class="strip-label">{{ t('worldInteraction.map.title') }}</span>
-          <el-button
-            class="strip-action"
-            size="small"
-            text
+          <button
+            type="button"
+            class="strip-icon-btn"
             :title="t('worldInteraction.map.expand')"
+            :aria-label="t('worldInteraction.map.expand')"
             @click="mapCollapsed = false"
           >
-            <el-icon><DArrowRight /></el-icon>
-          </el-button>
+            <app-icon name="map" :size="18" />
+          </button>
         </div>
         <div v-show="!mapCollapsed" class="pane-body">
           <div class="pane-collapse-row">
-            <el-button size="small" text @click="mapCollapsed = true">
-              {{ t('worldInteraction.map.collapse') }}
-            </el-button>
+            <span class="pane-pane-label">
+              <app-icon name="map" :size="16" />
+              <span>{{ t('worldInteraction.map.title') }}</span>
+            </span>
+            <button
+              type="button"
+              class="strip-icon-btn"
+              :title="t('worldInteraction.map.collapse')"
+              :aria-label="t('worldInteraction.map.collapse')"
+              @click="mapCollapsed = true"
+            >
+              <app-icon name="chevronLeft" :size="16" />
+            </button>
           </div>
           <focus-semantic-map />
         </div>
@@ -58,16 +67,15 @@
         :style="contextPaneStyle"
       >
         <div v-if="contextCollapsed" class="pane-collapsed-strip">
-          <span class="strip-label">{{ t('worldInteraction.context.title') }}</span>
-          <el-button
-            class="strip-action"
-            size="small"
-            text
+          <button
+            type="button"
+            class="strip-icon-btn"
             :title="t('worldInteraction.context.expand')"
+            :aria-label="t('worldInteraction.context.expand')"
             @click="contextCollapsed = false"
           >
-            <el-icon><DArrowLeft /></el-icon>
-          </el-button>
+            <app-icon name="context" :size="18" />
+          </button>
         </div>
         <div v-show="!contextCollapsed" class="pane-body">
           <context-summary-panel @collapse="contextCollapsed = true" />
@@ -81,7 +89,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useI18n } from 'vue-i18n'
 import WorldTopBar from './WorldTopBar.vue'
 import FocusSemanticMap from '@/components/map/FocusSemanticMap.vue'
@@ -226,7 +234,7 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: var(--spacing-md);
   padding: var(--spacing-md) 4px;
   border-right: 1px solid var(--border-color);
@@ -245,6 +253,28 @@ watch(
   color: var(--text-tertiary);
   letter-spacing: 0.08em;
   user-select: none;
+}
+
+.strip-icon-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.strip-icon-btn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.strip-icon-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .strip-action {
@@ -266,10 +296,22 @@ watch(
 
 .pane-collapse-row {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
   padding: 0 var(--spacing-sm);
   border-bottom: 1px solid var(--border-color-light);
   flex-shrink: 0;
+}
+
+.pane-pane-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 @media (max-width: 980px) {

@@ -2,11 +2,11 @@
   <div class="query-box">
     <div v-if="showModeMenu" class="mode-menu">
       <button type="button" @click="selectMode('command')">
-        <el-icon><Monitor /></el-icon>
+        <app-icon name="commandMode" :size="16" />
         <span>Command</span>
       </button>
       <button type="button" @click="selectMode('aico')">
-        <el-icon><ChatRound /></el-icon>
+        <app-icon name="conversation" :size="16" />
         <span>AICO</span>
       </button>
     </div>
@@ -21,7 +21,10 @@
         :title="modeAriaLabel"
         @click="openModeMenu"
       >
-        <el-icon><ChatRound v-if="worldSession.queryMode === 'aico'" /><Monitor v-else /></el-icon>
+        <app-icon
+          :name="worldSession.queryMode === 'aico' ? 'conversation' : 'commandMode'"
+          :size="16"
+        />
         <span class="decision-accent-btn__label">{{ modeLabel }}</span>
       </button>
       <input
@@ -42,7 +45,7 @@
         :title="t('worldInteraction.decision.stop')"
         @click="stop"
       >
-        <el-icon><VideoPause /></el-icon>
+        <app-icon name="stop" :size="16" />
       </button>
       <button
         v-if="!worldSession.streamInFlight"
@@ -53,8 +56,13 @@
         :title="sendTitle"
         @click="submit"
       >
-        <el-icon v-if="worldSession.actionLoading && !worldSession.streamInFlight" class="is-loading"><Loading /></el-icon>
-        <el-icon v-else><Promotion /></el-icon>
+        <app-icon
+          v-if="worldSession.actionLoading && !worldSession.streamInFlight"
+          class="is-loading"
+          name="loading"
+          :size="16"
+        />
+        <app-icon v-else name="send" :size="16" />
       </button>
     </div>
   </div>
@@ -62,8 +70,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { ChatRound, Loading, Monitor, Promotion, VideoPause } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import type { QueryMode } from '@/types/world'
 
@@ -142,9 +150,10 @@ const stop = async () => {
   margin: 0 var(--spacing-sm) var(--spacing-sm);
   border: 1px solid var(--decision-fold-border);
   border-top: none;
+  border-left: 3px solid var(--decision-fold-zone-header-accent);
   border-radius: 0 0 var(--radius-md) var(--radius-md);
   padding: var(--spacing-md);
-  background: var(--decision-fold-interaction-bg);
+  background: var(--decision-query-bg);
 }
 
 .mode-menu {

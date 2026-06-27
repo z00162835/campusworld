@@ -14,6 +14,7 @@ declare module 'vue' {
     ActiveTaskCard: typeof import('./src/components/decision/ActiveTaskCard.vue')['default']
     AgentsActivity: typeof import('./src/components/works/AgentsActivity.vue')['default']
     AicoThreadToolbar: typeof import('./src/components/decision/AicoThreadToolbar.vue')['default']
+    AppIcon: typeof import('./src/components/common/AppIcon.vue')['default']
     AppNavMenu: typeof import('./src/components/layout/AppNavMenu.vue')['default']
     BootSequence: typeof import('./src/components/auth/BootSequence.vue')['default']
     BottomUtilityDrawer: typeof import('./src/components/utility/BottomUtilityDrawer.vue')['default']

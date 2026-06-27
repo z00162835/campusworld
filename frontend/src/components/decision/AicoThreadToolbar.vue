@@ -11,7 +11,7 @@
     >
       <el-button size="small" :disabled="worldSession.streamInFlight">
         {{ t('worldInteraction.decision.currentConversation', { title: activeTitle }) }}
-        <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+        <app-icon class="toolbar-chevron" name="chevronDown" :size="12" />
       </el-button>
       <template #dropdown>
         <el-dropdown-menu>
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ArrowDown } from '@element-plus/icons-vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import type { AicoThread } from '@/types/world'
@@ -53,6 +53,9 @@ const activeTitle = computed(
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-sm);
-  padding-bottom: var(--spacing-sm);
+}
+
+.toolbar-chevron {
+  margin-left: var(--spacing-xs);
 }
 </style>

@@ -317,6 +317,7 @@ describe('auth store session handling', () => {
       route: '/profile',
       component: 'Profile',
       closable: true,
+      iconKey: 'profile',
     })
 
     const spacesStore = useSpacesStore()

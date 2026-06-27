@@ -1,10 +1,19 @@
 <template>
   <aside class="context-panel">
     <div class="region-menu">
-      <h2>{{ t('worldInteraction.context.title') }}</h2>
-      <el-button size="small" text @click="$emit('collapse')">
-        {{ t('worldInteraction.context.collapse') }}
-      </el-button>
+      <h2 class="region-menu-title">
+        <app-icon name="context" :size="18" />
+        <span>{{ t('worldInteraction.context.title') }}</span>
+      </h2>
+      <button
+        type="button"
+        class="pane-icon-btn"
+        :title="t('worldInteraction.context.collapse')"
+        :aria-label="t('worldInteraction.context.collapse')"
+        @click="$emit('collapse')"
+      >
+        <app-icon name="chevronRight" :size="16" />
+      </button>
     </div>
 
     <div v-if="worldSession.loading" class="empty">{{ t('worldInteraction.context.loading') }}</div>
@@ -54,6 +63,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useWorldSessionStore } from '@/stores/worldSession'
 
 defineEmits<{ collapse: [] }>()
@@ -86,9 +96,41 @@ const lastHandledLabel = computed(() => {
   border-bottom: 1px solid var(--border-color);
 }
 
-.region-menu h2 {
+.region-menu h2,
+.region-menu-title {
   margin: 0;
   font-size: var(--font-size-base);
+}
+
+.region-menu-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.pane-icon-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pane-icon-btn:hover {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.pane-icon-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .summary-body {

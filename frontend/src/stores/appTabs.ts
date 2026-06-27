@@ -1,3 +1,5 @@
+import type { IconName } from '@/icons'
+
 export interface AppTabDefinition {
   id: string
   title?: string
@@ -5,6 +7,7 @@ export interface AppTabDefinition {
   route: string
   component: string
   closable: boolean
+  iconKey: IconName
 }
 
 export const DEFAULT_APP_ROUTE = '/works'
@@ -16,6 +19,7 @@ export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
     route: '/works',
     component: 'WorldInteractionView',
     closable: true,
+    iconKey: 'works',
   },
   {
     id: 'tab-spaces',
@@ -23,6 +27,7 @@ export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
     route: '/spaces',
     component: 'Spaces',
     closable: true,
+    iconKey: 'spaces',
   },
   {
     id: 'tab-agents',
@@ -30,6 +35,7 @@ export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
     route: '/agents',
     component: 'Agents',
     closable: true,
+    iconKey: 'agents',
   },
   {
     id: 'tab-discovery',
@@ -37,6 +43,7 @@ export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
     route: '/discovery',
     component: 'Discovery',
     closable: true,
+    iconKey: 'discovery',
   },
   {
     id: 'tab-history',
@@ -44,6 +51,7 @@ export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
     route: '/history',
     component: 'History',
     closable: true,
+    iconKey: 'history',
   },
   {
     id: 'tab-profile',
@@ -51,6 +59,7 @@ export const APP_TAB_DEFINITIONS: AppTabDefinition[] = [
     route: '/profile',
     component: 'Profile',
     closable: true,
+    iconKey: 'profile',
   },
 ]
 

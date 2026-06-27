@@ -77,6 +77,23 @@
   background: var(--bg-primary);
 }
 
+.tab-leading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  flex: 1;
+}
+
+.tab-icon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.tab-item.active .tab-icon {
+  color: var(--color-primary);
+}
+
 .tab-title {
   flex: 1;
   overflow: hidden;
@@ -86,14 +103,17 @@
 
 .tab-close {
   margin-left: var(--spacing-sm);
-  width: 16px;
-  height: 16px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 0;
+  background: transparent;
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
   flex-shrink: 0;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  padding: 2px;
 }
 
 .tab-close:hover {

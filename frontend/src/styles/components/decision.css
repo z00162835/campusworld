@@ -72,7 +72,8 @@
   box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.25);
 }
 
-.decision-accent-btn .el-icon {
+.decision-accent-btn .el-icon,
+.decision-accent-btn .app-icon {
   font-size: var(--decision-accent-btn-icon-size);
 }
 

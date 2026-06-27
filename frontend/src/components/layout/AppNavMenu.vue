@@ -19,7 +19,7 @@
           :class="{ 'is-active': activeRoute === item.route }"
         >
           <span class="app-nav-item">
-            <el-icon class="app-nav-icon"><component :is="item.icon" /></el-icon>
+            <app-icon class="app-nav-icon" :name="item.iconKey" :size="16" />
             <span>{{ t(item.labelKey) }}</span>
           </span>
         </el-dropdown-item>
@@ -31,28 +31,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowDown, Clock, Document, FolderOpened, Search, User } from '@element-plus/icons-vue'
+import { ArrowDown } from '@element-plus/icons-vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useAppTabs } from '@/composables/useAppTabs'
+import { APP_TAB_DEFINITIONS } from '@/stores/appTabs'
 import { useTabsStore } from '@/stores/tabs'
-
-interface MenuItem {
-  key: string
-  labelKey: string
-  icon: typeof Document
-  route: string
-}
 
 const { t } = useI18n()
 const tabsStore = useTabsStore()
 const { openAppTab } = useAppTabs()
 
-const menuItems: MenuItem[] = [
-  { key: 'works', labelKey: 'nav.works', icon: Document, route: '/works' },
-  { key: 'spaces', labelKey: 'nav.spaces', icon: FolderOpened, route: '/spaces' },
-  { key: 'agents', labelKey: 'nav.agents', icon: User, route: '/agents' },
-  { key: 'discovery', labelKey: 'nav.discovery', icon: Search, route: '/discovery' },
-  { key: 'history', labelKey: 'nav.history', icon: Clock, route: '/history' },
-]
+const menuItems = APP_TAB_DEFINITIONS.filter(tab => tab.route !== '/profile').map(tab => ({
+  key: tab.id,
+  labelKey: tab.titleKey || tab.route,
+  route: tab.route,
+  iconKey: tab.iconKey,
+}))
 
 const activeRoute = computed(() => tabsStore.activeTab?.route || '')
 
@@ -97,6 +91,6 @@ const handleCommand = async (route: string) => {
 }
 
 .app-nav-icon {
-  font-size: 16px;
+  color: var(--text-secondary);
 }
 </style>

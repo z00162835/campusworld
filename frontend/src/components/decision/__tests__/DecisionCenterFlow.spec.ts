@@ -71,7 +71,7 @@ describe('DecisionCenterFlow', () => {
         DecisionConversationThread: true,
         AicoThreadToolbar: true,
         ElButton: { template: '<button><slot /></button>' },
-        ElIcon: { template: '<span><slot /></span>' },
+        AppIcon: true,
       },
     },
   }

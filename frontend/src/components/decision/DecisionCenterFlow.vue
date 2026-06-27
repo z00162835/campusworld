@@ -1,7 +1,10 @@
 <template>
   <section class="decision-panel">
     <div class="region-menu">
-      <h2>{{ t('worldInteraction.decision.title') }}</h2>
+      <h2 class="region-menu-title">
+        <app-icon name="decision" :size="18" />
+        <span>{{ t('worldInteraction.decision.title') }}</span>
+      </h2>
       <div class="region-actions">
         <el-button size="small" text :type="viewFilter === 'pending' ? 'primary' : undefined" @click="viewFilter = 'pending'">
           {{ t('worldInteraction.decision.pending') }}
@@ -44,6 +47,7 @@
         >
         <header :id="taskZoneTitleId" class="task-zone-header">
           <div class="zone-header-main">
+            <app-icon class="zone-header-icon" name="decisionTasks" :size="16" />
             <span class="zone-title">{{ t('worldInteraction.decision.taskZoneTitle') }}</span>
             <span v-if="pendingBadgeCount > 0" class="zone-badge">{{ pendingBadgeCount }}</span>
           </div>
@@ -109,10 +113,11 @@
           tabindex="-1"
           aria-hidden="true"
         >
-          <el-icon :size="14">
-            <ArrowUp v-if="foldMode !== 'collapsed'" />
-            <ArrowDown v-else />
-          </el-icon>
+          <app-icon
+            class="zone-divider-toggle-icon"
+            :name="foldMode !== 'collapsed' ? 'chevronUp' : 'chevronDown'"
+            :size="10"
+          />
         </button>
         <span class="zone-divider-side zone-divider-side--end" aria-hidden="true" />
       </div>
@@ -124,11 +129,16 @@
         :aria-labelledby="conversationZoneTitleId"
       >
         <header :id="conversationZoneTitleId" class="conversation-zone-header">
-          <span class="zone-title">{{ t('worldInteraction.decision.conversationZoneTitle') }}</span>
+          <div class="zone-header-main">
+            <app-icon class="zone-header-icon" name="conversation" :size="16" />
+            <span class="zone-title">{{ t('worldInteraction.decision.conversationZoneTitle') }}</span>
+          </div>
           <span class="zone-subtitle">{{ conversationZoneSubtitle }}</span>
         </header>
-        <aico-thread-toolbar />
-        <decision-conversation-thread ref="threadRef" />
+        <div class="conversation-zone-body">
+          <aico-thread-toolbar />
+          <decision-conversation-thread ref="threadRef" />
+        </div>
       </div>
       </div>
     </div>
@@ -139,8 +149,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
+import AppIcon from '@/components/common/AppIcon.vue'
 import DecisionEventCard from './DecisionEventCard.vue'
 import ActiveTaskCard from './ActiveTaskCard.vue'
 import DecisionQueryBox from './DecisionQueryBox.vue'
@@ -255,10 +265,18 @@ async function scrollConversationToBottom() {
   background: var(--decision-pane-bg);
 }
 
-.region-menu h2 {
+.region-menu h2,
+.region-menu-title {
   margin: 0;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
+}
+
+.region-menu-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
 }
 
 .region-actions {
@@ -339,19 +357,23 @@ async function scrollConversationToBottom() {
 
 .task-zone-header {
   background: var(--decision-fold-task-header-bg);
-  border-left: 3px solid rgba(64, 158, 255, 0.45);
+  border-left: 3px solid var(--decision-fold-zone-header-accent);
 }
 
 .conversation-zone-header {
   background: var(--decision-fold-interaction-header-bg);
-  margin-bottom: 0;
-  border-left: 3px solid rgba(255, 255, 255, 0.12);
+  border-left: 3px solid var(--decision-fold-zone-header-accent);
 }
 
 .zone-header-main {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.zone-header-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .zone-title {
@@ -461,16 +483,18 @@ async function scrollConversationToBottom() {
   justify-self: center;
   position: relative;
   z-index: 1;
-  width: var(--decision-fold-hinge-btn-size);
-  min-width: var(--decision-fold-hinge-btn-size);
-  height: var(--decision-fold-hinge-btn-size);
-  border-radius: 999px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  width: var(--decision-fold-hinge-btn-width);
+  min-width: var(--decision-fold-hinge-btn-width);
+  height: var(--decision-fold-hinge-btn-height);
+  min-height: var(--decision-fold-hinge-btn-height);
+  padding: 0;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
   pointer-events: none;
 }
 
-.zone-divider-toggle :deep(.el-icon) {
-  font-size: 14px;
+.zone-divider-toggle-icon {
+  pointer-events: none;
 }
 
 .decision-fold.task-expanded .fold-hinge {
@@ -483,14 +507,17 @@ async function scrollConversationToBottom() {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0 var(--spacing-md) var(--spacing-md);
   border-top: 1px solid var(--decision-fold-border);
 }
 
-.conversation-zone-header {
-  padding: var(--spacing-sm) 0;
-  margin-bottom: 0;
-  border-bottom: 1px solid var(--decision-fold-border);
+.conversation-zone-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .focus-summary,

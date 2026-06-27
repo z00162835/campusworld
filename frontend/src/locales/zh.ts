@@ -201,11 +201,12 @@ export default {
       empty: '暂无可用世界',
     },
     utility: {
-      toggle: '命令 / 历史',
+      toggle: '历史',
+      conversation: '对话',
       command: '命令',
-      history: '历史',
-      commandHint: '可通过决策中心输入框的模式切换使用命令。',
-      historyEmpty: '当前视图暂无历史记录。',
+      conversationEmpty: '暂无对话记录。',
+      commandEmpty: '暂无命令记录。',
+      messageCount: '{count} 条消息',
     },
     map: {
       title: '地图',
