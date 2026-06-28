@@ -78,7 +78,13 @@ describe('worldSession stream handoff', () => {
     await vi.waitFor(() => expect(store.streamInFlight).toBe(true))
 
     releaseSecond?.()
-    await Promise.all([first, second])
+    const finishSubmission = async (submissionPromise: ReturnType<typeof store.submitQuery>) => {
+      const submission = await submissionPromise
+      if (submission.accepted) {
+        await submission.completion
+      }
+    }
+    await Promise.all([finishSubmission(first), finishSubmission(second)])
 
     expect(store.streamInFlight).toBe(false)
     const assistants = store.conversationMessages.filter(msg => msg.role === 'assistant')
@@ -104,7 +110,10 @@ describe('worldSession stream handoff', () => {
     await vi.waitFor(() => expect(store.streamInFlight).toBe(true))
 
     store.reset()
-    await request
+    const submission = await request
+    if (submission.accepted) {
+      await submission.completion
+    }
 
     expect(capturedSignal?.aborted).toBe(true)
     expect(decisionCenterApi.cancelStream).toHaveBeenCalledWith('stream-active')

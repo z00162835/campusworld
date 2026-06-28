@@ -3,6 +3,41 @@
     <div class="region-menu">
       <h2>{{ t('worldInteraction.map.title') }}</h2>
       <div class="region-actions">
+        <el-button
+          size="small"
+          text
+          :type="mapStore.mode === 'route' ? 'primary' : undefined"
+          @click="switchMapMode('route')"
+        >
+          {{ t('worldInteraction.map.mode.route') }}
+        </el-button>
+        <el-button
+          size="small"
+          text
+          :type="mapStore.mode === 'agent' ? 'primary' : undefined"
+          @click="switchMapMode('agent')"
+        >
+          {{ t('worldInteraction.map.mode.agent') }}
+        </el-button>
+        <el-dropdown trigger="click" @command="handleMapMenuCommand">
+          <el-button size="small" text>
+            {{ t('worldInteraction.map.modeMenu') }}
+            <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="focus">
+                {{ t('worldInteraction.map.mode.focus') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="event">
+                {{ t('worldInteraction.map.mode.event') }}
+              </el-dropdown-item>
+              <el-dropdown-item divided command="resetView">
+                {{ t('worldInteraction.map.resetView') }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-button size="small" text @click="mapStore.drillTo('world')">
           {{ t('worldInteraction.map.openFullMap') }}
         </el-button>
@@ -109,6 +144,9 @@
           </el-button>
           <el-button :title="t('worldInteraction.map.zoomIn')" @click="zoomBy(1.18)">
             <el-icon><ZoomIn /></el-icon>
+          </el-button>
+          <el-button :title="t('worldInteraction.map.resetView')" @click="resetView">
+            <el-icon><RefreshRight /></el-icon>
           </el-button>
         </el-button-group>
         <span class="zoom-label">{{ zoomPercent }}%</span>
@@ -344,6 +382,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  RefreshRight,
   ZoomIn,
   ZoomOut,
 } from '@element-plus/icons-vue'
@@ -354,6 +393,7 @@ import MapEntityInspectSheet from '@/components/map/MapEntityInspectSheet.vue'
 import { useWorldMapStore } from '@/stores/worldMap'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import { COMPASS_ROSE_SIZE } from '@/utils/mapLayout'
+import type { FocusMap } from '@/types/world'
 import type { RenderedMapAgent } from '@/composables/useSemanticMapRender'
 
 const COORD_UNIT_PX = 10
@@ -544,6 +584,21 @@ const fitView = () => {
 const resetView = () => {
   userZoom.value = 1
   nextTick(() => fitView())
+}
+
+async function switchMapMode(nextMode: FocusMap['mode']) {
+  if (mapStore.mode === nextMode) return
+  await mapStore.switchMapMode(nextMode)
+}
+
+function handleMapMenuCommand(command: string) {
+  if (command === 'resetView') {
+    resetView()
+    return
+  }
+  if (command === 'focus' || command === 'event') {
+    void switchMapMode(command)
+  }
 }
 
 const zoomBy = (factor: number) => {

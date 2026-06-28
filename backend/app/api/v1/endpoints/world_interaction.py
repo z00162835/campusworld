@@ -1,7 +1,7 @@
 """CampusWorld world interaction HTTP adapters."""
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -9,6 +9,12 @@ from sqlalchemy.orm import Session
 from app.api.v1.dependencies import AuthenticatedUser, get_current_http_user
 from app.core.database import get_db
 from app.core.log import get_logger, LoggerNames
+from app.repositories.world_conversation_archive import WorldHistoryArchiveLimitError
+from app.schemas.world_history import (
+    ConversationArchiveRequest,
+    DEFAULT_HISTORY_SUMMARY_LIMIT,
+    MAX_HISTORY_SUMMARY_LIMIT,
+)
 from app.services.world_interaction import WorldActor, world_interaction_service
 
 logger = get_logger(LoggerNames.API)
@@ -63,11 +69,6 @@ class WorldSearchRequest(BaseModel):
 
 class StreamCancelRequest(BaseModel):
     stream_id: str = Field(..., min_length=1)
-
-
-class ConversationArchiveRequest(BaseModel):
-    aico_threads: list[dict] = Field(default_factory=list)
-    command_conversation: list[dict] = Field(default_factory=list)
 
 
 def _actor(user: AuthenticatedUser) -> WorldActor:
@@ -221,10 +222,27 @@ def search_world(payload: WorldSearchRequest, db: Session = Depends(get_db), cur
 
 
 @world_history_router.get("/summary")
-def get_world_history_summary(db: Session = Depends(get_db), current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
-    return world_interaction_service.history_summary(db, _actor(current_user))
+def get_world_history_summary(
+    limit: int = Query(DEFAULT_HISTORY_SUMMARY_LIMIT, ge=1, le=MAX_HISTORY_SUMMARY_LIMIT),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+) -> Dict[str, Any]:
+    return world_interaction_service.history_summary(
+        db,
+        _actor(current_user),
+        limit=limit,
+        offset=offset,
+    )
 
 
 @world_history_router.post("/conversations/archive")
-def archive_conversations(payload: ConversationArchiveRequest, current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
-    return world_interaction_service.archive_conversations(_actor(current_user), payload.model_dump())
+def archive_conversations(
+    payload: ConversationArchiveRequest,
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+) -> Dict[str, Any]:
+    try:
+        return world_interaction_service.archive_conversations(db, _actor(current_user), payload)
+    except WorldHistoryArchiveLimitError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

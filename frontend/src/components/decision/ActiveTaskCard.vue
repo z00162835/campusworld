@@ -14,7 +14,12 @@
       <strong>{{ task.currentStep.title }}</strong>
       <p>{{ task.currentStep.shortInstruction }}</p>
     </div>
-    <el-button type="primary" size="small" @click="$emit('execute', task.nextBestAction.id)">
+    <el-button
+      type="primary"
+      size="small"
+      :disabled="worldSession.sessionActionBusy"
+      @click="$emit('execute', task.nextBestAction.id)"
+    >
       {{ task.nextBestAction.label }}
     </el-button>
   </article>
@@ -22,6 +27,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useWorldSessionStore } from '@/stores/worldSession'
 import type { TaskCard } from '@/types/world'
 
 defineProps<{
@@ -33,6 +39,7 @@ defineEmits<{
 }>()
 
 const { t } = useI18n()
+const worldSession = useWorldSessionStore()
 </script>
 
 <style scoped>

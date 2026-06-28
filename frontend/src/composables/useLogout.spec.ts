@@ -13,6 +13,7 @@ vi.mock('@/stores/worldSession', () => ({
 
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
+    token: 'snapshot-token',
     logout: logoutMock,
   }),
 }))
@@ -53,6 +54,7 @@ describe('useLogout', () => {
     await Promise.resolve()
 
     expect(calls).toEqual(['archive', 'logout', 'replace'])
+    expect(archiveConversationsMock).toHaveBeenCalledWith('snapshot-token')
     expect(archiveConversationsMock).toHaveBeenCalledTimes(1)
     expect(logoutMock).toHaveBeenCalledTimes(1)
     expect(replaceMock).toHaveBeenCalledWith('/login')

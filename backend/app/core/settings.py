@@ -253,6 +253,7 @@ class CommandsConfig(BaseModel):
 class WorldInteractionConfig(BaseModel):
     """HTTP world interaction / decision-center tunables."""
     aico_stream_worker_join_sec: float = Field(default=30.0, ge=1.0, description='Max seconds to wait for AICO stream worker exit after cancel')
+    max_archives_per_user: int = Field(default=100, ge=1, description='Max persisted logout archive batches per account')
 
 class Settings(BaseModel):
     """应用设置"""

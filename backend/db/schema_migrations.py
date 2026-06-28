@@ -251,6 +251,13 @@ def _try_exec_mapped(conn, sql: str, params: dict) -> None:
         pass
 
 
+def _must_exec_mapped(conn, sql: str, params: dict) -> None:
+    try:
+        conn.execute(text(sql), params)
+    except Exception as exc:
+        raise SchemaMigrationError(str(exc)) from exc
+
+
 def _ensure_pg_extensions(conn) -> None:
     """
     Create PostGIS / pgvector / related extensions so ORM create_all can use
@@ -1297,5 +1304,61 @@ def ensure_account_permission_defaults(engine) -> None:
                     text("UPDATE nodes SET attributes = CAST(:attrs AS jsonb) WHERE id = :id"),
                     {"id": int(row[0]), "attrs": json.dumps(attrs, ensure_ascii=False)},
                 )
+    finally:
+        conn.close()
+
+
+def ensure_account_node_type(engine) -> None:
+    """Ensure account node type exists before dependent ontology rows."""
+    import json
+
+    from db.ontology.schema_envelope import account_node_type_schema_definition
+
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        _must_exec_mapped(
+            conn,
+            """
+            INSERT INTO node_types (
+                type_code, parent_type_code, type_name, typeclass, status, classname, module_path, description,
+                schema_definition, schema_default, inferred_rules, tags, ui_config, trait_class, trait_mask
+            ) VALUES (
+                'account', NULL, '账号', 'app.models.accounts.DefaultAccount', 0, 'DefaultAccount', 'app.models.accounts',
+                '用户账号类型，支持管理员、开发者和普通用户',
+                CAST(:schema_definition AS jsonb), '{}'::jsonb, '{}'::jsonb, '[]'::jsonb, '{}'::jsonb, 'PERSON', 0
+            )
+            ON CONFLICT (type_code) DO NOTHING;
+            """,
+            {"schema_definition": json.dumps(account_node_type_schema_definition(), ensure_ascii=False)},
+        )
+    except SchemaMigrationError:
+        raise
+    except Exception as exc:
+        raise SchemaMigrationError(f"ensure account node type failed: {exc}") from exc
+    finally:
+        conn.close()
+
+
+def ensure_world_conversation_archive_ontology(engine) -> None:
+    """Ensure graph ontology for persisted logout conversation archives."""
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        _must_exec(
+            conn,
+            """
+            INSERT INTO node_types (
+                type_code, parent_type_code, type_name, typeclass, status, classname, module_path, description,
+                schema_definition, schema_default, inferred_rules, tags, ui_config, trait_class, trait_mask
+            ) VALUES (
+                'world_conversation_archive', 'account', 'World conversation archive',
+                'app.repositories.world_conversation_archive.WorldConversationArchiveRepository', 0,
+                'WorldConversationArchive', 'app.repositories.world_conversation_archive',
+                'Logout-archived AICO and command conversations owned by an account node',
+                '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '["world_history"]'::jsonb, '{}'::jsonb, 'PROCESS', 0
+            )
+            ON CONFLICT (type_code) DO NOTHING;
+            """,
+            "ensure world_conversation_archive node type failed",
+        )
     finally:
         conn.close()

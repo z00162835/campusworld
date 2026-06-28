@@ -3,6 +3,10 @@ export const CAMPUS_HUB_WORLD_ID = '__campus_hub__' as const
 export type ViewMode = 'Focus' | 'Map'
 export type QueryMode = 'command' | 'aico'
 
+export type QuerySubmission =
+  | { accepted: false }
+  | { accepted: true; completion: Promise<void> }
+
 export interface ConversationMessage {
   id: string
   role: 'user' | 'assistant' | 'system'

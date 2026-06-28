@@ -25,6 +25,7 @@
         :type="buttonType(option.style)"
         size="small"
         :plain="option.style !== 'primary'"
+        :disabled="worldSession.sessionActionBusy"
         @click="$emit('execute', event.id, option.id)"
       >
         {{ option.label }}
@@ -36,6 +37,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useWorldSessionStore } from '@/stores/worldSession'
 import type { DecisionEvent, DecisionOption } from '@/types/world'
 
 const props = defineProps<{
@@ -47,6 +49,7 @@ defineEmits<{
 }>()
 
 const { t } = useI18n()
+const worldSession = useWorldSessionStore()
 
 const stripeClass = computed(() => {
   const map: Record<DecisionEvent['priority'], string> = {

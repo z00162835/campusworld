@@ -11,6 +11,7 @@ import type {
   ConversationMessage,
   DisplayPolicy,
   QueryMode,
+  QuerySubmission,
   StatePatch,
   ViewMode,
   WorldInteractionState,
@@ -41,7 +42,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   const displayPolicy = ref<DisplayPolicy | null>(null)
   const availableWorlds = ref<WorldSummary[]>([])
   const loading = ref(false)
-  const actionLoading = ref(false)
+  const commandLoading = ref(false)
+  const streamLoading = ref(false)
+  const sessionActionLoading = ref(false)
   const error = ref<string | null>(null)
   const errorKey = ref<string | null>(null)
   const viewMode = ref<ViewMode>('Focus')
@@ -77,7 +80,11 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   )
 
   const conversationAtCap = computed(() => conversationMessages.value.length >= CONVERSATION_CAP)
-  const streamInFlight = computed(() => actionLoading.value && queryMode.value === 'aico')
+  const streamInFlight = computed(() => streamLoading.value)
+  const sessionActionBusy = computed(
+    () => sessionActionLoading.value || commandLoading.value || streamLoading.value,
+  )
+  const actionLoading = computed(() => sessionActionBusy.value)
 
   function ensureActiveAicoThread(): AicoThread {
     let thread = activeAicoThread.value
@@ -120,18 +127,18 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     if (row) row.expanded = !row.expanded
   }
 
-  function appendMessage(message: ConversationMessage) {
-    if (queryMode.value === 'aico') {
-      const thread = ensureActiveAicoThread()
-      if (message.role === 'user' && thread.titleKey === NEW_CONVERSATION_TITLE_KEY) {
-        thread.title = threadTitleFromQuery(message.query || message.answer)
-        thread.titleKey = undefined
-      }
-      thread.messages = trimMessages([...thread.messages, message])
-      thread.updatedAt = new Date().toISOString()
-    } else {
-      commandConversation.value = trimMessages([...commandConversation.value, message])
+  function appendAicoMessage(message: ConversationMessage) {
+    const thread = ensureActiveAicoThread()
+    if (message.role === 'user' && thread.titleKey === NEW_CONVERSATION_TITLE_KEY) {
+      thread.title = threadTitleFromQuery(message.query || message.answer)
+      thread.titleKey = undefined
     }
+    thread.messages = trimMessages([...thread.messages, message])
+    thread.updatedAt = new Date().toISOString()
+  }
+
+  function appendCommandMessage(message: ConversationMessage) {
+    commandConversation.value = trimMessages([...commandConversation.value, message])
   }
 
   function clearActiveAicoThreads() {
@@ -187,69 +194,121 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   }
 
   async function enterWorld(worldId: string) {
-    const { data } = await runAction(() => worldSessionsApi.enterWorld(worldId))
-    await applyActionResponse(data)
-    clearActiveAicoThreads()
-    await loadCurrent()
+    if (sessionActionLoading.value || commandLoading.value) return
+    await stopStreamForSessionChange()
+    if (sessionActionLoading.value || commandLoading.value) return
+    await runSessionAction(async () => {
+      const { data } = await worldSessionsApi.enterWorld(worldId)
+      await applyActionResponse(data)
+      clearActiveAicoThreads()
+      await loadCurrent()
+      return data
+    })
   }
 
   async function leaveWorld() {
-    const { data } = await runAction(() => worldSessionsApi.leaveWorld())
-    await applyActionResponse(data)
-    clearActiveAicoThreads()
-    await loadCurrent()
+    if (sessionActionLoading.value || commandLoading.value) return
+    await stopStreamForSessionChange()
+    if (sessionActionLoading.value || commandLoading.value) return
+    await runSessionAction(async () => {
+      const { data } = await worldSessionsApi.leaveWorld()
+      await applyActionResponse(data)
+      clearActiveAicoThreads()
+      await loadCurrent()
+      return data
+    })
   }
 
   async function executeDecisionAction(decisionEventId: string, optionId: string) {
     if (!session.value?.id) return
-    const { data } = await runAction(() => decisionCenterApi.executeAction(session.value!.id, decisionEventId, optionId))
-    await applyActionResponse(data)
-    await loadCurrent()
+    if (sessionActionBusy.value) return
+    await runSessionAction(async () => {
+      const { data } = await decisionCenterApi.executeAction(session.value!.id, decisionEventId, optionId)
+      await applyActionResponse(data)
+      await loadCurrent()
+      return data
+    })
   }
 
-  async function submitQuery(query: string) {
-    if (!session.value?.id) return
+  async function executeCommandQuery(
+    command: string,
+    options: { recordConversation?: boolean; showError?: boolean; throwOnError?: boolean } = {},
+  ) {
+    if (!session.value?.id) return null
+    const clean = command.trim()
+    if (!clean) return null
+    if (sessionActionBusy.value) return null
+    if (commandLoading.value) return null
+    const recordConversation = options.recordConversation !== false
+    const showError = options.showError !== false
+    const throwOnError = options.throwOnError === true
+
+    commandLoading.value = true
+    try {
+      if (recordConversation) {
+        appendCommandMessage({
+          id: newId(),
+          role: 'user',
+          mode: 'command',
+          query: clean,
+          answer: clean,
+        })
+      }
+
+      const { data } = await decisionCenterApi.query(session.value.id, clean, 'command')
+      if (recordConversation) {
+        appendCommandMessage({
+          id: newId(),
+          role: 'assistant',
+          mode: 'command',
+          query: clean,
+          answer: data.answer || data.command_result?.message || '',
+          results: data.results,
+          commandResult: data.command_result,
+        })
+      }
+      if (data.state_patch) {
+        await applyStatePatch(data.state_patch)
+        await refreshInteractionState()
+      }
+      return data
+    } catch (err: any) {
+      if (showError) {
+        ElMessage.error(err?.response?.data?.detail || err?.message || i18n.global.t('worldInteraction.decision.queryFailed'))
+      }
+      if (throwOnError) {
+        throw err
+      }
+      return null
+    } finally {
+      commandLoading.value = false
+    }
+  }
+
+  async function submitQuery(query: string): Promise<QuerySubmission> {
+    if (!session.value?.id) return { accepted: false }
     const clean = query.trim()
-    if (!clean) return
+    if (!clean) return { accepted: false }
+    if (commandLoading.value || sessionActionLoading.value) return { accepted: false }
 
     if (queryMode.value === 'aico' && streamInFlight.value) {
       await stopStream({ handoff: true })
     }
 
-    appendMessage({
-      id: newId(),
-      role: 'user',
-      mode: queryMode.value,
-      query: clean,
-      answer: clean,
-    })
-
     if (queryMode.value === 'aico') {
-      await submitAicoStream(clean)
-      return
+      appendAicoMessage({
+        id: newId(),
+        role: 'user',
+        mode: 'aico',
+        query: clean,
+        answer: clean,
+      })
+      const completion = submitAicoStream(clean).then(() => undefined)
+      return { accepted: true, completion }
     }
 
-    actionLoading.value = true
-    try {
-      const { data } = await decisionCenterApi.query(session.value.id, clean, 'command')
-      appendMessage({
-        id: newId(),
-        role: 'assistant',
-        mode: 'command',
-        query: clean,
-        answer: data.answer || data.command_result?.message || '',
-        results: data.results,
-        commandResult: data.command_result,
-      })
-      if (data.state_patch) {
-        await applyStatePatch(data.state_patch)
-        await refreshInteractionState()
-      }
-    } catch (err: any) {
-      ElMessage.error(err?.response?.data?.detail || err?.message || i18n.global.t('worldInteraction.decision.queryFailed'))
-    } finally {
-      actionLoading.value = false
-    }
+    const completion = executeCommandQuery(clean).then(() => undefined)
+    return { accepted: true, completion }
   }
 
   function mapActivityToStatusKey(activity?: string, detail?: string): string | null {
@@ -322,7 +381,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     const assistantId = newId()
     streamAssistantId = assistantId
     streamThreadId = threadId
-    appendMessage({
+    appendAicoMessage({
       id: assistantId,
       role: 'assistant',
       mode: 'aico',
@@ -333,7 +392,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     })
 
     streamAbort = new AbortController()
-    actionLoading.value = true
+    streamLoading.value = true
     activeStreamId.value = null
 
     try {
@@ -438,7 +497,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       }
     } finally {
       if (generation !== streamGeneration) return
-      actionLoading.value = false
+      streamLoading.value = false
       streamAbort = null
       streamAssistantId = null
       streamThreadId = null
@@ -473,7 +532,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       })
     }
     if (!handoff) {
-      actionLoading.value = false
+      streamLoading.value = false
       streamAbort = null
       streamAssistantId = null
       streamThreadId = null
@@ -500,6 +559,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     streamAssistantId = null
     streamThreadId = null
     activeStreamId.value = null
+    streamLoading.value = false
     pendingStreamDelta = ''
     if (streamFlushTimer != null) {
       clearTimeout(streamFlushTimer)
@@ -507,12 +567,12 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
   }
 
-  async function archiveConversations(): Promise<void> {
+  async function archiveConversations(accessToken?: string | null): Promise<void> {
     const payload = buildArchivePayload(aicoThreads.value, commandConversation.value)
     const hasContent = payload.aico_threads.length > 0 || payload.command_conversation.length > 0
     if (!hasContent) return
     try {
-      await worldHistoryApi.archiveConversations(payload)
+      await worldHistoryApi.archiveConversations(payload, accessToken)
     } catch (err) {
       console.warn('Failed to archive conversations before logout', err)
     }
@@ -564,12 +624,21 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     if (patch.currentSpaceId) interactionState.value.session.currentSpaceId = patch.currentSpaceId
   }
 
-  async function runAction<T>(fn: () => Promise<T>): Promise<T> {
-    actionLoading.value = true
+  async function stopStreamForSessionChange() {
+    if (streamInFlight.value) {
+      await stopStream()
+    }
+  }
+
+  async function runSessionAction<T>(fn: () => Promise<T>): Promise<T | null> {
+    if (sessionActionBusy.value) {
+      return null
+    }
+    sessionActionLoading.value = true
     try {
       return await fn()
     } finally {
-      actionLoading.value = false
+      sessionActionLoading.value = false
     }
   }
 
@@ -579,7 +648,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     displayPolicy.value = null
     availableWorlds.value = []
     loading.value = false
-    actionLoading.value = false
+    commandLoading.value = false
+    streamLoading.value = false
+    sessionActionLoading.value = false
     error.value = null
     errorKey.value = null
     viewMode.value = 'Focus'
@@ -593,6 +664,10 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     displayPolicy,
     availableWorlds,
     loading,
+    commandLoading,
+    streamLoading,
+    sessionActionLoading,
+    sessionActionBusy,
     actionLoading,
     error,
     errorKey,
@@ -616,6 +691,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     leaveWorld,
     executeDecisionAction,
     submitQuery,
+    executeCommandQuery,
     submitAicoStream,
     stopStream,
     toggleMessageExpanded,

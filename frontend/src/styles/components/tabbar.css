@@ -35,10 +35,44 @@
   gap: var(--spacing-xs);
 }
 
+.tab-entry {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 200px;
+  min-width: 100px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-bottom: none;
+  position: relative;
+}
+
+.tab-entry:hover {
+  background: var(--bg-hover);
+}
+
+.tab-entry.active {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+.tab-entry.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--bg-primary);
+}
+
 .tab-item {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
   padding: 6px var(--spacing-md);
+  border: 0;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -48,33 +82,26 @@
   white-space: nowrap;
   user-select: none;
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid transparent;
-  border-bottom: none;
-  min-width: 100px;
-  max-width: 200px;
+  background: transparent;
+  min-width: 0;
+  max-width: none;
 }
 
 .tab-item:hover {
   color: var(--text-secondary);
-  background: var(--bg-hover);
 }
 
-.tab-item.active {
+.tab-entry.active .tab-item {
   color: var(--text-primary);
-  background: var(--bg-primary);
-  border-color: var(--border-color);
   font-weight: var(--font-weight-medium);
 }
 
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--bg-primary);
+.tab-entry.active .tab-item:hover {
+  color: var(--text-primary);
+}
+
+.tab-entry.active .tab-icon {
+  color: var(--color-primary);
 }
 
 .tab-leading {
@@ -90,10 +117,6 @@
   flex-shrink: 0;
 }
 
-.tab-item.active .tab-icon {
-  color: var(--color-primary);
-}
-
 .tab-title {
   flex: 1;
   overflow: hidden;
@@ -102,7 +125,7 @@
 }
 
 .tab-close {
-  margin-left: var(--spacing-sm);
+  margin-right: var(--spacing-xs);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -114,6 +137,7 @@
   cursor: pointer;
   color: var(--text-tertiary);
   padding: 2px;
+  align-self: center;
 }
 
 .tab-close:hover {

@@ -60,11 +60,85 @@ describe('utilityHistory', () => {
         {
           id: 'command_conversations',
           title: 'Command sessions',
-          items: [{ id: 'archive_1', summary: 'Command session (4 messages)', createdAt: '2026-06-27T07:00:00.000Z' }],
+          items: [
+            {
+              id: 'archive_1',
+              title: 'look',
+              detail: 'You see a room.',
+              messageCount: 1,
+              createdAt: '2026-06-27T07:00:00.000Z',
+            },
+          ],
         },
       ],
     )
 
     expect(entries.map(entry => entry.id)).toEqual(['cmd_1', 'archive_1'])
+    expect(entries[1]?.label).toBe('look')
+    expect(entries[1]?.detail).toBe('You see a room.')
+  })
+
+  it('sorts archived command entries by sequence when createdAt matches', () => {
+    const createdAt = '2026-06-27T07:00:00.000Z'
+    const entries = buildCommandEntries(
+      [],
+      [],
+      [
+        {
+          id: 'command_conversations',
+          title: 'Command sessions',
+          items: [
+            {
+              id: 'archive_old',
+              title: 'look',
+              detail: 'You see a room.',
+              sequence: 0,
+              createdAt,
+            },
+            {
+              id: 'archive_new',
+              title: 'inventory',
+              detail: 'You are carrying nothing.',
+              sequence: 1,
+              createdAt,
+            },
+          ],
+        },
+      ],
+    )
+
+    expect(entries.map(entry => entry.id)).toEqual(['archive_new', 'archive_old'])
+  })
+
+  it('builds archived conversation entries from structured fields', () => {
+    const entries = buildConversationEntries(
+      [],
+      [
+        {
+          id: 'aico_conversations',
+          title: 'AICO conversations',
+          items: [
+            {
+              id: 'archive_t1',
+              title: 'Route to F3',
+              messageCount: 3,
+              preview: 'Take the bridge.',
+              createdAt: '2026-06-27T06:00:00.000Z',
+            },
+          ],
+        },
+      ],
+      'New conversation',
+    )
+
+    expect(entries).toEqual([
+      {
+        id: 'archive_t1',
+        title: 'Route to F3',
+        messageCount: 3,
+        preview: 'Take the bridge.',
+        updatedAt: '2026-06-27T06:00:00.000Z',
+      },
+    ])
   })
 })

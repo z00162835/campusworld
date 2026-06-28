@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it, vi } from 'vitest'
 import MapEntityInspectSheet from '@/components/map/MapEntityInspectSheet.vue'
 import { useWorldMapStore } from '@/stores/worldMap'
+import { useWorldSessionStore } from '@/stores/worldSession'
 
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
@@ -82,5 +83,44 @@ describe('MapEntityInspectSheet', () => {
       global: { stubs: { ElButton: { template: '<button><slot /></button>' } } },
     })
     expect(wrapper.text()).toContain('worldInteraction.map.inspect.kind.person')
+  })
+
+  it('disables inspect actions while session action is in flight', () => {
+    setActivePinia(createPinia())
+    const mapStore = useWorldMapStore()
+    const worldSession = useWorldSessionStore()
+    worldSession.sessionActionLoading = true
+    mapStore.selectedInspect = {
+      entityId: '3',
+      entityKind: 'device',
+      inspect: {
+        entity: { id: '3', name: 'Lamp', type_code: 'item', map_node_type: 'device' },
+        entity_kind: 'device',
+        appearance: { lines: ['A lamp'] },
+        actions: [
+          {
+            id: 'look',
+            label: 'Look',
+            style: 'primary',
+            actionType: 'execute_command',
+            command: 'look',
+            requiresConfirmation: false,
+          },
+        ],
+        source: 'look',
+      },
+    }
+    const wrapper = mount(MapEntityInspectSheet, {
+      global: {
+        stubs: {
+          ElButton: {
+            props: ['disabled'],
+            template: '<button :disabled="disabled"><slot /></button>',
+          },
+        },
+      },
+    })
+    const actionButton = wrapper.find('.inspect-actions button')
+    expect(actionButton.attributes('disabled')).toBeDefined()
   })
 })

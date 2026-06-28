@@ -191,6 +191,7 @@ agents:
         base_url: "https://api.minimaxi.com/anthropic"
         api_key_env: "AICO_OPENAI_API_KEY"
         model: "MiniMax-M2.7-highspeed"
+        # model: "MiniMax-M3"
         temperature: 0.2
         max_tokens: 4096
         # prepend_primer_tier1: false — omit auto-prepended primer §1+§8 before system_prompt
@@ -334,6 +335,7 @@ commands:
 
 world_interaction:
   aico_stream_worker_join_sec: 30
+  max_archives_per_user: 100
 
 # 引擎 / 世界包
 game_engine:

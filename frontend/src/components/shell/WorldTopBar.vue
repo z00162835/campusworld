@@ -6,7 +6,7 @@
       popper-class="cw-dropdown-popper"
       @command="handleWorldCommand"
     >
-      <button class="world-anchor" type="button">
+      <button class="world-anchor" type="button" :disabled="worldSession.sessionActionBusy">
         <span class="world-name">{{ currentWorldLabel }}</span>
         <el-icon><ArrowDown /></el-icon>
       </button>
@@ -17,7 +17,7 @@
             :key="world.world_id"
             :command="worldCommand(world.world_id)"
             :class="{ 'is-active': world.is_current }"
-            :disabled="world.is_current"
+            :disabled="worldSession.sessionActionBusy || world.is_current"
           >
             {{ world.name }}
           </el-dropdown-item>
@@ -100,6 +100,7 @@ const onViewModeCommand = (mode: ViewMode) => {
 }
 
 const handleWorldCommand = async (command: string) => {
+  if (worldSession.sessionActionBusy) return
   if (command === 'leave') {
     await worldSession.leaveWorld()
     return
@@ -125,6 +126,12 @@ const handleWorldCommand = async (command: string) => {
   padding: 0 var(--spacing-lg);
   background: #171a20;
   border-bottom: 1px solid var(--border-color);
+}
+
+.world-anchor:disabled,
+.view-mode-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .world-anchor,

@@ -70,6 +70,8 @@ def run_schema_migrations(engine) -> List[MigrationStepResult]:
         ensure_f02_agent_memory_schema,
         ensure_f02_ltm_semantic_extension,
         ensure_multi_turn_conversation_memory_schema,
+        ensure_account_node_type,
+        ensure_world_conversation_archive_ontology,
         ensure_graph_schema,
         ensure_graph_seed_ontology,
         ensure_nodes_world_id_index,
@@ -93,6 +95,8 @@ def run_schema_migrations(engine) -> List[MigrationStepResult]:
         ("ensure_nodes_world_id_index", ensure_nodes_world_id_index),
         ("ensure_task_system_schema", ensure_task_system_schema),
         ("ensure_task_system_seed", ensure_task_system_seed),
+        ("ensure_account_node_type", ensure_account_node_type),
+        ("ensure_world_conversation_archive_ontology", ensure_world_conversation_archive_ontology),
     ]
     results: List[MigrationStepResult] = []
     for name, fn in steps:

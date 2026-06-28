@@ -29,6 +29,9 @@ from app.services.task.user_task_queue import (
     principal_from_actor,
 )
 
+from app.core.config_manager import get_setting
+from app.repositories.world_conversation_archive import WorldConversationArchiveRepository
+from app.schemas.world_history import ConversationArchiveRequest
 from app.services.space_summary_service import build_space_summary_data
 
 from .aico_stream_query import AicoStreamQueryService
@@ -47,7 +50,8 @@ class WorldInteractionService:
 
     def __init__(self) -> None:
         self.logger = get_logger(LoggerNames.GAME)
-        self._conversation_archives: Dict[str, List[Dict[str, Any]]] = {}
+        max_archives = int(get_setting("world_interaction.max_archives_per_user", 100) or 100)
+        self._archive_repo = WorldConversationArchiveRepository(max_archives_per_user=max_archives)
         self._command_runner = CommandRunner()
         self._command_query = CommandQueryService(
             run_command=self._command_runner.run,
@@ -173,17 +177,24 @@ class WorldInteractionService:
     def cancel_stream(self, stream_id: str) -> Dict[str, Any]:
         return self._aico_stream_query.cancel(stream_id)
 
-    def archive_conversations(self, actor: WorldActor, payload: Dict[str, Any]) -> Dict[str, Any]:
-        user_key = str(actor.user_id)
+    def archive_conversations(
+        self,
+        session: Session,
+        actor: WorldActor,
+        payload: ConversationArchiveRequest,
+    ) -> Dict[str, Any]:
+        user = self._get_user_node(session, actor.user_id, username=actor.username)
         entry = {
             "id": f"archive_{uuid.uuid4().hex[:12]}",
             "archivedAt": self._now(),
-            "aico_threads": list(payload.get("aico_threads") or []),
-            "command_conversation": payload.get("command_conversation") or [],
+            "aico_threads": [thread.model_dump() for thread in payload.aico_threads],
+            "command_conversation": [message.model_dump() for message in payload.command_conversation],
         }
         has_content = bool(entry["aico_threads"]) or bool(entry["command_conversation"])
         if has_content:
-            self._conversation_archives.setdefault(user_key, []).append(entry)
+            entry["history_summary"] = self._build_archive_history_summary(entry)
+            self._archive_repo.append_for_account(session, user, entry)
+            session.commit()
         return {"ok": True, "archived": has_content, "archive_id": entry["id"] if has_content else None}
 
     def stream_aico_query(self, actor: WorldActor, query: str, *, thread_id: Optional[str] = None):
@@ -360,44 +371,141 @@ class WorldInteractionService:
             suggested_actions.append({"id": "show_first_result", "label": "Show on map", "actionType": "open_map", "targetEntityId": first["entity_id"], "requiresConfirmation": False})
         return {"summary": summary, "results": results[:20], "suggested_actions": suggested_actions}
 
-    def history_summary(self, session: Session, actor: WorldActor) -> Dict[str, Any]:
+    def history_summary(
+        self,
+        session: Session,
+        actor: WorldActor,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
         user = self._get_user_node(session, actor.user_id, username=actor.username)
         location = self._resolve_current_location(session, user)
         groups: List[Dict[str, Any]] = [
             {
                 "id": "location",
                 "title": "Location changes",
-                "items": [{"id": f"loc_{location.id}", "summary": f"Current location: {self._display_name(location)}", "createdAt": self._now()}],
+                "items": [
+                    {
+                        "id": f"loc_{location.id}",
+                        "title": self._display_name(location),
+                        "summary": f"Current location: {self._display_name(location)}",
+                        "messageCount": 1,
+                        "createdAt": self._now(),
+                    }
+                ],
             }
         ]
-        for archive in self._conversation_archives.get(str(actor.user_id), []):
-            aico_items = [
+        archives, total = self._archive_repo.list_summaries_for_account(
+            session,
+            user.id,
+            limit=limit,
+            offset=offset,
+        )
+        aico_items: List[Dict[str, Any]] = []
+        command_items: List[Dict[str, Any]] = []
+        for archive in archives:
+            archived_at = archive.get("archivedAt") or self._now()
+            summary = dict(archive.get("history_summary") or {})
+            if summary:
+                aico_items.extend(list(summary.get("aico_items") or []))
+                command_items.extend(list(summary.get("command_items") or []))
+                continue
+            aico_items.extend(
                 {
                     "id": f"{archive['id']}_{thread.get('id', 'thread')}",
-                    "summary": f"AICO: {thread.get('title') or 'Conversation'} ({len(thread.get('messages') or [])} messages)",
-                    "createdAt": archive.get("archivedAt") or self._now(),
+                    "title": thread.get("title") or "Conversation",
+                    "messageCount": len(thread.get("messages") or []),
+                    "preview": self._history_preview_from_messages(thread.get("messages") or []),
+                    "createdAt": thread.get("updatedAt") or archived_at,
                 }
                 for thread in archive.get("aico_threads") or []
                 if thread.get("messages")
-            ]
-            if aico_items:
-                groups.append({"id": "aico_conversations", "title": "AICO conversations", "items": aico_items})
-            command_msgs = archive.get("command_conversation") or []
-            if command_msgs:
-                groups.append(
-                    {
-                        "id": "command_conversations",
-                        "title": "Command sessions",
-                        "items": [
-                            {
-                                "id": f"{archive['id']}_command",
-                                "summary": f"Command session ({len(command_msgs)} messages)",
-                                "createdAt": archive.get("archivedAt") or self._now(),
-                            }
-                        ],
-                    }
+            )
+            command_items.extend(
+                self._archived_command_items(
+                    archive.get("id", "archive"),
+                    archive.get("command_conversation") or [],
+                    archived_at,
                 )
-        return {"groups": groups, "collapsed": True}
+            )
+        if aico_items:
+            groups.append({"id": "aico_conversations", "title": "AICO conversations", "items": aico_items})
+        if command_items:
+            groups.append(
+                {
+                    "id": "command_conversations",
+                    "title": "Command sessions",
+                    "items": command_items,
+                }
+            )
+        return {
+            "groups": groups,
+            "collapsed": True,
+            "pagination": {"limit": limit, "offset": offset, "total": total},
+        }
+
+    @staticmethod
+    def _build_archive_history_summary(entry: Dict[str, Any]) -> Dict[str, Any]:
+        archived_at = entry.get("archivedAt") or WorldInteractionService._now()
+        archive_id = str(entry.get("id") or "archive")
+        aico_items = [
+            {
+                "id": f"{archive_id}_{thread.get('id', 'thread')}",
+                "title": thread.get("title") or "Conversation",
+                "messageCount": len(thread.get("messages") or []),
+                "preview": WorldInteractionService._history_preview_from_messages(thread.get("messages") or []),
+                "createdAt": thread.get("updatedAt") or archived_at,
+            }
+            for thread in entry.get("aico_threads") or []
+            if thread.get("messages")
+        ]
+        command_items = WorldInteractionService._archived_command_items(
+            archive_id,
+            entry.get("command_conversation") or [],
+            archived_at,
+        )
+        return {"aico_items": aico_items, "command_items": command_items}
+
+    @staticmethod
+    def _history_preview_from_messages(messages: List[Dict[str, Any]]) -> str:
+        for message in reversed(messages or []):
+            role = message.get("role")
+            if role == "assistant":
+                text = str(message.get("answer") or message.get("query") or "").strip()
+            else:
+                text = str(message.get("query") or message.get("answer") or "").strip()
+            if text:
+                return text[:56]
+        return ""
+
+    @staticmethod
+    def _archived_command_items(archive_id: str, messages: List[Dict[str, Any]], archived_at: str) -> List[Dict[str, Any]]:
+        items: List[Dict[str, Any]] = []
+        index = 0
+        while index < len(messages):
+            message = messages[index]
+            if message.get("role") != "user":
+                index += 1
+                continue
+            assistant = messages[index + 1] if index + 1 < len(messages) and messages[index + 1].get("role") == "assistant" else None
+            label = str(message.get("query") or message.get("answer") or "").strip()
+            detail = str((assistant or {}).get("answer") or label).strip()
+            if not label and not detail:
+                index += 1
+                continue
+            items.append(
+                {
+                    "id": f"{archive_id}_cmd_{message.get('id', index)}",
+                    "title": label[:48] if label else "Command",
+                    "detail": detail[:120] if detail else label,
+                    "messageCount": 2 if assistant else 1,
+                    "sequence": len(items),
+                    "createdAt": archived_at,
+                }
+            )
+            index += 2 if assistant else 1
+        return list(reversed(items))
 
     def execute_command(self, session: Session, actor: WorldActor, command_line: str) -> CommandResult:
         return self._command_runner.run(session, actor, command_line)

@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search } from '@element-plus/icons-vue'
 import { useWorldMapStore } from '@/stores/worldMap'
@@ -25,22 +25,29 @@ const { t } = useI18n()
 const query = ref('')
 const isComposing = ref(false)
 
+const queryBlocked = computed(
+  () => worldSession.commandLoading || worldSession.sessionActionLoading,
+)
+
 function onEnterKeydown(event: KeyboardEvent) {
   if (event.isComposing || isComposing.value) return
+  if (queryBlocked.value) return
   event.preventDefault()
   void submit()
 }
 
 const submit = async () => {
   const clean = query.value.trim()
-  if (!clean) return
+  if (!clean || queryBlocked.value) return
 
+  const submission = await worldSession.submitQuery(clean)
+  if (!submission.accepted) return
+
+  query.value = ''
   void mapStore.searchMap(clean).catch(err => {
     console.warn('[GlobalCommandSearch] map search failed:', err)
   })
-
-  await worldSession.submitQuery(clean)
-  query.value = ''
+  void submission.completion
 }
 </script>
 

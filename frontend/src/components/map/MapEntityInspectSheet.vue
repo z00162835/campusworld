@@ -52,6 +52,7 @@
           size="small"
           :type="action.style === 'primary' ? 'primary' : 'default'"
           :loading="runningActionId === action.id"
+          :disabled="inspectActionsBlocked"
           @click="runAction(action)"
         >
           {{ action.label }}
@@ -65,7 +66,6 @@
 import { computed, inject, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNotification } from '@/composables/useNotification'
-import { decisionCenterApi } from '@/api/decisionCenter'
 import MapSpaceSummaryCard from '@/components/map/MapSpaceSummaryCard.vue'
 import { useWorldMapStore } from '@/stores/worldMap'
 import { useWorldSessionStore } from '@/stores/worldSession'
@@ -98,6 +98,8 @@ const entityInspect = computed<EntityInspectData | null>(() => {
   if (!sel || sel.entityKind === 'space') return null
   return sel.inspect
 })
+
+const inspectActionsBlocked = computed(() => worldSession.sessionActionBusy)
 
 function resolveInspectKind(selection: MapInspectSelection): MapInspectSelection['entityKind'] {
   if (selection.entityKind === 'space') return 'space'
@@ -226,19 +228,22 @@ onBeforeUnmount(() => {
 
 async function runAction(action: DecisionOption) {
   if (action.actionType !== 'execute_command' || !action.command) return
-  const sessionId = worldSession.session?.id
-  if (!sessionId) return
+  if (inspectActionsBlocked.value) return
+  if (!worldSession.session?.id) return
   if (action.requiresConfirmation) {
     try {
       await confirm(t('worldInteraction.map.inspect.confirmAction', { label: action.label }))
     } catch {
       return
     }
+    if (inspectActionsBlocked.value) return
   }
   runningActionId.value = action.id
   try {
-    await decisionCenterApi.query(sessionId, action.command, 'command')
-    await mapStore.refreshSelectedInspect()
+    const result = await worldSession.executeCommandQuery(action.command)
+    if (result) {
+      await mapStore.refreshSelectedInspect()
+    }
   } catch (err) {
     console.warn('[MapEntityInspectSheet] action failed:', err)
   } finally {

@@ -16,15 +16,11 @@
     <div v-if="open" class="drawer-body">
       <nav
         class="drawer-tab-nav"
-        role="tablist"
-        aria-orientation="vertical"
         :aria-label="t('worldInteraction.utility.toggle')"
       >
         <button
           type="button"
           class="drawer-tab"
-          role="tab"
-          :aria-selected="activeTab === 'conversation'"
           :class="{ 'drawer-tab--active': activeTab === 'conversation' }"
           @click="activeTab = 'conversation'"
         >
@@ -33,8 +29,6 @@
         <button
           type="button"
           class="drawer-tab"
-          role="tab"
-          :aria-selected="activeTab === 'command'"
           :class="{ 'drawer-tab--active': activeTab === 'command' }"
           @click="activeTab = 'command'"
         >
@@ -43,8 +37,17 @@
       </nav>
 
       <div class="drawer-content">
-        <div v-show="activeTab === 'conversation'" class="drawer-pane" role="tabpanel">
-          <div v-if="!conversationEntries.length" class="utility-empty">
+        <div v-show="activeTab === 'conversation'" class="drawer-pane">
+          <p v-if="archivedLoading" class="utility-banner" role="status">
+            {{ t('worldInteraction.utility.historyLoading') }}
+          </p>
+          <p v-else-if="archivedErrorKey" class="utility-banner utility-banner--error" role="alert">
+            {{ t(archivedErrorKey) }}
+          </p>
+          <div
+            v-if="!conversationEntries.length && !archivedLoading && !archivedErrorKey"
+            class="utility-empty"
+          >
             {{ t('worldInteraction.utility.conversationEmpty') }}
           </div>
           <article
@@ -60,8 +63,17 @@
           </article>
         </div>
 
-        <div v-show="activeTab === 'command'" class="drawer-pane" role="tabpanel">
-          <div v-if="!commandEntries.length" class="utility-empty">
+        <div v-show="activeTab === 'command'" class="drawer-pane">
+          <p v-if="archivedLoading" class="utility-banner" role="status">
+            {{ t('worldInteraction.utility.historyLoading') }}
+          </p>
+          <p v-else-if="archivedErrorKey" class="utility-banner utility-banner--error" role="alert">
+            {{ t(archivedErrorKey) }}
+          </p>
+          <div
+            v-if="!commandEntries.length && !archivedLoading && !archivedErrorKey"
+            class="utility-empty"
+          >
             {{ t('worldInteraction.utility.commandEmpty') }}
           </div>
           <article
@@ -89,7 +101,13 @@ import { useUtilityHistory } from '@/composables/useUtilityHistory'
 const { t } = useI18n()
 const open = ref(false)
 const activeTab = ref<'conversation' | 'command'>('conversation')
-const { conversationEntries, commandEntries, refreshArchivedHistory } = useUtilityHistory()
+const {
+  archivedLoading,
+  archivedErrorKey,
+  conversationEntries,
+  commandEntries,
+  refreshArchivedHistory,
+} = useUtilityHistory()
 
 async function toggleDrawer() {
   open.value = !open.value
@@ -212,6 +230,21 @@ watch(open, value => {
   color: var(--text-tertiary);
   font-size: var(--font-size-sm);
   padding: var(--spacing-sm) 0;
+}
+
+.utility-banner {
+  margin: 0 0 var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+}
+
+.utility-banner--error {
+  background: rgba(245, 108, 108, 0.08);
+  color: var(--color-danger);
 }
 
 .history-group {

@@ -20,6 +20,7 @@ export interface UtilityCommandEntry {
   label: string
   detail: string
   createdAt?: string
+  sequence?: number
 }
 
 function truncate(text: string, max = 56): string {
@@ -70,12 +71,11 @@ export function buildConversationEntries(
   for (const group of archivedGroups) {
     if (group.id !== 'aico_conversations') continue
     for (const item of group.items) {
-      const match = item.summary.match(/\((\d+) messages\)\s*$/)
       archivedEntries.push({
         id: item.id,
-        title: item.summary.replace(/\s*\(\d+ messages\)\s*$/, '').replace(/^AICO:\s*/, ''),
-        messageCount: match ? Number(match[1]) : 0,
-        preview: group.title,
+        title: item.title || item.summary || '',
+        messageCount: item.messageCount ?? 0,
+        preview: item.preview || group.title,
         updatedAt: item.createdAt,
       })
     }
@@ -140,6 +140,7 @@ export function buildCommandEntries(
     label: truncate(item.summary, 48),
     detail: truncate(item.summary),
     createdAt: item.createdAt,
+    sequence: undefined as number | undefined,
   }))
 
   const archivedEntries: UtilityCommandEntry[] = []
@@ -148,9 +149,10 @@ export function buildCommandEntries(
     for (const item of group.items) {
       archivedEntries.push({
         id: item.id,
-        label: item.summary,
-        detail: group.title,
+        label: truncate(item.title || item.summary || '', 48),
+        detail: truncate(item.detail || item.summary || group.title),
         createdAt: item.createdAt,
+        sequence: item.sequence,
       })
     }
   }
@@ -164,6 +166,7 @@ export function buildCommandEntries(
   }).sort((left, right) => {
     const leftTime = left.createdAt ? Date.parse(left.createdAt) : Number.MAX_SAFE_INTEGER
     const rightTime = right.createdAt ? Date.parse(right.createdAt) : Number.MAX_SAFE_INTEGER
-    return rightTime - leftTime
+    if (rightTime !== leftTime) return rightTime - leftTime
+    return (right.sequence ?? 0) - (left.sequence ?? 0)
   })
 }

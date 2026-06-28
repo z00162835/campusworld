@@ -49,6 +49,9 @@ export default {
     discovery: '发现',
     history: '历史',
     profile: '个人资料',
+    tabsLabel: '已打开页面',
+    closeTab: '关闭 {title}',
+    closeTabShortcut: '按 Delete 关闭 {title}',
   },
   routes: {
     home: '首页',
@@ -207,6 +210,8 @@ export default {
       conversationEmpty: '暂无对话记录。',
       commandEmpty: '暂无命令记录。',
       messageCount: '{count} 条消息',
+      historyLoading: '历史记录加载中…',
+      historyLoadFailed: '无法加载归档历史。',
     },
     map: {
       title: '地图',
@@ -223,6 +228,7 @@ export default {
       zoomIn: '放大',
       zoomOut: '缩小',
       resetView: '重置视图',
+      modeMenu: '视图',
       openFullMap: '全图',
       minimap: '缩略图',
       backToRoom: '当前位置',

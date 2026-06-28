@@ -7,7 +7,8 @@ export function useLogout() {
   const authStore = useAuthStore()
 
   const logout = async () => {
-    void useWorldSessionStore().archiveConversations()
+    const archiveToken = authStore.token
+    void useWorldSessionStore().archiveConversations(archiveToken)
     const logoutPromise = authStore.logout()
     await router.replace('/login')
     return logoutPromise

@@ -37,6 +37,7 @@ export const useWorldMapStore = defineStore('worldMap', () => {
   const loadingInspect = ref(false)
   const mapLoading = ref(false)
   let mapRequestSeq = 0
+  let inspectRequestSeq = 0
 
   function beginMapRequest(): number {
     mapRequestSeq += 1
@@ -52,6 +53,26 @@ export const useWorldMapStore = defineStore('worldMap', () => {
 
   function isCurrentMapRequest(seq: number): boolean {
     return seq === mapRequestSeq
+  }
+
+  function beginInspectRequest(): number {
+    inspectRequestSeq += 1
+    return inspectRequestSeq
+  }
+
+  function isCurrentInspectRequest(seq: number): boolean {
+    return seq === inspectRequestSeq
+  }
+
+  function invalidateInspectRequests() {
+    inspectRequestSeq += 1
+    loadingInspect.value = false
+  }
+
+  function invalidateMapRequests() {
+    mapRequestSeq += 1
+    mapLoading.value = false
+    invalidateInspectRequests()
   }
 
   const map = computed(() => worldSession.focusMap)
@@ -121,8 +142,8 @@ export const useWorldMapStore = defineStore('worldMap', () => {
 
   async function drillTo(layer: MapViewLayer, anchorId?: string) {
     const seq = beginMapRequest()
+    invalidateInspectRequests()
     selectedInspect.value = null
-    loadingInspect.value = false
     try {
       const { data } = await semanticMapApi.executeAction({
         action_type: 'drill',
@@ -184,37 +205,46 @@ export const useWorldMapStore = defineStore('worldMap', () => {
   async function refreshSelectedInspect() {
     const current = selectedInspect.value
     if (!current) return
+    const inspectSeq = beginInspectRequest()
     loadingInspect.value = true
     try {
       const res = await semanticMapApi.getEntityInspect({ node_id: current.entityId })
+      if (!isCurrentInspectRequest(inspectSeq)) return
       if (res.data.ok && res.data.inspect) {
         selectedInspect.value = entitySelection(current.entityId, res.data.inspect)
         return
       }
       const summaryRes = await semanticMapApi.getSpaceSummary(current.entityId)
+      if (!isCurrentInspectRequest(inspectSeq)) return
       if (summaryRes.data.ok && summaryRes.data.summary) {
         selectedInspect.value = spaceSelection(current.entityId, summaryRes.data.summary)
       }
     } catch (err) {
       console.warn('[worldMap] refreshSelectedInspect failed:', err)
     } finally {
-      loadingInspect.value = false
+      if (isCurrentInspectRequest(inspectSeq)) {
+        loadingInspect.value = false
+      }
     }
   }
 
   async function drillToOutdoorSpot(nodeId: string) {
     selectedInspect.value = null
     await drillTo('room', nodeId)
+    const inspectSeq = beginInspectRequest()
     loadingInspect.value = true
     try {
       const summaryRes = await semanticMapApi.getSpaceSummary(nodeId)
+      if (!isCurrentInspectRequest(inspectSeq)) return
       if (summaryRes.data.ok && summaryRes.data.summary) {
         selectedInspect.value = spaceSelection(nodeId, summaryRes.data.summary)
       }
     } catch (err) {
       console.warn('[worldMap] drillToOutdoorSpot summary failed:', err)
     } finally {
-      loadingInspect.value = false
+      if (isCurrentInspectRequest(inspectSeq)) {
+        loadingInspect.value = false
+      }
     }
   }
 
@@ -227,6 +257,7 @@ export const useWorldMapStore = defineStore('worldMap', () => {
     options?: { viewLayer?: MapViewLayer; anchorId?: string; agentId?: string },
   ) {
     const seq = beginMapRequest()
+    const inspectSeq = beginInspectRequest()
     loadingInspect.value = true
     selectedInspect.value = null
     const layer = options?.viewLayer ?? viewLayer.value
@@ -245,7 +276,7 @@ export const useWorldMapStore = defineStore('worldMap', () => {
         mode: mode.value,
         selected_entity_id: nodeId,
       })
-      if (!isCurrentMapRequest(seq)) return
+      if (!isCurrentMapRequest(seq) || !isCurrentInspectRequest(inspectSeq)) return
       if (data.focus_map) {
         applyFocusMap(data.focus_map)
       }
@@ -253,26 +284,28 @@ export const useWorldMapStore = defineStore('worldMap', () => {
       if (!selectedInspect.value && !data.space_summary && !data.entity_inspect) {
         if (options?.agentId) {
           const agentRes = await semanticMapApi.getEntityInspect({ agent_id: options.agentId })
-          if (!isCurrentMapRequest(seq)) return
+          if (!isCurrentMapRequest(seq) || !isCurrentInspectRequest(inspectSeq)) return
           if (agentRes?.data?.ok && agentRes.data.inspect) {
             selectedInspect.value = entitySelection(nodeId, agentRes.data.inspect)
           }
         } else {
           const summaryRes = await semanticMapApi.getSpaceSummary(nodeId)
-          if (!isCurrentMapRequest(seq)) return
+          if (!isCurrentMapRequest(seq) || !isCurrentInspectRequest(inspectSeq)) return
           if (summaryRes?.data?.ok && summaryRes.data.summary) {
             selectedInspect.value = spaceSelection(nodeId, summaryRes.data.summary)
             return
           }
           const inspectRes = await semanticMapApi.getEntityInspect({ node_id: nodeId })
-          if (!isCurrentMapRequest(seq)) return
+          if (!isCurrentMapRequest(seq) || !isCurrentInspectRequest(inspectSeq)) return
           if (inspectRes?.data?.ok && inspectRes.data.inspect) {
             selectedInspect.value = entitySelection(nodeId, inspectRes.data.inspect)
           }
         }
       }
     } finally {
-      loadingInspect.value = false
+      if (isCurrentInspectRequest(inspectSeq)) {
+        loadingInspect.value = false
+      }
       endMapRequest(seq)
     }
   }
@@ -418,8 +451,8 @@ export const useWorldMapStore = defineStore('worldMap', () => {
   }
 
   function clearMapSelection() {
+    invalidateMapRequests()
     selectedInspect.value = null
-    loadingInspect.value = false
     if (worldSession.interactionState?.focus_map) {
       worldSession.interactionState.focus_map.selectedEntityId = null
       for (const node of worldSession.interactionState.focus_map.nodes) {
@@ -432,9 +465,7 @@ export const useWorldMapStore = defineStore('worldMap', () => {
 
   function reset() {
     selectedInspect.value = null
-    loadingInspect.value = false
-    mapRequestSeq += 1
-    mapLoading.value = false
+    invalidateMapRequests()
   }
 
   return {

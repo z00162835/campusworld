@@ -49,6 +49,9 @@ export default {
     discovery: 'Discovery',
     history: 'History',
     profile: 'Profile',
+    tabsLabel: 'Open pages',
+    closeTab: 'Close {title}',
+    closeTabShortcut: 'Press Delete to close {title}',
   },
   routes: {
     home: 'Home',
@@ -207,6 +210,8 @@ export default {
       conversationEmpty: 'No conversations yet.',
       commandEmpty: 'No commands yet.',
       messageCount: '{count} messages',
+      historyLoading: 'Loading history…',
+      historyLoadFailed: 'Could not load archived history.',
     },
     map: {
       title: 'Map',
@@ -223,6 +228,7 @@ export default {
       zoomIn: 'Zoom in',
       zoomOut: 'Zoom out',
       resetView: 'Reset view',
+      modeMenu: 'View',
       openFullMap: 'Full map',
       minimap: 'Minimap',
       backToRoom: 'Current location',

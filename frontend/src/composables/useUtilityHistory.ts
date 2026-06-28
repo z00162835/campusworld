@@ -9,17 +9,41 @@ export function useUtilityHistory() {
   const worldSession = useWorldSessionStore()
   const archivedGroups = ref<WorldHistoryGroup[]>([])
   const archivedLoaded = ref(false)
+  const archivedLoading = ref(false)
+  const archivedErrorKey = ref<string | null>(null)
+  let refreshSeq = 0
+  let refreshInFlight: Promise<void> | null = null
 
   async function refreshArchivedHistory() {
-    try {
-      const { data } = await worldHistoryApi.getSummary()
-      archivedGroups.value = data.groups
-    } catch (err) {
-      console.warn('[useUtilityHistory] Failed to load archived history summary:', err)
-      archivedGroups.value = []
-    } finally {
-      archivedLoaded.value = true
+    if (refreshInFlight) {
+      await refreshInFlight
+      return
     }
+
+    const seq = ++refreshSeq
+    archivedLoading.value = true
+    archivedErrorKey.value = null
+
+    refreshInFlight = (async () => {
+      try {
+        const { data } = await worldHistoryApi.getSummary()
+        if (seq !== refreshSeq) return
+        archivedGroups.value = data.groups
+      } catch (err) {
+        console.warn('[useUtilityHistory] Failed to load archived history summary:', err)
+        if (seq !== refreshSeq) return
+        archivedErrorKey.value = 'worldInteraction.utility.historyLoadFailed'
+        archivedGroups.value = []
+      } finally {
+        if (seq === refreshSeq) {
+          archivedLoading.value = false
+          archivedLoaded.value = true
+        }
+        refreshInFlight = null
+      }
+    })()
+
+    await refreshInFlight
   }
 
   const conversationEntries = computed(() =>
@@ -40,6 +64,8 @@ export function useUtilityHistory() {
 
   return {
     archivedLoaded,
+    archivedLoading,
+    archivedErrorKey,
     conversationEntries,
     commandEntries,
     refreshArchivedHistory,

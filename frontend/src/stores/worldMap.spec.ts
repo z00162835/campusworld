@@ -549,4 +549,87 @@ describe('selectedInspect mutual exclusion', () => {
     await store.drillTo('building')
     expect(store.selectedInspect).toBeNull()
   })
+
+  it('ignores stale inspect refresh after clearMapSelection', async () => {
+    const store = useWorldMapStore()
+    store.selectedInspect = {
+      entityId: '1',
+      entityKind: 'person',
+      inspect: {
+        entity: { id: '1', name: 'Alice', type_code: 'character', map_node_type: 'agent' },
+        entity_kind: 'person',
+        appearance: { lines: ['Hello'] },
+        actions: [],
+        source: 'look',
+      },
+    }
+
+    let resolveInspect: (value: unknown) => void = () => undefined
+    const inspectPromise = new Promise(resolve => {
+      resolveInspect = resolve
+    })
+    vi.mocked(semanticMapApi.getEntityInspect).mockReturnValueOnce(inspectPromise as any)
+
+    const refreshPromise = store.refreshSelectedInspect()
+    store.clearMapSelection()
+
+    resolveInspect({
+      data: {
+        ok: true,
+        inspect: {
+          entity: { id: '1', name: 'Stale', type_code: 'character', map_node_type: 'agent' },
+          entity_kind: 'person',
+          appearance: { lines: ['Stale'] },
+          actions: [],
+          source: 'look',
+        },
+      },
+    })
+    await refreshPromise
+
+    expect(store.selectedInspect).toBeNull()
+  })
+
+  it('ignores stale inspect refresh after drillTo', async () => {
+    const store = useWorldMapStore()
+    store.selectedInspect = {
+      entityId: '1',
+      entityKind: 'person',
+      inspect: {
+        entity: { id: '1', name: 'Alice', type_code: 'character', map_node_type: 'agent' },
+        entity_kind: 'person',
+        appearance: { lines: ['Hello'] },
+        actions: [],
+        source: 'look',
+      },
+    }
+
+    let resolveInspect: (value: unknown) => void = () => undefined
+    const inspectPromise = new Promise(resolve => {
+      resolveInspect = resolve
+    })
+    vi.mocked(semanticMapApi.getEntityInspect).mockReturnValueOnce(inspectPromise as any)
+    vi.mocked(semanticMapApi.executeAction).mockResolvedValueOnce({
+      data: { focus_map: useWorldSessionStore().interactionState!.focus_map! },
+    } as any)
+
+    const refreshPromise = store.refreshSelectedInspect()
+    const drillPromise = store.drillTo('building')
+
+    resolveInspect({
+      data: {
+        ok: true,
+        inspect: {
+          entity: { id: '1', name: 'Stale', type_code: 'character', map_node_type: 'agent' },
+          entity_kind: 'person',
+          appearance: { lines: ['Stale'] },
+          actions: [],
+          source: 'look',
+        },
+      },
+    })
+    await Promise.all([refreshPromise, drillPromise])
+
+    expect(store.selectedInspect).toBeNull()
+  })
 })

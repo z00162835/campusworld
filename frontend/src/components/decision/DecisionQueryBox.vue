@@ -51,13 +51,13 @@
         v-if="!worldSession.streamInFlight"
         type="button"
         class="decision-accent-btn decision-accent-btn--icon-only decision-accent-btn--primary"
-        :disabled="!inputText.trim() || inputText.trim() === '/' || (worldSession.actionLoading && !worldSession.streamInFlight)"
+        :disabled="!inputText.trim() || inputText.trim() === '/' || queryBlocked"
         :aria-label="sendAriaLabel"
         :title="sendTitle"
         @click="submit"
       >
         <app-icon
-          v-if="worldSession.actionLoading && !worldSession.streamInFlight"
+          v-if="queryBlocked"
           class="is-loading"
           name="loading"
           :size="16"
@@ -85,8 +85,13 @@ const inputRef = ref<HTMLInputElement>()
 /** IME composition in progress; Enter confirms candidates, must not submit. */
 const isComposing = ref(false)
 
+const queryBlocked = computed(
+  () => worldSession.commandLoading || worldSession.sessionActionLoading,
+)
+
 function onEnterKeydown(event: KeyboardEvent) {
   if (event.isComposing || isComposing.value) return
+  if (queryBlocked.value) return
   event.preventDefault()
   void submit()
 }
@@ -130,12 +135,14 @@ const selectMode = async (mode: QueryMode) => {
 const submit = async () => {
   const clean = inputText.value.trim()
   if (!clean || clean === '/') return
+  if (queryBlocked.value) return
+  const submission = await worldSession.submitQuery(clean)
+  if (!submission.accepted) return
   inputText.value = ''
   showModeMenu.value = false
-  const pending = worldSession.submitQuery(clean)
   await nextTick()
   emit('submitted')
-  await pending
+  void submission.completion
 }
 
 const stop = async () => {

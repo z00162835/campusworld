@@ -81,8 +81,10 @@
           <section
             v-if="decisionStore.nextBestAction"
             class="next-action clickable"
+            :class="{ 'next-action--disabled': worldSession.sessionActionBusy }"
             role="button"
-            tabindex="0"
+            :tabindex="worldSession.sessionActionBusy ? -1 : 0"
+            :aria-disabled="worldSession.sessionActionBusy"
             @click="runNextBestAction"
             @keyup.enter="runNextBestAction"
           >
@@ -211,16 +213,19 @@ const hingeAriaLabel = computed(() => {
 })
 
 const executeAction = async (eventId: string, optionId: string) => {
+  if (worldSession.sessionActionBusy) return
   await decisionStore.executeDecisionOption(eventId, optionId)
 }
 
 const executeTaskAction = async (optionId: string) => {
+  if (worldSession.sessionActionBusy) return
   const task = decisionStore.activeTask
   if (!task) return
   await decisionStore.executeDecisionOption(task.id, optionId)
 }
 
 const runNextBestAction = async () => {
+  if (worldSession.sessionActionBusy) return
   const action = decisionStore.nextBestAction
   if (!action) return
   const eventId = decisionStore.activeTask?.id || visibleEvents.value[0]?.id
@@ -585,6 +590,13 @@ async function scrollConversationToBottom() {
 .next-action.clickable:hover {
   border-color: var(--color-primary);
   background: rgba(64, 158, 255, 0.06);
+}
+
+.next-action--disabled,
+.next-action--disabled.clickable {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .error-card {

@@ -184,12 +184,33 @@ def test_command_query_returns_state_patch(monkeypatch):
     assert body["command_result"]["message"] == "You see the room."
 
 
-def test_archive_conversations_and_history_summary():
+def test_archive_conversations_and_history_summary(monkeypatch):
+    stored_archives = []
+
+    def fake_append(session, user, entry):
+        stored_archives.append(entry)
+        return entry
+
+    def fake_list(session, account_node_id, *, limit=50, offset=0):
+        page = stored_archives[offset: offset + limit]
+        return page, len(stored_archives)
+
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service._archive_repo,
+        "append_for_account",
+        fake_append,
+    )
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service._archive_repo,
+        "list_summaries_for_account",
+        fake_list,
+    )
+
     client = TestClient(_app())
     archive = client.post(
         "/api/v1/world-history/conversations/archive",
         json={
-            "aico_threads": [{"id": "t1", "title": "Test", "messages": [{"id": "m1", "role": "user", "answer": "hi"}], "updatedAt": "2026-05-31T00:00:00Z"}],
+            "aico_threads": [{"id": "t1", "title": "Test", "messages": [{"id": "m1", "role": "user", "mode": "aico", "answer": "hi"}], "updatedAt": "2026-05-31T00:00:00Z"}],
             "command_conversation": [],
         },
     )
@@ -200,6 +221,109 @@ def test_archive_conversations_and_history_summary():
     assert summary.status_code == 200
     groups = {group["id"]: group for group in summary.json()["groups"]}
     assert "aico_conversations" in groups
+    aico_item = groups["aico_conversations"]["items"][0]
+    assert aico_item["title"] == "Test"
+    assert aico_item["messageCount"] == 1
+    assert "preview" in aico_item
+    assert summary.json()["pagination"]["total"] == 1
+
+
+def test_archive_conversations_rejects_oversized_batch(monkeypatch):
+    from app.repositories.world_conversation_archive import WorldHistoryArchiveLimitError
+
+    def fake_append(session, user, entry):
+        raise WorldHistoryArchiveLimitError("Archive batch exceeds size limit (512000 bytes)")
+
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service._archive_repo,
+        "append_for_account",
+        fake_append,
+    )
+
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/world-history/conversations/archive",
+        json={
+            "aico_threads": [],
+            "command_conversation": [{"id": "m1", "role": "user", "mode": "command", "answer": "look"}],
+        },
+    )
+    assert response.status_code == 422
+    assert "size limit" in response.json()["detail"]
+
+
+def test_archive_conversations_rejects_oversized_command_payload():
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/world-history/conversations/archive",
+        json={
+            "aico_threads": [],
+            "command_conversation": [
+                {"id": f"m{i}", "role": "user", "mode": "command", "answer": f"msg {i}"}
+                for i in range(51)
+            ],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_archive_conversations_rejects_oversized_aico_thread():
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/world-history/conversations/archive",
+        json={
+            "aico_threads": [
+                {
+                    "id": "t1",
+                    "title": "Test",
+                    "messages": [
+                        {"id": f"m{i}", "role": "user", "mode": "aico", "answer": f"msg {i}"}
+                        for i in range(51)
+                    ],
+                    "updatedAt": "2026-05-31T00:00:00Z",
+                }
+            ],
+            "command_conversation": [],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_archive_conversations_rejects_unknown_fields():
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/world-history/conversations/archive",
+        json={
+            "aico_threads": [],
+            "command_conversation": [],
+            "extra_field": True,
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_archive_conversations_rejects_archive_batch_limit(monkeypatch):
+    from app.repositories.world_conversation_archive import WorldHistoryArchiveLimitError
+
+    def fake_append(session, user, entry):
+        raise WorldHistoryArchiveLimitError("Archive limit reached (100 batches per account)")
+
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service._archive_repo,
+        "append_for_account",
+        fake_append,
+    )
+
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/world-history/conversations/archive",
+        json={
+            "aico_threads": [],
+            "command_conversation": [{"id": "m1", "role": "user", "mode": "command", "answer": "look"}],
+        },
+    )
+    assert response.status_code == 422
+    assert "Archive limit reached" in response.json()["detail"]
 
 
 def test_aico_stream_response_has_anti_buffer_headers(monkeypatch):
