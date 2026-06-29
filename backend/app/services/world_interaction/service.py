@@ -407,28 +407,13 @@ class WorldInteractionService:
         for archive in archives:
             archived_at = archive.get("archivedAt") or self._now()
             summary = dict(archive.get("history_summary") or {})
-            if summary:
-                aico_items.extend(list(summary.get("aico_items") or []))
-                command_items.extend(list(summary.get("command_items") or []))
+            if not summary:
+                # Pre-summary-format archives are not re-expanded here; the
+                # listing intentionally only reads the summary JSON path so the
+                # endpoint does not hydrate full message JSONB per batch.
                 continue
-            aico_items.extend(
-                {
-                    "id": f"{archive['id']}_{thread.get('id', 'thread')}",
-                    "title": thread.get("title") or "Conversation",
-                    "messageCount": len(thread.get("messages") or []),
-                    "preview": self._history_preview_from_messages(thread.get("messages") or []),
-                    "createdAt": thread.get("updatedAt") or archived_at,
-                }
-                for thread in archive.get("aico_threads") or []
-                if thread.get("messages")
-            )
-            command_items.extend(
-                self._archived_command_items(
-                    archive.get("id", "archive"),
-                    archive.get("command_conversation") or [],
-                    archived_at,
-                )
-            )
+            aico_items.extend(list(summary.get("aico_items") or []))
+            command_items.extend(list(summary.get("command_items") or []))
         if aico_items:
             groups.append({"id": "aico_conversations", "title": "AICO conversations", "items": aico_items})
         if command_items:

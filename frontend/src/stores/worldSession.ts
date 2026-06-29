@@ -65,6 +65,10 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   const STREAM_FLUSH_MIN_CHARS = 32
   const STREAM_FLUSH_MS = 16
 
+  // Bumped on reset()/logout so in-flight non-stream requests can detect that
+  // their results belong to a previous session and must not write back to refs.
+  let sessionGeneration = 0
+
   const session = computed(() => interactionState.value?.session || null)
   const decisionCenter = computed(() => interactionState.value?.decision_center || null)
   const focusMap = computed(() => interactionState.value?.focus_map || null)
@@ -152,16 +156,19 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   }
 
   async function loadCurrent() {
+    const generation = sessionGeneration
     loading.value = true
     error.value = null
     errorKey.value = null
     try {
       const { data } = await worldSessionsApi.getCurrent()
+      if (generation !== sessionGeneration) return
       interactionState.value = data.interaction_state
       displayPolicy.value = data.display_policy
       availableWorlds.value = data.available_worlds
       useWorldMapStore().clearMapSelection()
     } catch (err: any) {
+      if (generation !== sessionGeneration) return
       if (err?.response?.status === 401) {
         return
       }
@@ -180,7 +187,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         errorKey.value = err?.message ? null : LOAD_FAILED_KEY
       }
     } finally {
-      loading.value = false
+      if (generation === sessionGeneration) {
+        loading.value = false
+      }
     }
   }
 
@@ -189,7 +198,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       await loadCurrent()
       return
     }
+    const generation = sessionGeneration
     const { data } = await worldSessionsApi.getInteractionState(session.value.id)
+    if (generation !== sessionGeneration) return
     interactionState.value = data
   }
 
@@ -243,6 +254,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     const showError = options.showError !== false
     const throwOnError = options.throwOnError === true
 
+    const generation = sessionGeneration
     commandLoading.value = true
     try {
       if (recordConversation) {
@@ -256,6 +268,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       }
 
       const { data } = await decisionCenterApi.query(session.value.id, clean, 'command')
+      if (generation !== sessionGeneration) return null
       if (recordConversation) {
         appendCommandMessage({
           id: newId(),
@@ -273,6 +286,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       }
       return data
     } catch (err: any) {
+      if (generation !== sessionGeneration) return null
       if (showError) {
         ElMessage.error(err?.response?.data?.detail || err?.message || i18n.global.t('worldInteraction.decision.queryFailed'))
       }
@@ -281,7 +295,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       }
       return null
     } finally {
-      commandLoading.value = false
+      if (generation === sessionGeneration) {
+        commandLoading.value = false
+      }
     }
   }
 
@@ -573,8 +589,16 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     if (!hasContent) return
     try {
       await worldHistoryApi.archiveConversations(payload, accessToken)
-    } catch (err) {
-      console.warn('Failed to archive conversations before logout', err)
+    } catch (err: any) {
+      // Never log the raw error object: axios errors include the request config
+      // (and the explicit Authorization header we set for the logout archive call).
+      const status = err?.response?.status
+      const code = err?.code
+      const detail = err?.response?.data?.detail
+      console.warn(
+        '[worldSession] archive conversations failed',
+        JSON.stringify({ status, code, detail: typeof detail === 'string' ? detail : undefined }),
+      )
     }
   }
 
@@ -615,7 +639,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     if (patch.contextSummary) interactionState.value.context_summary = patch.contextSummary
     if (patch.mapPatch) {
       try {
-        await useWorldMapStore().applyMapPatch(patch.mapPatch)
+        await useWorldMapStore().applyMapPatch(patch.mapPatch, { openInspect: false })
       } catch (err) {
         console.warn('[worldSession] applyMapPatch failed:', err)
       }
@@ -634,15 +658,21 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     if (sessionActionBusy.value) {
       return null
     }
+    const generation = sessionGeneration
     sessionActionLoading.value = true
     try {
-      return await fn()
+      const result = await fn()
+      if (generation !== sessionGeneration) return null
+      return result
     } finally {
-      sessionActionLoading.value = false
+      if (generation === sessionGeneration) {
+        sessionActionLoading.value = false
+      }
     }
   }
 
   function reset(options: { cancelServerStream?: boolean } = {}) {
+    sessionGeneration += 1
     cleanupActiveStream(options)
     interactionState.value = null
     displayPolicy.value = null

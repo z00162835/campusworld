@@ -392,12 +392,16 @@ export const useWorldMapStore = defineStore('worldMap', () => {
     await selectEntity(agentId, { viewLayer: 'room', agentId })
   }
 
-  async function applyMapPatch(patch?: MapPatch) {
+  async function applyMapPatch(
+    patch?: MapPatch,
+    options?: { openInspect?: boolean },
+  ) {
     if (!patch) return
+    const openInspect = options?.openInspect === true
     if (patch.focus_map) {
       applyFocusMap(patch.focus_map)
       const highlightId = patch.highlightedNodeIds?.[0]
-      if (highlightId) {
+      if (highlightId && openInspect) {
         await selectEntity(highlightId)
       }
       return
@@ -417,8 +421,10 @@ export const useWorldMapStore = defineStore('worldMap', () => {
           ? (node.id === focus.currentSpaceId ? 'current' : 'active')
           : (node.id === focus.currentSpaceId ? 'current' : 'visible'),
       }))
-      focus.selectedEntityId = patch.highlightedNodeIds[0] ?? null
-      await selectEntity(patch.highlightedNodeIds[0])
+      if (openInspect) {
+        focus.selectedEntityId = patch.highlightedNodeIds[0] ?? null
+        await selectEntity(patch.highlightedNodeIds[0])
+      }
     }
     if (patch.highlightedPath) {
       focus.highlightedPath = patch.highlightedPath
@@ -440,7 +446,7 @@ export const useWorldMapStore = defineStore('worldMap', () => {
     try {
       const { data } = await semanticMapApi.query(query.trim())
       if (!isCurrentMapRequest(seq)) return data
-      await applyMapPatch(data.map_patch)
+      await applyMapPatch(data.map_patch, { openInspect: true })
       return data
     } catch (err) {
       console.warn('[worldMap] searchMap failed:', err)

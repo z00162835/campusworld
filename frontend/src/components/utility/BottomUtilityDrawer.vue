@@ -61,6 +61,15 @@
               <template v-if="entry.preview"> · {{ entry.preview }}</template>
             </div>
           </article>
+          <button
+            v-if="archivedHasMore && !archivedLoading"
+            type="button"
+            class="utility-load-more"
+            :disabled="archivedLoadingMore"
+            @click="loadMoreArchivedHistory"
+          >
+            {{ archivedLoadingMore ? t('worldInteraction.utility.historyLoading') : t('worldInteraction.utility.loadMore') }}
+          </button>
         </div>
 
         <div v-show="activeTab === 'command'" class="drawer-pane">
@@ -86,6 +95,15 @@
               {{ entry.detail }}
             </div>
           </article>
+          <button
+            v-if="archivedHasMore && !archivedLoading"
+            type="button"
+            class="utility-load-more"
+            :disabled="archivedLoadingMore"
+            @click="loadMoreArchivedHistory"
+          >
+            {{ archivedLoadingMore ? t('worldInteraction.utility.historyLoading') : t('worldInteraction.utility.loadMore') }}
+          </button>
         </div>
       </div>
     </div>
@@ -103,10 +121,13 @@ const open = ref(false)
 const activeTab = ref<'conversation' | 'command'>('conversation')
 const {
   archivedLoading,
+  archivedLoadingMore,
   archivedErrorKey,
+  archivedHasMore,
   conversationEntries,
   commandEntries,
   refreshArchivedHistory,
+  loadMoreArchivedHistory,
 } = useUtilityHistory()
 
 async function toggleDrawer() {
@@ -245,6 +266,29 @@ watch(open, value => {
 .utility-banner--error {
   background: rgba(245, 108, 108, 0.08);
   color: var(--color-danger);
+}
+
+.utility-load-more {
+  display: block;
+  width: 100%;
+  margin: var(--spacing-sm) 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-color-light);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.utility-load-more:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.utility-load-more:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }
 
 .history-group {

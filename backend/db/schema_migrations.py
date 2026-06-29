@@ -1340,7 +1340,17 @@ def ensure_account_node_type(engine) -> None:
 
 
 def ensure_world_conversation_archive_ontology(engine) -> None:
-    """Ensure graph ontology for persisted logout conversation archives."""
+    """Ensure graph ontology for persisted logout conversation archives.
+
+    Archives are not account subtypes; they are generic graph nodes owned by an
+    account via the ``owns`` relationship. The typeclass/classname point at the
+    shared ``DefaultObject`` model (no dedicated ORM class exists for archives),
+    matching the ``task`` node-type convention.
+
+    ``ON CONFLICT DO UPDATE`` repairs pre-existing rows that were inserted with
+    the wrong parent_type_code / classname / typeclass; ``DO NOTHING`` would
+    leave those bad rows in place and break model discovery.
+    """
     conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
     try:
         _must_exec(
@@ -1350,13 +1360,22 @@ def ensure_world_conversation_archive_ontology(engine) -> None:
                 type_code, parent_type_code, type_name, typeclass, status, classname, module_path, description,
                 schema_definition, schema_default, inferred_rules, tags, ui_config, trait_class, trait_mask
             ) VALUES (
-                'world_conversation_archive', 'account', 'World conversation archive',
-                'app.repositories.world_conversation_archive.WorldConversationArchiveRepository', 0,
-                'WorldConversationArchive', 'app.repositories.world_conversation_archive',
+                'world_conversation_archive', 'default_object', 'World conversation archive',
+                'app.models.base.DefaultObject', 0,
+                'DefaultObject', 'app.models.base',
                 'Logout-archived AICO and command conversations owned by an account node',
                 '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '["world_history"]'::jsonb, '{}'::jsonb, 'PROCESS', 0
             )
-            ON CONFLICT (type_code) DO NOTHING;
+            ON CONFLICT (type_code) DO UPDATE SET
+                parent_type_code = EXCLUDED.parent_type_code,
+                type_name = EXCLUDED.type_name,
+                typeclass = EXCLUDED.typeclass,
+                classname = EXCLUDED.classname,
+                module_path = EXCLUDED.module_path,
+                description = EXCLUDED.description,
+                tags = EXCLUDED.tags,
+                trait_class = EXCLUDED.trait_class,
+                trait_mask = EXCLUDED.trait_mask;
             """,
             "ensure world_conversation_archive node type failed",
         )

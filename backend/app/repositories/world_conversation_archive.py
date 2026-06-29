@@ -30,8 +30,23 @@ class WorldConversationArchiveRepository:
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[List[Dict[str, Any]], int]:
+        # Only select the precomputed history_summary JSON path plus identity
+        # metadata. Reading the full Node row would hydrate aico_threads and
+        # command_conversation JSONB for every archived batch (tens of MB at the
+        # 50-batch default), which the summary endpoint never needs.
+        history_summary = Node.attributes["history_summary"]
+        archive_id_col = Node.attributes["archive_id"].astext
+        archived_at_col = Node.attributes["archived_at"].astext
+
         base_query = (
-            session.query(Node)
+            session.query(
+                Node.id,
+                Node.uuid,
+                Node.created_at,
+                archive_id_col.label("archive_id"),
+                archived_at_col.label("archived_at"),
+                history_summary.label("history_summary"),
+            )
             .join(Relationship, Relationship.target_id == Node.id)
             .filter(
                 Relationship.source_id == account_node_id,
@@ -42,13 +57,13 @@ class WorldConversationArchiveRepository:
             )
         )
         total = base_query.count()
-        nodes = (
+        rows = (
             base_query.order_by(Node.created_at.desc())
             .offset(max(0, offset))
             .limit(max(1, limit))
             .all()
         )
-        entries = [self._summary_entry_from_node(node) for node in nodes]
+        entries = [self._summary_entry_from_row(row) for row in rows]
         return entries, total
 
     def append_for_account(self, session: Session, account_node: Node, entry: Dict[str, Any]) -> Dict[str, Any]:
@@ -118,16 +133,26 @@ class WorldConversationArchiveRepository:
         )
 
     @staticmethod
-    def _summary_entry_from_node(node: Node) -> Dict[str, Any]:
-        attrs = dict(node.attributes or {})
-        history_summary = dict(attrs.get("history_summary") or {})
-        archived_at = attrs.get("archived_at") or (node.created_at.isoformat() if node.created_at else None)
+    def _summary_entry_from_row(row: Any) -> Dict[str, Any]:
+        # row is a named tuple from the column projection above.
+        attrs_archive_id = row.archive_id
+        attrs_archived_at = row.archived_at
+        archive_id = str(attrs_archive_id or row.uuid or "")
+        archived_at = attrs_archived_at or (row.created_at.isoformat() if row.created_at else None)
+        history_summary = row.history_summary
+        if isinstance(history_summary, str):
+            try:
+                history_summary = json.loads(history_summary)
+            except (TypeError, ValueError):
+                history_summary = None
+        if not isinstance(history_summary, dict):
+            history_summary = {}
         return {
-            "id": str(attrs.get("archive_id") or node.uuid),
+            "id": archive_id,
             "archivedAt": archived_at,
             "history_summary": history_summary,
-            "aico_threads": list(attrs.get("aico_threads") or []),
-            "command_conversation": list(attrs.get("command_conversation") or []),
+            "aico_threads": [],
+            "command_conversation": [],
         }
 
     @staticmethod

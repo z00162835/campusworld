@@ -175,6 +175,33 @@ describe('worldMap store', () => {
     expect(store.nodes[0].status).toBe('active')
   })
 
+  it('applyMapPatch does not open inspect unless explicitly requested', async () => {
+    const store = useWorldMapStore()
+    vi.mocked(semanticMapApi.executeAction).mockClear()
+
+    await store.applyMapPatch({ highlightedNodeIds: [IDS.currentSpace] })
+
+    expect(store.selectedInspect).toBeNull()
+    expect(semanticMapApi.executeAction).not.toHaveBeenCalled()
+    expect(store.nodes.find(node => node.id === IDS.currentSpace)?.status).toBe('current')
+  })
+
+  it('applyMapPatch opens inspect when openInspect is true', async () => {
+    const store = useWorldMapStore()
+    vi.mocked(semanticMapApi.executeAction).mockResolvedValue({
+      data: {
+        space_summary: {
+          space_node: { id: Number(IDS.currentSpace), type_code: 'room', name: 'Current Space', parent_id: null },
+        },
+      },
+    } as any)
+
+    await store.applyMapPatch({ highlightedNodeIds: [IDS.currentSpace] }, { openInspect: true })
+
+    expect(semanticMapApi.executeAction).toHaveBeenCalled()
+    expect(store.selectedInspect?.entityKind).toBe('space')
+  })
+
   it('applyMapPatch merges agentPresences by agentId', async () => {
     const store = useWorldMapStore()
     const focus = store.map!

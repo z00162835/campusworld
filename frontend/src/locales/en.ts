@@ -212,6 +212,7 @@ export default {
       messageCount: '{count} messages',
       historyLoading: 'Loading history…',
       historyLoadFailed: 'Could not load archived history.',
+      loadMore: 'Load more history',
     },
     map: {
       title: 'Map',

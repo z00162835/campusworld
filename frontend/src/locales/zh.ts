@@ -212,6 +212,7 @@ export default {
       messageCount: '{count} 条消息',
       historyLoading: '历史记录加载中…',
       historyLoadFailed: '无法加载归档历史。',
+      loadMore: '加载更多历史',
     },
     map: {
       title: '地图',

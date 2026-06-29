@@ -289,3 +289,111 @@ describe('session action gate', () => {
     expect(store.aicoThreads).toHaveLength(0)
   })
 })
+
+describe('reset generation guard', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('does not let a stale loadCurrent write interactionState after reset', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+
+    let releaseLoad: (() => void) | undefined
+    vi.mocked(worldSessionsApi.getCurrent).mockImplementationOnce(async () => {
+      await new Promise<void>(resolve => {
+        releaseLoad = resolve
+      })
+      return {
+        data: {
+          interaction_state: { session: { id: 'stale' } },
+          display_policy: null,
+          available_worlds: [],
+        },
+      } as any
+    })
+
+    const loadPromise = store.loadCurrent()
+    await vi.waitFor(() => expect(store.loading).toBe(true))
+
+    store.reset()
+    expect(store.interactionState).toBeNull()
+
+    releaseLoad?.()
+    await loadPromise
+
+    // Stale response must not write back into the cleared store.
+    expect(store.interactionState).toBeNull()
+    expect(store.loading).toBe(false)
+  })
+
+  it('does not let a stale executeCommandQuery append messages after reset', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+
+    let releaseQuery: (() => void) | undefined
+    vi.mocked(decisionCenterApi.query).mockImplementationOnce(async () => {
+      await new Promise<void>(resolve => {
+        releaseQuery = resolve
+      })
+      return {
+        data: { answer: 'stale reply', command_result: { message: 'stale reply' } },
+      } as any
+    })
+
+    const queryPromise = store.executeCommandQuery('look')
+    await vi.waitFor(() => expect(store.commandConversation.length).toBe(1))
+
+    store.reset()
+    expect(store.commandConversation).toHaveLength(0)
+
+    releaseQuery?.()
+    await queryPromise
+
+    // The user echo was appended before reset (then cleared); the stale assistant
+    // reply arriving after reset must NOT be appended.
+    expect(store.commandConversation).toHaveLength(0)
+    expect(store.commandLoading).toBe(false)
+  })
+})
+
+describe('archiveConversations sanitized error log', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('logs only status/code/detail and never the Authorization header', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const store = useWorldSessionStore()
+    seedSession(store)
+
+    const { worldHistoryApi, buildArchivePayload } = await import('@/api/worldHistory')
+    vi.mocked(buildArchivePayload).mockReturnValueOnce({
+      aico_threads: [{
+        id: 't1',
+        title: 'Thread',
+        messages: [{ id: 'm1', role: 'user', mode: 'aico', answer: 'hi' }],
+        updatedAt: '2026-06-01T00:00:00.000Z',
+      }],
+      command_conversation: [],
+    })
+
+    const axiosLikeError = {
+      response: { status: 422, data: { detail: 'Archive batch exceeds size limit (512000 bytes)' } },
+      config: { headers: { Authorization: 'Bearer secret-leak-token' } },
+      message: 'Request failed with status code 422',
+    }
+    vi.mocked(worldHistoryApi.archiveConversations).mockRejectedValueOnce(axiosLikeError as any)
+
+    await store.archiveConversations('snapshot-token')
+
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+    const logged = warnSpy.mock.calls[0]!.join(' ')
+    expect(logged).toContain('422')
+    expect(logged).toContain('Archive batch exceeds size limit')
+    expect(logged).not.toContain('secret-leak-token')
+    expect(logged).not.toContain('Bearer')
+  })
+})
