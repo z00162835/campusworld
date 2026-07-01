@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from app.core.log import get_logger, LoggerNames
-from app.commands.command_tool_semantics import resolve_command_tool_semantics
+from app.commands.command_tool_semantics import resolve_command_tool_semantics, resolve_side_effect_level
 from app.models.graph import Node, NodeType
 from app.models.root_manager import RootNodeManager
 from db.ontology.schema_envelope import system_command_ability_node_type_schema_definition
@@ -70,6 +70,30 @@ def _sync_tool_semantics(command_name: str, attrs: Dict[str, Any]) -> None:
         attrs.pop('routing_hint_i18n', None)
     if not isinstance(attrs.get('agent_observation_policy'), dict):
         attrs['agent_observation_policy'] = _default_observation_policy_from_semantics(sem)
+    # --- extended tool contract fields ---
+    attrs['side_effect_level'] = resolve_side_effect_level(sem)
+    attrs['idempotent'] = bool(sem.idempotent)
+    attrs['deterministic'] = bool(sem.deterministic)
+    if sem.input_schema is not None:
+        attrs['input_schema'] = dict(sem.input_schema)
+    else:
+        attrs.pop('input_schema', None)
+    if sem.output_schema is not None:
+        attrs['output_schema'] = dict(sem.output_schema)
+    else:
+        attrs.pop('output_schema', None)
+    if sem.error_schema is not None:
+        attrs['error_schema'] = dict(sem.error_schema)
+    else:
+        attrs.pop('error_schema', None)
+    if sem.data_classification is not None:
+        attrs['data_classification'] = sem.data_classification
+    else:
+        attrs.pop('data_classification', None)
+    if sem.data_scope:
+        attrs['data_scope'] = list(sem.data_scope)
+    else:
+        attrs.pop('data_scope', None)
 
 def _get_or_create_command_ability_type(session: Session) -> Optional[int]:
     try:
