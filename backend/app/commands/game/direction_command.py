@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.orm.attributes import flag_modified
 from app.commands.base import CommandContext, CommandResult, GameCommand
+from app.commands.command_tool_semantics import CommandToolSemantics, build_error_schema
 from app.core.database import db_session_context
 from app.game_engine.direction_util import normalize_direction
 from app.game_engine.subgraph_boundary import bridge_enabled, is_authorized_cross_world_bridge
@@ -14,6 +15,21 @@ from app.models.graph import Node, Relationship
 from app.models.root_manager import root_manager
 
 class MovementCommand(GameCommand):
+
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        invocation_guard={
+            'requires_confirmation': False,
+            'allowed_intents': ['execute'],
+            'side_effect_scope': 'state_change',
+        },
+        side_effect_level='write_low',
+        idempotent=False,
+        deterministic=True,
+        data_classification='internal',
+        data_scope=('room', 'character'),
+        error_schema=build_error_schema(('NOT_FOUND', 'NOT_AVAILABLE', 'POLICY_DENIED')),
+    )
 
     def __init__(self):
         super().__init__(name='go', description='按方向移动（n/s/e/w/ne/nw/se/sw/up/down/in/out）', aliases=['walk'], game_name='')

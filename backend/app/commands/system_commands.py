@@ -10,7 +10,7 @@ from datetime import datetime
 from collections import Counter
 from typing import List, Dict, Any, Optional
 from .base import SystemCommand, CommandResult, CommandType
-from app.commands.command_tool_semantics import CommandToolSemantics, INFORMATIONAL_MANIFEST
+from app.commands.command_tool_semantics import CommandToolSemantics
 
 class HelpCommand(SystemCommand):
     """帮助命令"""
@@ -61,7 +61,15 @@ class HelpCommand(SystemCommand):
 class StatsCommand(SystemCommand):
     """统计命令"""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='read',
+        idempotent=True,
+        deterministic=False,
+        data_classification='internal',
+        data_scope=('account',),
+    )
 
     def __init__(self):
         super().__init__('stats', 'Show system statistics', ['stat', 'system'])
@@ -84,7 +92,14 @@ class StatsCommand(SystemCommand):
 class VersionCommand(SystemCommand):
     """版本命令"""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='none',
+        idempotent=True,
+        deterministic=True,
+        data_classification='public',
+    )
 
     def __init__(self):
         super().__init__('version', 'Show version information', ['ver'])
@@ -95,6 +110,20 @@ class VersionCommand(SystemCommand):
 
 class QuitCommand(SystemCommand):
     """退出命令"""
+
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        invocation_guard={
+            'requires_confirmation': False,
+            'allowed_intents': ['execute'],
+            'side_effect_scope': 'session_end',
+        },
+        manifest_tier='informational',
+        side_effect_level='write_low',
+        idempotent=False,
+        deterministic=True,
+        data_classification='public',
+    )
 
     def __init__(self):
         super().__init__('quit', 'Exit system', ['exit', 'q'])
@@ -111,7 +140,14 @@ class QuitCommand(SystemCommand):
 class TimeCommand(SystemCommand):
     """时间命令"""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='none',
+        idempotent=True,
+        deterministic=False,
+        data_classification='public',
+    )
 
     def __init__(self):
         super().__init__('time', 'Show current time', ['date'])
@@ -127,7 +163,15 @@ class TimeCommand(SystemCommand):
 class WhoamiCommand(SystemCommand):
     """显示当前用户命令"""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='read',
+        idempotent=True,
+        deterministic=True,
+        data_classification='public',
+        data_scope=('account',),
+    )
 
     def __init__(self):
         super().__init__('whoami', 'Show current user', [])
@@ -142,7 +186,15 @@ class WhoamiCommand(SystemCommand):
 class WhoCommand(SystemCommand):
     """显示当前在线会话列表（独立命令，不是 whoami 别名）。"""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='read',
+        idempotent=True,
+        deterministic=False,
+        data_classification='internal',
+        data_scope=('account',),
+    )
 
     def __init__(self):
         super().__init__('who', 'List online users and sessions', [])
@@ -264,7 +316,14 @@ class TypeCommand(SystemCommand):
     database. The text line uses ``-`` when the field is null or only whitespace.
     """
     DEFAULT_LIMIT: int = 8
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='read',
+        idempotent=True,
+        deterministic=True,
+        data_classification='public',
+    )
 
     def __init__(self):
         super().__init__('type', 'List system-registered node types', [])

@@ -17,9 +17,20 @@ def test_read_commands_including_space_use_full_observation():
     from app.commands.init_commands import initialize_commands
 
     initialize_commands(force_reinit=True)
-    for name in ("find", "space", "go"):
+    for name in ("find", "space"):
         policy = resolve_tool_observation_policy(name)
         assert policy.message_mode == "full", name
+
+
+@pytest.mark.unit
+def test_mutate_movement_command_uses_summary_observation():
+    from app.commands.init_commands import initialize_commands
+
+    initialize_commands(force_reinit=True)
+    # ``go`` mutates character location (write_low) so its observation policy
+    # collapses to summary for LLM context, unlike pure read commands.
+    policy = resolve_tool_observation_policy("go")
+    assert policy.message_mode == "summary"
 
 
 @pytest.mark.unit

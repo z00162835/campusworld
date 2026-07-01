@@ -4,14 +4,30 @@ Notice admin command for system bulletin board.
 from __future__ import annotations
 from typing import List, Optional
 from ..base import AdminCommand, CommandContext, CommandResult
-from app.commands.command_tool_semantics import NOTICE_MUTATE_SEMANTICS
+from app.commands.command_tool_semantics import (
+    CommandToolSemantics,
+    NOTICE_SUBCOMMAND_PROFILES,
+    build_error_schema,
+)
 from app.services.bulletin_board import bulletin_board_service
 
 
 class NoticeCommand(AdminCommand):
     """Admin operations: notice publish/edit/archive/list/view."""
 
-    tool_semantics = NOTICE_MUTATE_SEMANTICS
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=NOTICE_SUBCOMMAND_PROFILES,
+        data_classification='internal',
+        data_scope=('system_notice',),
+        error_schema=build_error_schema((
+            'INVALID_PARAM',
+            'NOT_FOUND',
+            'PERMISSION_DENIED',
+            'POLICY_DENIED',
+            'CONFLICT',
+        )),
+    )
 
     def __init__(self):
         super().__init__(name='notice', description='管理系统公告(publish/edit/archive/list/view)', aliases=['notices'])

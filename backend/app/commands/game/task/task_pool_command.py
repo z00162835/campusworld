@@ -17,6 +17,12 @@ import logging
 from typing import Any, Dict, List, Optional
 from sqlalchemy import text
 from app.commands.base import AdminCommand, CommandContext, CommandResult
+from app.commands.command_tool_semantics import (
+    CommandToolSemantics,
+    MUTATE_SUBCOMMAND,
+    READ_SUBCOMMAND,
+    build_error_schema,
+)
 from app.core.database import db_session_context
 from app.services.task.permissions import TASK_POOL_ADMIN, TASK_READ
 from app.services.task.task_pool_service import get_pool_by_key, list_pools
@@ -30,6 +36,27 @@ _DEFAULT_POOL_CONSUME_ACL: Dict[str, Any] = {'_schema_version': 1, 'principal_ki
 
 class TaskPoolCommand(AdminCommand):
     """``task pool`` family — registry CRUD + read."""
+
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=(
+            READ_SUBCOMMAND('list'),
+            READ_SUBCOMMAND('show'),
+            MUTATE_SUBCOMMAND('create'),
+            MUTATE_SUBCOMMAND('update'),
+            MUTATE_SUBCOMMAND('disable'),
+            MUTATE_SUBCOMMAND('enable'),
+        ),
+        data_classification='internal',
+        data_scope=('task',),
+        error_schema=build_error_schema((
+            'INVALID_PARAM',
+            'NOT_FOUND',
+            'PERMISSION_DENIED',
+            'POLICY_DENIED',
+            'CONFLICT',
+        )),
+    )
 
     def __init__(self) -> None:
         super().__init__(name='task.pool', description='Task pool admin/read commands (list / show / create / update / disable / enable)', aliases=[])

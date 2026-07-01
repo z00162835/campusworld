@@ -16,12 +16,19 @@ Usage:
 from __future__ import annotations
 from typing import List
 from app.commands.base import CommandContext, CommandResult, SystemCommand
-from app.commands.command_tool_semantics import INFORMATIONAL_MANIFEST
+from app.commands.command_tool_semantics import CommandToolSemantics
 
 class PrimerCommand(SystemCommand):
     """Expose the CampusWorld system primer to users and agents."""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='none',
+        idempotent=True,
+        deterministic=True,
+        data_classification='public',
+    )
 
     def __init__(self):
         super().__init__('primer', 'CampusWorld system primer — prefer `primer <section>` (e.g. primer ontology) to save tokens; bare `primer` returns the full nine-section document.', aliases=['manual'])

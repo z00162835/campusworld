@@ -146,3 +146,214 @@ def test_create_has_write_high_contract():
 def test_task_has_subcommand_aware_side_effect():
     assert resolve_command_tool_semantics('task', args=['list']).side_effect_level == 'read'
     assert resolve_command_tool_semantics('task', args=['create']).side_effect_level == 'write_high'
+
+
+# ---------------------------------------------------------------------------
+# Wave-2 command tool contract annotations
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+def test_stats_has_read_contract():
+    sem = resolve_command_tool_semantics('stats')
+    assert sem.side_effect_level == 'read'
+    assert sem.data_classification == 'internal'
+    assert sem.manifest_tier == 'informational'
+
+
+@pytest.mark.unit
+def test_version_has_none_side_effect_contract():
+    sem = resolve_command_tool_semantics('version')
+    assert sem.side_effect_level == 'none'
+    assert sem.data_classification == 'public'
+    assert sem.idempotent is True
+
+
+@pytest.mark.unit
+def test_quit_has_write_low_contract():
+    sem = resolve_command_tool_semantics('quit')
+    assert sem.side_effect_level == 'write_low'
+    assert sem.idempotent is False
+    assert sem.data_classification == 'public'
+
+
+@pytest.mark.unit
+def test_time_has_none_side_effect_contract():
+    sem = resolve_command_tool_semantics('time')
+    assert sem.side_effect_level == 'none'
+    assert sem.data_classification == 'public'
+    assert sem.deterministic is False
+
+
+@pytest.mark.unit
+def test_whoami_has_read_contract():
+    sem = resolve_command_tool_semantics('whoami')
+    assert sem.side_effect_level == 'read'
+    assert sem.data_classification == 'public'
+    assert sem.data_scope == ('account',)
+
+
+@pytest.mark.unit
+def test_who_has_read_contract():
+    sem = resolve_command_tool_semantics('who')
+    assert sem.side_effect_level == 'read'
+    assert sem.data_classification == 'internal'
+    assert sem.data_scope == ('account',)
+    assert sem.deterministic is False
+
+
+@pytest.mark.unit
+def test_type_has_read_contract():
+    sem = resolve_command_tool_semantics('type')
+    assert sem.side_effect_level == 'read'
+    assert sem.data_classification == 'public'
+    assert sem.idempotent is True
+
+
+@pytest.mark.unit
+def test_space_has_read_contract():
+    sem = resolve_command_tool_semantics('space')
+    assert sem.side_effect_level == 'read'
+    assert sem.data_classification == 'public'
+    assert sem.idempotent is True
+    assert sem.deterministic is True
+    assert set(sem.data_scope) == {'room', 'building', 'building_floor'}
+    assert sem.error_schema is not None
+
+
+@pytest.mark.unit
+def test_primer_has_none_side_effect_contract():
+    sem = resolve_command_tool_semantics('primer')
+    assert sem.side_effect_level == 'none'
+    assert sem.data_classification == 'public'
+    assert sem.idempotent is True
+    assert sem.deterministic is True
+
+
+@pytest.mark.unit
+def test_agent_has_subcommand_aware_side_effect():
+    assert resolve_command_tool_semantics('agent', args=['list']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('agent', args=['show']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('agent', args=['tool']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('agent', args=['tool', 'add']).side_effect_level == 'write_high'
+    assert resolve_command_tool_semantics('agent', args=['tool', 'del']).side_effect_level == 'write_high'
+
+
+@pytest.mark.unit
+def test_agent_data_classification_internal():
+    sem = resolve_command_tool_semantics('agent')
+    assert sem.data_classification == 'internal'
+    assert sem.data_scope == ('npc_agent',)
+
+
+@pytest.mark.unit
+def test_world_has_subcommand_aware_side_effect():
+    assert resolve_command_tool_semantics('world', args=['list']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('world', args=['status']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('world', args=['install']).side_effect_level == 'write_high'
+
+
+@pytest.mark.unit
+def test_world_data_classification_internal():
+    sem = resolve_command_tool_semantics('world')
+    assert sem.data_classification == 'internal'
+    assert sem.data_scope == ('world',)
+    assert sem.error_schema is not None
+
+
+@pytest.mark.unit
+def test_notice_has_subcommand_aware_side_effect():
+    assert resolve_command_tool_semantics('notice', args=['list']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('notice', args=['view']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('notice', args=['publish']).side_effect_level == 'write_high'
+
+
+@pytest.mark.unit
+def test_notice_data_classification_internal():
+    sem = resolve_command_tool_semantics('notice')
+    assert sem.data_classification == 'internal'
+    assert sem.data_scope == ('system_notice',)
+
+
+@pytest.mark.unit
+def test_find_has_read_contract():
+    sem = resolve_command_tool_semantics('find')
+    assert sem.side_effect_level == 'read'
+    assert sem.data_classification == 'public'
+    assert sem.idempotent is True
+    assert sem.deterministic is True
+
+
+@pytest.mark.unit
+def test_describe_has_read_contract():
+    sem = resolve_command_tool_semantics('describe')
+    assert sem.side_effect_level == 'read'
+    assert sem.data_classification == 'public'
+    assert sem.idempotent is True
+    assert sem.deterministic is True
+
+
+@pytest.mark.unit
+def test_go_has_write_low_contract():
+    sem = resolve_command_tool_semantics('go')
+    assert sem.side_effect_level == 'write_low'
+    assert sem.idempotent is False
+    assert sem.data_classification == 'internal'
+    assert set(sem.data_scope) == {'room', 'character'}
+
+
+@pytest.mark.unit
+def test_enter_has_write_low_contract():
+    sem = resolve_command_tool_semantics('enter')
+    assert sem.side_effect_level == 'write_low'
+    assert sem.idempotent is False
+    assert sem.data_classification == 'internal'
+    assert set(sem.data_scope) == {'world', 'world_entrance'}
+
+
+@pytest.mark.unit
+def test_leave_has_write_low_contract():
+    sem = resolve_command_tool_semantics('leave')
+    assert sem.side_effect_level == 'write_low'
+    assert sem.idempotent is False
+    assert sem.data_classification == 'internal'
+
+
+@pytest.mark.unit
+def test_task_pool_classvar_subcommand_aware():
+    # TaskPoolCommand is not registered as a standalone command; it is invoked
+    # internally by TaskCommand._do_pool. Assert the ClassVar contract directly.
+    import dataclasses
+    from app.commands.command_tool_semantics import (
+        default_guard_for,
+        resolve_side_effect_level,
+    )
+    from app.commands.game.task.task_pool_command import TaskPoolCommand
+
+    base = TaskPoolCommand.tool_semantics
+    assert base.data_classification == 'internal'
+    assert base.data_scope == ('task',)
+    assert base.side_effect_level is None  # subcommand-derived
+
+    read_rule = next(r for r in base.subcommand_profiles if r.arg_prefix == ('list',))
+    read_sem = dataclasses.replace(
+        base,
+        interaction_profile=read_rule.interaction_profile,
+        invocation_guard=default_guard_for(read_rule.interaction_profile),
+    )
+    assert resolve_side_effect_level(read_sem) == 'read'
+
+    mutate_rule = next(r for r in base.subcommand_profiles if r.arg_prefix == ('create',))
+    mutate_sem = dataclasses.replace(
+        base,
+        interaction_profile=mutate_rule.interaction_profile,
+        invocation_guard=default_guard_for(mutate_rule.interaction_profile),
+    )
+    assert resolve_side_effect_level(mutate_sem) == 'write_high'
+
+
+@pytest.mark.unit
+def test_task_pool_not_registered_returns_pending():
+    # TaskPoolCommand is dispatched via TaskCommand._do_pool, not the registry.
+    sem = resolve_command_tool_semantics('task.pool', args=['list'])
+    assert sem.semantic_pending is True
+

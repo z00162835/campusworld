@@ -24,7 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from app.commands.base import CommandContext, CommandResult, SystemCommand
-from app.commands.command_tool_semantics import INFORMATIONAL_MANIFEST
+from app.commands.command_tool_semantics import CommandToolSemantics, build_error_schema
 from app.commands.space_command import SpaceCommand
 _DEFAULT_LIMIT = 12
 _MAX_LIMIT = 50
@@ -214,7 +214,15 @@ def _truncate(text: Optional[str], max_chars: int) -> str:
 class FindCommand(SystemCommand):
     """Find graph nodes by name/description/id/account (Evennia-style ``find``)."""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='read',
+        idempotent=True,
+        deterministic=True,
+        data_classification='public',
+        error_schema=build_error_schema(('INVALID_PARAM', 'NOT_FOUND')),
+    )
 
     def __init__(self):
         super().__init__('find', 'Find graph nodes. Flags AND-compose: -n name, -des desc, -t type, -loc id, -l N, -a (capped). Shortcuts: #<id>, *<account>. Returns data.results [{id,type_code,name,location_id,description}] + total/next_offset. Not semantic.', aliases=['@find', 'locate'])
@@ -246,7 +254,15 @@ class FindCommand(SystemCommand):
 class DescribeCommand(SystemCommand):
     """Render one graph node with its attributes, location, and a sample of edges."""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='read',
+        idempotent=True,
+        deterministic=True,
+        data_classification='public',
+        error_schema=build_error_schema(('INVALID_PARAM', 'NOT_FOUND')),
+    )
 
     def __init__(self):
         super().__init__('describe', "Show a single graph node's details (type, name, description, attrs, edges).", aliases=['examine', 'ex'])

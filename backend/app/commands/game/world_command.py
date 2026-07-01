@@ -6,7 +6,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import yaml
 from app.commands.base import AdminCommand, CommandContext, CommandResult
-from app.commands.command_tool_semantics import WORLD_MUTATE_SEMANTICS
+from app.commands.command_tool_semantics import (
+    CommandToolSemantics,
+    WORLD_SUBCOMMAND_PROFILES,
+    build_error_schema,
+)
 from app.core.database import db_session_context
 from app.core.permissions import permission_checker
 from app.game_engine.manager import game_engine_manager
@@ -54,7 +58,20 @@ def _format_world_list_message(rows: List[Dict[str, Any]]) -> str:
 
 class WorldCommand(AdminCommand):
     """Admin world operations: list/install/uninstall/reload/status/validate/repair, and bridge subcommands."""
-    tool_semantics = WORLD_MUTATE_SEMANTICS
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=WORLD_SUBCOMMAND_PROFILES,
+        data_classification='internal',
+        data_scope=('world',),
+        error_schema=build_error_schema((
+            'INVALID_PARAM',
+            'NOT_FOUND',
+            'PERMISSION_DENIED',
+            'POLICY_DENIED',
+            'CONFLICT',
+            'NOT_AVAILABLE',
+        )),
+    )
     _SUB_PERM: Dict[str, str] = {'list': 'admin.world.read', 'status': 'admin.world.read', 'install': 'admin.world.manage', 'uninstall': 'admin.world.manage', 'reload': 'admin.world.manage', 'validate': 'admin.world.maintain', 'repair': 'admin.world.maintain', 'content': 'admin.world.maintain'}
 
     def __init__(self):

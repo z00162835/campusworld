@@ -3,10 +3,26 @@ Enter world command.
 """
 from typing import List
 from ..base import GameCommand, CommandContext, CommandResult
+from app.commands.command_tool_semantics import CommandToolSemantics, build_error_schema
 from app.game_engine.world_entry_service import world_entry_service
 from .direction_command import FixedDirectionCommand
 
 class EnterWorldCommand(GameCommand):
+
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        invocation_guard={
+            'requires_confirmation': False,
+            'allowed_intents': ['execute'],
+            'side_effect_scope': 'state_change',
+        },
+        side_effect_level='write_low',
+        idempotent=False,
+        deterministic=True,
+        data_classification='internal',
+        data_scope=('world', 'world_entrance'),
+        error_schema=build_error_schema(('NOT_FOUND', 'NOT_AVAILABLE', 'PERMISSION_DENIED', 'POLICY_DENIED')),
+    )
 
     def __init__(self):
         super().__init__(name='enter', description='进入指定世界（通用命令）', aliases=[], game_name='')
