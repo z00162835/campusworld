@@ -29,6 +29,14 @@
 - **AICO 特化须有独立实现单元**：在 **L3′（AICO 思考管线特化）** 与 **L4′（AICO 经验/Skill 组合）** 上应有 **独立模块或子包**（如 `aico/` 编排器、AICO 专属 `preflight`、默认 prompt 与工具偏好），**调用** 公共 L2/L3 API，**不**复制 L1 数据语义或绕过 **`authorize_command`**。公共实现 **不**硬编码 `aico`（种子、默认 YAML 键等约定处除外）。
 - **验收暗示**：能区分「改 L1 本体」「改 L2 命令工具」「改 L3 通用思考框架」与「仅改 AICO 的 L3′/L4′」；测试可对通用 `npc_agent` 与 **`service_id=aico`** 分别覆盖。
 
+### 1.3 Tool Contract（CommandToolSemantics as Tool Profile）
+
+`CommandToolSemantics`（`BaseCommand` 上的 `ClassVar`，即 `tool_semantics`）是每条命令 **按工具类型的内在契约** 的唯一真源 —— 项目的 **Tool Profile**。它承载：`interaction_profile`（粗粒度 `read` / `mutate`）、`side_effect_level`（细化 `none` / `read` / `write_low` / `write_high`）、`idempotent` / `deterministic`、`input_schema` / `output_schema` / `error_schema`（JSON Schema）、`data_classification`（`public` / `internal` / `confidential` / `restricted`）、`data_scope`（`NodeType.type_code` 元组），以及既有的 `invocation_guard` / `manifest_tier` / `routing_hint`。
+
+`system_command_ability` 图节点是 **只读镜像**，由 `ability_sync._sync_tool_semantics` 自 `CommandToolSemantics` **单向同步**。运行时消费方（`build_llm_tool_manifest`、`execution_gate`、`tool_observation_policy`）**只读 `CommandToolSemantics`**；节点镜像服务于图查询、NPC 能力发现、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md) 的工具路由/preplan 与审计。**授权仍在 `command_policies`** 中维护，不随镜像下沉。
+
+`side_effect_level` 采用 **混合解析**：显式声明优先；否则由 `interaction_profile` 与 `invocation_guard.requires_confirmation` 派生（`read` → `read`；`mutate` + 确认 → `write_high`；`mutate` + 无确认 → `write_low`）。`none` 是 **纯无副作用信息类命令** 的显式 opt-in，不参与派生。该解析由 `resolve_side_effect_level` 实现，错误契约由 `build_error_schema` 基于 **平台统一错误码** 生成。
+
 ---
 
 ## 2. Non-Goals
