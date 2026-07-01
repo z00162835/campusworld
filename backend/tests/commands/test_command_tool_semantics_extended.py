@@ -90,3 +90,19 @@ def test_validate_data_scope_against_known_type_codes():
     # unknown type_code returned in error list
     bad = validate_data_scope(('nonexistent_type',))
     assert 'nonexistent_type' in bad
+
+
+@pytest.mark.unit
+def test_error_schema_must_use_platform_codes():
+    from app.commands.command_tool_semantics import build_error_schema, PLATFORM_ERROR_CODES
+    schema = build_error_schema(codes=('NOT_FOUND', 'INVALID_PARAM'))
+    assert set(schema['properties']['code']['enum']).issubset(PLATFORM_ERROR_CODES)
+    assert schema['properties']['code']['enum'] == ['NOT_FOUND', 'INVALID_PARAM']
+    assert schema['properties']['message']['type'] == 'string'
+
+
+@pytest.mark.unit
+def test_error_schema_rejects_unknown_code():
+    from app.commands.command_tool_semantics import build_error_schema
+    with pytest.raises(ValueError):
+        build_error_schema(codes=('BOGUS_CODE',))

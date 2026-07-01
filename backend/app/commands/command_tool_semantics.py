@@ -95,6 +95,26 @@ class CommandToolSemantics:
         }
 
 
+def build_error_schema(codes: Tuple[str, ...]) -> Dict[str, Any]:
+    """Build a JSON Schema for command errors using platform-unified codes.
+
+    The localized message for each code is resolved at presentation time via
+    the i18n key ``command.error.<code>`` (existing i18n/command_resource pipeline).
+    """
+    unknown = [c for c in codes if c not in PLATFORM_ERROR_CODES]
+    if unknown:
+        raise ValueError(f'unknown platform error codes: {unknown}')
+    return {
+        'type': 'object',
+        'required': ['code', 'message'],
+        'properties': {
+            'code': {'type': 'string', 'enum': list(codes)},
+            'message': {'type': 'string'},
+            'retryable': {'type': 'boolean'},
+        },
+    }
+
+
 def resolve_side_effect_level(sem: 'CommandToolSemantics') -> 'ToolSideEffectLevel':
     """Hybrid: explicit declaration wins; else derive from interaction_profile + invocation_guard."""
     if sem.side_effect_level is not None:

@@ -285,3 +285,14 @@ commands:
       expansion_backpressure: "expand 背压：{detail}"
       unauthenticated: "调用方未通过账号系统认证，任务系统拒绝处理：{detail}"
       visibility_unsupported: "不支持该可见性等级（仅支持 private / explicit / pool_open）：{detail}"
+command:
+  error:
+    INVALID_PARAM: "参数无效"
+    NOT_FOUND: "未找到"
+    TIMEOUT: "请求超时"
+    SERVICE_ERROR: "服务暂时不可用"
+    RATE_LIMIT: "请求过于频繁"
+    PERMISSION_DENIED: "权限不足"
+    POLICY_DENIED: "策略拒绝"
+    CONFLICT: "状态冲突"
+    NOT_AVAILABLE: "当前不可用"

@@ -293,3 +293,14 @@ commands:
       expansion_backpressure: "expand backpressure: {detail}"
       unauthenticated: "Caller is not authenticated via the account system; task system refuses to act: {detail}"
       visibility_unsupported: "Visibility level not supported (allowed: private, explicit, pool_open): {detail}"
+command:
+  error:
+    INVALID_PARAM: "Invalid parameter"
+    NOT_FOUND: "Not found"
+    TIMEOUT: "Request timed out"
+    SERVICE_ERROR: "Service temporarily unavailable"
+    RATE_LIMIT: "Rate limit exceeded"
+    PERMISSION_DENIED: "Permission denied"
+    POLICY_DENIED: "Denied by policy"
+    CONFLICT: "State conflict"
+    NOT_AVAILABLE: "Currently unavailable"
