@@ -10,12 +10,31 @@ from datetime import datetime
 from collections import Counter
 from typing import List, Dict, Any, Optional
 from .base import SystemCommand, CommandResult, CommandType
-from app.commands.command_tool_semantics import INFORMATIONAL_MANIFEST
+from app.commands.command_tool_semantics import CommandToolSemantics, INFORMATIONAL_MANIFEST
 
 class HelpCommand(SystemCommand):
     """帮助命令"""
 
-    tool_semantics = INFORMATIONAL_MANIFEST
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='read',
+        manifest_tier='informational',
+        side_effect_level='none',
+        idempotent=True,
+        deterministic=True,
+        data_classification='public',
+        input_schema={
+            'type': 'object',
+            'properties': {
+                'topic': {'type': 'string', 'description': 'command name to get help for'},
+            },
+        },
+        output_schema={
+            'type': 'object',
+            'properties': {
+                'help_text': {'type': 'string'},
+            },
+        },
+    )
 
     def __init__(self):
         super().__init__('help', 'List available commands for the current caller, or show detailed help for one command.', ['h', '?'])

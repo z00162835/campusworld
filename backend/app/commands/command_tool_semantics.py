@@ -251,7 +251,13 @@ def resolve_command_tool_semantics(
     command_name: str,
     args: Optional[Sequence[str]] = None,
 ) -> CommandToolSemantics:
-    """Resolve semantics from registry ClassVar only (no command-name frozensets)."""
+    """Resolve semantics from registry ClassVar only (no command-name frozensets).
+
+    When the resolved semantics leaves ``side_effect_level`` unset (None), the
+    effective level is derived from the interaction profile and invocation
+    guard so callers observe a concrete side-effect contract without having to
+    invoke ``resolve_side_effect_level`` separately.
+    """
     from app.commands.registry import command_registry
 
     name = str(command_name or '').strip().lower()
@@ -260,16 +266,21 @@ def resolve_command_tool_semantics(
         return CommandToolSemantics(interaction_profile='read', semantic_pending=True)
     base = getattr(type(cmd), 'tool_semantics', DEFAULT_READ_SEMANTICS)
     if not args or not base.subcommand_profiles:
-        return base
-    matched = _match_subcommand_rule(base.subcommand_profiles, args)
-    if matched is None:
-        return base
-    guard = matched.invocation_guard if matched.invocation_guard is not None else default_guard_for(matched.interaction_profile)
-    return dataclasses.replace(
-        base,
-        interaction_profile=matched.interaction_profile,
-        invocation_guard=dict(guard),
-    )
+        resolved = base
+    else:
+        matched = _match_subcommand_rule(base.subcommand_profiles, args)
+        if matched is None:
+            resolved = base
+        else:
+            guard = matched.invocation_guard if matched.invocation_guard is not None else default_guard_for(matched.interaction_profile)
+            resolved = dataclasses.replace(
+                base,
+                interaction_profile=matched.interaction_profile,
+                invocation_guard=dict(guard),
+            )
+    if resolved.side_effect_level is None:
+        return dataclasses.replace(resolved, side_effect_level=resolve_side_effect_level(resolved))
+    return resolved
 
 
 def get_command_tool_semantics(

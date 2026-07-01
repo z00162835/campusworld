@@ -29,7 +29,7 @@ from app.services.task.task_visibility_sql import (
 from app.services.task.permissions import TASK_ASSIGN, TASK_CLAIM, TASK_CREATE, TASK_PUBLISH, TASK_READ, TASK_UPDATE
 from app.services.task.task_state_machine import TransitionResult, create_task, transition
 from app.services.task.visibility import PHASE_B_SUPPORTED_VISIBILITIES, is_phase_b_supported
-from app.commands.command_tool_semantics import TASK_MUTATE_SEMANTICS
+from app.commands.command_tool_semantics import CommandToolSemantics, TASK_SUBCOMMAND_PROFILES, build_error_schema
 from ._helpers import correlation_id_from_context, derive_idempotency_key, i18n, parse_argv, require_permission, resolve_principal_or_error, task_error_to_result, trace_id_from_context, usage_result
 from .task_pool_command import execute_task_pool_command
 logger = logging.getLogger(__name__)
@@ -42,7 +42,18 @@ _TASK_LIST_MAX_LIMIT = max(1, int(os.getenv('TASK_LIST_MAX_LIMIT', '200')))
 class TaskCommand(GameCommand):
     """Phase B implementation of the ``task`` command family."""
 
-    tool_semantics = TASK_MUTATE_SEMANTICS
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=TASK_SUBCOMMAND_PROFILES,
+        routing_hint='For task examples/syntax/usage, route to `help task` (or primer) first; call state-changing subcommands only after explicit execution intent and confirmation.',
+        routing_hint_i18n={
+            'zh-CN': '若用户问 task 的例子/语法/用法，先走 help task（或 primer）；不要把示例请求当作执行请求。仅在用户明确执行且确认后才可调用会改状态的 task 子命令。',
+            'en-US': 'For task examples/syntax/usage, route to `help task` (or primer) first; do not treat example requests as execute intent. Call state-changing task subcommands only after explicit execution intent and confirmation.',
+        },
+        data_classification='internal',
+        data_scope=('task',),
+        error_schema=build_error_schema(('INVALID_PARAM', 'NOT_FOUND', 'PERMISSION_DENIED', 'POLICY_DENIED', 'CONFLICT')),
+    )
 
     def __init__(self) -> None:
         super().__init__(name='task', description='Task command family (create / list / show / claim / assign / publish / complete)', aliases=['tasks'], game_name='campusworld')

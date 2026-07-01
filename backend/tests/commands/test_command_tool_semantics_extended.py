@@ -5,6 +5,12 @@ from app.commands.command_tool_semantics import (
     resolve_side_effect_level,
     PLATFORM_ERROR_CODES,
 )
+from app.commands.init_commands import initialize_commands
+
+
+@pytest.fixture(scope='module', autouse=True)
+def _init_commands():
+    initialize_commands(force_reinit=True)
 
 
 @pytest.mark.unit
@@ -106,3 +112,37 @@ def test_error_schema_rejects_unknown_code():
     from app.commands.command_tool_semantics import build_error_schema
     with pytest.raises(ValueError):
         build_error_schema(codes=('BOGUS_CODE',))
+
+
+@pytest.mark.unit
+def test_look_has_structured_contract():
+    sem = resolve_command_tool_semantics('look')
+    assert sem.side_effect_level == 'none'
+    assert sem.idempotent is True
+    assert sem.deterministic is True
+    assert sem.data_classification == 'public'
+    assert sem.input_schema is not None
+    assert 'target' in sem.input_schema.get('properties', {})
+
+
+@pytest.mark.unit
+def test_help_has_read_contract():
+    sem = resolve_command_tool_semantics('help')
+    assert sem.side_effect_level == 'none'
+    assert sem.data_classification == 'public'
+    assert sem.input_schema is not None
+
+
+@pytest.mark.unit
+def test_create_has_write_high_contract():
+    sem = resolve_command_tool_semantics('create')
+    assert sem.side_effect_level == 'write_high'
+    assert sem.data_classification == 'internal'
+    assert sem.error_schema is not None
+    assert 'POLICY_DENIED' in sem.error_schema['properties']['code']['enum']
+
+
+@pytest.mark.unit
+def test_task_has_subcommand_aware_side_effect():
+    assert resolve_command_tool_semantics('task', args=['list']).side_effect_level == 'read'
+    assert resolve_command_tool_semantics('task', args=['create']).side_effect_level == 'write_high'

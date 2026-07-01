@@ -5,14 +5,41 @@ import json
 import ast
 from typing import List, Dict, Any, Optional, Type
 from app.commands.base import BaseCommand, CommandResult, CommandType
-from app.commands.command_tool_semantics import CREATE_MUTATE_SEMANTICS
+from app.commands.command_tool_semantics import CommandToolSemantics, build_error_schema
 from app.commands.builder.model_discovery import model_discoverer
 from app.models.base import DefaultObject
 from app.core.log import get_logger, LoggerNames
 
 class CreateCommand(BaseCommand):
 
-    tool_semantics = CREATE_MUTATE_SEMANTICS
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        routing_hint='Example/syntax requests should use `help create`; call only with explicit execution intent and confirmation.',
+        routing_hint_i18n={
+            'zh-CN': 'create 会改变系统状态。示例/语法问题应使用 help create；仅在明确执行且确认后调用。',
+            'en-US': 'create mutates system state. Example/syntax requests should use `help create`; call only with explicit execution intent and confirmation.',
+        },
+        side_effect_level='write_high',
+        idempotent=False,
+        deterministic=False,
+        data_classification='internal',
+        data_scope=('room', 'building', 'world_object'),
+        input_schema={
+            'type': 'object',
+            'properties': {
+                'kind': {'type': 'string', 'description': 'entity kind to create'},
+                'name': {'type': 'string'},
+            },
+        },
+        output_schema={
+            'type': 'object',
+            'properties': {
+                'created_id': {'type': 'string'},
+                'message': {'type': 'string'},
+            },
+        },
+        error_schema=build_error_schema(('INVALID_PARAM', 'PERMISSION_DENIED', 'POLICY_DENIED', 'CONFLICT', 'NOT_AVAILABLE')),
+    )
 
     def __init__(self):
         super().__init__(name='create', description='创建对象 - create ClassName = {参数}', aliases=['spawn', 'build', 'make'], command_type=CommandType.ADMIN)
