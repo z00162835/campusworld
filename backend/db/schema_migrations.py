@@ -1010,6 +1010,34 @@ def ensure_builtin_node_type_schema_envelopes(engine) -> None:
         conn.close()
 
 
+def ensure_command_ability_envelope_refresh(engine) -> None:
+    """Force-refresh ``system_command_ability.schema_definition`` to the canonical
+    envelope so the extended tool-contract fields appear even when the stored
+    envelope already has the JSON Schema object shape that the idempotent guard in
+    ``ensure_builtin_node_type_schema_envelopes`` would otherwise skip.
+
+    Idempotent: writes the canonical envelope each run via a cheap single-row
+    UPDATE. Safe to call on databases where the ``system_command_ability`` row is
+    absent (the UPDATE matches zero rows).
+    """
+    import json
+
+    from db.ontology.schema_envelope import system_command_ability_node_type_schema_definition
+
+    sd = system_command_ability_node_type_schema_definition()
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        conn.execute(
+            text(
+                "UPDATE node_types SET schema_definition = CAST(:js AS jsonb) "
+                "WHERE type_code = 'system_command_ability'"
+            ),
+            {"js": json.dumps(sd, ensure_ascii=False)},
+        )
+    finally:
+        conn.close()
+
+
 def ensure_nodes_world_id_index(engine) -> None:
     """
     Partial B-tree on (attributes->>'world_id') for world-scoped graph read filters.
