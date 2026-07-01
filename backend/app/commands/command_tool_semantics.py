@@ -148,7 +148,6 @@ def validate_data_scope(scope: Tuple[str, ...]) -> List[str]:
 
 
 DEFAULT_READ_SEMANTICS = CommandToolSemantics(interaction_profile='read')
-DEFAULT_MUTATE_SEMANTICS = CommandToolSemantics(interaction_profile='mutate')
 
 READ_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read')
 MUTATE_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='mutate')
@@ -182,17 +181,6 @@ AGENT_SUBCOMMAND_PROFILES = (
     MUTATE_SUBCOMMAND('tool', 'del'),
 )
 
-INFORMATIONAL_MANIFEST = dataclasses.replace(DEFAULT_READ_SEMANTICS, manifest_tier='informational')
-
-CREATE_MUTATE_SEMANTICS = CommandToolSemantics(
-    interaction_profile='mutate',
-    routing_hint='Example/syntax requests should use `help create`; call only with explicit execution intent and confirmation.',
-    routing_hint_i18n={
-        'zh-CN': 'create 会改变系统状态。示例/语法问题应使用 help create；仅在明确执行且确认后调用。',
-        'en-US': 'create mutates system state. Example/syntax requests should use `help create`; call only with explicit execution intent and confirmation.',
-    },
-)
-
 TASK_MUTATE_SEMANTICS = CommandToolSemantics(
     interaction_profile='mutate',
     subcommand_profiles=TASK_SUBCOMMAND_PROFILES,
@@ -201,22 +189,6 @@ TASK_MUTATE_SEMANTICS = CommandToolSemantics(
         'zh-CN': '若用户问 task 的例子/语法/用法，先走 help task（或 primer）；不要把示例请求当作执行请求。仅在用户明确执行且确认后才可调用会改状态的 task 子命令。',
         'en-US': 'For task examples/syntax/usage, route to `help task` (or primer) first; do not treat example requests as execute intent. Call state-changing task subcommands only after explicit execution intent and confirmation.',
     },
-)
-
-WORLD_MUTATE_SEMANTICS = CommandToolSemantics(
-    interaction_profile='mutate',
-    subcommand_profiles=WORLD_SUBCOMMAND_PROFILES,
-)
-
-NOTICE_MUTATE_SEMANTICS = CommandToolSemantics(
-    interaction_profile='mutate',
-    subcommand_profiles=NOTICE_SUBCOMMAND_PROFILES,
-)
-
-AGENT_READ_SEMANTICS = CommandToolSemantics(
-    interaction_profile='read',
-    subcommand_profiles=AGENT_SUBCOMMAND_PROFILES,
-    manifest_tier='informational',
 )
 
 

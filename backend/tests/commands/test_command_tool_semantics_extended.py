@@ -149,7 +149,7 @@ def test_task_has_subcommand_aware_side_effect():
 
 
 # ---------------------------------------------------------------------------
-# Wave-2 command tool contract annotations
+# Extended command tool contract annotations
 # ---------------------------------------------------------------------------
 
 @pytest.mark.unit
