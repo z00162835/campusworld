@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-from app.commands.command_tool_semantics import get_command_tool_semantics, pick_routing_hint, resolve_command_tool_semantics
+from app.commands.command_tool_semantics import pick_routing_hint, resolve_command_tool_semantics
 from app.game_engine.agent_runtime.tool_calling import ToolSchema, tool_schemas_from_surface
 from app.game_engine.agent_runtime.world_runtime_queries import installed_worlds_from_session
 
@@ -113,26 +113,6 @@ def _llm_hint_from_command_node(session, name: str, *, locale: str) -> Optional[
         return None
     return None
 
-def _command_semantics_from_node(session, name: str) -> Dict[str, Any]:
-    sem = resolve_command_tool_semantics(name)
-    out = get_command_tool_semantics(name)
-    if session is None:
-        return out
-    try:
-        from app.models.graph import Node
-        row = session.query(Node).filter(Node.type_code == 'system_command_ability', Node.attributes['command_name'].astext == name, Node.is_active == True).first()
-        if row is None:
-            return out
-        attrs = row.attributes or {}
-        routing = pick_routing_hint(attrs, 'en-US')
-        if routing:
-            out['routing_hint'] = routing
-        if isinstance(attrs.get('routing_hint_i18n'), dict):
-            out['routing_hint_i18n'] = dict(attrs['routing_hint_i18n'])
-    except Exception:
-        return out
-    return out
-
 def _manifest_section_title(locale: str, profile: str) -> str:
     zh = str(locale or '').lower().startswith('zh')
     if profile == 'read':
@@ -179,7 +159,7 @@ def build_llm_tool_manifest(surface, command_registry, *, session=None, locale: 
     rows_by_profile: Dict[str, List[str]] = {'read': [], 'mutate': [], 'other': []}
     for schema in schemas:
         hint = _llm_hint_from_command_node(session, schema.name, locale=loc)
-        sem = _command_semantics_from_node(session, schema.name)
+        sem_obj = resolve_command_tool_semantics(schema.name)
         cmd = command_registry.get_command(schema.name)
         reg_desc = ''
         if cmd is not None:
@@ -188,21 +168,22 @@ def build_llm_tool_manifest(surface, command_registry, *, session=None, locale: 
             except Exception:
                 reg_desc = (getattr(cmd, 'description', None) or '').strip()
         desc = (hint or reg_desc or schema.description or '').strip()
-        profile = str(sem.get('interaction_profile') or 'read').strip().lower()
+        profile = str(sem_obj.interaction_profile or 'read').strip().lower()
         if profile not in {'read', 'mutate'}:
             profile = 'other'
         if manifest_interaction_filter == 'informational':
-            tier = str(sem.get('manifest_tier') or 'none').strip().lower()
+            tier = str(sem_obj.manifest_tier or 'none').strip().lower()
             if tier != 'informational':
                 continue
-        attrs_for_hint = {'routing_hint': sem.get('routing_hint'), 'routing_hint_i18n': sem.get('routing_hint_i18n')}
+        attrs_for_hint = {'routing_hint': sem_obj.routing_hint, 'routing_hint_i18n': sem_obj.routing_hint_i18n}
         routing_hint = pick_routing_hint(attrs_for_hint, loc) or ''
         schema_desc = desc
         if routing_hint:
             schema_desc = f'{desc} Routing: {routing_hint}'
         if len(schema_desc) > max_description_chars:
             schema_desc = schema_desc[:max_description_chars - 3] + '...'
-        patched.append(ToolSchema(name=schema.name, description=schema_desc, input_schema=dict(schema.input_schema)))
+        effective_input_schema = dict(sem_obj.input_schema) if sem_obj.input_schema is not None else dict(schema.input_schema)
+        patched.append(ToolSchema(name=schema.name, description=schema_desc, input_schema=effective_input_schema))
         usage = ''
         if cmd is not None:
             try:
