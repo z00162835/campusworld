@@ -1,6 +1,6 @@
 """Manifest must surface a command's declared ``CommandToolSemantics.input_schema``.
 
-P0-8: ``build_llm_tool_manifest`` resolves contract fields via
+``build_llm_tool_manifest`` resolves contract fields via
 ``resolve_command_tool_semantics`` (registry ClassVar, no DB read) and, when a
 command declares a structured ``input_schema``, emits that schema in the
 manifest entry instead of the default args-array schema derived from
