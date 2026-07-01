@@ -71,3 +71,22 @@ def test_resolve_side_effect_level_derive_write_low():
         invocation_guard={'requires_confirmation': False, 'allowed_intents': ['execute'], 'side_effect_scope': 'state_change'},
     )
     assert resolve_side_effect_level(sem) == 'write_low'
+
+
+@pytest.mark.unit
+def test_data_classification_only_accepts_known_tiers():
+    # dataclass is not frozen-enforcing on Literal at runtime, but to_dict must round-trip
+    sem = CommandToolSemantics(interaction_profile='read', data_classification='confidential', data_scope=('task', 'room'))
+    d = sem.to_dict()
+    assert d['data_classification'] == 'confidential'
+    assert d['data_scope'] == ['task', 'room']
+
+
+@pytest.mark.integration
+def test_validate_data_scope_against_known_type_codes():
+    from app.commands.command_tool_semantics import validate_data_scope
+    # known type_codes from graph seed
+    assert validate_data_scope(('room', 'building')) == []
+    # unknown type_code returned in error list
+    bad = validate_data_scope(('nonexistent_type',))
+    assert 'nonexistent_type' in bad

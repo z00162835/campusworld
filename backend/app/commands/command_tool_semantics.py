@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 InteractionProfile = Literal['read', 'mutate']
 ManifestTier = Literal['informational', 'full', 'none']
@@ -106,6 +106,25 @@ def resolve_side_effect_level(sem: 'CommandToolSemantics') -> 'ToolSideEffectLev
     if bool(guard.get('requires_confirmation', True)):
         return 'write_high'
     return 'write_low'
+
+
+def validate_data_scope(scope: Tuple[str, ...]) -> List[str]:
+    """Return any type_codes in ``scope`` not registered in the graph ontology.
+
+    An empty list means every entry is a known ``NodeType.type_code``. When the
+    database is unavailable, returns an empty list so callers can audit
+    separately rather than blocking on infrastructure failures.
+    """
+    if not scope:
+        return []
+    from app.models.graph import NodeType
+    from app.core.database import db_session_context
+    try:
+        with db_session_context() as session:
+            known = {row[0] for row in session.query(NodeType.type_code).all()}
+    except Exception:
+        return []
+    return [s for s in scope if s not in known]
 
 
 DEFAULT_READ_SEMANTICS = CommandToolSemantics(interaction_profile='read')
