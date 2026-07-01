@@ -40,11 +40,12 @@ def _exec(engine, sql: str, params=None):
         return conn.execute(text(sql), params or {})
 
 
-def test_ensure_command_ability_envelope_refresh_updates_stale_envelope(engine):
-    from db.schema_migrations import ensure_command_ability_envelope_refresh
-
-    # Ensure the system_command_ability node_type row exists so the UPDATE has a
-    # target. Uses ON CONFLICT DO NOTHING so this is safe on fresh and existing DBs.
+def _ensure_command_ability_type_row(engine) -> None:
+    """Ensure the ``system_command_ability`` node_type row exists so the refresh
+    UPDATE has a target. Uses ON CONFLICT DO NOTHING so this is safe on fresh and
+    existing DBs. The row is normally created by ``app/commands/ability_sync.py``,
+    not by the ontology seed, so each test must guarantee its presence independently.
+    """
     _exec(
         engine,
         """
@@ -61,6 +62,12 @@ def test_ensure_command_ability_envelope_refresh_updates_stale_envelope(engine):
         ON CONFLICT (type_code) DO NOTHING;
         """,
     )
+
+
+def test_ensure_command_ability_envelope_refresh_updates_stale_envelope(engine):
+    from db.schema_migrations import ensure_command_ability_envelope_refresh
+
+    _ensure_command_ability_type_row(engine)
 
     # Force a stale envelope that already looks like a JSON Schema object (so the
     # idempotent guard in ensure_builtin_node_type_schema_envelopes would skip it)
@@ -89,12 +96,22 @@ def test_ensure_command_ability_envelope_refresh_updates_stale_envelope(engine):
 def test_ensure_command_ability_envelope_refresh_is_idempotent(engine):
     from db.schema_migrations import ensure_command_ability_envelope_refresh
 
-    ensure_command_ability_envelope_refresh(engine)
-    ensure_command_ability_envelope_refresh(engine)
+    _ensure_command_ability_type_row(engine)
 
+    ensure_command_ability_envelope_refresh(engine)
     row = _exec(
         engine,
         "SELECT schema_definition FROM node_types WHERE type_code = 'system_command_ability'",
     ).fetchone()
-    sd = row[0]
-    assert "side_effect_level" in sd["properties"]
+    after_first = row[0]
+
+    ensure_command_ability_envelope_refresh(engine)
+    row = _exec(
+        engine,
+        "SELECT schema_definition FROM node_types WHERE type_code = 'system_command_ability'",
+    ).fetchone()
+    after_second = row[0]
+
+    assert isinstance(after_second, dict)
+    assert "side_effect_level" in after_second["properties"]
+    assert after_second == after_first
