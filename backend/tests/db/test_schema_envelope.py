@@ -63,3 +63,20 @@ def test_builtin_system_schemas_envelope():
     assert ca["properties"]["aliases"] == {}
     sn = system_notice_node_type_schema_definition()
     assert sn["properties"]["content_md"] == {"type": "string"}
+
+
+@pytest.mark.unit
+def test_system_command_ability_envelope_has_new_fields():
+    sd = system_command_ability_node_type_schema_definition()
+    props = sd["properties"]
+    for field in (
+        "side_effect_level",
+        "idempotent",
+        "deterministic",
+        "error_schema",
+        "data_classification",
+        "data_scope",
+    ):
+        assert field in props, f"missing {field}"
+    assert props["idempotent"]["type"] == "boolean"
+    assert props["data_scope"]["type"] == "array"

@@ -13,6 +13,7 @@ _SQLISH_TO_JSON_TYPE = {
     "bool": "boolean",
     "number": "number",
     "float": "number",
+    "array": "array",
 }
 
 
@@ -108,6 +109,12 @@ _SYSTEM_COMMAND_ABILITY_FLAT: Dict[str, str] = {
     "routing_hint": "string",
     "routing_hint_i18n": "json",
     "agent_observation_policy": "json",
+    "side_effect_level": "string",
+    "idempotent": "boolean",
+    "deterministic": "boolean",
+    "error_schema": "json",
+    "data_classification": "string",
+    "data_scope": "array",
 }
 
 
