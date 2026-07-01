@@ -96,13 +96,16 @@ class CommandToolSemantics:
 
 
 def resolve_side_effect_level(sem: 'CommandToolSemantics') -> 'ToolSideEffectLevel':
-    # Minimal derivation; full hybrid logic (explicit wins; else derive from
-    # interaction_profile + invocation_guard.requires_confirmation) is completed in Task 2.
+    """Hybrid: explicit declaration wins; else derive from interaction_profile + invocation_guard."""
     if sem.side_effect_level is not None:
         return sem.side_effect_level
     if sem.interaction_profile == 'read':
         return 'read'
-    return 'write_high'
+    # mutate branch
+    guard = sem.invocation_guard or {}
+    if bool(guard.get('requires_confirmation', True)):
+        return 'write_high'
+    return 'write_low'
 
 
 DEFAULT_READ_SEMANTICS = CommandToolSemantics(interaction_profile='read')

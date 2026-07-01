@@ -44,3 +44,30 @@ def test_to_dict_includes_new_fields():
 def test_platform_error_codes_is_frozen_set():
     assert 'INVALID_PARAM' in PLATFORM_ERROR_CODES
     assert 'POLICY_DENIED' in PLATFORM_ERROR_CODES
+
+
+@pytest.mark.unit
+def test_resolve_side_effect_level_explicit_wins():
+    sem = CommandToolSemantics(interaction_profile='mutate', side_effect_level='write_low')
+    assert resolve_side_effect_level(sem) == 'write_low'
+
+
+@pytest.mark.unit
+def test_resolve_side_effect_level_derive_read():
+    sem = CommandToolSemantics(interaction_profile='read')
+    assert resolve_side_effect_level(sem) == 'read'
+
+
+@pytest.mark.unit
+def test_resolve_side_effect_level_derive_write_high():
+    sem = CommandToolSemantics(interaction_profile='mutate')  # default guard => requires_confirmation True
+    assert resolve_side_effect_level(sem) == 'write_high'
+
+
+@pytest.mark.unit
+def test_resolve_side_effect_level_derive_write_low():
+    sem = CommandToolSemantics(
+        interaction_profile='mutate',
+        invocation_guard={'requires_confirmation': False, 'allowed_intents': ['execute'], 'side_effect_scope': 'state_change'},
+    )
+    assert resolve_side_effect_level(sem) == 'write_low'
