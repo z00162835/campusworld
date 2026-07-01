@@ -7,6 +7,14 @@ from typing import Any, Dict, Literal, Optional, Sequence, Tuple
 
 InteractionProfile = Literal['read', 'mutate']
 ManifestTier = Literal['informational', 'full', 'none']
+ToolSideEffectLevel = Literal['none', 'read', 'write_low', 'write_high']
+ToolDataClassification = Literal['public', 'internal', 'confidential', 'restricted']
+
+PLATFORM_ERROR_CODES: frozenset[str] = frozenset({
+    'INVALID_PARAM', 'NOT_FOUND', 'TIMEOUT', 'SERVICE_ERROR',
+    'RATE_LIMIT', 'PERMISSION_DENIED', 'POLICY_DENIED',
+    'CONFLICT', 'NOT_AVAILABLE',
+})
 
 
 def default_guard_for(profile: InteractionProfile) -> Dict[str, Any]:
@@ -45,6 +53,14 @@ class CommandToolSemantics:
     routing_hint: str = ''
     routing_hint_i18n: Dict[str, str] = field(default_factory=dict)
     invocation_guard: Dict[str, Any] = field(default_factory=dict)
+    side_effect_level: Optional[ToolSideEffectLevel] = None
+    idempotent: bool = False
+    deterministic: bool = False
+    input_schema: Optional[Dict[str, Any]] = None
+    output_schema: Optional[Dict[str, Any]] = None
+    error_schema: Optional[Dict[str, Any]] = None
+    data_classification: Optional[ToolDataClassification] = None
+    data_scope: Tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.invocation_guard:
@@ -68,7 +84,25 @@ class CommandToolSemantics:
             'manifest_tier': self.manifest_tier,
             'routing_hint': self.routing_hint or None,
             'routing_hint_i18n': dict(self.routing_hint_i18n) if self.routing_hint_i18n else None,
+            'side_effect_level': self.side_effect_level,
+            'idempotent': self.idempotent,
+            'deterministic': self.deterministic,
+            'input_schema': self.input_schema,
+            'output_schema': self.output_schema,
+            'error_schema': self.error_schema,
+            'data_classification': self.data_classification,
+            'data_scope': list(self.data_scope) if self.data_scope else None,
         }
+
+
+def resolve_side_effect_level(sem: 'CommandToolSemantics') -> 'ToolSideEffectLevel':
+    # Minimal derivation; full hybrid logic (explicit wins; else derive from
+    # interaction_profile + invocation_guard.requires_confirmation) is completed in Task 2.
+    if sem.side_effect_level is not None:
+        return sem.side_effect_level
+    if sem.interaction_profile == 'read':
+        return 'read'
+    return 'write_high'
 
 
 DEFAULT_READ_SEMANTICS = CommandToolSemantics(interaction_profile='read')
