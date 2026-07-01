@@ -6,6 +6,7 @@
 
 - 直接继承 [`DefaultObject`](../../backend/app/models/base.py) 的模型 → 父类型为 **`default_object`**（需在 `node_types` 中注册对应行，`typeclass` 指向 `DefaultObject`）。
 - 直接继承 [`WorldThing`](../../backend/app/models/things/base.py) 的模型 → 父类型为 **`world_thing`**（`WorldThing` 的注册行，父为 `default_object`）。
+- 直接继承 **`Character`** 的模型 → 父类型为 **`character`**（`Character` 的注册行，父为 `default_object`）。
 - 直接继承 **`Furniture`** 的子类（如 `ConferenceSeating`、`LoungeFurniture`）→ 父类型为 **`furniture`**。
 
 **说明**：这里的「父类型」是 **本体类型树**，用于治理、UI、校验；**不要求** Python 采用多重继承去模仿表结构。`WorldObject` 与 `world_object` 仅对应「**type_code 恰好为 `world_object` 的节点**」所绑定的类；**不应**因为历史原因把所有 `DefaultObject` 子类都挂在 `world_object` 下。
@@ -22,8 +23,9 @@
 | `building_floor` | `default_object` | `DefaultObject` | `BuildingFloor` | `app.models.building` |
 | `room` | `default_object` | `DefaultObject` | `Room` | `app.models.room` |
 | `world_entrance` | `default_object` | `DefaultObject` | `WorldEntrance` | `app.models.world_entrance` |
+| `character` | `default_object` | `DefaultObject` | `Character` | `app.models.character` |
 | `furniture` | `world_thing` | `WorldThing` | `Furniture` | `app.models.things.furniture` |
-| `npc_agent` | `world_thing` | `WorldThing` | `NpcAgent` | `app.models.things.agents` |
+| `npc_agent` | `character` | `Character` | `NpcAgent` | `app.models.things.agents` |
 | `logical_zone` | `world_thing` | `WorldThing` | `LogicalZone` | `app.models.things.zones` |
 | `world_environment` | `world_thing` | `WorldThing` | `WorldEnvironment` | `app.models.things.environments` |
 | `access_terminal` | `world_thing` | `WorldThing` | `AccessTerminal` | `app.models.things.terminals` |

@@ -24,6 +24,96 @@ def test_access_terminal_type_code_and_import_path():
 def test_npc_agent_smoke():
     o = NpcAgent("npc1", disable_auto_sync=True)
     assert o.get_node_type() == "npc_agent"
+    assert o.get_node_typeclass() == "app.models.things.agents.NpcAgent"
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_npc_agent_inherits_character_and_keeps_type_code():
+    from app.models.character import Character
+    from app.models.base import DefaultObject
+
+    o = NpcAgent("npc1", disable_auto_sync=True)
+    assert isinstance(o, Character)
+    assert isinstance(o, DefaultObject)
+    # Character.__init__ writes _node_type='character'; NpcAgent must restore it.
+    assert o.get_node_type() == "npc_agent"
+    assert o._node_type == "npc_agent"
+    assert o._node_type_code == "npc_agent"
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_npc_agent_defaults_is_npc_and_is_ai():
+    o = NpcAgent("npc1", disable_auto_sync=True)
+    assert o.is_npc is True
+    assert o._node_attributes.get("is_ai") is True
+    tags = o._node_tags
+    assert "npc" in tags
+    assert "ai" in tags
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_npc_agent_disable_auto_sync_not_leaked_into_attributes():
+    o = NpcAgent("npc1", disable_auto_sync=True)
+    assert "disable_auto_sync" not in o._node_attributes
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_npc_agent_sync_observes_npc_agent_type_code(monkeypatch):
+    """sync_to_node runs inside super().__init__ via at_object_creation; the
+    type_code must already be 'npc_agent' at that moment, not 'character'
+    (F02 §6.1 invariant #1). Patch sync_to_node to capture the value without DB.
+    """
+    captured = {}
+
+    def fake_sync(self):
+        captured["type_code"] = self.get_node_type()
+
+    monkeypatch.setattr(NpcAgent, "sync_to_node", fake_sync)
+    # Construct WITHOUT disable_auto_sync so at_object_creation reaches sync.
+    NpcAgent("sync_probe")
+    assert captured.get("type_code") == "npc_agent"
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_npc_agent_cmdset_branch_by_agent_role():
+    from app.commands.cmdset import CharacterCmdSet, NPCCmdSet
+
+    # Unspecified role defaults to the narrative_npc branch (NPCCmdSet only).
+    o_default = NpcAgent("a", disable_auto_sync=True)
+    stack_default = o_default.get_cmdset_manager().cmdset_stack
+    assert len(stack_default) == 1
+    assert isinstance(stack_default[0], NPCCmdSet)
+    assert not any(isinstance(c, CharacterCmdSet) for c in stack_default)
+
+    o_npc = NpcAgent("b", disable_auto_sync=True, agent_role="narrative_npc")
+    stack_npc = o_npc.get_cmdset_manager().cmdset_stack
+    assert len(stack_npc) == 1
+    assert isinstance(stack_npc[0], NPCCmdSet)
+    assert not any(isinstance(c, CharacterCmdSet) for c in stack_npc)
+
+    o_worker = NpcAgent("c", disable_auto_sync=True, agent_role="sys_worker")
+    assert o_worker.get_cmdset_manager().cmdset_stack == []
+
+
+@pytest.mark.unit
+@pytest.mark.models
+def test_npc_agent_rpg_hooks_are_noop():
+    o = NpcAgent("npc1", disable_auto_sync=True)
+    # _initialize_base_stats must not mutate stats based on character_type.
+    o._node_attributes["character_type"] = "athlete"
+    o._initialize_base_stats()
+    assert o._node_attributes.get("agility") == 10  # unchanged from Character default
+    assert o._node_attributes.get("max_energy") == 100
+
+    cost = o.at_action_cost("run")
+    assert cost == {"success": True, "energy_cost": 0}
+    res = o.at_action_result("run")
+    assert res == {"success": True}
 
 
 @pytest.mark.unit

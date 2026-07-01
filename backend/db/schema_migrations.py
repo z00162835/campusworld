@@ -27,8 +27,12 @@ GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, st
     ("building_floor", "default_object", "楼层", "app.models.building.BuildingFloor", "BuildingFloor", "app.models.building"),
     ("room", "default_object", "房间", "app.models.room.Room", "Room", "app.models.room"),
     ("world_entrance", "default_object", "世界入口（Evennia Exit）", "app.models.world_entrance.WorldEntrance", "WorldEntrance", "app.models.world_entrance"),
+    # `character` is the ontology parent for role-bearing typeclasses. It is
+    # ontology-only (no schema_definition extension) so it does not collide with
+    # the F02 `npc_agent` schema. See ADR-F02-NpcAgent-Character-Typeclass.
+    ("character", "default_object", "角色", "app.models.character.Character", "Character", "app.models.character"),
     ("furniture", "world_thing", "家具", "app.models.things.furniture.Furniture", "Furniture", "app.models.things.furniture"),
-    ("npc_agent", "world_thing", "NPC代理", "app.models.things.agents.NpcAgent", "NpcAgent", "app.models.things.agents"),
+    ("npc_agent", "character", "NPC代理", "app.models.things.agents.NpcAgent", "NpcAgent", "app.models.things.agents"),
     (
         "access_terminal",
         "world_thing",

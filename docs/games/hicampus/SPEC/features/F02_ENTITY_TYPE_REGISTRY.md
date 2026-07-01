@@ -20,7 +20,7 @@
 | world_object | world_object | app.models.world | WorldObject | — | 泛化可放置物/未细分类对象 |
 | furniture | furniture | app.models.things.furniture | Furniture | world_object | 家具；F02 `entity_kind: item` |
 | access_terminal | access_terminal | app.models.things.terminals | AccessTerminal | — | 门禁/接入终端 |
-| npc_agent | npc_agent | app.models.things.agents | NpcAgent | — | NPC 语义节点 |
+| npc_agent | npc_agent | app.models.things.agents | NpcAgent | character | NPC 语义节点（typeclass 继承 Character；见 [ADR-F02-NpcAgent-Character-Typeclass](../../../../architecture/adr/ADR-F02-NpcAgent-Character-Typeclass.md)） |
 | logical_zone | logical_zone | app.models.things.zones | LogicalZone | — | 逻辑区域/围栏 |
 | world_environment | world_environment | app.models.things.environments | WorldEnvironment | world_thing | 园区级宏观天气/温湿度（每 world 单例） |
 

@@ -4,7 +4,7 @@
 
 **文档状态：RC — 2026-04-09**（与实现里程碑对齐；定稿时改为 Accepted）
 
-**Changelog：** 2026-04-09 — 与 ADR-F02-*（Agent 运行时、记忆晋升、PDCA 认知）及 Phase B/C 首版实现对齐。
+**Changelog：** 2026-04-09 — 与 ADR-F02-*（Agent 运行时、记忆晋升、PDCA 认知）及 Phase B/C 首版实现对齐。2026-06-29 — [`ADR-F02-NpcAgent-Character-Typeclass`](../../../architecture/adr/ADR-F02-NpcAgent-Character-Typeclass.md)：`NpcAgent` typeclass 改为继承 `Character`，`type_code` 与 F02 schema 不变。
 
 **Architecture Role：** 在知识本体中，将 **`type_code=npc_agent`** 的节点定义为可配置的 **智能体服务**（及叙事 NPC）载体：通过 **思维模型**、**命令/工具** 与 **独立记忆/运行表** 表达「类用户 Actor」的自主行为能力；**默认**经 **命令系统** 读写本体，语义世界（图），与 F10 Graph API 解耦。
 
@@ -54,6 +54,7 @@
 
 - **实现语言**：Agent **执行体** 为 **Python**，与现有 [`NpcAgent`](../../../../backend/app/models/things/agents.py)、[`CommandRegistry`](../../../../backend/app/commands/registry.py)（若存在）及命令系统一致。
 - **逻辑归属**：具体业务逻辑（思维模型阶段推进、解析输入、调用命令/工具、读写记忆表、写 `agent_run_records`）实现在 **对应 Python 类** 中（例如扩展 `NpcAgent`、或 `AgentWorker` / `*Runtime` 子类，由 **`node_types.typeclass`** 与运行时注册表解析）；**不在** `nodes.attributes` 内嵌脚本或 DSL。
+- **Typeclass 继承**：[`NpcAgent`](../../../../backend/app/models/things/agents.py) 为 **[`Character`](../../../../backend/app/models/character.py) 子类**（非 `WorldThing`），对齐 Evennia 角色树；**`type_code` 仍为 `npc_agent`**，F02 schema 与 Agent 运行时不变。RPG 默认属性惰性 noop，`CmdSet` 按 `agent_role` 分支（`sys_worker` 空；`narrative_npc` 挂 `NPCCmdSet`，不挂 `CharacterCmdSet`）。详见 [`ADR-F02-NpcAgent-Character-Typeclass`](../../../architecture/adr/ADR-F02-NpcAgent-Character-Typeclass.md)。
 - **调度链**：外部触发（队列、定时、命令）→ 装载/构造 **已注册 Python 类实例** → 在 **`CommandContext`** 下执行（**服务主体** 为绑定的账号 principal，见 [`F11`](../../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md)）→ 默认仍经 **命令层** 写图，与 §6 不变式一致。命令发现见 [`registry.py`](../../../../backend/app/commands/registry.py)。
 
 ---
@@ -420,6 +421,7 @@ flowchart LR
 ## 15. 相关文档
 
 - **扩展设计（Phase 2）：** 语义向量检索与长期记忆条目间关联 — [`F02_LTM_VECTORS_AND_MEMORY_LINKS.md`](F02_LTM_VECTORS_AND_MEMORY_LINKS.md)
+- [`ADR-F02-NpcAgent-Character-Typeclass`](../../../architecture/adr/ADR-F02-NpcAgent-Character-Typeclass.md) — `NpcAgent` 继承 `Character` 的 typeclass 重构决策
 - [`docs/models/SPEC/SPEC.md`](../SPEC.md)
 - [`docs/command/SPEC/SPEC.md`](../../../command/SPEC/SPEC.md)
 - [`F01`](../../../database/SPEC/features/F01_TRAIT_CLASS_MASK_FOR_AGENT.md)
