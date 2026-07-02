@@ -398,4 +398,10 @@ backend/ssh_host_key
 # Model Artifacts
 backend/artifacts/
 
+# Tool Router Data
+backend/app/models/agent_model/tool_router/data/
+
 # Local Config Files
+
+# Cursor
+.cursor/
