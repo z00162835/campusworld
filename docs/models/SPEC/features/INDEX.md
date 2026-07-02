@@ -17,6 +17,10 @@
 | `models.agent.f12` | `F12_NLP_AGENT_MULTI_TURN_SESSION_MEMORY.md` | Multi-turn memory |
 | `models.agent.f13` | `F13_AICO_INTERACTIVE_UPGRADE.md` | Interactive upgrade |
 | `models.agent.f14` | `F14_AGENT_TOOL_ROUTER_PREPLAN.md` | Tool router |
+| `models.agent.f15` | `F15_AGENT_SKILL_REGISTRY.md` | L4 Skill registry & injection |
+| `models.agent.f16` | `F16_AGENT_POLICY_ENGINE.md` | Deterministic policy engine |
+| `models.agent.f17` | `F17_AGENT_STATE_MACHINE.md` | State machine DSL & structured turn |
+| `models.agent.f18` | `F18_AGENT_QUALITY_GATES.md` | Quality gates & stop policy |
 
 ## Transitional Root-Level Topics
 

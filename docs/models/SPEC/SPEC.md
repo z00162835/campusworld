@@ -176,6 +176,18 @@
 - `F14` Agent 工具路由（**Draft**）：**mandatory**＝tick 内 **ToolObservation**（异常见 §3.4 **兜底反馈**）；**hint_only** 默认可配 **schema_subset**（严格 **candidates∪mandatory**，**仅 Plan 相位收窄下发**，Do 持全量解析面）；非法工具＝∉注册表或∉allowlist；**informational** 仅缩小 **K_info**；阶段 B **配对精排** 默认 **`google/gemma-4-E2B`**（Gemma 4 E2B）；**D5** 采纳 **B.1** 默认（**K_default/K_info/batch/p95**；**max_score/margin** 首次标定后版本化）；槽位 **`Qwen2.5-0.5B-Instruct` 微调（D9）**；**GLiNER-only**；**§6.1**（`CrossEncoderRerankBackend` + Gemma 适配）；槽位 schema **单文件**、**A.3.1**（运行时 **jsonschema** 校验 + repair 文案版本文件）；**lexicon -b** **全库**、**仅手工（D8）**、**§4.1a**；**STM** 次于 **world_snapshot**；§11、§12；与 [**F08**](features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) / [**F11**](features/F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md) / [**F10**](features/F10_AICO_PERFORMANCE_AND_LATENCY.md) / [**F12**](features/F12_NLP_AGENT_MULTI_TURN_SESSION_MEMORY.md) 衔接（**`tool_router/` 脚手架已落地，默认关 / Stub；阈值与 D6 等见 F14 正文**）  
   [`features/F14_AGENT_TOOL_ROUTER_PREPLAN.md`](features/F14_AGENT_TOOL_ROUTER_PREPLAN.md)
 
+- `F15` Agent Skill Registry & Injection（L4 经验 Skill 层）：`SkillDefinition`/`SkillRegistry`/`SkillRunner`/`SkillInjection`，`config/skills/` YAML，`skill_refs` 节点引用，`allowed_tool_groups` 矩阵（v1 复用 `interaction_profile`，声明式/审计式，不收敛冻结面）；落地 [**F09**](features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md) §6.4。  
+  [`features/F15_AGENT_SKILL_REGISTRY.md`](features/F15_AGENT_SKILL_REGISTRY.md)
+
+- `F16` Agent Policy Engine（确定性策略引擎）：4 check_points（`before_skill_activation`/`before_tool_call`/`after_tool_observation`/`before_final_answer`），`PolicyEngine` + detectors + decisions，收敛 `execution_gate` 为 `before_tool_call` 适配器（外部 API 稳定），平台默认由 [**F08**](features/F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 推导；与 `command_policies` 授权平面并存不合并。  
+  [`features/F16_AGENT_POLICY_ENGINE.md`](features/F16_AGENT_POLICY_ENGINE.md)
+
+- `F17` Agent State Machine DSL & Structured Turn：`StateMachine` + `condition_evaluators` + `workflow_loader`（节点 `attributes.workflow`）+ `react_turn_schema`；默认 workflow = PDCA（golden-trace 等价），`require_structured_turn` opt-in；重构 `LlmPDCAFramework` 为状态机驱动。  
+  [`features/F17_AGENT_STATE_MACHINE.md`](features/F17_AGENT_STATE_MACHINE.md)
+
+- `F18` Agent Quality Gates & Stop Policy：`SuccessChecker`（hard_gates + semantic_score）+ `StopPolicy`（precedence fail>pause>final_success>replan>continue）+ `semantic_scorer`（v1 规则评分）；收敛 `draft_gate` / `ToolGatherBudgets`；`pause` v1 同步降级。  
+  [`features/F18_AGENT_QUALITY_GATES.md`](features/F18_AGENT_QUALITY_GATES.md)
+
 ### 任务系统（独立模块，跨 models / command / database / api）
 
 - **Task System**：`type_code=task` 节点 + 独立关系子底座（`task_workflow_definitions / task_details / task_assignments / task_state_transitions / task_runs / task_events / task_outbox`）+ 唯一状态机服务 `task_state_machine.transition`；以用户/Agent 为中心的协作任务、任务池、审批接力（agent1 → admin → agent2）。设计律 D1 边稀疏 / D2 属性瘦独立表厚 / D3 SSOT 单事务幂等。  
