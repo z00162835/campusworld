@@ -40,14 +40,36 @@ from app.game_engine.agent_runtime.agent_loop.signals import DraftReasonContext
 _CHECK_RETRY_RE = re.compile('RETRY\\s*:\\s*need_tools\\s*=\\s*([A-Za-z0-9_.\\-]+(?:\\s*,\\s*[A-Za-z0-9_.\\-]+)*)', flags=re.IGNORECASE)
 _DEFAULT_NPC_AGENT_EMPTY_REPLY = '抱歉，我没有能力处理此问题。你可以换一个问题。'
 
+_INTERNAL_PHASE_TAG_RE = re.compile(r'^\s*\[(?:plan|do|check|act|react|thought|thinking|reasoning)\]\s*', re.IGNORECASE)
+
+def _strip_internal_markers(text: str) -> str:
+    """Remove internal reasoning/phase tags that must never reach the user.
+
+    Thin PDCA returns Plan output verbatim when Do is skipped; if Plan's ReAct
+    loop terminates with an internal note (e.g. ``[plan] The output was
+    truncated. Let me try...``), strip those tagged lines so only user-facing
+    prose remains. When everything was internal, an empty string is returned
+    and the (non-skipped) Check phase is expected to catch the incomplete
+    draft and trigger a re-plan.
+    """
+    if not text:
+        return ''
+    kept = []
+    for line in text.splitlines():
+        if _INTERNAL_PHASE_TAG_RE.match(line):
+            continue
+        kept.append(line)
+    return '\n'.join(kept).strip()
+
 def assemble_plan_skip_do_draft(plan_out: str, _plan_tools_text: str) -> str:
     """Text shown to the user when the Do phase LLM is skipped.
 
     Tool observations are omitted here; they are appended only to the Check-phase
     prompt for grounding. ``_plan_tools_text`` remains on the signature for stable
-    call sites and tests.
+    call sites and tests. Internal phase/reasoning tags (e.g. ``[plan] ...``) are
+    stripped so Plan's working notes never leak as the user-facing reply.
     """
-    return (plan_out or '').strip()
+    return _strip_internal_markers(plan_out)
 _DEFAULT_PD_CA_SLIM_FOLLOWUP = 'You are a CampusWorld npc_agent continuing after Plan (Do / Check / Act).\n- Ground factual claims about live graph or command output only in tool observations or text already present in this user turn (Plan, Memory, Draft). Do not invent nodes, locations, or command results.\n- Tool calling: use native tool_use when the runtime supports it; otherwise emit exactly one fenced JSON block of the form {"commands": [{"name": "<registered_tool>", "args": ["..."]}, ...]}. Do not claim a tool ran unless observations include its output. Respect the per-turn tool batch limit in the system prompt.\n- Match the user\'s language; stay concise unless the phase prompt asks otherwise.'
 
 def _resolve_pdca_slim_followup_system(cfg: AgentLlmServiceConfig) -> Optional[str]:

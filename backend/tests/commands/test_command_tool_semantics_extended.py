@@ -53,6 +53,54 @@ def test_platform_error_codes_is_frozen_set():
 
 
 @pytest.mark.unit
+def test_resolve_task_bare_falls_back_to_read():
+    """`task` called with an explicit empty arg list (execution_gate path)
+    only prints usage (no state change); it must resolve to `read` via
+    default_profile_when_no_subcommand so execution_gate does not block
+    informational intent on the bare call."""
+    sem = resolve_command_tool_semantics('task', args=[])
+    assert sem.interaction_profile == 'read'
+
+
+@pytest.mark.unit
+def test_resolve_task_unspecified_args_keeps_class_profile():
+    """When args is unspecified (manifest grouping / classification), the
+    class-level profile is preserved so `task` is still grouped under
+    state-changing tools."""
+    sem = resolve_command_tool_semantics('task', args=None)
+    assert sem.interaction_profile == 'mutate'
+
+
+@pytest.mark.unit
+def test_resolve_task_mutate_subcommand_still_mutate():
+    """State-changing subcommands keep their mutate profile."""
+    sem = resolve_command_tool_semantics('task', args=['complete', '1'])
+    assert sem.interaction_profile == 'mutate'
+
+
+@pytest.mark.unit
+def test_resolve_task_read_subcommands_stay_read():
+    assert resolve_command_tool_semantics('task', args=['list']).interaction_profile == 'read'
+    assert resolve_command_tool_semantics('task', args=['show', '1']).interaction_profile == 'read'
+
+
+@pytest.mark.unit
+def test_default_profile_when_no_subcommand_field_defaults_none():
+    sem = CommandToolSemantics(interaction_profile='mutate')
+    assert sem.default_profile_when_no_subcommand is None
+
+
+@pytest.mark.unit
+def test_to_dict_includes_default_profile_when_no_subcommand():
+    sem = CommandToolSemantics(
+        interaction_profile='mutate',
+        default_profile_when_no_subcommand='read',
+    )
+    d = sem.to_dict()
+    assert d['default_profile_when_no_subcommand'] == 'read'
+
+
+@pytest.mark.unit
 def test_resolve_side_effect_level_explicit_wins():
     sem = CommandToolSemantics(interaction_profile='mutate', side_effect_level='write_low')
     assert resolve_side_effect_level(sem) == 'write_low'

@@ -26,6 +26,7 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 
 - 类级 **`mutate`**；只读子命令（`list`、`show`、`pool list|show|stats`、`workflow list|show` 等）经 `subcommand_profiles` 解析为 **`read`**。
 - 写子命令（`create`、`claim`、`assign`、`publish`、`complete` 等）保持 **`mutate`**。
+- **无参回落 read**：`task` 以无参形式调用时仅打印用法（不改变状态），故 `CommandToolSemantics.default_profile_when_no_subcommand='read'`，`resolve_command_tool_semantics('task', args=[])` 解析为 `read`；避免 `execution_gate` 因类级 `mutate` 误阻 informational 意图下的 bare 调用。
 - 见快照 `tool_semantics` 与 `backend/app/commands/command_tool_semantics.py`。
 
 ## Implementation contract（SSOT：[`docs/task/SPEC/`](../../../task/SPEC/)）

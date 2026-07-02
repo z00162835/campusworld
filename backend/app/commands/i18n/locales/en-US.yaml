@@ -252,6 +252,7 @@ commands:
       header: "Task list (total={total}, rows {offset}–{end})"
       empty: "No tasks match."
       row: "#{id}  state={state}  pool={pool_key}  priority={priority}  title={title}"
+      hint: "Use `task show <id>` with the node id above to see task details."
     show:
       title: "Task #{id}"
     pool:

@@ -244,6 +244,7 @@ commands:
       header: "任务清单（共 {total} 条，第 {offset}–{end} 条）"
       empty: "未匹配任何任务。"
       row: "#{id}  state={state}  pool={pool_key}  priority={priority}  title={title}"
+      hint: "使用 `task show <id>`（上方列表中的节点 id）查看任务详情。"
     show:
       title: "任务 #{id}"
     pool:

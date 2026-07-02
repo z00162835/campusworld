@@ -45,6 +45,7 @@ class TaskCommand(GameCommand):
     tool_semantics = CommandToolSemantics(
         interaction_profile='mutate',
         subcommand_profiles=TASK_SUBCOMMAND_PROFILES,
+        default_profile_when_no_subcommand='read',
         routing_hint='For task examples/syntax/usage, route to `help task` (or primer) first; call state-changing subcommands only after explicit execution intent and confirmation.',
         routing_hint_i18n={
             'zh-CN': '若用户问 task 的例子/语法/用法，先走 help task（或 primer）；不要把示例请求当作执行请求。仅在用户明确执行且确认后才可调用会改状态的 task 子命令。',
@@ -225,6 +226,9 @@ class TaskCommand(GameCommand):
             lines = [header]
             for it in items:
                 lines.append(row_tmpl.format(id=it['id'], state=it['state'] or '-', pool_key=it['pool_key'] or '-', priority=it['priority'] or '-', title=it['title'] or '-'))
+            hint = i18n(ctx, 'list.hint', default='Use `task show <id>` with the node id above to see task details.')
+            if hint.strip():
+                lines.append(hint)
             msg = '\n'.join(lines)
         return CommandResult.success_result(msg, data={'items': items, 'total': total})
 

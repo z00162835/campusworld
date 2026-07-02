@@ -165,11 +165,14 @@ _AICO_PREVIOUS_DEFAULT_PHASE_LLM = {
     "check": {"mode": "fast"},
     "act": {"mode": "skip"},
 }
-# Thin PDCA: Plan LLM + tools; Do/Check/Act skipped. User prose streams from Plan react last round.
+# Thin PDCA with a Check gate: Plan LLM + tools; Do/Act skipped, Check runs a
+# lightweight fast LLM to assess the draft and trigger RETRY/re-plan when the
+# Plan output is empty, internal-reasoning-only, or a deferral. User prose
+# streams from the Plan react last round, sanitized by assemble_plan_skip_do_draft.
 _AICO_DEFAULT_PHASE_LLM = {
     "plan": {"mode": "fast"},
     "do": {"mode": "skip"},
-    "check": {"mode": "skip"},
+    "check": {"mode": "fast"},
     "act": {"mode": "skip"},
 }
 # Shipped briefly with act:fast for presentation streaming experiments (idempotent → act:skip default).
@@ -179,7 +182,9 @@ _AICO_ACT_FAST_PHASE_LLM = {
     "check": {"mode": "skip"},
     "act": {"mode": "fast"},
 }
-# Older seed before presentation-layer streaming (same as current default).
+# Older seed before presentation-layer streaming: thin PDCA with Check skipped.
+# Now the upgrade target for agents still carrying the pre-Check-gate default
+# (check=skip); upgraded to the current default (check=fast) idempotently.
 _AICO_PRE_ACT_STREAMING_PHASE_LLM = {
     "plan": {"mode": "fast"},
     "do": {"mode": "skip"},

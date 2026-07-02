@@ -35,6 +35,8 @@
 
 `system_command_ability` 图节点是 **只读镜像**，由 `ability_sync._sync_tool_semantics` 自 `CommandToolSemantics` **单向同步**。运行时消费方读取 **契约字段**（`interaction_profile` / `side_effect_level` / `invocation_guard` / schemas / `data_*`）时 **只读 `CommandToolSemantics`**：`build_llm_tool_manifest` 与 `execution_gate` 完全不读节点；`tool_observation_policy` 的 profile / guard 解析以注册表为准，**仅** ops 级 `agent_observation_policy`（observation 模式覆盖，见 §8）仍从 `system_command_ability.attributes` 读取。节点镜像服务于图查询、NPC 能力发现、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md) 的工具路由/preplan 与审计。**授权仍在 `command_policies`** 中维护，不随镜像下沉。
 
+> **`agent_observation_policy` 同步规则（ops-only，不自动灌覆盖）：** `ability_sync._sync_tool_semantics` **仅在** `CommandToolSemantics.observation_message_mode` 被显式声明时写入 `agent_observation_policy`；**不**从类级 `interaction_profile` 自动派生。历史上自动派生会把 `task`（类级 `mutate`）seed 成 `summary`，进而覆盖 `task list` / `task show` 等 read 子命令在运行时应得的 `full`，导致观测被截断、Agent 丢失可操作的 node id。存量自动 seed 的覆盖须由 `backend/scripts/migrate_clear_observation_policy.py` 一次性清空（dry-run 默认，`--execute` 生效，清理前 dump 审计）；清理后任何显式 ops 覆盖需运维重新设置。LLM 工具 `input_schema` 始终为与 `BaseCommand.execute(context, args: List[str])` 对齐的 **args-array** 形态，`CommandToolSemantics.input_schema` 仅作契约元数据（镜像入节点供审计/校验），**不**作为下发 LLM 的工具 schema。
+
 `side_effect_level` 采用 **混合解析**：显式声明优先；否则由 `interaction_profile` 与 `invocation_guard.requires_confirmation` 派生（`read` → `read`；`mutate` + 确认 → `write_high`；`mutate` + 无确认 → `write_low`）。`none` 是 **纯无副作用信息类命令** 的显式 opt-in，不参与派生。该解析由 `resolve_side_effect_level` 实现；`resolve_command_tool_semantics` 在解析得到的 `CommandToolSemantics.side_effect_level` 仍为 `None` 时（典型场景：子命令感知命令仅覆盖 `interaction_profile` / `invocation_guard` 而未显式声明 `side_effect_level`）**自动** 调用 `resolve_side_effect_level` 物化为具体值，使下游消费方始终拿到非空 `side_effect_level`。
 
 错误契约由 `build_error_schema` 基于 **平台统一错误码**（`PLATFORM_ERROR_CODES`，`backend/app/commands/command_tool_semantics.py` 中的 `frozenset`）生成；命令 `error_schema` 的 `code` 枚举取自该集合，对应人类可读文案以 **`command.error.<CODE>`** 为 key 存放于 `backend/app/commands/i18n/locales/{en-US,zh-CN}.yaml`，由展示层按 locale 解析。
@@ -162,7 +164,7 @@ flowchart LR
 
 - **禁止默认递归**：工具上下文中 **不得** 默认再次调度 **`aico` / `@` NLP**（避免无限嵌套）；若未来允许「子助手 tick」，须单独 **深度上限** 与 **标识符**。
 - **每 tick 上限**：**最大命令条数**、**ToolObservation 总字符**、**wall-clock 时间**；超限截断并记入 **tool_trace**。
-- **ToolObservation policy**：命令输出进入 LLM 前必须经确定性策略处理。语义真源为命令注册表上的 `Command.tool_semantics`（`backend/app/commands/command_tool_semantics.py`）；`resolve_command_tool_semantics(name, args=...)` 按类级 `interaction_profile` 与可选 `subcommand_profiles`（最长 `arg_prefix` 优先）解析。**read** 默认 `message_mode=full`；**mutate** 默认 `message_mode=summary`（首个非空行 + `original_chars=<n>`，不使用 LLM 摘要或 hash）。**未注册**命令与 `semantic_pending=true` 命令默认 `summary`；`semantic_pending` **不**再单独驱动已注册命令的 observation 模式。L2 `system_command_ability.attributes.agent_observation_policy` **仅**可 ops 覆盖 observation（profile / guard 以 registry 为准）。可选模式为 `full` / `summary` / `blocked`，均受 `max_message_chars` 与 trace preview 上限约束。单次 gather 内 policy 缓存键为 `(command_name, tuple(args))`。
+- **ToolObservation policy**：命令输出进入 LLM 前必须经确定性策略处理。语义真源为命令注册表上的 `Command.tool_semantics`（`backend/app/commands/command_tool_semantics.py`）；`resolve_command_tool_semantics(name, args=...)` 按类级 `interaction_profile` 与可选 `subcommand_profiles`（最长 `arg_prefix` 优先）解析；当命令带 `subcommand_profiles` 且以 **无参** 形式调用时，若声明了 `default_profile_when_no_subcommand`（如 `task` 无参仅打印用法），回落为该更安全的 profile（`read`），避免 `execution_gate` 因类级 `mutate` 误阻 informational 意图。**read** 默认 `message_mode=full`；**mutate** 默认 `message_mode=summary`（首个非空行 + `original_chars=<n>`，不使用 LLM 摘要或 hash）。**未注册**命令与 `semantic_pending=true` 命令默认 `summary`；`semantic_pending` **不**再单独驱动已注册命令的 observation 模式。L2 `system_command_ability.attributes.agent_observation_policy` **仅**可 ops 覆盖 observation（profile / guard 以 registry 为准），且 **不由 `ability_sync` 自动 seed**（仅显式 `observation_message_mode` 写入；存量自动覆盖须经迁移脚本清理，见 §1.3）。可选模式为 `full` / `summary` / `blocked`，均受 `max_message_chars` 与 trace preview 上限约束。单次 gather 内 policy 缓存键为 `(command_name, tuple(args))`。
 - **`CommandResult.data`**：仅允许 **白名单键** 进入 ToolObservation（防泄漏大图 JSON、内部 id）；默认键为 `ok`、`phase`、`handle`、`service_id`，可由 ToolObservation policy 的 `data_keys` 收窄或扩展。
 - **Trace preview 同源策略**：`agent_run_records.command_trace[].message_preview` 必须使用同一 ToolObservation policy 的 message 处理结果，并受 `trace_preview_chars` 限制，避免 LLM 上下文与审计预览脱敏规则漂移。
 - **授权**：与 **`authorize_command`**、**`command_policies`**、F11 数据访问策略 **一致**；**不**因「Agent 调用」绕过审计。
@@ -264,9 +266,11 @@ message:
 
 Check 阶段不再只做「通过/不通过」标签，而引入可选 **重试信号**：
 
+- **AICO 默认 `check` 不再 `skip`**：`_AICO_DEFAULT_PHASE_LLM`（`seed_data.py`）将 `check` 由 `skip` 升为 `fast`，使 Check 守门（草稿完整性判定 + `RETRY` 信号）实际执行；`do` / `act` 仍 `skip`。存量仍为 `check=skip` 的 AICO 实例由 `_aico_phase_llm_should_upgrade_to_current_default` 幂等升级到当前默认。当 `do` 被跳过时，`assemble_plan_skip_do_draft` 会对 Plan 输出做 **内部标记净化**：剥离 `[plan]` / `[do]` / `[check]` / `[act]` / `[thought]` 等内部 phase/reasoning 标签行，避免 Plan 阶段的工作笔记（如 `[plan] The output was truncated. Let me try...`）作为用户可见答复泄漏；净化后若草稿为空或仅剩 deferral 语，由 Check 守门触发 re-plan。
 - Check 输出中若出现 `RETRY: need_tools=<a,b,c>`（单行，tool 名用逗号分隔，匹配 `_CHECK_RETRY_RE`），framework 解析为 `["a", "b", "c"]`。
 - 若 `tool_gather_counters` 仍在预算内，framework 追加一条「Guardrail note: 要求调用 <tools>」的提示再跑一次 Plan → Do（每 tick 最多一次，避免无限递归）。
 - 该信号与失败标签共存：Check 仍可同时给出「error」语义；二者在 `command_trace` 中以 `check_retry_triggered` 条目显式记录。
+- `_DEFAULT_DEFERRAL_PATTERNS`（`draft_gate.py`）覆盖中英 deferral 与内部推理泄漏短语（如 `let me try` / `the output was truncated` / `让我再试`），以判定草稿是否尚属「推迟/未完成」。
 
 ### 12.5 默认工具面扩展 — Discovery Suite
 
@@ -305,5 +309,5 @@ agent
 
 - 旧 provider 无需改动：`LlmClient.supports_tools()` 默认 `False`，framework 走 v1 JSON 通道。
 - 旧 `tool_allowlist`（仅 `help/look/whoami`）继续可用；`build_llm_tool_manifest` 自 `CommandToolSemantics`（注册表 ClassVar）解析契约语义，缺失 `system_command_ability` 节点时仅退化为无描述提示（`_llm_hint_from_command_node` 容错），不影响 manifest 生成。
-- 旧 `phase_llm` 配置保持语义；`act` 仍默认 `skip`。
+- 旧 `phase_llm` 配置保持语义；`act` 仍默认 `skip`。`check` 默认由 `skip` 升为 `fast`（Thin PDCA 加 Check 守门，见 §12.4），存量 `check=skip` 实例由 seed 幂等升级；自定义 `check` 配置不受影响。
 - 观测日志 schema 不变，仅增加 `round`、`channel`（`text|tool_use`）、`tool_call_count`、`check_retry_triggered` 等可选字段。

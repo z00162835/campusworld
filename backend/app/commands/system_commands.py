@@ -25,8 +25,14 @@ class HelpCommand(SystemCommand):
         input_schema={
             'type': 'object',
             'properties': {
-                'topic': {'type': 'string', 'description': 'command name to get help for'},
+                'args': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                    'description': 'Positional arguments; args[0] is the command name to get help for (e.g. ["task"]).',
+                },
             },
+            'required': [],
+            'additionalProperties': False,
         },
         output_schema={
             'type': 'object',

@@ -1,10 +1,15 @@
-"""Manifest must surface a command's declared ``CommandToolSemantics.input_schema``.
+"""Manifest must always emit the args-array tool input schema.
 
 ``build_llm_tool_manifest`` resolves contract fields via
-``resolve_command_tool_semantics`` (registry ClassVar, no DB read) and, when a
-command declares a structured ``input_schema``, emits that schema in the
-manifest entry instead of the default args-array schema derived from
-``BaseCommand.execute(context, args)``.
+``resolve_command_tool_semantics`` (registry ClassVar, no DB read) but the
+LLM tool ``input_schema`` is always the args-array shape matching
+``BaseCommand.execute(context, args: List[str])``. A command's declared
+``CommandToolSemantics.input_schema`` is contract metadata (mirrored to
+``system_command_ability`` for audit) and is NOT emitted as the tool schema:
+named-field schemas (e.g. ``{"topic": ...}``, ``{"query": ...}``) diverge
+from the positional-arg execution contract and induce mis calls (the model
+fills the named field, the adapter flattens key+value into positional args,
+and the command reads the field name as ``args[0]``).
 """
 
 from __future__ import annotations
@@ -37,7 +42,7 @@ class _FakeCmd(BaseCommand):
 
 
 @pytest.mark.unit
-def test_manifest_emits_structured_input_schema_when_present():
+def test_manifest_always_emits_args_array_schema():
     from app.commands.registry import command_registry
     from app.game_engine.agent_runtime.aico_world_context import (
         build_llm_tool_manifest,
@@ -57,10 +62,37 @@ def test_manifest_emits_structured_input_schema_when_present():
         )
         fake = next(s for s in schemas if s.name == "fakesearch")
         props = fake.input_schema.get("properties", {})
-        assert props.get("query", {}).get("type") == "string"
-        assert fake.input_schema.get("required") == ["query"]
-        # The default args-array schema must NOT leak through when a
-        # structured schema is declared.
-        assert "args" not in props
+        # The args-array schema matching BaseCommand.execute(context, args)
+        # is always emitted, even when a command declares a structured
+        # named-field input_schema.
+        assert "args" in props
+        assert props["args"]["type"] == "array"
+        # The declared named-field schema must NOT leak into the tool schema.
+        assert "query" not in props
     finally:
         command_registry.unregister_command("fakesearch")
+
+
+@pytest.mark.unit
+def test_manifest_args_array_schema_for_help():
+    from app.commands.init_commands import initialize_commands
+    from app.commands.registry import command_registry
+    from app.game_engine.agent_runtime.aico_world_context import (
+        build_llm_tool_manifest,
+    )
+    from app.game_engine.agent_runtime.resolved_tool_surface import (
+        ResolvedToolSurface,
+    )
+
+    initialize_commands(force_reinit=True)
+    surface = ResolvedToolSurface(
+        allowed_command_names=frozenset({"help"}),
+        tool_command_context=None,
+    )
+    _prose, schemas = build_llm_tool_manifest(surface, command_registry, session=None)
+    help_schema = next(s for s in schemas if s.name == "help")
+    props = help_schema.input_schema.get("properties", {})
+    assert "args" in props
+    assert props["args"]["type"] == "array"
+    # The legacy "topic" named field must no longer appear.
+    assert "topic" not in props

@@ -177,8 +177,11 @@ Three behavioural rules override everything else in this primer:
 2. Questions about world state, user identity, rooms, or installed worlds
    MUST be answered from tool observations, not from prior training.
 3. In the Plan phase, first decide whether tools are needed. If yes, emit
-   **only** the tool call (JSON or provider-native), no prose. Prose
-   belongs in the Do phase reply.
+   **only** the tool call (JSON or provider-native), no prose. The final
+   user-facing reply is composed only after tool observations are gathered
+   (Do/Check phase, or the reply step when Do is skipped); never emit prose
+   that narrates internal reasoning, and never leak internal phase tags such
+   as `[plan]` into the user-facing reply.
 
 ## 9. Commands
 

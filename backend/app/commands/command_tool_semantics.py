@@ -47,6 +47,12 @@ class CommandToolSemantics:
     interaction_profile: InteractionProfile
     semantic_pending: bool = False
     subcommand_profiles: Tuple[SubcommandProfileRule, ...] = ()
+    # When non-None and the command is invoked with no args, resolve the bare
+    # form to this profile instead of the class-level interaction_profile. Use
+    # case: `task` is class-level `mutate` but `task` with no args only prints
+    # usage (no state change), so it should be treated as `read` to avoid the
+    # execution_gate blocking informational intent on the bare call.
+    default_profile_when_no_subcommand: Optional[InteractionProfile] = None
     observation_message_mode: Optional[str] = None
     observation_data_keys: Optional[frozenset[str]] = None
     manifest_tier: ManifestTier = 'none'
@@ -79,6 +85,7 @@ class CommandToolSemantics:
             'interaction_profile': self.interaction_profile,
             'semantic_pending': self.semantic_pending,
             'subcommand_profiles': sub,
+            'default_profile_when_no_subcommand': self.default_profile_when_no_subcommand,
             'observation_message_mode': self.observation_message_mode,
             'observation_data_keys': data_keys,
             'manifest_tier': self.manifest_tier,
@@ -184,6 +191,7 @@ AGENT_SUBCOMMAND_PROFILES = (
 TASK_MUTATE_SEMANTICS = CommandToolSemantics(
     interaction_profile='mutate',
     subcommand_profiles=TASK_SUBCOMMAND_PROFILES,
+    default_profile_when_no_subcommand='read',
     routing_hint='For task examples/syntax/usage, route to `help task` (or primer) first; call state-changing subcommands only after explicit execution intent and confirmation.',
     routing_hint_i18n={
         'zh-CN': '若用户问 task 的例子/语法/用法，先走 help task（或 primer）；不要把示例请求当作执行请求。仅在用户明确执行且确认后才可调用会改状态的 task 子命令。',
@@ -239,6 +247,21 @@ def resolve_command_tool_semantics(
     base = getattr(type(cmd), 'tool_semantics', DEFAULT_READ_SEMANTICS)
     if not args or not base.subcommand_profiles:
         resolved = base
+        # A command that exposes subcommands may declare a safer profile for the
+        # bare (no-arg) form: e.g. `task` with no args only prints usage and
+        # should not be treated as the class-level `mutate`, otherwise the
+        # execution_gate blocks informational intent on the bare call. This
+        # fallback triggers ONLY for an explicit empty arg list (``args=[]``,
+        # the execution_gate path); when ``args is None`` (manifest grouping /
+        # classification) the class-level profile is preserved so a mutate
+        # command is still grouped under state-changing tools.
+        if args is not None and len(args) == 0 and base.subcommand_profiles and base.default_profile_when_no_subcommand:
+            prof = base.default_profile_when_no_subcommand
+            resolved = dataclasses.replace(
+                base,
+                interaction_profile=prof,
+                invocation_guard=dict(default_guard_for(prof)),
+            )
     else:
         matched = _match_subcommand_rule(base.subcommand_profiles, args)
         if matched is None:

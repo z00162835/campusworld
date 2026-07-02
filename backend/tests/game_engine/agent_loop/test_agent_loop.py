@@ -76,3 +76,27 @@ def test_budget_exhausted_becomes_fail_fallback():
         rounds_remaining=0,
     )
     assert verdict == DraftCompletenessVerdict.fail_fallback
+
+
+@pytest.mark.unit
+def test_deferral_prose_catches_internal_reasoning_leaks():
+    """Expanded deferral patterns must catch Plan-phase internal reasoning
+    that leaked as the draft (e.g. ``[plan] The output was truncated. Let me
+    try to get more detail.``) so the Check gate can trigger a re-plan."""
+    cfg = AgentLoopConfig()
+    assert is_deferral_prose('The output was truncated. Let me try to get more detail.', config=cfg)
+    assert is_deferral_prose("I'll try to get the detail.", config=cfg)
+    assert is_deferral_prose('让我再试一试。', config=cfg)
+    assert is_deferral_prose('Let me try again.', config=cfg)
+
+
+@pytest.mark.unit
+def test_assemble_plan_skip_do_draft_strips_internal_plan_tag():
+    """Internal phase tags such as ``[plan]`` must never reach the user."""
+    from app.game_engine.agent_runtime.frameworks.llm_pdca import (
+        assemble_plan_skip_do_draft,
+    )
+    assert assemble_plan_skip_do_draft('[plan] The output was truncated. Let me try.', '') == ''
+    assert assemble_plan_skip_do_draft('[plan] thinking...\nHere is the answer.', '') == 'Here is the answer.'
+    assert assemble_plan_skip_do_draft('[PLAN] internal note\n[do] also internal\nFinal reply.', '') == 'Final reply.'
+    assert assemble_plan_skip_do_draft('[thought] reasoning\n[check] verifying\nVisible prose.', '') == 'Visible prose.'

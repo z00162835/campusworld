@@ -12,9 +12,15 @@ _DEFAULT_DEFERRAL_PATTERNS = (
     r'让我(?:先)?查(?:询|一下)',
     r'稍等',
     r'正在查',
+    r'让我(?:再)?试(?:一试|看)',
+    r'我再(?:查|试)',
     r"(?i)\blet me check\b",
     r"(?i)\bi['']?ll (?:look up|query|check)\b",
     r"(?i)\bi will (?:look up|query|check)\b",
+    r"(?i)\blet me try\b",
+    r"(?i)\bi['']?ll try\b",
+    r"(?i)\bthe output was truncated\b",
+    r"(?i)\btry to get (?:more|the) detail\b",
 )
 
 _GROUNDING_TOOL_NAMES = frozenset({'find', 'describe', 'primer', 'look', 'space', 'help', 'whoami', 'agent'})

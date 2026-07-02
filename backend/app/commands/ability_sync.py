@@ -40,13 +40,23 @@ def _sync_llm_hints_from_command(cmd: Any, attrs: Dict[str, Any]) -> None:
     else:
         attrs.pop('llm_hint_i18n', None)
 
-def _default_observation_policy_from_semantics(sem: Any) -> Dict[str, Any]:
-    from app.game_engine.agent_runtime.tool_observation_policy import _default_policy_for_profile
+def _explicit_observation_policy_from_semantics(sem: Any) -> Optional[Dict[str, Any]]:
+    """Build ``agent_observation_policy`` only when the registry explicitly
+    declares ``observation_message_mode``.
 
-    profile = str(getattr(sem, 'interaction_profile', '') or 'read')
-    base = _default_policy_for_profile(profile)
-    mode = getattr(sem, 'observation_message_mode', None) or base.message_mode
-    policy: Dict[str, Any] = {'message_mode': mode}
+    Auto-deriving from the class-level ``interaction_profile`` is intentionally
+    NOT done here: a command with ``mutate`` class profile but ``read``
+    subcommands (e.g. ``task list``) would get a stale ``summary`` override
+    that defeats the registry's per-subcommand resolution at runtime
+    (``tool_observation_policy.resolve_tool_observation_policy`` lets the DB
+    override win). Per F08 §1.3, ``agent_observation_policy`` is an ops-level
+    override, not an auto-seeded default. Returns ``None`` when no explicit
+    mode is declared (caller leaves any existing value untouched).
+    """
+    mode = getattr(sem, 'observation_message_mode', None)
+    if not mode:
+        return None
+    policy: Dict[str, Any] = {'message_mode': str(mode)}
     keys = getattr(sem, 'observation_data_keys', None)
     if keys:
         policy['data_keys'] = sorted(keys)
@@ -68,8 +78,13 @@ def _sync_tool_semantics(command_name: str, attrs: Dict[str, Any]) -> None:
         attrs['routing_hint_i18n'] = {str(k): str(v) for (k, v) in hints_i18n.items() if str(v).strip()}
     else:
         attrs.pop('routing_hint_i18n', None)
-    if not isinstance(attrs.get('agent_observation_policy'), dict):
-        attrs['agent_observation_policy'] = _default_observation_policy_from_semantics(sem)
+    explicit_policy = _explicit_observation_policy_from_semantics(sem)
+    if explicit_policy is not None:
+        attrs['agent_observation_policy'] = explicit_policy
+    # When no explicit observation_message_mode is declared, leave any existing
+    # ``agent_observation_policy`` untouched: it is either an ops override
+    # (preserved across syncs per F08 §1.3) or a stale auto-seeded value (cleared
+    # once by the migrate_clear_observation_policy script). We never auto-seed.
     # --- extended tool contract fields ---
     attrs['side_effect_level'] = resolve_side_effect_level(sem)
     attrs['idempotent'] = bool(sem.idempotent)
@@ -133,12 +148,9 @@ def ensure_command_ability_nodes(session: Session) -> int:
         existing = session.query(Node).filter(and_(Node.type_code == 'system_command_ability', Node.attributes['command_name'].astext == command_name, Node.is_active == True)).first()
         if existing:
             attrs = dict(existing.attributes or {})
-            preserved_obs = attrs.get('agent_observation_policy') if isinstance(attrs.get('agent_observation_policy'), dict) else None
             attrs.update({'command_name': command_name, 'aliases': aliases, 'command_type': command_type, 'entity_kind': 'ability', 'presentation_domains': ['help', 'npc'], 'access_locks': {'view': 'all()', 'invoke': 'all()'}, 'updated_at': now})
             _sync_llm_hints_from_command(cmd, attrs)
             _sync_tool_semantics(command_name, attrs)
-            if preserved_obs:
-                attrs['agent_observation_policy'] = preserved_obs
             existing.attributes = attrs
             if root_node_id and (not existing.location_id):
                 existing.location_id = root_node_id

@@ -182,8 +182,13 @@ def build_llm_tool_manifest(surface, command_registry, *, session=None, locale: 
             schema_desc = f'{desc} Routing: {routing_hint}'
         if len(schema_desc) > max_description_chars:
             schema_desc = schema_desc[:max_description_chars - 3] + '...'
-        effective_input_schema = dict(sem_obj.input_schema) if sem_obj.input_schema is not None else dict(schema.input_schema)
-        patched.append(ToolSchema(name=schema.name, description=schema_desc, input_schema=effective_input_schema))
+        # The LLM tool input schema is always the args-array shape matching
+        # ``BaseCommand.execute(context, args: List[str])``. A command's declared
+        # ``CommandToolSemantics.input_schema`` is contract metadata (mirrored to
+        # ``system_command_ability`` for audit/validation) but is NOT emitted as
+        # the tool schema: named-field schemas (e.g. ``{"topic": ...}``) diverge
+        # from the positional-arg execution contract and induce mis calls.
+        patched.append(ToolSchema(name=schema.name, description=schema_desc))
         usage = ''
         if cmd is not None:
             try:

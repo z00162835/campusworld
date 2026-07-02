@@ -11,6 +11,9 @@ from app.game_engine.agent_runtime.llm_client import LlmCallSpec
 from app.game_engine.agent_runtime.llm_providers.http_utils import httpx_post_json, httpx_stream_post_lines, parse_anthropic_messages_sse_lines
 from app.game_engine.agent_runtime.llm_streaming import LlmStreamSink
 from app.game_engine.agent_runtime.tool_calling import AssistantToolUseTurn, CompleteWithToolsResult, ConversationTurn, TextTurn, ToolCall, ToolResultsTurn, ToolSchema
+from app.core.log import get_logger, LoggerNames
+
+logger = get_logger(LoggerNames.AICO_AGENT)
 
 def minimax_anthropic_messages_url(base_url: str) -> str:
     b = (base_url or '').strip().rstrip('/')
@@ -256,6 +259,16 @@ def normalize_tool_use_args(raw_input: Any) -> List[str]:
                 out.append(str(v).strip())
         return out
     if maybe_args is None:
+        # Top-level named params (no ``args`` key). This is the CLI flag-dict
+        # path (e.g. ``{"-n": "hicampus"}`` -> ``["-n", "hicampus"]``). It is
+        # also hit when a model goes off-schema and emits named fields at top
+        # level; warn so such divergence is observable. Key+value are both
+        # appended to preserve the flag-pair semantics.
+        logger.warning(
+            'normalize_tool_use_args: top-level named input without args key; '
+            'falling back to flag-pair flatten. input_keys=%s',
+            list(raw_input.keys()),
+        )
         out = []
         for (k, v) in raw_input.items():
             if k == 'args':
