@@ -33,9 +33,11 @@
 
 `CommandToolSemantics`（`BaseCommand` 上的 `ClassVar`，即 `tool_semantics`）是每条命令 **按工具类型的内在契约** 的唯一真源 —— 项目的 **Tool Profile**。它承载：`interaction_profile`（粗粒度 `read` / `mutate`）、`side_effect_level`（细化 `none` / `read` / `write_low` / `write_high`）、`idempotent` / `deterministic`、`input_schema` / `output_schema` / `error_schema`（JSON Schema）、`data_classification`（`public` / `internal` / `confidential` / `restricted`）、`data_scope`（`NodeType.type_code` 元组），以及既有的 `invocation_guard` / `manifest_tier` / `routing_hint`。
 
-`system_command_ability` 图节点是 **只读镜像**，由 `ability_sync._sync_tool_semantics` 自 `CommandToolSemantics` **单向同步**。运行时消费方（`build_llm_tool_manifest`、`execution_gate`、`tool_observation_policy`）**只读 `CommandToolSemantics`**；节点镜像服务于图查询、NPC 能力发现、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md) 的工具路由/preplan 与审计。**授权仍在 `command_policies`** 中维护，不随镜像下沉。
+`system_command_ability` 图节点是 **只读镜像**，由 `ability_sync._sync_tool_semantics` 自 `CommandToolSemantics` **单向同步**。运行时消费方读取 **契约字段**（`interaction_profile` / `side_effect_level` / `invocation_guard` / schemas / `data_*`）时 **只读 `CommandToolSemantics`**：`build_llm_tool_manifest` 与 `execution_gate` 完全不读节点；`tool_observation_policy` 的 profile / guard 解析以注册表为准，**仅** ops 级 `agent_observation_policy`（observation 模式覆盖，见 §8）仍从 `system_command_ability.attributes` 读取。节点镜像服务于图查询、NPC 能力发现、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md) 的工具路由/preplan 与审计。**授权仍在 `command_policies`** 中维护，不随镜像下沉。
 
-`side_effect_level` 采用 **混合解析**：显式声明优先；否则由 `interaction_profile` 与 `invocation_guard.requires_confirmation` 派生（`read` → `read`；`mutate` + 确认 → `write_high`；`mutate` + 无确认 → `write_low`）。`none` 是 **纯无副作用信息类命令** 的显式 opt-in，不参与派生。该解析由 `resolve_side_effect_level` 实现，错误契约由 `build_error_schema` 基于 **平台统一错误码** 生成。
+`side_effect_level` 采用 **混合解析**：显式声明优先；否则由 `interaction_profile` 与 `invocation_guard.requires_confirmation` 派生（`read` → `read`；`mutate` + 确认 → `write_high`；`mutate` + 无确认 → `write_low`）。`none` 是 **纯无副作用信息类命令** 的显式 opt-in，不参与派生。该解析由 `resolve_side_effect_level` 实现；`resolve_command_tool_semantics` 在解析得到的 `CommandToolSemantics.side_effect_level` 仍为 `None` 时（典型场景：子命令感知命令仅覆盖 `interaction_profile` / `invocation_guard` 而未显式声明 `side_effect_level`）**自动** 调用 `resolve_side_effect_level` 物化为具体值，使下游消费方始终拿到非空 `side_effect_level`。
+
+错误契约由 `build_error_schema` 基于 **平台统一错误码**（`PLATFORM_ERROR_CODES`，`backend/app/commands/command_tool_semantics.py` 中的 `frozenset`）生成；命令 `error_schema` 的 `code` 枚举取自该集合，对应人类可读文案以 **`command.error.<CODE>`** 为 key 存放于 `backend/app/commands/i18n/locales/{en-US,zh-CN}.yaml`，由展示层按 locale 解析。
 
 ---
 
@@ -302,6 +304,6 @@ agent
 ### 12.8 与 v1 的兼容性
 
 - 旧 provider 无需改动：`LlmClient.supports_tools()` 默认 `False`，framework 走 v1 JSON 通道。
-- 旧 `tool_allowlist`（仅 `help/look/whoami`）继续可用；`build_llm_tool_manifest` 对缺失命令节点仅是忽略。
+- 旧 `tool_allowlist`（仅 `help/look/whoami`）继续可用；`build_llm_tool_manifest` 自 `CommandToolSemantics`（注册表 ClassVar）解析契约语义，缺失 `system_command_ability` 节点时仅退化为无描述提示（`_llm_hint_from_command_node` 容错），不影响 manifest 生成。
 - 旧 `phase_llm` 配置保持语义；`act` 仍默认 `skip`。
 - 观测日志 schema 不变，仅增加 `round`、`channel`（`text|tool_use`）、`tool_call_count`、`check_retry_triggered` 等可选字段。
