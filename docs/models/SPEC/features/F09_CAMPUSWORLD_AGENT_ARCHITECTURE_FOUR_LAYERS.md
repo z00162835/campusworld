@@ -32,7 +32,7 @@
 | **L1** | **类型与数据层** | 本体与状态；本体推理、常识规则 | 图节点、关系、NodeType；声明式可验证推理；见 §6.1。 |
 | **L2** | **命令工具层** | 面向 Agent 的工具面 | 命令注册表、`RegistryToolExecutor`、`tool_allowlist`、`ToolObservation`；见 §6.2。 |
 | **L3** | **Agent 思考模型层** | 认知编排与多模式推理 | `ThinkingFramework`、快慢思考、PDCA+LLM 等；见 §6.3。 |
-| **L4** | **经验 Skill 层** | 语义 Skill、业务经验与场景理解 | 命令拉取或指定注入；见 §6.4。 |
+| **L4** | **经验 Skill 层** | 语义 Skill、业务经验与场景理解 | `SKILL.md` 资产 + `skill_refs` 引用 + `skill-context` 经 user/input context 注入；见 §6.4 / [**F15**](F15_AGENT_SKILL_REGISTRY.md)。 |
 
 ---
 
@@ -82,23 +82,23 @@ flowchart TB
 | **L1** | [`docs/models/SPEC/SPEC.md`](../SPEC.md)、`trait_mask` / `NodeType` 种子（`backend/db/ontology/`）；[**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)（意图运行时；与 Graph API 授权分册若存在则并列引用） | 图的 **类型与实例**；策略表达式作用的对象。 |
 | **L2** | [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md) §4–§6、[**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) ToolGather、`ToolObservation` | **命令即工具**；F08 规定 **工具输出进上下文** 的契约。 |
 | **L3** | [**F02**](F02_INTELLIGENT_AGENT_SERVICE_TYPE.md) 思维模型、[**F03**](F03_AICO_DEFAULT_SYSTEM_ASSISTANT.md) PDCA+LLM、ADR-F03 | **PDCA** 为常见慢路径，非 L3 全部。 |
-| **L4** | [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) L4 补充、[**F06**](F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)（互补） | **经验 Skill**：可经命令或注入；**非** LTM 同义词。 |
+| **L4** | [**F15**](F15_AGENT_SKILL_REGISTRY.md)（L4 Skill Registry & Injection）、[**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) L4 补充、[**F06**](F06_CAMPUSLIBRARY_KNOWLEDGE_WORLD.md)（互补） | **经验 Skill**：`SKILL.md` 资产 + `skill_refs` 引用 + `skill-context` 经 user/input context 注入（F15）；**非** LTM 同义词。 |
 
 **L4 vs F07（长期记忆）**
 
-| 维度 | **L4 Skill（本架构）** | **F07 LTM / `memory_context`** |
+| 维度 | **L4 Skill（本架构，见 [F15](F15_AGENT_SKILL_REGISTRY.md)）** | **F07 LTM / `memory_context`** |
 |------|------------------------|----------------------------------|
-| 语义 | 可版本化 **经验条目**、场景剧本、世界侧 **Skill** 标识 | **按用户区隔** 的 **长期记忆** 检索与晋升 |
-| 典型载体 | 命令输出、节点绑定、显式注入 | `agent_memory_entries` / LTM 表、`build_ltm_memory_context_for_tick` |
-| 与 L3 | 作为 **可选文本块** 进入 tick | 作为 **`memory_context`** 进入 tick（F03 §5.5） |
+| 语义 | **经验 Skill**：可复用流程/场景指引（v1 无版本化，`version` 延后见 F15 Q7）；世界包 Skill 概念为 **不同域**（F15 §11） | **按用户区隔** 的 **长期记忆** 检索与晋升 |
+| 典型载体 | `backend/config/skills/<id>/SKILL.md`（per-type 资产）+ 节点 `attributes.skill_refs: List[str]`（per-instance 引用） | `agent_memory_entries` / LTM 表、`build_ltm_memory_context_for_tick` |
+| 与 L3 | 注入专门 **`skill-context` 经 user/input context 通道**（优先级 < 平台 system/安全/command policy，物理隔离不靠 ordering）；按 PDCA 阶段注入 eligible manifest（L1）+ 匹配 body（L2） | 作为 **`memory_context`** 进入 tick（F03 §5.5） |
 
 二者 **可并存** 于同一 tick，**拼接顺序与截断** 由实现或 F03 扩展约定。
 
 **L4 vs F06（CampusLibrary）**
 
 - **F06**：OS 级知识世界、入库、`cl search`、GraphRAG/pgvector 等 **检索路径**。
-- **L4**：偏 **与本 tick 强绑定** 的短文本、**命令可拉取** 的经验、**语义世界 Skill 标识**。
-- **互补**：同一问题可 **先 F06 检索** 再经 L2 暴露为观测，或 **L4 直接注入**；产品边界由实现划分。
+- **L4**：偏 **与本 tick 强绑定** 的 Skill 文本（`SKILL.md` body，advisory 经验/流程指引）；世界包 Skill 概念（`data/concepts/skills.yaml`）为 **世界内容资产、不同域**（F15 §11）。
+- **互补**：同一问题可 **先 F06 检索** 再经 L2 暴露为观测，或 **L4 注入 `skill-context`（user/input context 通道）**；产品边界由实现划分。
 
 ---
 
@@ -122,9 +122,14 @@ flowchart TB
 
 ### 6.4 L4 Skill 来源与注入
 
-- **语义世界中的 Skill**：与 L1 对象/世界包元数据 **可对齐标识**。
-- **经命令得到**：注册表命令拉取，鉴权 + `tool_allowlist`。
-- **指定方式注入**：tick 入参、`nodes.attributes` 绑定、L3 预置片段、会话元数据（策略允许）；**trace 可区分** 命令拉取 vs 预注入。
+> **细节契约见 [**F15**](F15_AGENT_SKILL_REGISTRY.md)（L4 经验 Skill Registry & Injection）；本节为分层真源摘要。**
+
+- **Skill 资产形态**：单文件 `SKILL.md` + YAML frontmatter（对标 Anthropic Agent Skills）；全局资产位于 `backend/config/skills/<skill_id>/SKILL.md`，由 `SkillRegistry` 启动期加载（渐进式披露 L1 清单 / L2 body / L3 bundled 预留）。
+- **Agent 实例引用**：`npc_agent` 节点 `attributes.skill_refs: List[str]`（per-instance 引用），与 Skill 定义（per-type 资产）分离。
+- **激活**：`activation_mode == phase_mapped`（v1 确定性阶段映射，自动注入 body）/ `model_selected`（model 经 [F17](F17_AGENT_STATE_MACHINE.md) `selected_skill` 自选，post-F17）。
+- **注入**：Skill 内容注入 **user/input context 通道**（`skill-context`，**绝不**进平台 system message），优先级 < 平台 system / 安全 / command policy（物理隔离不靠 ordering）；按 PDCA 阶段注入 eligible manifest（L1）+ 匹配 body（L2）。
+- **世界包 Skill 概念**（HiCampus `data/concepts/skills.yaml`）为 **不同域**（世界内容资产，不入图节点、不被 agent tick 消费），与 L4 SkillRegistry **不合并**（见 F15 §11）。
+- **可并存**：F07 `memory_context` 与 L4 Skill 文本可并存于同一 tick（§5）。
 
 ---
 
@@ -135,7 +140,7 @@ flowchart TB
 | **L1** | `backend/app/models/graph.py`、`db/ontology/`、NodeType 种子 | 图与类型 |
 | **L2** | `app/commands/registry.py`、`agent_runtime/tooling.py`、`invoke.py` | ToolGather **契约** 见 F08；**实现缺口** 以 F08 §5.1 为准 |
 | **L3** | `agent_runtime/frameworks/`、`worker.py`、`npc_agent_nlp.py` | `LlmPDCAFramework` 等 |
-| **L4** | 无单一目录；**未来** 可与内容包、节点属性、命令共存 | **经验模块** 可渐进落地 |
+| **L4** | `backend/app/game_engine/agent_runtime/skills/`（`SkillDefinition`/`SkillRegistry`/`SkillRunner`/`SkillInjection`）+ `backend/config/skills/<id>/SKILL.md`；节点 `attributes.skill_refs` | **经验 Skill**：渐进式披露 + `skill-context` 经 user/input context 注入；细节契约见 [**F15**](F15_AGENT_SKILL_REGISTRY.md) |
 | **F07 注入** | `app/services/ltm_semantic_retrieval.py`、`npc_agent_nlp.py` | `memory_context` |
 
 ---

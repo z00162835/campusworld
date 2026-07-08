@@ -150,9 +150,9 @@ workflow:
 
 ## 9. prompt_fingerprint
 
-- fingerprint 为 **输入侧**（`world_snapshot`/`tool_manifest_text`/`user_message`，`prompt_fingerprint.py:5-7`），HTTP 前剥离，非正确性契约。
+- fingerprint 为 **输入侧**（`world_snapshot`/`tool_manifest_text`/`user_message`，`prompt_fingerprint.py:5-7`），HTTP 前剥离，**v1 非正确性契约**（当前不驱动返回答案的缓存；与 [F15](F15_AGENT_SKILL_REGISTRY.md) §5.3 一致——F15 skill 文本纳入 fingerprint 同此定位）。
 - 结构化 turn 改 **输出形状**，不改 fingerprint 输入。
-- ⚠️ 若 `react_turn_schema` 提示注入 system/manifest 文本，则 fingerprint 输入变 —— v1 将 schema 提示放 system 段（同 [F15] Skill 注入），接受 desync；精确缓存失效延后。
+- ⚠️ 若 `react_turn_schema` 提示注入 system/manifest 文本，则 fingerprint 输入变 —— v1 将 F17 **schema 提示** 放 **system 段**（**不同于 [F15](F15_AGENT_SKILL_REGISTRY.md) Skill 注入的 user/input context 通道 `skill-context`**）；fingerprint desync **非 v1 正确性 bug**（输入侧、HTTP 前剥离），仅为 trace/dedup 完整性 + 前向兼容。**未来接入 provider prompt-cache / 内部响应缓存时**升级为正确性契约，届时须 **per-loop-phase** 计算 + 含 `skill_context_text`（[F15](F15_AGENT_SKILL_REGISTRY.md) §5.3 已规定该结构），精确缓存失效随之落地。
 
 ---
 
