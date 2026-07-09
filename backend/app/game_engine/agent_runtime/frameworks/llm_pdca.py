@@ -302,10 +302,12 @@ class LlmPDCAFramework(ThinkingFramework):
         """Compute this phase's skill-context (L1 manifest + L2 body) and trace activations."""
         if self._skill_injection is None or not self._skill_refs:
             ctx.payload['skill_context_text'] = ''
+            ctx.payload['active_skill_activations'] = []
             return
-        text, activations = self._skill_injection.inject(self._skill_refs, phase=phase)
-        ctx.payload['skill_context_text'] = text
-        for a in activations:
+        result = self._skill_injection.inject(self._skill_refs, phase=phase)
+        ctx.payload['skill_context_text'] = result.text
+        ctx.payload['active_skill_activations'] = list(result.activations)
+        for a in result.activations:
             trace.append({
                 'step': 'skill_activated',
                 'skill_id': a.skill_id,

@@ -4,24 +4,46 @@
 
 **文档状态：Draft（契约先行；实现按本 SPEC 逐阶段优化）。**
 
-**交叉引用：** [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（`execution_gate`、`CommandToolSemantics` Tool Profile、`PreauthorizedToolExecutor`）、[**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（L2/L4 边界）、[**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)（意图分类，与 `before_tool_call` 同向）、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md)（execution_gate 仍负责最终允许）、[**F15**](F15_AGENT_SKILL_REGISTRY.md)（`before_skill_activation`）、[**F18**](F18_AGENT_QUALITY_GATES.md)（`pause`/`require_approval` 停止决策）。
+**交叉引用：** [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（`execution_gate`、`CommandToolSemantics` Tool Profile、`PreauthorizedToolExecutor`）、[**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（L2/L4 边界）、[**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)（意图分类，与 `before_tool_call` 同向）、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md)（execution_gate 仍负责最终允许）、[**F15**](F15_AGENT_SKILL_REGISTRY.md)（`before_skill_activation`、`SkillActivation.allowed_tool_groups`）、[**F18**](F18_AGENT_QUALITY_GATES.md)（`pause`/`require_approval` 停止决策、输出层脱敏/停止）。
+
+**决策状态：** 本章基于 F15 实现完成后的架构评审，D1–D10 已决策（见 §1.5）。
+
 
 ---
 
 ## 1. Goal
 
-- 把 `CAMPUSWORLD_SYSTEM_PRIMER.md` §8–§9 与 `settings.yaml` AICO `system_prompt`/`phase_prompts` 中的 **行为安全规则文本** 迁移到确定性引擎，消除「Prompt 注入依赖」。
+- 把 `CAMPUSWORLD_SYSTEM_PRIMER.md` §8–§9 与 `settings.yaml` AICO `system_prompt`/`phase_prompts` 中的 **行为安全规则文本** 迁移到确定性引擎，消除「Prompt 注入依赖」；v1 保留 prompt 文本作为 fallback（`policy.enable_prompt_fallback: true`），实际移除延后到 F18 输出/流式 gate 落地。
 - 提供 4 个 check_point 的统一拦截：`before_skill_activation` / `before_tool_call` / `after_tool_observation` / `before_final_answer`。
 - 收敛 `execution_gate.py` 为 PolicyEngine 的 `before_tool_call` 适配器，**保持外部 API 与 `GateDecision` 结构稳定**，避免破坏 `PreauthorizedToolExecutor` 与现有测试。
+- 通过 `before_tool_call` 硬收敛 F15 `SkillActivation.allowed_tool_groups`（命令所在组 ∉ 当前激活 skill 的 group 并集时拒绝）。
+
+## 1.5 Architectural Decisions（已决策）
+
+| 编号 | 决策 | 结论 | 对 SPEC 的影响 |
+|------|------|------|----------------|
+| **D1** | 检测器是否允许 LLM 调用 | **A. 纯函数，无 LLM** | v1 所有 detector 为纯函数，复杂语义评估交给 F11/F18 |
+| **D2** | `before_skill_activation` 插入位置 | **在 `SkillInjection` 加 hook**；policy 拒绝的 skill 进入 **独立 `Blocked by policy` 段**（v1），明确表达 policy-denied 语义，不混入 F15 `inactive` 段 | 需同步 F15 manifest 模板 + 验收；拒绝信息通过 `policy_decision` trace 保留 |
+| **D3** | `allowed_tool_groups` 硬收敛 | **B. 在 `before_tool_call` 硬过滤** | 命令 tool_group 必须能被当前激活 skill 的 group 并集覆盖；数据流见 §4.2 |
+| **D4** | `execution_gate` 收敛 | **A. 适配器模式** | `evaluate_execution_gate` 内部委托 `PolicyEngine.evaluate`，对外签名不变 |
+| **D5** | `after_tool_observation` 脱敏 | **C. 延迟到 F18 输出层** | v1 `after_tool_observation` 不实现 transform，F18 `before_final_answer` 统一脱敏 |
+| **D6** | streaming `before_final_answer` | **在 F18 中考虑** | v1 仅在非流式 Act 路径检查；流式路径已知限制 |
+| **D7** | 规则定义语言 | **B. Python dataclass + 代码注册** | v1 平台默认与实例规则均为代码；YAML 节点覆盖延后 |
+| **D8** | `require_approval` 语义 | **A. v1 同步降级为 deny** | 保留枚举值，但 `runtime_action='block'`，trace 记录原始 decision |
+| **D9** | `policy_decision` trace schema | **兼容现有 schema** | 新增字段可扩展，eval adapter 显式映射 `policy_decision` |
+| **D10** | Skill `side_effect_level` 是否约束命令 | **不约束** | Skill 的 `side_effect_level` 仅描述 Skill 自身；命令副作用来自 F08 `CommandToolSemantics` |
 
 ## 2. Scope / Non-Goals
 
-- **Scope：** `npc_agent`（含 AICO）agent tick 内的行为策略；`before_tool_call` / `after_tool_observation` / `before_final_answer` 三个今日可落地的 check_point；`before_skill_activation`（依赖 [F15](F15_AGENT_SKILL_REGISTRY.md)）。
+- **Scope：** `npc_agent`（含 AICO）agent tick 内的行为策略；`before_skill_activation` / `before_tool_call` 今日落地；`after_tool_observation` 只记录审计、不 transform（D5）；`before_final_answer` 非流式路径拦截（D6）。
 - **Non-Goals：**
   - **不**替代 `command_policies`（权限/角色授权平面，`policy.py` / `command_policies` 表）。PolicyEngine 是 **行为平面**（意图/确认/副作用/数据分级），两平面并存（见 §6）。
   - **不**替代 F11 意图分类器；F11 产出 `intent_hint` 软提示，PolicyEngine 在 check_point 做最终拦截。
   - v1 **不**实现跨 tick 异步 `pause`/`resume` 审批工作流（tick 同步不变量，见 §8 / Open Question Q2）。
   - **不**改变 `ResolvedToolSurface` 冻结面构造（F08 §5.1）。
+  - v1 **不**实现 LLM-based detector（D1）；所有 detector 为纯函数。
+  - v1 **不**实现 `after_tool_observation` 数据脱敏 transform（D5）；脱敏延后到 F18 `before_final_answer`。
+  - v1 **不**支持 YAML 节点规则覆盖（D7）；规则通过 Python dataclass + 代码注册。
 
 ---
 
@@ -31,10 +53,10 @@
 
 | CheckPoint | 触发时机 | 今日可落地 | 依赖 |
 |------------|---------|-----------|------|
-| `before_skill_activation` | Skill 激活前（`SkillInjection.select` 后） | ❌ 否 | [F15](F15_AGENT_SKILL_REGISTRY.md) |
+| `before_skill_activation` | Skill body 激活前（F15 `SkillInjection` 内部 hook） | ✅ 是 | [F15](F15_AGENT_SKILL_REGISTRY.md) |
 | `before_tool_call` | 单次工具执行前 | ✅ 是 | — |
-| `after_tool_observation` | ToolObservation 生成后、注入后续 LLM 前 | ✅ 是 | — |
-| `before_final_answer` | 最终答复发出前 | ⚠️ 部分 | streaming 锚点见 §7 |
+| `after_tool_observation` | ToolObservation 生成后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
+| `before_final_answer` | 最终答复发出前（非流式） | ⚠️ 部分 | streaming 路径延后到 F18（D6） |
 
 ### 3.2 PolicyDecision（`decisions.py`）
 
@@ -51,15 +73,16 @@ class PolicyDecision:
 
 ### 3.3 Detectors（`detectors.py`）
 
-纯函数检测器，读 `resolve_command_tool_semantics` 返回的 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 字段 + tick 上下文，**不**读第二个元数据源：
+纯函数检测器，读 `resolve_command_tool_semantics` 返回的 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 字段 + tick 上下文 + F15 `SkillActivation`（`allowed_tool_groups`），**不**读第二个元数据源：
 
 | Detector | 输入 | 用途 |
 |----------|------|------|
 | `action_type_match` | `interaction_profile` / `side_effect_level` | 校验提议动作类型与 caller ceiling |
-| `side_effect_level` | `side_effect_level` | `write_high` → `require_approval` |
-| `data_classification` | `data_classification` | `confidential`/`restricted` 触发 `allow_with_transform`（脱敏） |
+| `side_effect_level` | `side_effect_level` | `write_high` → `require_approval`（v1 降级 block） |
+| `data_classification` | `data_classification` | `confidential`/`restricted` → `require_approval`（v1 降级 block）；`allow_with_transform` 延后到 F18 输出层落地（D5） |
 | `pattern_match` | `user_message` / `args` | Prompt 注入模式 / 越权短语 |
 | `pii_scanner` | `ToolObservation` / `final_answer` | v1 规则模式；PII 模式扫描 |
+| `skill_tool_group` | `SkillActivation.allowed_tool_groups` + 命令的 tool group | 命令 tool group ∉ 激活 skill 的 group 并集 → `deny`（D3） |
 
 ---
 
@@ -81,41 +104,62 @@ class PolicyDecision:
 - **保持** `PreauthorizedToolExecutor` 在 `before_tool_call` 内调用（F08 R2：构造面时鉴权等价、tick 内不重复 `authorize_command`）。
 - trace：`guard_pass` / `guard_block`（`reason_code` 前缀 `guard_blocked_`）保持；新增 `policy_decision` trace 行（见 §9）。
 
+### 4.3 激活 skill 的 group 数据流（D3 实现协议）
+
+`SkillInjection` 产生 `SkillActivation` 列表后，F16 需要把 **当前 phase 实际激活 skill 的 group 并集** 传入 `before_tool_call`。由于 `evaluate_execution_gate` 外部签名保持不变（`context_metadata`），数据流通过 `CommandContext.metadata` 传递：
+
+1. **`llm_pdca._prepare_skill_context`** 在 policy 允许后，写入 `ctx.payload['active_skill_activations'] = [SkillActivation(...), ...]`（仅包含允许激活的 skill）。
+2. **`_phase_react_loop`** 构建 `runtime_tool_ctx` 时，把 `ctx.payload['active_skill_activations']` 复制到 `runtime_tool_ctx.metadata['active_skill_activations']`。
+3. **`PreauthorizedToolExecutor.execute_command`** 调用 `evaluate_execution_gate` 时传入该 `metadata`。
+4. **`evaluate_execution_gate` 适配器** 从 `context_metadata['active_skill_activations']` 提取 `allowed_tool_groups` 并集，作为 `PolicyContext` 的一部分委托 `PolicyEngine.evaluate(check_point='before_tool_call', ...)`。
+
+**命令 tool_group 派生：** 从 `resolve_command_tool_semantics(command_name, args=args).tool_groups` 读取（F08 新增字段）。`tool_groups` 为空时，回退到 `interaction_profile` 的 `read`/`mutate` 二元组。
+
+**无激活 skill 时的默认行为：** 若 `active_skill_activations` 为空（agent 未配置 `skill_refs` 或当前 phase 无激活 skill），`skill_tool_group` detector 不触发 deny（即不因为 skill group 缺失而阻断），保持与 F15 前向兼容。该默认行为 v1 以代码常量体现，可通过平台默认规则覆盖。
+
+### 4.4 `tool_group` 词汇（v1 细化）
+
+参考 OpenAI function categories、Claude tool policy 与 Palantir ontology 做法，v1 从 F08 的 `read`/`mutate` 二元组扩展到更细的行为分组，但 **保持与 `interaction_profile` 正交**（`tool_group` 是行为分类，`interaction_profile` 保留用于执行 gate 的 ceiling/confirm 语义）。
+
+| `tool_group` | 语义 | 典型命令 / 子命令 |
+|--------------|------|-------------------|
+| `read` | 纯信息检索，无状态改变 | `help`, `look`, `find`, `describe`, `space`, `time`, `version`, `primer` |
+| `observe` | 读取动态世界/任务/会话状态 | `task list`, `task show`, `world status`, `agent status` |
+| `agent_meta` | Agent 自身元数据与能力查询 | `agent list`, `agent show`, `agent capabilities` |
+| `identity` | 用户/账户身份与权限查询 | `whoami` |
+| `communicate` | 低副作用的通信/通知读取 | `notice list`, `notice view` |
+| `mutate` | 改变世界/图/任务状态 | `go`, `enter`, `leave`, `create`, `task <create/…>`, `agent tool add/del` |
+| `admin` | 权限、角色、账户管理（reserved） | （未来） |
+
+**命令 → group 的解析规则：**
+
+1. 命令/子命令可通过 `CommandToolSemantics.tool_groups` 显式声明一个或多个 group；若声明为空，回退到 `interaction_profile`（`read` → `['read']`，`mutate` → `['mutate']`）。
+2. `SubcommandProfileRule` 可覆盖子命令的 `tool_groups`，与 `interaction_profile` 覆盖类似（例如 `task list` 为 `['observe']`，`task create` 为 `['mutate']`）。
+3. 未注册命令回退到 `['read']`。
+
+**skill `allowed_tool_groups` 与命令 group 的匹配：** 命令的任一 group 落在当前 phase 激活 skill 的 `allowed_tool_groups` 并集中即允许；否则 `skill_tool_group` detector 返回 `deny`。例如 `task list` 的 `tool_groups=['observe']` 可被 `allowed_tool_groups=['read', 'observe']` 的 skill 允许，但不能被仅 `['read']` 的 skill 允许。
+
 ---
 
 ## 5. 规则来源与加载
 
 ### 5.1 平台默认（`settings.yaml` 新增 `policy.platform_defaults`）
 
-由 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 自动推导：
+由 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 自动推导，以 Python dataclass 形式注册在代码中：
 
 | `side_effect_level` | 默认 decision |
 |---------------------|--------------|
 | `none` / `read` | `allow` |
 | `write_low` | `allow`（caller `require_confirmation_for_mutate` 仍生效） |
-| `write_high` | `require_approval` |
+| `write_high` | `require_approval`（v1 降级 block） |
 
-`policy.platform_defaults` 位于 `backend/config/settings.yaml` 顶层 `policy:` block（与 `commands:` 并列；当前 **不存在**，需新增 `PolicyConfig` 于 `settings.py`）。
+`policy.platform_defaults` 位于 `backend/config/settings.yaml` 顶层 `policy:` block（与 `commands:` 并列；当前 **不存在**，需新增 `PolicyConfig` 于 `settings.py`）。平台默认规则在代码中实现，配置仅开关/参数化。
 
-### 5.2 实例规则（图节点 `nodes.attributes.safety.rules`）
+### 5.2 实例规则（v1 代码注册，延后 YAML）
 
-```yaml
-safety:
-  schema_version: "1.0.0"
-  rules:
-    - id: no_permission_change
-      who: any
-      what: modify_permission
-      decision: approve
-    - id: sensitive_data_mask
-      who: any
-      what: read
-      on: sensitive_data
-      decision: allow
-      transform: desensitize
-```
+v1 实例规则通过 Python dataclass + 代码注册（D7），与平台默认规则共享同一类型系统。规则在启动期加载到内存，check_point 仅在 4 个点位插入（性能：纯函数，无 DB / 无 LLM）。
 
-`rules_loader.py` 合并顺序：平台默认（基线）→ 实例 `safety.rules`（覆盖/追加）。规则为内存加载的纯函数求值，check_point 仅在 4 个点位插入（性能：纯函数，无 DB / 无 LLM）。
+节点级 YAML 规则覆盖（如 `nodes.attributes.safety.rules`）延后到有 UI/ops 配置需求时再引入；v1 不实现 `rules_loader` YAML 解析路径。
 
 ---
 
@@ -135,9 +179,9 @@ safety:
 | CheckPoint | 插入位置（`llm_pdca.py`） | 备注 |
 |------------|-------------------------|------|
 | `before_tool_call` | `_phase_react_loop` 工具 gather 前（`609:641`，`gather_tool_observations` 前） | 今日 `PreauthorizedToolExecutor` 内已有 gate，适配器收敛 |
-| `after_tool_observation` | `build_round_tool_results` 后（`641:666`） | 观测 shaping / `data_classification` 脱敏 |
-| `before_final_answer` | Act 阶段（`889:912`）`final_text` 赋值后 | ⚠️ streaming：Do 末轮 prose 可能先达用户（`_call_llm_dual_track` `436:463`），v1 在 Act 锚点拦截非流式路径；流式 `before_final_answer` 为 Open Question Q1 |
-| `before_skill_activation` | `SkillInjection.select` 后 | 依赖 [F15](F15_AGENT_SKILL_REGISTRY.md) |
+| `after_tool_observation` | `build_round_tool_results` 后（`641:666`） | v1 仅审计，不 transform；脱敏由 F18 输出层处理（D5） |
+| `before_final_answer` | Act 阶段（`889:912`）`final_text` 赋值后 | 非流式路径拦截；streaming 路径延后到 F18（D6） |
+| `before_skill_activation` | `SkillInjection` 内部 hook，body 激活前 | 依赖 [F15](F15_AGENT_SKILL_REGISTRY.md)；policy 拒绝 skill 进入 `Blocked by policy` 段（D2），不混入 F15 `inactive` 段 |
 
 `_phase_react_loop` 被 Plan（`754`）/ Do（`780`/`869`）/ Check-retry Plan（`854`）调用，check_point 在所有 react 入口生效。
 
@@ -162,7 +206,7 @@ safety:
 
 ## 10. system_prompt 安全文本迁移
 
-迁移目标（**迁移后从 prompt 移除**，由确定性引擎承接）：
+迁移目标（**待 F18 输出/流式 gate 落地后从 prompt 移除**，由确定性引擎承接）：
 
 | 来源 | 内容 | 承接 detector |
 |------|------|--------------|
@@ -172,35 +216,43 @@ safety:
 | `settings.yaml` AICO `phase_prompts.plan` (`263:271`) | intent 分类 / 确认信号 | 同上 |
 | `settings.yaml` AICO `phase_prompts.check` (`302:308`) | informational→execution 升级 fail | `before_final_answer` |
 
-**保留**：`CAMPUSWORLD_SYSTEM_PRIMER.md` 中 **不变量陈述**（角色边界、不泄漏 phase tag）作为 LLM 行为指引，**移除具体规则条文**。
+**保留**：`CAMPUSWORLD_SYSTEM_PRIMER.md` 中 **不变量陈述**（角色边界、不泄漏 phase tag）作为 LLM 行为指引；**具体规则条文（§8–§9）的移除为后置验收条件**，需在以下任一条件满足后执行：
 
-⚠️ **迁移风险：** 今日存在三处意图执行（prompt §9、F11 classifier `llm_pdca.py:712-718`、execution_gate regex `44:58`）。移除 prompt 规则后，行为依赖 F11 + PolicyEngine；需 golden trace 对比验证 AICO 工具选择行为等价（Open Question Q4）。
+1. **非流式模式**：禁用 Do 阶段 prose 流式输出（或所有最终输出都经 Act 阶段 `before_final_answer` gate 后发出）。
+2. **F18 落地**：F18 的 pre-flush / `before_final_answer` / `after_tool_observation` 输出层 gate 已覆盖 prompt 规则所防御的缺口。
+
+**v1 策略**：F16 v1 先实现确定性引擎，但 **保留 prompt 安全规则文本作为 fallback**（配置项 `policy.enable_prompt_fallback: true`，默认 `true`）。待 F18 输出/流式 gate 落地后，通过 golden trace 对比验证 AICO 工具选择行为等价，再关闭 fallback 并移除规则条文。
+
+⚠️ **迁移风险：** 今日存在三处意图执行（prompt §9、F11 classifier `llm_pdca.py:712-718`、execution_gate regex `44:58`）。若提前移除 prompt 规则，流式 prose 会绕过 v1 `before_final_answer` gate，造成安全覆盖缺口。
 
 ---
 
 ## 11. Acceptance Criteria
 
-- [ ] `PolicyEngine.evaluate(check_point, context) -> PolicyDecision` 纯函数，无 LLM 调用
-- [ ] `evaluate_execution_gate` 外部 API + `GateDecision` + `reason_code` 集稳定，内部委托 PolicyEngine
-- [ ] `before_tool_call` 读 `side_effect_level`：`write_high` → `require_approval`（v1 同步降级 block）
-- [ ] `data_classification` `confidential`/`restricted` → `allow_with_transform`（脱敏）
+- [ ] `PolicyEngine.evaluate(check_point, context) -> PolicyDecision` 纯函数，无 LLM 调用（D1）
+- [ ] `evaluate_execution_gate` 外部 API + `GateDecision` + `reason_code` 集稳定，内部委托 PolicyEngine（D4）
+- [ ] `before_skill_activation` 在 `SkillInjection` 内 hook，policy 拒绝 skill 进入独立 `Blocked by policy` 段（v1），不混入 F15 `inactive` 段（D2）；需同步 F15 manifest 模板
+- [ ] `before_tool_call` 读 `side_effect_level`：`write_high` → `require_approval`（v1 同步降级 block）（D8）
+- [ ] `before_tool_call` 读 F15 `SkillActivation.allowed_tool_groups`，命令 tool group 不在并集时 deny（D3）；数据流协议见 §4.3
+- [ ] `data_classification` `confidential`/`restricted` → `require_approval`（v1 同步降级 block）；`allow_with_transform` 延后到 F18 输出层（D5）
 - [ ] Prompt 注入模式被 `before_tool_call` / `before_final_answer` `pattern_match` 拦截
-- [ ] `settings.yaml` 新增 `policy.platform_defaults`；`settings.py` 新增 `PolicyConfig`
-- [ ] `policy_decision` trace 行写入 `command_trace`
-- [ ] `system_prompt` 安全规则文本段移除，AICO golden trace 行为等价
+- [ ] `settings.yaml` 新增 `policy.platform_defaults` + `policy.enable_prompt_fallback`（默认 `true`）；`settings.py` 新增 `PolicyConfig`；实例规则用 Python 代码注册（D7）
+- [ ] `policy_decision` trace 行写入 `command_trace`，兼容现有 schema（D9）
+- [ ] `system_prompt` 安全规则文本段 **fallback 可开关**，移除为后置验收条件（需 F18 输出/流式 gate 落地）
 - [ ] `command_policies` 授权平面不被 PolicyEngine 写入/替代
+- [ ] Skill `side_effect_level` 不用于约束命令副作用（D10）
 - [ ] 单元测试位于 `backend/tests/game_engine/`
 
 ---
 
 ## 12. Open Questions
 
-- **Q1（streaming `before_final_answer`）：** Do 末轮流式 prose 先达用户，Act 锚点拦截滞后；是否引入流式 pre-flush policy gate？延后到流式体验迭代。
-- **Q2（异步审批）：** v1 同步降级；跨 tick pause/resume 何时引入（需 WS 事件 + 持久化）？
-- **Q3（确认令牌）：** v1 子串确认；结构化 `confirmed_execute` 令牌何时由 UI/会话层产出？
-- **Q4（迁移等价性）：** 移除 prompt 安全文本后，如何 golden trace 验证 AICO 工具选择不退化？需回归测试集。
-- **Q5（PII detector 强度）：** v1 规则模式；是否引入扫描库（如 regex PII / 第三方）？
-- **Q6（`before_skill_activation`）：** 随 [F15](F15_AGENT_SKILL_REGISTRY.md) 落地后补；v1 `SkillActivation.allowed_tool_groups` 违规记警告，强制阻断延后。
+- **Q1（streaming `before_final_answer`）：** 已决策：延后到 F18（D6）。流式路径引入 pre-flush policy gate 时，需评估首字延迟。
+- **Q2（异步审批）：** 已决策：v1 同步降级为 block（D8）；跨 tick pause/resume 何时引入（需 WS 事件 + 持久化）仍待产品排期。
+- **Q3（确认令牌）：** 已决策：v1 保留子串确认；结构化 `confirmed_execute` 令牌何时由 UI/会话层产出仍待 UX 设计。
+- **Q4（迁移等价性）：** 移除 prompt 安全文本后，如何 golden trace 验证 AICO 工具选择不退化？需回归测试集。待 F16 v1 实现后补充 golden cases。
+- **Q5（PII detector 强度）：** 已决策：v1 规则模式（D1）；是否引入扫描库（如 regex PII / 第三方）延后评估。
+- **Q6（`before_skill_activation`）：** 已决策：F15 已落地，`before_skill_activation` 在 v1 实现；`SkillActivation.allowed_tool_groups` 在 `before_tool_call` 硬过滤（D3），不再只是警告。
 
 ---
 

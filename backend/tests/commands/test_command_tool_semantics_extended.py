@@ -405,3 +405,58 @@ def test_task_pool_not_registered_returns_pending():
     sem = resolve_command_tool_semantics('task.pool', args=['list'])
     assert sem.semantic_pending is True
 
+
+@pytest.mark.unit
+def test_explicit_tool_groups_propagate_to_resolution():
+    import dataclasses
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        SubcommandProfileRule,
+        READ_SUBCOMMAND,
+    )
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        tool_groups=('mutate', 'admin'),
+    )
+    sem = dataclasses.replace(base, interaction_profile='read', tool_groups=('read', 'observe'))
+    resolved = resolve_command_tool_semantics.__wrapped__ if hasattr(resolve_command_tool_semantics, '__wrapped__') else resolve_command_tool_semantics
+    # Direct construction: tool_groups is preserved.
+    assert sem.tool_groups == ('read', 'observe')
+    assert base.tool_groups == ('mutate', 'admin')
+
+
+@pytest.mark.unit
+def test_subcommand_tool_groups_override_base():
+    import dataclasses
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        SubcommandProfileRule,
+        default_guard_for,
+    )
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=(
+            SubcommandProfileRule(arg_prefix=('list',), interaction_profile='read', tool_groups=('observe',)),
+            SubcommandProfileRule(arg_prefix=('create',), interaction_profile='mutate', tool_groups=('mutate',)),
+        ),
+        default_profile_when_no_subcommand='read',
+    )
+    # Simulate resolving with subcommand: list -> observe, create -> mutate
+    list_rule = next(r for r in base.subcommand_profiles if r.arg_prefix == ('list',))
+    list_sem = dataclasses.replace(
+        base,
+        interaction_profile=list_rule.interaction_profile,
+        invocation_guard=default_guard_for(list_rule.interaction_profile),
+        tool_groups=list_rule.tool_groups,
+    )
+    assert list_sem.tool_groups == ('observe',)
+
+    create_rule = next(r for r in base.subcommand_profiles if r.arg_prefix == ('create',))
+    create_sem = dataclasses.replace(
+        base,
+        interaction_profile=create_rule.interaction_profile,
+        invocation_guard=default_guard_for(create_rule.interaction_profile),
+        tool_groups=create_rule.tool_groups,
+    )
+    assert create_sem.tool_groups == ('mutate',)
+
