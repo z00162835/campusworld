@@ -27,6 +27,8 @@ from app.game_engine.agent_runtime.tool_router.router_result import EnforcementL
 from app.game_engine.agent_runtime.tool_gather import ToolGatherBudgets, ToolGatherCounters, ToolInvocationPlan, format_tool_batch_limit_hint, format_tool_observation_block, gather_tool_observations, max_executable_commands_this_round, parse_tool_invocation_plan_from_text, tool_gather_budgets_from_agent_extra
 from app.game_engine.agent_runtime.tool_runtime_view import resolve_tool_runtime_view
 from app.game_engine.agent_runtime.tooling import ToolExecutor
+from app.game_engine.agent_runtime.skills import SkillInjection, get_default_skill_registry
+from app.game_engine.agent_runtime.prompt_fingerprint import compute_npc_prompt_fingerprint
 from app.game_engine.agent_runtime.agent_loop import (
     AgentLoopConfig,
     DraftCompletenessVerdict,
@@ -244,7 +246,7 @@ class LlmPDCAFramework(ThinkingFramework):
       allows.
     """
 
-    def __init__(self, memory: MemoryPort, llm_config: AgentLlmServiceConfig, *, instance_phase_llm: Dict[str, PhaseLlmPhaseConfig], instance_mode_models: Dict[str, str], llm: Optional[LlmClient]=None, tools: Optional[ToolExecutor]=None, tool_command_context: Optional[CommandContext]=None, preauthorized_tool_executor: Optional[PreauthorizedToolExecutor]=None, tool_gather_budgets: Optional[ToolGatherBudgets]=None, tick_hooks: Optional[AgentTickHooks]=None, tool_schemas: Optional[Sequence[ToolSchema]]=None, intent_classifier: Optional[IntentClassifier]=None, observability: Optional[AgentRuntimeObservability]=None):
+    def __init__(self, memory: MemoryPort, llm_config: AgentLlmServiceConfig, *, instance_phase_llm: Dict[str, PhaseLlmPhaseConfig], instance_mode_models: Dict[str, str], llm: Optional[LlmClient]=None, tools: Optional[ToolExecutor]=None, tool_command_context: Optional[CommandContext]=None, preauthorized_tool_executor: Optional[PreauthorizedToolExecutor]=None, tool_gather_budgets: Optional[ToolGatherBudgets]=None, tick_hooks: Optional[AgentTickHooks]=None, tool_schemas: Optional[Sequence[ToolSchema]]=None, intent_classifier: Optional[IntentClassifier]=None, observability: Optional[AgentRuntimeObservability]=None, skill_refs: Optional[Sequence[str]]=None, skill_injection: Optional[SkillInjection]=None):
         self._memory = memory
         self._cfg = llm_config
         self._instance_phase_llm = instance_phase_llm
@@ -259,6 +261,13 @@ class LlmPDCAFramework(ThinkingFramework):
         self._intent_classifier: Optional[IntentClassifier] = intent_classifier
         self._observability: AgentRuntimeObservability = observability or NoopAgentRuntimeObservability()
         self._agent_loop_config = AgentLoopConfig.from_agent_extra(getattr(llm_config, 'extra', None))
+        self._skill_refs: Tuple[str, ...] = tuple(str(s).strip() for s in (skill_refs or ()) if str(s).strip())
+        if skill_injection is not None:
+            self._skill_injection: Optional[SkillInjection] = skill_injection
+        elif self._skill_refs:
+            self._skill_injection = SkillInjection(registry=get_default_skill_registry())
+        else:
+            self._skill_injection = None
 
     @property
     def framework_id(self) -> str:
@@ -268,19 +277,43 @@ class LlmPDCAFramework(ThinkingFramework):
         pcfg = merge_phase_config(phase, self._instance_phase_llm, ctx.phase_llm_overrides)
         return to_llm_call_spec(pcfg, mode_models=self._instance_mode_models, default_model=(self._cfg.model or '').strip())
 
-    def _augment_spec_from_ctx(self, spec: LlmCallSpec, ctx: FrameworkRunContext) -> LlmCallSpec:
-        fp = (ctx.payload or {}).get('prompt_fingerprint')
+    def _augment_spec_from_ctx(self, spec: LlmCallSpec, ctx: FrameworkRunContext, *, phase: Optional[str] = None) -> LlmCallSpec:
         extra = dict(spec.extra or {})
-        if isinstance(fp, str) and fp.strip():
-            extra['prompt_fingerprint'] = fp.strip()
+        if phase is not None:
+            fp = compute_npc_prompt_fingerprint(
+                world_snapshot=str((ctx.payload or {}).get('world_snapshot') or ''),
+                tool_manifest_text=str((ctx.payload or {}).get('tool_manifest_text') or ''),
+                user_message=str((ctx.payload or {}).get('message') or ''),
+                skill_context_text=str((ctx.payload or {}).get('skill_context_text') or '') or None,
+                phase=phase,
+            )
+            extra['prompt_fingerprint'] = fp
         cm_extra = getattr(self._cfg, 'extra', None) or {}
         if isinstance(cm_extra, dict):
             for key in AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC:
                 if key in cm_extra:
                     extra[key] = cm_extra[key]
-        if extra != (spec.extra or {}):
-            return replace(spec, extra=extra)
+        skill_ctx = str((ctx.payload or {}).get('skill_context_text') or '').strip() or None
+        if extra != (spec.extra or {}) or skill_ctx != spec.skill_context_text:
+            return replace(spec, extra=extra, skill_context_text=skill_ctx)
         return spec
+
+    def _prepare_skill_context(self, ctx: FrameworkRunContext, phase: str, trace: List[Dict[str, Any]]) -> None:
+        """Compute this phase's skill-context (L1 manifest + L2 body) and trace activations."""
+        if self._skill_injection is None or not self._skill_refs:
+            ctx.payload['skill_context_text'] = ''
+            return
+        text, activations = self._skill_injection.inject(self._skill_refs, phase=phase)
+        ctx.payload['skill_context_text'] = text
+        for a in activations:
+            trace.append({
+                'step': 'skill_activated',
+                'skill_id': a.skill_id,
+                'phase': phase,
+                'states': list(self._skill_refs),
+                'category': a.category,
+                'definition_hash': a.definition_hash,
+            })
 
     def _effective_tool_schemas(self, ctx: FrameworkRunContext, *, pdca_phase: str) -> List[ToolSchema]:
         """Narrow tool schemas for Plan only when F14 ``schema_subset`` set allowlist on payload."""
@@ -366,7 +399,7 @@ class LlmPDCAFramework(ThinkingFramework):
 
     def _call_llm(self, phase: str, system: str, user: str, ctx: FrameworkRunContext) -> Tuple[str, Dict[str, Any]]:
         """Single plain-text LLM call (back-compat shape for existing tests)."""
-        spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx)
+        spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx, phase=phase)
         cm = get_config()
         if self._observability.should_log_full_chain(cm):
             self._observability.log_llm_call(cm, phase=phase, system=system, user=user, spec=spec, skipped=spec.mode == PhaseLlmMode.skip)
@@ -420,7 +453,7 @@ class LlmPDCAFramework(ThinkingFramework):
         Returns ``(text, tool_calls, trace_entry)``. ``tool_calls`` is empty
         when the model chose to answer with prose or when parsing failed.
         """
-        spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx)
+        spec = self._augment_spec_from_ctx(self._spec_for_phase(phase, ctx), ctx, phase=phase)
         cm = get_config()
         user_text_for_log = _render_turns_as_text(turns)
         if self._observability.should_log_full_chain(cm):
@@ -750,6 +783,7 @@ class LlmPDCAFramework(ThinkingFramework):
         self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
         if self._tick_cancelled(ctx):
             return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
+        self._prepare_skill_context(ctx, PDCAPhase.plan.value, trace)
         plan_sys = _phase_system(base_system, PDCAPhase.plan.value, merged_phases)
         (plan_out, plan_tools_text, plan_tool_results, plan_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan_user, ctx, gather_counters, trace)
         if plan_entry.get('cancelled'):
@@ -769,6 +803,7 @@ class LlmPDCAFramework(ThinkingFramework):
             do_user = f"User message:\n{user_msg}\n\nPlan:\n{plan_out}\n{tool_blocks_plan}\n\nMemory:\n{mem_for_do or '(none)'}"
         else:
             do_user = f"User message:\n{user_msg}{tool_blocks_plan}\n\nMemory:\n{mem_for_do or '(none)'}"
+        self._prepare_skill_context(ctx, PDCAPhase.do.value, trace)
         do_sys = _phase_system_core(base_system, PDCAPhase.do.value, merged_phases, slim_followup)
         do_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.do.value, ctx), ctx)
         if do_spec.mode == PhaseLlmMode.skip:
@@ -798,6 +833,7 @@ class LlmPDCAFramework(ThinkingFramework):
                 check_user += '\n\nRouting mandatory tools (verify ToolObservation covers each): ' + ', '.join((str(x) for x in mans))
         if chain_criteria_text:
             check_user += '\n\n' + chain_criteria_text
+        self._prepare_skill_context(ctx, PDCAPhase.check.value, trace)
         check_sys = _phase_system_core(base_system, PDCAPhase.check.value, merged_phases, slim_followup)
         self._tick_hooks.on_before_phase(ThinkingPhaseId.check, ctx)
         if self._tick_cancelled(ctx):
@@ -850,6 +886,7 @@ class LlmPDCAFramework(ThinkingFramework):
                 uvs_retry.coordinator.on_rewrite()
             retry_hint = f"Check phase flagged that tool observations are required to answer. Requested tools: {', '.join(retry_tools) or '(any)'}."
             trace.append({'step': 'check_retry_triggered', 'tools': retry_tools})
+            self._prepare_skill_context(ctx, PDCAPhase.plan.value, trace)
             plan2_user = f'{plan_user}\n\nGuardrail note:\n{retry_hint}\nEmit a tool call plan now.'
             (plan2_out, plan2_tools_text, plan2_tool_results, plan2_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan2_user, ctx, gather_counters, trace)
             if plan2_entry.get('cancelled'):
@@ -866,6 +903,7 @@ class LlmPDCAFramework(ThinkingFramework):
                 reply2 = assemble_plan_skip_do_draft(plan2_out or plan_out or '', plan2_tools_text or '')
                 trace.append({'step': PDCAPhase.do.value, 'skipped': True, 'mode': PhaseLlmMode.skip.value, 'after_check_retry': True, 'skip_do_draft_chars': len(reply2 or '')})
             else:
+                self._prepare_skill_context(ctx, PDCAPhase.do.value, trace)
                 (reply2, do2_tools_text, do2_tool_results, de2) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace)
                 if de2.get('cancelled'):
                     return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
@@ -891,6 +929,7 @@ class LlmPDCAFramework(ThinkingFramework):
             return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
         tool_blocks_check = ''
         act_user = f'User message:\n{user_msg}\n\nDraft reply:\n{final_text}{tool_blocks_check}\n\nPolish for final user-facing text.'
+        self._prepare_skill_context(ctx, PDCAPhase.act.value, trace)
         act_sys = _phase_system_core(base_system, PDCAPhase.act.value, merged_phases, slim_followup)
         act_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.act.value, ctx), ctx)
         uvs_act = ctx.user_visible_stream

@@ -35,6 +35,34 @@ def _anthropic_system_blocks(system: str, extra: Dict[str, Any]) -> Any:
         return [{'type': 'text', 'text': text, 'cache_control': {'type': 'ephemeral'}}]
     return text
 
+def _anthropic_user_blocks(user: str, skill_context_text: Optional[str]) -> List[Dict[str, Any]]:
+    """User-turn content blocks. Per-phase skill context is a leading text block in the
+    user/input channel (never the system message); absent skill context collapses
+    to a single user block."""
+    blocks: List[Dict[str, Any]] = []
+    sk = (skill_context_text or '').strip()
+    if sk:
+        blocks.append({'type': 'text', 'text': sk})
+    blocks.append({'type': 'text', 'text': user or ' '})
+    return blocks
+
+def _inject_skill_context_into_messages(messages: List[Dict[str, Any]], skill_context_text: Optional[str]) -> None:
+    """Prepend per-phase skill context as a leading text block in the first user
+    message (user/input channel), never in the system message. If there is no
+    user message yet, insert one. No-op when skill context is empty."""
+    sk = (skill_context_text or '').strip()
+    if not sk:
+        return
+    for msg in messages:
+        if msg.get('role') == 'user':
+            content = msg.get('content')
+            if isinstance(content, list):
+                msg['content'] = [{'type': 'text', 'text': sk}] + content
+            else:
+                msg['content'] = [{'type': 'text', 'text': sk}, {'type': 'text', 'text': str(content or ' ')}]
+            return
+    messages.insert(0, {'role': 'user', 'content': [{'type': 'text', 'text': sk}]})
+
 def clamp_anthropic_temperature(value: float) -> float:
     """MiniMax Anthropic layer documents temperature in (0, 1]."""
     if value <= 0.0:
@@ -68,7 +96,8 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         extra = dict(spec.extra or {})
         extra.pop('prompt_fingerprint', None)
         sys_payload = _anthropic_system_blocks(system, extra)
-        body: Dict[str, Any] = {'model': model, 'max_tokens': int(max_tokens), 'system': sys_payload, 'messages': [{'role': 'user', 'content': [{'type': 'text', 'text': user or ' '}]}], 'stream': False, 'temperature': temp}
+        user_blocks = _anthropic_user_blocks(user, getattr(spec, 'skill_context_text', None))
+        body: Dict[str, Any] = {'model': model, 'max_tokens': int(max_tokens), 'system': sys_payload, 'messages': [{'role': 'user', 'content': user_blocks}], 'stream': False, 'temperature': temp}
         body.update(extra)
         headers = {'Authorization': f'Bearer {self._api_key}', 'x-api-key': self._api_key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json'}
         data = httpx_post_json(url, headers=headers, body=body, timeout=timeout, cancel_check=cancel_check)
@@ -92,11 +121,12 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         extra = dict(spec.extra or {})
         extra.pop('prompt_fingerprint', None)
         sys_payload = _anthropic_system_blocks(system, extra)
+        user_blocks = _anthropic_user_blocks(user, getattr(spec, 'skill_context_text', None))
         body: Dict[str, Any] = {
             'model': model,
             'max_tokens': int(max_tokens),
             'system': sys_payload,
-            'messages': [{'role': 'user', 'content': [{'type': 'text', 'text': user or ' '}]}],
+            'messages': [{'role': 'user', 'content': user_blocks}],
             'stream': True,
             'temperature': temp,
         }
@@ -123,6 +153,7 @@ class MinimaxAnthropicMessagesHttpLlmClient:
         temp = clamp_anthropic_temperature(float(temp))
         url = minimax_anthropic_messages_url(self._base_url)
         messages = _turns_to_anthropic_messages(turns)
+        _inject_skill_context_into_messages(messages, getattr(spec, 'skill_context_text', None))
         allowed_names = {str(t.name) for t in tools if getattr(t, 'name', None)}
         _validate_anthropic_tool_messages(messages, allowed_tool_names=allowed_names)
         extra = dict(spec.extra or {})

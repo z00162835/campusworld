@@ -22,6 +22,10 @@ class LlmCallSpec:
     max_tokens: Optional[int] = None
     timeout_sec: Optional[float] = None
     extra: Dict[str, Any] = field(default_factory=dict)
+    # Per-phase skill-context text (L1 manifest + L2 body) for the current phase.
+    # Providers inject this into the user/input context channel — never into a
+    # platform system message. Empty/None means no skill context this call.
+    skill_context_text: Optional[str] = None
 AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC = frozenset({'use_prompt_cache'})
 
 @runtime_checkable

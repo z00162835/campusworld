@@ -125,6 +125,8 @@ class LlmPdcaAssistantWorker(AgentWorker):
         pre_ex = PreauthorizedToolExecutor(surface)
         budgets = tool_gather_budgets_from_agent_extra(cfg.extra)
         (instance_phase_llm, instance_mode_models) = parse_phase_llm_from_attributes(attrs)
+        skill_refs_raw = attrs.get('skill_refs') or []
+        skill_refs = [str(x) for x in skill_refs_raw] if isinstance(skill_refs_raw, list) else []
         manifest_locale = None
         if invoker_context is not None and isinstance(getattr(invoker_context, 'metadata', None), dict):
             v = invoker_context.metadata.get('locale')
@@ -137,5 +139,5 @@ class LlmPdcaAssistantWorker(AgentWorker):
         from app.game_engine.agent_runtime.intent_classifier_runtime import build_intent_classifier_for_tick, resolve_intent_classifier_runtime
         ic_runtime = resolve_intent_classifier_runtime(dict(cfg.extra or {}), attrs)
         intent_classifier = build_intent_classifier_for_tick(ic_runtime)
-        fw = LlmPDCAFramework(memory=mem, llm_config=cfg, instance_phase_llm=instance_phase_llm, instance_mode_models=instance_mode_models, llm=llm_impl, tools=pre_ex, tool_command_context=tool_ctx, preauthorized_tool_executor=pre_ex, tool_gather_budgets=budgets, tick_hooks=tick_hooks, tool_schemas=tool_schemas, intent_classifier=intent_classifier, observability=runtime_observability)
+        fw = LlmPDCAFramework(memory=mem, llm_config=cfg, instance_phase_llm=instance_phase_llm, instance_mode_models=instance_mode_models, llm=llm_impl, tools=pre_ex, tool_command_context=tool_ctx, preauthorized_tool_executor=pre_ex, tool_gather_budgets=budgets, tick_hooks=tick_hooks, tool_schemas=tool_schemas, intent_classifier=intent_classifier, observability=runtime_observability, skill_refs=skill_refs)
         return cls(memory=mem, framework=fw, tools=pre_ex, tool_command_context=tool_ctx, tool_manifest_text=manifest_text, tool_schemas=tool_schemas, resolved_tool_surface=surface)
