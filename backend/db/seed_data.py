@@ -191,6 +191,12 @@ _AICO_PRE_ACT_STREAMING_PHASE_LLM = {
     "check": {"mode": "skip"},
     "act": {"mode": "skip"},
 }
+# Default L4 Agent Skill refs for AICO (global SkillRegistry ids).
+_AICO_DEFAULT_SKILL_REFS = [
+    "problem_framing",
+    "retrieval_reasoning",
+    "final_synthesis",
+]
 
 
 def _aico_phase_llm_is_legacy(phase_llm: object) -> bool:
@@ -259,6 +265,9 @@ def ensure_aico_npc_agent(session) -> bool:
         elif _aico_phase_llm_should_upgrade_to_current_default(merged.get("phase_llm")):
             merged["phase_llm"] = {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()}
             changed = True
+        if "skill_refs" not in merged:
+            merged["skill_refs"] = list(_AICO_DEFAULT_SKILL_REFS)
+            changed = True
         if changed:
             existing.attributes = merged
             session.commit()
@@ -302,6 +311,10 @@ def ensure_aico_npc_agent(session) -> bool:
             "trigger_mode": "nlp",
             "decision_mode": "llm",
             "cognition_profile_ref": "pdca_v1",
+            # L4 Agent Skill references. Authority for which reusable experience
+            # skills this agent may use; resolved against the global SkillRegistry
+            # at tick time. cognition_profile_ref above is inert.
+            "skill_refs": list(_AICO_DEFAULT_SKILL_REFS),
             # Discovery suite (primer / whoami / look / find / describe) is the
             # backbone of "tool first" answering. ``find`` follows Evennia's
             # ``@find`` convention; ``describe`` is our ``examine`` equivalent.

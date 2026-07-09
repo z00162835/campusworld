@@ -61,7 +61,6 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
     from app.game_engine.agent_runtime.frameworks.base import FrameworkRunResult
     from app.game_engine.agent_runtime.llm_client import build_llm_client_from_service_config, http_llm_available
     from app.game_engine.agent_runtime.profiles import resolve_agent_runtime_profile
-    from app.game_engine.agent_runtime.prompt_fingerprint import compute_npc_prompt_fingerprint
     from app.game_engine.agent_runtime.worker import LlmPdcaAssistantWorker
     from app.core.config_manager import get_config
     attrs = node.attributes or {}
@@ -138,8 +137,8 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
         if world_snapshot_text:
             payload['world_snapshot'] = world_snapshot_text
         payload.update(profile.prepare_payload_overrides(session=session, node=node, context=context, message=message, attrs=attrs, cfg=cfg, worker=w))
-        manifest_for_fp = str(payload.get('tool_manifest_text') or w.tool_manifest_text or '')
-        payload['prompt_fingerprint'] = compute_npc_prompt_fingerprint(world_snapshot=world_snapshot_text, tool_manifest_text=manifest_for_fp, user_message=message)
+        # prompt_fingerprint is now computed per-loop-phase inside LlmPDCAFramework
+        # (_augment_spec_from_ctx) so it can include the phase's skill-context text.
         corr_s = str(context.session_id or '')
         if context.metadata is None:
             context.metadata = {}

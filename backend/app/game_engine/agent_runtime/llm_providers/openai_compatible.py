@@ -5,6 +5,16 @@ from app.game_engine.agent_runtime.llm_client import LlmCallSpec
 from app.game_engine.agent_runtime.llm_providers.http_utils import httpx_post_json, httpx_stream_post_lines, parse_openai_compatible_sse_lines
 from app.game_engine.agent_runtime.llm_streaming import LlmStreamSink
 
+
+def _openai_user_content(user: str, skill_context_text: Optional[str]) -> str:
+    """Inject per-phase skill context into the user/input channel (the user
+    message content), never the system message. Absent skill context returns
+    the plain user string."""
+    sk = (skill_context_text or '').strip()
+    if not sk:
+        return user or ' '
+    return f"{sk}\n\n---\n\n{user or ' '}"
+
 class OpenAiCompatibleHttpLlmClient:
     """OpenAI-compatible Chat Completions (POST {base}/chat/completions)."""
 
@@ -22,7 +32,8 @@ class OpenAiCompatibleHttpLlmClient:
         temperature = spec.temperature if spec.temperature is not None else self._default_temperature
         max_tokens = spec.max_tokens if spec.max_tokens is not None else self._default_max_tokens
         timeout = spec.timeout_sec if spec.timeout_sec is not None else self._timeout
-        body: Dict[str, Any] = {'model': model, 'messages': [{'role': 'system', 'content': system or ' '}, {'role': 'user', 'content': user or ' '}], 'temperature': temperature, 'max_tokens': max_tokens}
+        user_content = _openai_user_content(user, getattr(spec, 'skill_context_text', None))
+        body: Dict[str, Any] = {'model': model, 'messages': [{'role': 'system', 'content': system or ' '}, {'role': 'user', 'content': user_content}], 'temperature': temperature, 'max_tokens': max_tokens}
         extra = dict(spec.extra or {})
         extra.pop('prompt_fingerprint', None)
         body.update(extra)
@@ -42,9 +53,10 @@ class OpenAiCompatibleHttpLlmClient:
         temperature = spec.temperature if spec.temperature is not None else self._default_temperature
         max_tokens = spec.max_tokens if spec.max_tokens is not None else self._default_max_tokens
         timeout = spec.timeout_sec if spec.timeout_sec is not None else self._timeout
+        user_content = _openai_user_content(user, getattr(spec, 'skill_context_text', None))
         body: Dict[str, Any] = {
             'model': model,
-            'messages': [{'role': 'system', 'content': system or ' '}, {'role': 'user', 'content': user or ' '}],
+            'messages': [{'role': 'system', 'content': system or ' '}, {'role': 'user', 'content': user_content}],
             'temperature': temperature,
             'max_tokens': max_tokens,
             'stream': True,
