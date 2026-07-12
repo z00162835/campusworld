@@ -71,7 +71,7 @@ def skill_activation_mode_detector(ctx: PolicyContext) -> Optional[PolicyDecisio
 
 
 # ---------------------------------------------------------------------------
-# before_tool_call: skill_tool_group (P3, D3)
+# before_tool_call: skill_tool_group (opt-in via config toggle)
 # ---------------------------------------------------------------------------
 
 def skill_tool_group_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:

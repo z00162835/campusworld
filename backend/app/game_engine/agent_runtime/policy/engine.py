@@ -32,10 +32,9 @@ class PolicyEngine:
         for detector in self._detectors:
             decision = detector(ctx)
             if decision is not None and not decision.is_allow:
-                tagged = dataclasses.replace(
-                    decision,
-                    evidence={**decision.evidence, 'detector': detector.__name__},
-                )
+                evidence = dict(decision.evidence or {})
+                evidence['detector'] = detector.__name__
+                tagged = dataclasses.replace(decision, evidence=evidence)
                 return tagged
         return PolicyDecision.allow(ctx.check_point)
 

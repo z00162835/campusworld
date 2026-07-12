@@ -58,7 +58,7 @@ class PolicyDecision:
         *,
         evidence: Optional[Dict[str, Any]] = None,
     ) -> "PolicyDecision":
-        # v1: require_approval degrades to synchronous block (D8).
+        # v1: require_approval degrades to synchronous block.
         return cls(
             decision="require_approval",
             reason_code=reason_code,

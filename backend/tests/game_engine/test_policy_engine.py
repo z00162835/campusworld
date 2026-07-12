@@ -359,6 +359,29 @@ class TestPolicyEngine:
         decision = engine.evaluate(ctx)
         assert decision.is_allow is True
 
+    def test_denied_decision_carries_detector_name(self):
+        """The engine tags evidence with the firing detector's __name__."""
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            side_effect_level="write_high",
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_block is True
+        assert decision.evidence.get('detector') == 'side_effect_level_detector'
+
+    def test_denied_decision_carries_detector_name_for_data_classification(self):
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            data_classification="restricted",
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_block is True
+        assert decision.evidence.get('detector') == 'data_classification_detector'
+
 
 class TestPolicyEngineConfigToggles:
     """Verify that PolicyConfig switches actually control detector registration."""
