@@ -576,3 +576,16 @@ def test_prompt_fallback_toggle():
     # Toggle reads config; defaults True when config unavailable
     assert _prompt_fallback_enabled() is True
 
+
+@pytest.mark.unit
+def test_prompt_fallback_disabled_skips_preamble(monkeypatch):
+    """When enable_prompt_fallback=false, _prompt_fallback_enabled returns False."""
+    from app.game_engine.agent_runtime.frameworks import llm_pdca as pdca_mod
+    from app.core.config_manager import get_config
+
+    fake_cm = get_config()
+    monkeypatch.setattr(fake_cm, 'get_nested', lambda *keys, **kw: False if keys == ('policy', 'enable_prompt_fallback') else None)
+    monkeypatch.setattr(pdca_mod, 'get_config', lambda: fake_cm)
+
+    assert pdca_mod._prompt_fallback_enabled() is False
+

@@ -287,3 +287,118 @@ def test_tool_gather_emits_policy_decision_trace():
     assert policy_entries[0]["reason_code"] == "policy_blocked_side_effect_write_high"
     assert policy_entries[0]["phase"] == "plan"
     assert policy_entries[0]["command_name"] == "task"
+
+
+# ---------------------------------------------------------------------------
+# E2E: active_skill_context DTO → execution_gate → skill_tool_group detector
+# ---------------------------------------------------------------------------
+
+def _skill_group_engine():
+    """Build a PolicyEngine with skill_tool_group_detector enabled."""
+    from app.game_engine.agent_runtime.policy import PolicyEngine
+    from app.game_engine.agent_runtime.policy.detectors import (
+        data_classification_detector,
+        side_effect_level_detector,
+        skill_activation_mode_detector,
+        skill_tool_group_detector,
+    )
+    return PolicyEngine(detectors=[
+        side_effect_level_detector,
+        data_classification_detector,
+        skill_tool_group_detector,
+        skill_activation_mode_detector,
+    ])
+
+
+def test_e2e_skill_tool_group_allows_covered_command(monkeypatch):
+    """active_skill_context with [observe] allows task list (observe) but not agent list (agent_meta)."""
+    from app.game_engine.agent_runtime import execution_gate as gate_mod
+
+    monkeypatch.setattr(gate_mod, '_policy_engine', _skill_group_engine())
+
+    # task list → observe: exact match in [observe] → allowed
+    d = evaluate_execution_gate(
+        db_session=None,
+        command_name="task",
+        args=["list"],
+        context_metadata={
+            "agent_interaction_profile": "read",
+            "user_message": "list tasks",
+            "active_skill_context": {
+                "active_skill_ids": ["campus_observer"],
+                "active_skill_allowed_tool_groups": ["observe"],
+            },
+        },
+    )
+    assert d.allow is True
+    assert d.reason_code == "guard_pass"
+
+
+def test_e2e_skill_tool_group_blocks_uncovered_command(monkeypatch):
+    """active_skill_context with [observe] blocks agent list (agent_meta)."""
+    from app.game_engine.agent_runtime import execution_gate as gate_mod
+
+    monkeypatch.setattr(gate_mod, '_policy_engine', _skill_group_engine())
+
+    # agent list → agent_meta: not in [observe], parent is read not in [observe] → blocked
+    d = evaluate_execution_gate(
+        db_session=None,
+        command_name="agent",
+        args=["list"],
+        context_metadata={
+            "agent_interaction_profile": "read",
+            "user_message": "list agents",
+            "active_skill_context": {
+                "active_skill_ids": ["campus_observer"],
+                "active_skill_allowed_tool_groups": ["observe"],
+            },
+        },
+    )
+    assert d.allow is False
+    assert d.reason_code == "guard_blocked_policy"
+    policy_trace = d.effective_guard.get("policy_decision")
+    assert policy_trace is not None
+    assert policy_trace["reason_code"] == "policy_blocked_skill_tool_group"
+    assert policy_trace["detector"] == "skill_tool_group_detector"
+
+
+def test_e2e_skill_tool_group_read_parent_covers_all_children(monkeypatch):
+    """active_skill_context with [read] (parent) allows observe, agent_meta, identity, communicate."""
+    from app.game_engine.agent_runtime import execution_gate as gate_mod
+
+    monkeypatch.setattr(gate_mod, '_policy_engine', _skill_group_engine())
+    skill_ctx = {
+        "active_skill_ids": ["general_reader"],
+        "active_skill_allowed_tool_groups": ["read"],
+    }
+
+    for cmd, args in [("task", ["list"]), ("agent", ["list"]), ("whoami", []), ("notice", ["list"])]:
+        d = evaluate_execution_gate(
+            db_session=None,
+            command_name=cmd,
+            args=args,
+            context_metadata={
+                "agent_interaction_profile": "read",
+                "user_message": "query",
+                "active_skill_context": skill_ctx,
+            },
+        )
+        assert d.allow is True, f"{cmd} {args} should be allowed by read parent group"
+
+
+def test_e2e_skill_tool_group_no_active_skills_allows_all(monkeypatch):
+    """When active_skill_context is None or empty, skill_tool_group detector does not fire."""
+    from app.game_engine.agent_runtime import execution_gate as gate_mod
+
+    monkeypatch.setattr(gate_mod, '_policy_engine', _skill_group_engine())
+
+    d = evaluate_execution_gate(
+        db_session=None,
+        command_name="task",
+        args=["list"],
+        context_metadata={
+            "agent_interaction_profile": "read",
+            "user_message": "list tasks",
+        },
+    )
+    assert d.allow is True
