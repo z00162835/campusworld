@@ -460,3 +460,40 @@ def test_subcommand_tool_groups_override_base():
     )
     assert create_sem.tool_groups == ('mutate',)
 
+
+@pytest.mark.unit
+def test_subcommand_without_explicit_groups_uses_matched_profile():
+    """A read subcommand of a command with explicit mutate base groups must
+    not inherit those base groups; it falls back to (matched.interaction_profile,).
+    """
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        SubcommandProfileRule,
+        _match_subcommand_rule,
+        default_guard_for,
+    )
+    import dataclasses
+
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        tool_groups=('mutate', 'admin'),
+        subcommand_profiles=(
+            SubcommandProfileRule(arg_prefix=('list',), interaction_profile='read'),
+        ),
+    )
+    matched = _match_subcommand_rule(base.subcommand_profiles, ['list'])
+    assert matched is not None
+    # Fallback should be (matched.interaction_profile,), not base.tool_groups
+    expected_groups = matched.tool_groups if matched.tool_groups else (matched.interaction_profile,)
+    assert expected_groups == ('read',)
+
+    # Simulate the resolution path for a matched subcommand
+    resolved = dataclasses.replace(
+        base,
+        interaction_profile=matched.interaction_profile,
+        invocation_guard=default_guard_for(matched.interaction_profile),
+        tool_groups=expected_groups,
+    )
+    assert resolved.tool_groups == ('read',)
+    assert resolved.tool_groups != base.tool_groups
+

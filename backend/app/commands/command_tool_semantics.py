@@ -275,7 +275,7 @@ def resolve_command_tool_semantics(
             resolved = base
         else:
             guard = matched.invocation_guard if matched.invocation_guard is not None else default_guard_for(matched.interaction_profile)
-            tool_groups = matched.tool_groups if matched.tool_groups else base.tool_groups
+            tool_groups = matched.tool_groups if matched.tool_groups else (matched.interaction_profile,)
             resolved = dataclasses.replace(
                 base,
                 interaction_profile=matched.interaction_profile,

@@ -189,3 +189,66 @@ class TestPolicyEngine:
         )
         decision = engine.evaluate(ctx)
         assert decision.is_allow is True
+
+
+class TestPolicyEngineConfigToggles:
+    """Verify that PolicyConfig switches actually control detector registration."""
+
+    def test_disabling_side_effect_detector_allows_write_high(self, monkeypatch):
+        from app.core.config_manager import get_config
+        cm = get_config()
+        original = cm.get_nested
+        def patched_get_nested(*keys, default=None):
+            if keys == ('policy', 'enable_side_effect_detector'):
+                return False
+            return original(*keys, default=default)
+        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
+
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            side_effect_level="write_high",
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_allow is True
+
+    def test_disabling_data_classification_detector_allows_restricted(self, monkeypatch):
+        from app.core.config_manager import get_config
+        cm = get_config()
+        original = cm.get_nested
+        def patched_get_nested(*keys, default=None):
+            if keys == ('policy', 'enable_data_classification_detector'):
+                return False
+            return original(*keys, default=default)
+        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
+
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            data_classification="restricted",
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_allow is True
+
+    def test_enabling_both_detectors_blocks_write_high(self, monkeypatch):
+        from app.core.config_manager import get_config
+        cm = get_config()
+        original = cm.get_nested
+        def patched_get_nested(*keys, default=None):
+            if keys == ('policy', 'enable_side_effect_detector'):
+                return True
+            if keys == ('policy', 'enable_data_classification_detector'):
+                return True
+            return original(*keys, default=default)
+        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
+
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            side_effect_level="write_high",
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_block is True

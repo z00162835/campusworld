@@ -24,7 +24,7 @@ class PolicyEngine:
 
     def __init__(self, detectors: Optional[List[Detector]] = None) -> None:
         if detectors is None:
-            detectors = _default_detectors()
+            detectors = _detectors_from_config()
         self._detectors: Tuple[Detector, ...] = tuple(detectors)
 
     def evaluate(self, ctx: PolicyContext) -> PolicyDecision:
@@ -52,6 +52,31 @@ def _default_detectors() -> List[Detector]:
         data_classification_detector,
         skill_activation_mode_detector,
     ]
+
+
+def _detectors_from_config() -> List[Detector]:
+    """Build the detector list honouring ``PolicyConfig`` toggles."""
+    from app.core.config_manager import get_config
+    from app.game_engine.agent_runtime.policy.detectors import (
+        data_classification_detector,
+        side_effect_level_detector,
+        skill_activation_mode_detector,
+    )
+
+    try:
+        cm = get_config()
+        enable_side_effect = cm.get_nested('policy', 'enable_side_effect_detector', default=True)
+        enable_data_cls = cm.get_nested('policy', 'enable_data_classification_detector', default=True)
+    except Exception:  # noqa: BLE001 — config may be unavailable in unit tests
+        return _default_detectors()
+
+    detectors: List[Detector] = []
+    if enable_side_effect:
+        detectors.append(side_effect_level_detector)
+    if enable_data_cls:
+        detectors.append(data_classification_detector)
+    detectors.append(skill_activation_mode_detector)
+    return detectors
 
 
 # Module-level singleton; detectors are stateless so reuse is safe.
