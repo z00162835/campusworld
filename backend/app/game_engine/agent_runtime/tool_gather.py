@@ -231,5 +231,10 @@ def gather_tool_observations(executor: ToolExecutor, tool_context: CommandContex
             trace_entries.append({'step': 'guard_pass', 'phase': phase_label, 'command_name': command_name, 'intent': str((res.data or {}).get('guard_intent') or ''), 'effective_profile': str((res.data or {}).get('guard_effective_profile') or '')})
         elif str(res.error or '').startswith('guard_blocked_'):
             trace_entries.append({'step': 'guard_block', 'phase': phase_label, 'command_name': command_name, 'reason': str(res.error or '')})
+        policy_trace = None
+        if isinstance(res.data, dict):
+            policy_trace = res.data.get('policy_decision')
+        if policy_trace and isinstance(policy_trace, dict):
+            trace_entries.append({**policy_trace, 'phase': phase_label, 'command_name': command_name})
     text = '\n\n'.join(chunks)
     return (text, trace_entries)

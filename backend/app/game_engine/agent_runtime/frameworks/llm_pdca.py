@@ -28,6 +28,8 @@ from app.game_engine.agent_runtime.tool_gather import ToolGatherBudgets, ToolGat
 from app.game_engine.agent_runtime.tool_runtime_view import resolve_tool_runtime_view
 from app.game_engine.agent_runtime.tooling import ToolExecutor
 from app.game_engine.agent_runtime.skills import SkillInjection, get_default_skill_registry
+from app.game_engine.agent_runtime.policy import PolicyContext, PolicyEngine
+from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 from app.game_engine.agent_runtime.prompt_fingerprint import compute_npc_prompt_fingerprint
 from app.game_engine.agent_runtime.agent_loop import (
     AgentLoopConfig,
@@ -268,6 +270,7 @@ class LlmPDCAFramework(ThinkingFramework):
             self._skill_injection = SkillInjection(registry=get_default_skill_registry())
         else:
             self._skill_injection = None
+        self._policy_engine: PolicyEngine = PolicyEngine()
 
     @property
     def framework_id(self) -> str:
@@ -304,7 +307,22 @@ class LlmPDCAFramework(ThinkingFramework):
             ctx.payload['skill_context_text'] = ''
             ctx.payload['active_skill_context'] = None
             return
-        result = self._skill_injection.inject(self._skill_refs, phase=phase)
+
+        def _before_activate(skill_def, ph: str):
+            policy_ctx = PolicyContext(
+                check_point=CheckPoint.BEFORE_SKILL_ACTIVATION,
+                skill_id=skill_def.name,
+                skill_allowed_tool_groups=tuple(skill_def.allowed_tool_groups or ()),
+                skill_activation_mode=skill_def.activation_mode,
+                skill_allowed_in_react_states=tuple(skill_def.allowed_in_react_states or ()),
+                current_react_state=ph,
+            )
+            decision = self._policy_engine.evaluate(policy_ctx)
+            if decision.is_block:
+                return decision.reason_code
+            return None
+
+        result = self._skill_injection.inject(self._skill_refs, phase=phase, before_activate=_before_activate)
         ctx.payload['skill_context_text'] = result.text
         allowed_groups = sorted({group for a in result.activations for group in a.allowed_tool_groups})
         ctx.payload['active_skill_context'] = {
@@ -319,6 +337,17 @@ class LlmPDCAFramework(ThinkingFramework):
                 'states': list(self._skill_refs),
                 'category': a.category,
                 'definition_hash': a.definition_hash,
+            })
+        for blocked_def, reason_code in zip(result.blocked, result.blocked_reasons):
+            trace.append({
+                'step': 'policy_decision',
+                'check_point': CheckPoint.BEFORE_SKILL_ACTIVATION,
+                'decision': 'deny',
+                'reason_code': reason_code,
+                'runtime_action': 'block',
+                'evidence': {'skill_id': blocked_def.name, 'phase': phase},
+                'phase': phase,
+                'skill_id': blocked_def.name,
             })
 
     def _effective_tool_schemas(self, ctx: FrameworkRunContext, *, pdca_phase: str) -> List[ToolSchema]:

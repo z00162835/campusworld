@@ -1,0 +1,58 @@
+"""PolicyEngine — deterministic check-point evaluator.
+
+The engine is a pure function over ``PolicyContext``: no DB, no LLM, no I/O.
+Detectors are registered at import time and evaluated in order; the first
+non-allow decision short-circuits the chain. If no detector fires the engine
+returns ``allow``.
+
+v1 only registers detectors for ``before_tool_call`` (side_effect_level,
+data_classification) and ``before_skill_activation`` (activation_mode). The
+``skill_tool_group`` detector is P3 and intentionally omitted from the MVP.
+"""
+from __future__ import annotations
+
+from typing import Callable, List, Optional, Tuple
+
+from app.game_engine.agent_runtime.policy.context import PolicyContext
+from app.game_engine.agent_runtime.policy.decisions import PolicyDecision
+
+Detector = Callable[[PolicyContext], Optional[PolicyDecision]]
+
+
+class PolicyEngine:
+    """Stateless evaluator. Constructed once per process; safe to reuse."""
+
+    def __init__(self, detectors: Optional[List[Detector]] = None) -> None:
+        if detectors is None:
+            detectors = _default_detectors()
+        self._detectors: Tuple[Detector, ...] = tuple(detectors)
+
+    def evaluate(self, ctx: PolicyContext) -> PolicyDecision:
+        for detector in self._detectors:
+            decision = detector(ctx)
+            if decision is not None and not decision.is_allow:
+                return decision
+        return PolicyDecision.allow(ctx.check_point)
+
+    @property
+    def detectors(self) -> Tuple[Detector, ...]:
+        return self._detectors
+
+
+def _default_detectors() -> List[Detector]:
+    # Local import to avoid module-level cycle when detectors import engine types.
+    from app.game_engine.agent_runtime.policy.detectors import (
+        data_classification_detector,
+        side_effect_level_detector,
+        skill_activation_mode_detector,
+    )
+
+    return [
+        side_effect_level_detector,
+        data_classification_detector,
+        skill_activation_mode_detector,
+    ]
+
+
+# Module-level singleton; detectors are stateless so reuse is safe.
+default_engine = PolicyEngine()
