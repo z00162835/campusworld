@@ -61,12 +61,14 @@ def _detectors_from_config() -> List[Detector]:
         data_classification_detector,
         side_effect_level_detector,
         skill_activation_mode_detector,
+        skill_tool_group_detector,
     )
 
     try:
         cm = get_config()
         enable_side_effect = cm.get_nested('policy', 'enable_side_effect_detector', default=True)
         enable_data_cls = cm.get_nested('policy', 'enable_data_classification_detector', default=True)
+        enable_skill_group = cm.get_nested('policy', 'enable_skill_tool_group_detector', default=False)
     except Exception:  # noqa: BLE001 — config may be unavailable in unit tests
         return _default_detectors()
 
@@ -75,6 +77,8 @@ def _detectors_from_config() -> List[Detector]:
         detectors.append(side_effect_level_detector)
     if enable_data_cls:
         detectors.append(data_classification_detector)
+    if enable_skill_group:
+        detectors.append(skill_tool_group_detector)
     detectors.append(skill_activation_mode_detector)
     return detectors
 

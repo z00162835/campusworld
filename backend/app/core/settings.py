@@ -260,6 +260,7 @@ class PolicyConfig(BaseModel):
     enable_prompt_fallback: bool = Field(default=True, description='Keep system_prompt safety text as fallback until F18 output gates land')
     enable_side_effect_detector: bool = Field(default=True, description='Block write_high side effects at before_tool_call')
     enable_data_classification_detector: bool = Field(default=True, description='Block confidential/restricted data at before_tool_call')
+    enable_skill_tool_group_detector: bool = Field(default=False, description='Block commands whose tool_groups are not covered by active skills allowed_tool_groups (P3, opt-in)')
 
 class WorldInteractionConfig(BaseModel):
     """HTTP world interaction / decision-center tunables."""

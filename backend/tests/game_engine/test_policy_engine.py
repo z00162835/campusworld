@@ -7,6 +7,7 @@ from app.game_engine.agent_runtime.policy.detectors import (
     data_classification_detector,
     side_effect_level_detector,
     skill_activation_mode_detector,
+    skill_tool_group_detector,
 )
 
 
@@ -124,6 +125,174 @@ class TestSkillActivationModeDetector:
             skill_activation_mode="prompt",
         )
         assert skill_activation_mode_detector(ctx) is None
+
+
+class TestToolGroupHierarchy:
+    """Tests for the tool_group parent/child matching (SPEC §4.4)."""
+
+    def test_read_parent_covers_observe(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("observe", ("read",)) is True
+
+    def test_read_parent_covers_agent_meta(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("agent_meta", ("read",)) is True
+
+    def test_read_parent_covers_identity(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("identity", ("read",)) is True
+
+    def test_read_parent_covers_communicate(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("communicate", ("read",)) is True
+
+    def test_read_exact_match(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("read", ("read",)) is True
+
+    def test_observe_does_not_cover_agent_meta(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("agent_meta", ("observe",)) is False
+
+    def test_observe_does_not_cover_read(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("read", ("observe",)) is False
+
+    def test_mutate_not_covered_by_read(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_group_allowed
+        assert is_group_allowed("mutate", ("read",)) is False
+
+    def test_any_group_allowed(self):
+        from app.game_engine.agent_runtime.policy.tool_groups import is_any_group_allowed
+        assert is_any_group_allowed(("read",), ("read",)) is True
+        assert is_any_group_allowed(("observe",), ("read",)) is True
+        assert is_any_group_allowed(("mutate",), ("read",)) is False
+        assert is_any_group_allowed(("read", "mutate"), ("read",)) is True
+        assert is_any_group_allowed(("mutate",), ("mutate",)) is True
+
+
+class TestSkillToolGroupDetector:
+    def test_read_command_allowed_by_read_skill(self):
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="help",
+            interaction_profile="read",
+            tool_groups=("read",),
+            active_skill_context={
+                "active_skill_ids": ["problem_framing"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        assert skill_tool_group_detector(ctx) is None
+
+    def test_observe_command_allowed_by_read_skill(self):
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="read",
+            tool_groups=("observe",),
+            active_skill_context={
+                "active_skill_ids": ["problem_framing"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        assert skill_tool_group_detector(ctx) is None
+
+    def test_mutate_command_denied_by_read_skill(self):
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="mutate",
+            tool_groups=("mutate",),
+            active_skill_context={
+                "active_skill_ids": ["problem_framing"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        decision = skill_tool_group_detector(ctx)
+        assert decision is not None
+        assert decision.is_block is True
+        assert decision.reason_code == "policy_blocked_skill_tool_group"
+
+    def test_no_active_skills_does_not_deny(self):
+        """When active_skill_ids is empty, detector must not fire (forward compat)."""
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="mutate",
+            tool_groups=("mutate",),
+            active_skill_context={
+                "active_skill_ids": [],
+                "active_skill_allowed_tool_groups": [],
+            },
+        )
+        assert skill_tool_group_detector(ctx) is None
+
+    def test_missing_active_skill_context_does_not_deny(self):
+        """When active_skill_context is None, detector must not fire."""
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="mutate",
+            tool_groups=("mutate",),
+            active_skill_context=None,
+        )
+        assert skill_tool_group_detector(ctx) is None
+
+    def test_skills_with_no_groups_does_not_deny(self):
+        """When skills declare no allowed_tool_groups, allow everything."""
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="mutate",
+            tool_groups=("mutate",),
+            active_skill_context={
+                "active_skill_ids": ["custom_skill"],
+                "active_skill_allowed_tool_groups": [],
+            },
+        )
+        assert skill_tool_group_detector(ctx) is None
+
+    def test_observe_skill_denies_agent_meta(self):
+        """[observe] skill should not allow agent_meta commands."""
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="agent",
+            interaction_profile="read",
+            tool_groups=("agent_meta",),
+            active_skill_context={
+                "active_skill_ids": ["narrow_skill"],
+                "active_skill_allowed_tool_groups": ["observe"],
+            },
+        )
+        decision = skill_tool_group_detector(ctx)
+        assert decision is not None
+        assert decision.is_block is True
+
+    def test_multiple_command_groups_any_match_allows(self):
+        """If any of the command's groups is covered, allow."""
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="mutate",
+            tool_groups=("observe", "mutate"),
+            active_skill_context={
+                "active_skill_ids": ["problem_framing"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        # observe is covered by read parent → allow (even though mutate is not)
+        assert skill_tool_group_detector(ctx) is None
+
+    def test_wrong_check_point_skipped(self):
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_SKILL_ACTIVATION,
+            active_skill_context={
+                "active_skill_ids": ["x"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        assert skill_tool_group_detector(ctx) is None
 
 
 class TestPolicyEngine:
@@ -252,3 +421,79 @@ class TestPolicyEngineConfigToggles:
         )
         decision = engine.evaluate(ctx)
         assert decision.is_block is True
+
+    def test_skill_tool_group_detector_off_by_default(self, monkeypatch):
+        """P3 detector is opt-in; with default config it should not fire."""
+        from app.core.config_manager import get_config
+        cm = get_config()
+        original = cm.get_nested
+        def patched_get_nested(*keys, default=None):
+            if keys == ('policy', 'enable_skill_tool_group_detector'):
+                return False
+            return original(*keys, default=default)
+        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
+
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="mutate",
+            tool_groups=("mutate",),
+            active_skill_context={
+                "active_skill_ids": ["problem_framing"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_allow is True
+
+    def test_skill_tool_group_detector_blocks_when_enabled(self, monkeypatch):
+        """When enabled, mutate command denied by [read] skill."""
+        from app.core.config_manager import get_config
+        cm = get_config()
+        original = cm.get_nested
+        def patched_get_nested(*keys, default=None):
+            if keys == ('policy', 'enable_skill_tool_group_detector'):
+                return True
+            return original(*keys, default=default)
+        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
+
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="task",
+            interaction_profile="mutate",
+            tool_groups=("mutate",),
+            active_skill_context={
+                "active_skill_ids": ["problem_framing"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_block is True
+        assert decision.reason_code == "policy_blocked_skill_tool_group"
+
+    def test_skill_tool_group_detector_allows_read_when_enabled(self, monkeypatch):
+        """When enabled, read command allowed by [read] skill."""
+        from app.core.config_manager import get_config
+        cm = get_config()
+        original = cm.get_nested
+        def patched_get_nested(*keys, default=None):
+            if keys == ('policy', 'enable_skill_tool_group_detector'):
+                return True
+            return original(*keys, default=default)
+        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
+
+        engine = PolicyEngine()
+        ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_TOOL_CALL,
+            command_name="help",
+            interaction_profile="read",
+            tool_groups=("read",),
+            active_skill_context={
+                "active_skill_ids": ["problem_framing"],
+                "active_skill_allowed_tool_groups": ["read"],
+            },
+        )
+        decision = engine.evaluate(ctx)
+        assert decision.is_allow is True

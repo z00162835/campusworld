@@ -68,3 +68,50 @@ def skill_activation_mode_detector(ctx: PolicyContext) -> Optional[PolicyDecisio
             evidence={"skill_id": ctx.skill_id, "activation_mode": mode},
         )
     return None
+
+
+# ---------------------------------------------------------------------------
+# before_tool_call: skill_tool_group (P3, D3)
+# ---------------------------------------------------------------------------
+
+def skill_tool_group_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
+    """Deny when the command's tool_groups are not covered by active skills.
+
+    Per SPEC §4.3/§4.4: if the agent has active skills, every command must
+    have at least one ``tool_group`` that is covered by the union of the
+    active skills' ``allowed_tool_groups`` (exact match or parent-group match).
+
+    When there are no active skills (``active_skill_context`` is missing or
+    ``active_skill_ids`` is empty), the detector does **not** fire — this
+    preserves forward compatibility with agents that have no ``skill_refs``.
+    """
+    if ctx.check_point != CheckPoint.BEFORE_TOOL_CALL:
+        return None
+    asc = ctx.active_skill_context
+    if not isinstance(asc, dict):
+        return None
+    active_ids = asc.get("active_skill_ids")
+    if not active_ids:
+        return None
+    allowed_groups = asc.get("active_skill_allowed_tool_groups")
+    if not allowed_groups:
+        # Skills are active but declare no groups — allow everything rather
+        # than over-block. The skill authors can tighten by declaring groups.
+        return None
+    command_groups = tuple(ctx.tool_groups or ())
+    if not command_groups:
+        command_groups = (ctx.interaction_profile or "read",)
+    from app.game_engine.agent_runtime.policy.tool_groups import is_any_group_allowed
+
+    if not is_any_group_allowed(command_groups, tuple(allowed_groups)):
+        return PolicyDecision.deny(
+            CheckPoint.BEFORE_TOOL_CALL,
+            "policy_blocked_skill_tool_group",
+            evidence={
+                "command_name": ctx.command_name,
+                "command_tool_groups": list(command_groups),
+                "active_skill_ids": list(active_ids),
+                "active_skill_allowed_tool_groups": list(allowed_groups),
+            },
+        )
+    return None

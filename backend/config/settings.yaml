@@ -339,6 +339,7 @@ policy:
   enable_prompt_fallback: true
   enable_side_effect_detector: true
   enable_data_classification_detector: true
+  enable_skill_tool_group_detector: false
 
 world_interaction:
   aico_stream_worker_join_sec: 30
