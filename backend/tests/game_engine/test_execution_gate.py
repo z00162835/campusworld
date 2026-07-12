@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
 from app.commands.base import CommandContext, CommandResult
+from app.commands.init_commands import initialize_commands
 from app.game_engine.agent_runtime.execution_gate import evaluate_execution_gate
 from app.game_engine.agent_runtime.resolved_tool_surface import (
     PreauthorizedToolExecutor,
@@ -12,6 +15,11 @@ from app.game_engine.agent_runtime.tool_gather import (
     ToolInvocationPlan,
     gather_tool_observations,
 )
+
+
+@pytest.fixture(scope='module', autouse=True)
+def _init_commands():
+    initialize_commands(force_reinit=True)
 
 
 def _ctx(meta=None) -> CommandContext:
