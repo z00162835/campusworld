@@ -681,6 +681,9 @@ class LlmPDCAFramework(ThinkingFramework):
                 if base_tool_ctx is not None:
                     rt_meta = dict(base_tool_ctx.metadata or {})
                     rt_meta['user_message'] = str(ctx.payload.get('message') or ctx.payload.get('text') or '')
+                    active_skill_context = ctx.payload.get('active_skill_context')
+                    if active_skill_context is not None:
+                        rt_meta['active_skill_context'] = active_skill_context
                     runtime_tool_ctx = CommandContext(user_id=base_tool_ctx.user_id, username=base_tool_ctx.username, session_id=base_tool_ctx.session_id, permissions=list(base_tool_ctx.permissions or []), roles=list(base_tool_ctx.roles or []), db_session=base_tool_ctx.db_session, caller=base_tool_ctx.caller, game_state=base_tool_ctx.game_state, metadata=rt_meta)
                 view = resolve_tool_runtime_view(pre_tool=self._pre_tool, tool_command_context=runtime_tool_ctx, budgets=self._tool_budgets, counters=counters)
                 if not view.can_execute:
