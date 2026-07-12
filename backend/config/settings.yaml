@@ -333,7 +333,7 @@ commands:
     min_trgm_chars: 3
     explain_on_all_over: 100000
 
-# F16 Agent Policy Engine — behaviour-plane check-point switches.
+# Agent Policy Engine — behaviour-plane check-point switches.
 # Platform default rules are implemented in code; this block only toggles/parameterizes them.
 policy:
   enable_prompt_fallback: true

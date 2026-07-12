@@ -88,4 +88,4 @@ def test_tool_groups_for_unknown_command():
 def test_tool_groups_in_to_dict():
     sem = resolve_command_tool_semantics('task', args=['list'])
     data = sem.to_dict()
-    assert data['tool_groups'] == ['read']
+    assert data['tool_groups'] == ['observe']

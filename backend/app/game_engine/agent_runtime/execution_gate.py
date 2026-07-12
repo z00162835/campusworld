@@ -1,12 +1,11 @@
 """Runtime execution gate for caller policy + callee semantics.
 
-Adapter contract (F16 D4): the external API and ``GateDecision`` structure are
-stable. Internally, after the legacy caller/callee checks pass, the gate
-delegates ``side_effect_level`` / ``data_classification`` evaluation to the
-``PolicyEngine`` (``before_tool_call`` check-point). The legacy
-reason_code set is preserved; policy denials surface as
-``guard_blocked_policy`` with the detailed ``policy_decision`` written to the
-trace by the caller.
+Adapter contract: the external API and ``GateDecision`` structure are stable.
+Internally, after the legacy caller/callee checks pass, the gate delegates
+``side_effect_level`` / ``data_classification`` evaluation to the
+``PolicyEngine`` (``before_tool_call`` check-point). The legacy reason_code set
+is preserved; policy denials surface as ``guard_blocked_policy`` with the
+detailed ``policy_decision`` written to the trace by the caller.
 """
 from __future__ import annotations
 import re
@@ -123,7 +122,7 @@ def evaluate_execution_gate(*, db_session, command_name: str, args: List[str], c
         return GateDecision(allow=False, reason_code='guard_blocked_scope', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
     if effective_guard.get('requires_confirmation') and (not _is_confirmed(meta, callee_guard, user_message)):
         return GateDecision(allow=False, reason_code='guard_blocked_confirmation', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
-    # F16 adapter: delegate side_effect_level / data_classification to PolicyEngine.
+    # Delegate side_effect_level / data_classification to PolicyEngine.
     policy_ctx = PolicyContext(
         check_point=CheckPoint.BEFORE_TOOL_CALL,
         command_name=command_name,
@@ -144,13 +143,15 @@ def evaluate_execution_gate(*, db_session, command_name: str, args: List[str], c
     return GateDecision(allow=True, reason_code='guard_pass', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
 
 def _policy_decision_to_trace(decision: PolicyDecision) -> Dict[str, Any]:
+    evidence = decision.evidence or {}
     return {
         'step': 'policy_decision',
         'check_point': decision.check_point,
         'decision': decision.decision,
         'reason_code': decision.reason_code,
+        'detector': evidence.get('detector'),
         'runtime_action': decision.runtime_action,
-        'evidence': decision.evidence or {},
+        'evidence': evidence,
     }
 
 

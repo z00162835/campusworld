@@ -5,12 +5,13 @@ Detectors are registered at import time and evaluated in order; the first
 non-allow decision short-circuits the chain. If no detector fires the engine
 returns ``allow``.
 
-v1 only registers detectors for ``before_tool_call`` (side_effect_level,
-data_classification) and ``before_skill_activation`` (activation_mode). The
-``skill_tool_group`` detector is P3 and intentionally omitted from the MVP.
+Registered detectors: ``side_effect_level``, ``data_classification``,
+``skill_activation_mode`` (always on, inert until modes are populated), and
+``skill_tool_group`` (opt-in via config toggle).
 """
 from __future__ import annotations
 
+import dataclasses
 from typing import Callable, List, Optional, Tuple
 
 from app.game_engine.agent_runtime.policy.context import PolicyContext
@@ -31,7 +32,11 @@ class PolicyEngine:
         for detector in self._detectors:
             decision = detector(ctx)
             if decision is not None and not decision.is_allow:
-                return decision
+                tagged = dataclasses.replace(
+                    decision,
+                    evidence={**decision.evidence, 'detector': detector.__name__},
+                )
+                return tagged
         return PolicyDecision.allow(ctx.check_point)
 
     @property

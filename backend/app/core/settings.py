@@ -251,7 +251,7 @@ class CommandsConfig(BaseModel):
     find: FindCommandConfig = Field(default_factory=FindCommandConfig)
 
 class PolicyConfig(BaseModel):
-    """policy.* — F16 Agent Policy Engine switches and platform defaults.
+    """policy.* — Agent Policy Engine switches and platform defaults.
 
     Platform default rules are implemented in code (Python dataclass +
     registration, D7); this config only parameterizes/toggles them.

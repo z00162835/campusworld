@@ -177,6 +177,7 @@ class WhoamiCommand(SystemCommand):
         deterministic=True,
         data_classification='public',
         data_scope=('account',),
+        tool_groups=('identity',),
     )
 
     def __init__(self):

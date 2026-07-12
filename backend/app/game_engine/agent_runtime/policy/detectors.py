@@ -2,7 +2,7 @@
 
 Each detector returns ``None`` when the rule passes (no opinion) or a
 ``PolicyDecision`` when it fires. Detectors are stateless and never call the
-LLM or the database (D1). The engine applies them in registration order; the
+LLM or the database. The engine applies them in registration order; the
 first non-``None`` deny/require_approval result wins.
 """
 from __future__ import annotations
@@ -77,9 +77,9 @@ def skill_activation_mode_detector(ctx: PolicyContext) -> Optional[PolicyDecisio
 def skill_tool_group_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
     """Deny when the command's tool_groups are not covered by active skills.
 
-    Per SPEC §4.3/§4.4: if the agent has active skills, every command must
-    have at least one ``tool_group`` that is covered by the union of the
-    active skills' ``allowed_tool_groups`` (exact match or parent-group match).
+    If the agent has active skills, every command must have at least one
+    ``tool_group`` that is covered by the union of the active skills'
+    ``allowed_tool_groups`` (exact match or parent-group match).
 
     When there are no active skills (``active_skill_context`` is missing or
     ``active_skill_ids`` is empty), the detector does **not** fire — this

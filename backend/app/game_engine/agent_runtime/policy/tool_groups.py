@@ -1,4 +1,4 @@
-"""tool_group hierarchy and matching rules (SPEC §4.4).
+"""tool_group hierarchy and matching rules.
 
 v1 taxonomy:
 

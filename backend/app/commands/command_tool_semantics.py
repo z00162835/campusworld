@@ -68,7 +68,7 @@ class CommandToolSemantics:
     error_schema: Optional[Dict[str, Any]] = None
     data_classification: Optional[ToolDataClassification] = None
     data_scope: Tuple[str, ...] = ()
-    # Refined behavior groups for F16 PolicyEngine skill_tool_group detector.
+    # Refined behavior groups for the PolicyEngine skill_tool_group detector.
     # Empty tuple means "derive from the resolved interaction_profile" (read or mutate).
     tool_groups: Tuple[str, ...] = ()
 
@@ -164,31 +164,34 @@ DEFAULT_READ_SEMANTICS = CommandToolSemantics(interaction_profile='read')
 
 READ_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read')
 MUTATE_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='mutate')
+OBSERVE_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read', tool_groups=('observe',))
+AGENT_META_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read', tool_groups=('agent_meta',))
+COMMUNICATE_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read', tool_groups=('communicate',))
 
 TASK_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('show'),
+    OBSERVE_SUBCOMMAND('list'),
+    OBSERVE_SUBCOMMAND('show'),
 )
 
 WORLD_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('status'),
-    READ_SUBCOMMAND('validate'),
-    READ_SUBCOMMAND('bridge', 'list'),
-    READ_SUBCOMMAND('bridge', 'validate'),
-    READ_SUBCOMMAND('content', 'validate'),
-    READ_SUBCOMMAND('content', 'diff'),
+    OBSERVE_SUBCOMMAND('list'),
+    OBSERVE_SUBCOMMAND('status'),
+    OBSERVE_SUBCOMMAND('validate'),
+    OBSERVE_SUBCOMMAND('bridge', 'list'),
+    OBSERVE_SUBCOMMAND('bridge', 'validate'),
+    OBSERVE_SUBCOMMAND('content', 'validate'),
+    OBSERVE_SUBCOMMAND('content', 'diff'),
 )
 
 NOTICE_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('view'),
+    COMMUNICATE_SUBCOMMAND('list'),
+    COMMUNICATE_SUBCOMMAND('view'),
 )
 
 AGENT_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('show'),
-    READ_SUBCOMMAND('status'),
+    AGENT_META_SUBCOMMAND('list'),
+    AGENT_META_SUBCOMMAND('show'),
+    OBSERVE_SUBCOMMAND('status'),
     READ_SUBCOMMAND('tool'),
     MUTATE_SUBCOMMAND('tool', 'add'),
     MUTATE_SUBCOMMAND('tool', 'del'),
