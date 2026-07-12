@@ -270,7 +270,7 @@ def resolve_command_tool_semantics(
                 base,
                 interaction_profile=prof,
                 invocation_guard=dict(default_guard_for(prof)),
-                tool_groups=base.tool_groups or (prof,),
+                tool_groups=(prof,),
             )
     else:
         matched = _match_subcommand_rule(base.subcommand_profiles, args)

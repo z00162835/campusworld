@@ -499,6 +499,40 @@ def test_subcommand_without_explicit_groups_uses_matched_profile():
 
 
 @pytest.mark.unit
+def test_bare_fallback_uses_fallback_profile_groups_not_base_groups(monkeypatch):
+    """When default_profile_when_no_subcommand downgrades a bare command to a
+    safer profile, the tool_groups must follow the fallback profile, not retain
+    the class-level base groups (e.g. mutate/admin)."""
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        READ_SUBCOMMAND,
+        MUTATE_SUBCOMMAND,
+        resolve_command_tool_semantics,
+    )
+    from app.commands.registry import command_registry
+
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        tool_groups=('mutate', 'admin'),
+        subcommand_profiles=(
+            READ_SUBCOMMAND('list'),
+            MUTATE_SUBCOMMAND('create'),
+        ),
+        default_profile_when_no_subcommand='read',
+    )
+
+    class _FakeCmd:
+        tool_semantics = base
+
+    monkeypatch.setattr(command_registry, 'get_command', lambda name: _FakeCmd())
+    resolved = resolve_command_tool_semantics('_fake_bare_test', args=[])
+    assert resolved.interaction_profile == 'read'
+    assert resolved.tool_groups == ('read',)
+    assert 'mutate' not in resolved.tool_groups
+    assert 'admin' not in resolved.tool_groups
+
+
+@pytest.mark.unit
 def test_fine_grained_tool_groups_for_known_subcommands():
     """SPEC §4.4 taxonomy: subcommands resolve to refined child groups."""
     initialize_commands(force_reinit=True)
