@@ -28,6 +28,8 @@ from app.game_engine.agent_runtime.tool_gather import ToolGatherBudgets, ToolGat
 from app.game_engine.agent_runtime.tool_runtime_view import resolve_tool_runtime_view
 from app.game_engine.agent_runtime.tooling import ToolExecutor
 from app.game_engine.agent_runtime.skills import SkillInjection, get_default_skill_registry
+from app.game_engine.agent_runtime.policy import PolicyContext, PolicyEngine
+from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 from app.game_engine.agent_runtime.prompt_fingerprint import compute_npc_prompt_fingerprint
 from app.game_engine.agent_runtime.agent_loop import (
     AgentLoopConfig,
@@ -124,6 +126,32 @@ def _resolve_npc_agent_empty_reply_message(cfg: AgentLlmServiceConfig) -> str:
         return raw.strip()
     return _DEFAULT_NPC_AGENT_EMPTY_REPLY
 _LLM_PDCA_LOG = logging.getLogger(__name__)
+
+
+_POLICY_FALLBACK_PREAMBLE = (
+    "\n\n--- Policy Fallback ---\n"
+    "The runtime enforces deterministic behavioural gates at the tool-call and "
+    "skill-activation check-points. High side-effect writes and restricted data "
+    "classifications are blocked automatically. When active skills constrain "
+    "tool groups, commands outside those groups are denied. Treat this text as "
+    "a backup safety net; the authoritative enforcement happens in the engine, "
+    "not in this prompt."
+)
+
+
+def _prompt_fallback_enabled() -> bool:
+    """Read ``policy.enable_prompt_fallback`` from config; default True."""
+    try:
+        from app.core.config_manager import get_config
+        return bool(get_config().get_nested('policy', 'enable_prompt_fallback', default=True))
+    except Exception:  # noqa: BLE001 — config may be unavailable in unit tests
+        return True
+
+
+def _append_policy_fallback(base_system: str) -> str:
+    if not base_system:
+        return base_system
+    return base_system + _POLICY_FALLBACK_PREAMBLE
 
 def _serialize_tool_calls_for_entry(calls: Sequence[ToolCall]) -> List[Dict[str, Any]]:
     return [{'id': c.id, 'name': c.name, 'args': list(c.args)} for c in calls]
@@ -268,6 +296,7 @@ class LlmPDCAFramework(ThinkingFramework):
             self._skill_injection = SkillInjection(registry=get_default_skill_registry())
         else:
             self._skill_injection = None
+        self._policy_engine: PolicyEngine = PolicyEngine()
 
     @property
     def framework_id(self) -> str:
@@ -302,10 +331,34 @@ class LlmPDCAFramework(ThinkingFramework):
         """Compute this phase's skill-context (L1 manifest + L2 body) and trace activations."""
         if self._skill_injection is None or not self._skill_refs:
             ctx.payload['skill_context_text'] = ''
+            ctx.payload['active_skill_context'] = None
             return
-        text, activations = self._skill_injection.inject(self._skill_refs, phase=phase)
-        ctx.payload['skill_context_text'] = text
-        for a in activations:
+
+        blocked_decisions: dict = {}
+
+        def _before_activate(skill_def, ph: str):
+            policy_ctx = PolicyContext(
+                check_point=CheckPoint.BEFORE_SKILL_ACTIVATION,
+                skill_id=skill_def.name,
+                skill_allowed_tool_groups=tuple(skill_def.allowed_tool_groups or ()),
+                skill_activation_mode=skill_def.activation_mode,
+                skill_allowed_in_react_states=tuple(skill_def.allowed_in_react_states or ()),
+                current_react_state=ph,
+            )
+            decision = self._policy_engine.evaluate(policy_ctx)
+            if decision.is_block:
+                blocked_decisions[skill_def.name] = decision
+                return decision.reason_code
+            return None
+
+        result = self._skill_injection.inject(self._skill_refs, phase=phase, before_activate=_before_activate)
+        ctx.payload['skill_context_text'] = result.text
+        allowed_groups = sorted({group for a in result.activations for group in a.allowed_tool_groups})
+        ctx.payload['active_skill_context'] = {
+            'active_skill_ids': [a.skill_id for a in result.activations],
+            'active_skill_allowed_tool_groups': allowed_groups,
+        }
+        for a in result.activations:
             trace.append({
                 'step': 'skill_activated',
                 'skill_id': a.skill_id,
@@ -313,6 +366,22 @@ class LlmPDCAFramework(ThinkingFramework):
                 'states': list(self._skill_refs),
                 'category': a.category,
                 'definition_hash': a.definition_hash,
+            })
+        for blocked_def, reason_code in zip(result.blocked, result.blocked_reasons):
+            dec = blocked_decisions.get(blocked_def.name)
+            evidence = dict(dec.evidence or {}) if dec else {}
+            evidence.setdefault('skill_id', blocked_def.name)
+            evidence.setdefault('phase', phase)
+            trace.append({
+                'step': 'policy_decision',
+                'check_point': CheckPoint.BEFORE_SKILL_ACTIVATION,
+                'decision': 'deny',
+                'reason_code': reason_code,
+                'detector': evidence.get('detector'),
+                'runtime_action': 'block',
+                'evidence': evidence,
+                'phase': phase,
+                'skill_id': blocked_def.name,
             })
 
     def _effective_tool_schemas(self, ctx: FrameworkRunContext, *, pdca_phase: str) -> List[ToolSchema]:
@@ -646,6 +715,9 @@ class LlmPDCAFramework(ThinkingFramework):
                 if base_tool_ctx is not None:
                     rt_meta = dict(base_tool_ctx.metadata or {})
                     rt_meta['user_message'] = str(ctx.payload.get('message') or ctx.payload.get('text') or '')
+                    active_skill_context = ctx.payload.get('active_skill_context')
+                    if active_skill_context is not None:
+                        rt_meta['active_skill_context'] = active_skill_context
                     runtime_tool_ctx = CommandContext(user_id=base_tool_ctx.user_id, username=base_tool_ctx.username, session_id=base_tool_ctx.session_id, permissions=list(base_tool_ctx.permissions or []), roles=list(base_tool_ctx.roles or []), db_session=base_tool_ctx.db_session, caller=base_tool_ctx.caller, game_state=base_tool_ctx.game_state, metadata=rt_meta)
                 view = resolve_tool_runtime_view(pre_tool=self._pre_tool, tool_command_context=runtime_tool_ctx, budgets=self._tool_budgets, counters=counters)
                 if not view.can_execute:
@@ -733,6 +805,8 @@ class LlmPDCAFramework(ThinkingFramework):
         self._bind_presentation_anchor(ctx)
         self._memory.start_run(run_id=run_id, correlation_id=correlation if isinstance(correlation, str) else None, phase=PDCAPhase.plan.value, command_trace=list(trace), status='running')
         base_system = (ctx.system_prompt or self._cfg.system_prompt or '').strip()
+        if _prompt_fallback_enabled():
+            base_system = _append_policy_fallback(base_system)
         merged_phases = _merge_phase_prompts(dict(self._cfg.phase_prompts), ctx.phase_prompts)
         slim_followup = _resolve_pdca_slim_followup_system(self._cfg)
         mem = (ctx.memory_context or '').strip()

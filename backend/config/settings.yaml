@@ -333,6 +333,14 @@ commands:
     min_trgm_chars: 3
     explain_on_all_over: 100000
 
+# Agent Policy Engine — behaviour-plane check-point switches.
+# Platform default rules are implemented in code; this block only toggles/parameterizes them.
+policy:
+  enable_prompt_fallback: true
+  enable_side_effect_detector: true
+  enable_data_classification_detector: true
+  enable_skill_tool_group_detector: false
+
 world_interaction:
   aico_stream_worker_join_sec: 30
   max_archives_per_user: 100

@@ -35,11 +35,12 @@ def default_guard_for(profile: InteractionProfile) -> Dict[str, Any]:
 
 @dataclass(frozen=True)
 class SubcommandProfileRule:
-    """Match args prefix (case-insensitive) to an effective interaction profile."""
+    """Match args prefix (case-insensitive) to an effective interaction profile and tool groups."""
 
     arg_prefix: Tuple[str, ...]
     interaction_profile: InteractionProfile
     invocation_guard: Optional[Dict[str, Any]] = None
+    tool_groups: Tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,9 @@ class CommandToolSemantics:
     error_schema: Optional[Dict[str, Any]] = None
     data_classification: Optional[ToolDataClassification] = None
     data_scope: Tuple[str, ...] = ()
+    # Refined behavior groups for the PolicyEngine skill_tool_group detector.
+    # Empty tuple means "derive from the resolved interaction_profile" (read or mutate).
+    tool_groups: Tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.invocation_guard:
@@ -77,6 +81,7 @@ class CommandToolSemantics:
             {
                 'arg_prefix': list(rule.arg_prefix),
                 'interaction_profile': rule.interaction_profile,
+                'tool_groups': list(rule.tool_groups) if rule.tool_groups else None,
             }
             for rule in self.subcommand_profiles
         ]
@@ -99,6 +104,7 @@ class CommandToolSemantics:
             'error_schema': self.error_schema,
             'data_classification': self.data_classification,
             'data_scope': list(self.data_scope) if self.data_scope else None,
+            'tool_groups': list(self.tool_groups) if self.tool_groups else None,
         }
 
 
@@ -158,31 +164,34 @@ DEFAULT_READ_SEMANTICS = CommandToolSemantics(interaction_profile='read')
 
 READ_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read')
 MUTATE_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='mutate')
+OBSERVE_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read', tool_groups=('observe',))
+AGENT_META_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read', tool_groups=('agent_meta',))
+COMMUNICATE_SUBCOMMAND = lambda *prefix: SubcommandProfileRule(arg_prefix=prefix, interaction_profile='read', tool_groups=('communicate',))
 
 TASK_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('show'),
+    OBSERVE_SUBCOMMAND('list'),
+    OBSERVE_SUBCOMMAND('show'),
 )
 
 WORLD_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('status'),
-    READ_SUBCOMMAND('validate'),
-    READ_SUBCOMMAND('bridge', 'list'),
-    READ_SUBCOMMAND('bridge', 'validate'),
-    READ_SUBCOMMAND('content', 'validate'),
-    READ_SUBCOMMAND('content', 'diff'),
+    OBSERVE_SUBCOMMAND('list'),
+    OBSERVE_SUBCOMMAND('status'),
+    OBSERVE_SUBCOMMAND('validate'),
+    OBSERVE_SUBCOMMAND('bridge', 'list'),
+    OBSERVE_SUBCOMMAND('bridge', 'validate'),
+    OBSERVE_SUBCOMMAND('content', 'validate'),
+    OBSERVE_SUBCOMMAND('content', 'diff'),
 )
 
 NOTICE_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('view'),
+    COMMUNICATE_SUBCOMMAND('list'),
+    COMMUNICATE_SUBCOMMAND('view'),
 )
 
 AGENT_SUBCOMMAND_PROFILES = (
-    READ_SUBCOMMAND('list'),
-    READ_SUBCOMMAND('show'),
-    READ_SUBCOMMAND('status'),
+    AGENT_META_SUBCOMMAND('list'),
+    AGENT_META_SUBCOMMAND('show'),
+    OBSERVE_SUBCOMMAND('status'),
     READ_SUBCOMMAND('tool'),
     MUTATE_SUBCOMMAND('tool', 'add'),
     MUTATE_SUBCOMMAND('tool', 'del'),
@@ -243,7 +252,7 @@ def resolve_command_tool_semantics(
     name = str(command_name or '').strip().lower()
     cmd = command_registry.get_command(name)
     if cmd is None:
-        return CommandToolSemantics(interaction_profile='read', semantic_pending=True)
+        return CommandToolSemantics(interaction_profile='read', semantic_pending=True, tool_groups=('read',))
     base = getattr(type(cmd), 'tool_semantics', DEFAULT_READ_SEMANTICS)
     if not args or not base.subcommand_profiles:
         resolved = base
@@ -261,6 +270,7 @@ def resolve_command_tool_semantics(
                 base,
                 interaction_profile=prof,
                 invocation_guard=dict(default_guard_for(prof)),
+                tool_groups=(prof,),
             )
     else:
         matched = _match_subcommand_rule(base.subcommand_profiles, args)
@@ -268,13 +278,17 @@ def resolve_command_tool_semantics(
             resolved = base
         else:
             guard = matched.invocation_guard if matched.invocation_guard is not None else default_guard_for(matched.interaction_profile)
+            tool_groups = matched.tool_groups if matched.tool_groups else (matched.interaction_profile,)
             resolved = dataclasses.replace(
                 base,
                 interaction_profile=matched.interaction_profile,
                 invocation_guard=dict(guard),
+                tool_groups=tool_groups,
             )
     if resolved.side_effect_level is None:
-        return dataclasses.replace(resolved, side_effect_level=resolve_side_effect_level(resolved))
+        resolved = dataclasses.replace(resolved, side_effect_level=resolve_side_effect_level(resolved))
+    if not resolved.tool_groups:
+        resolved = dataclasses.replace(resolved, tool_groups=(resolved.interaction_profile,))
     return resolved
 
 

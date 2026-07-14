@@ -100,22 +100,23 @@ class TestInjectSkillContext:
         reg = _build_registry(tmp_path)
         inj = SkillInjection(registry=reg)
         refs = ["problem_framing", "retrieval_reasoning", "final_synthesis"]
-        ctx_text, activations = inj.inject(refs, phase="plan")
-        assert ctx_text.startswith("## Available Agent Skills")
-        assert "# framing guidance" in ctx_text
-        assert "# retrieval guidance" in ctx_text
-        assert "# synthesis guidance" not in ctx_text
+        result = inj.inject(refs, phase="plan")
+        assert result.text.startswith("## Available Agent Skills")
+        assert "# framing guidance" in result.text
+        assert "# retrieval guidance" in result.text
+        assert "# synthesis guidance" not in result.text
         # only phase-mapped+matching skills produce activations (L2 injected)
-        assert {a.skill_id for a in activations} == {"problem_framing", "retrieval_reasoning"}
-        for a in activations:
+        assert {a.skill_id for a in result.activations} == {"problem_framing", "retrieval_reasoning"}
+        for a in result.activations:
             assert a.definition_hash
 
     def test_empty_refs_produces_empty_context(self, tmp_path):
         reg = _build_registry(tmp_path)
         inj = SkillInjection(registry=reg)
-        ctx_text, activations = inj.inject([], phase="plan")
-        assert ctx_text == ""
-        assert activations == []
+        result = inj.inject([], phase="plan")
+        assert result.text == ""
+        assert result.activations == ()
+        assert result.blocked == ()
 
 
 class TestActivationGoldenSet:
@@ -130,14 +131,49 @@ class TestActivationGoldenSet:
             "act": ["final_synthesis"],
         }
         for phase, expected in golden.items():
-            _, activations = inj.inject(refs, phase=phase)
-            assert [a.skill_id for a in activations] == expected, f"phase={phase}"
+            result = inj.inject(refs, phase=phase)
+            assert [a.skill_id for a in result.activations] == expected, f"phase={phase}"
 
     def test_non_mapped_phase_not_active(self, tmp_path):
         reg = _build_registry(tmp_path)
         inj = SkillInjection(registry=reg)
         refs = ["problem_framing", "retrieval_reasoning", "final_synthesis"]
         # problem_framing only in plan; should not activate in do
-        _, activations = inj.inject(refs, phase="do")
-        ids = {a.skill_id for a in activations}
+        result = inj.inject(refs, phase="do")
+        ids = {a.skill_id for a in result.activations}
         assert "problem_framing" not in ids
+
+
+class TestBlockedSection:
+    def test_before_activate_hook_can_block_skill(self, tmp_path):
+        reg = _build_registry(tmp_path)
+        inj = SkillInjection(registry=reg)
+        refs = ["problem_framing", "retrieval_reasoning", "final_synthesis"]
+
+        def _deny_problem_framing(defn, phase):
+            if defn.name == "problem_framing":
+                return "policy_denied_problem_framing"
+            return None
+
+        result = inj.inject(refs, phase="plan", before_activate=_deny_problem_framing)
+        assert {a.skill_id for a in result.activations} == {"retrieval_reasoning"}
+        assert {b.name for b in result.blocked} == {"problem_framing"}
+        assert result.blocked_reasons == ("policy_denied_problem_framing",)
+        assert "### Blocked by policy" in result.text
+        assert "problem_framing" in result.text.split("### Blocked by policy")[1]
+        assert "policy_denied_problem_framing" in result.text
+
+    def test_blocked_skill_not_in_active_or_inactive(self, tmp_path):
+        reg = _build_registry(tmp_path)
+        inj = SkillInjection(registry=reg)
+        refs = ["problem_framing", "retrieval_reasoning"]
+
+        result = inj.inject(
+            refs,
+            phase="plan",
+            before_activate=lambda defn, phase: "denied" if defn.name == "problem_framing" else None,
+        )
+        active_part = result.text.split("### Active skills")[1].split("### Blocked by policy")[0]
+        assert "problem_framing" not in active_part
+        assert "retrieval_reasoning" in active_part
+        assert "problem_framing" in result.text.split("### Blocked by policy")[1]

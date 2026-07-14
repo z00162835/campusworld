@@ -68,3 +68,24 @@ def test_world_read_subcommand_profiles():
     assert resolve_command_tool_semantics('world', args=['content', 'diff', 'hicampus']).interaction_profile == 'read'
     assert resolve_command_tool_semantics('world', args=['content', 'apply', 'hicampus']).interaction_profile == 'mutate'
     assert resolve_command_tool_semantics('world', args=['bridge', 'add']).interaction_profile == 'mutate'
+
+
+@pytest.mark.unit
+def test_tool_groups_fallback_to_interaction_profile():
+    sem = resolve_command_tool_semantics('space')
+    assert sem.tool_groups == ('read',)
+    sem_mutate = resolve_command_tool_semantics('world', args=['install', 'hicampus'])
+    assert sem_mutate.tool_groups == ('mutate',)
+
+
+@pytest.mark.unit
+def test_tool_groups_for_unknown_command():
+    sem = resolve_command_tool_semantics('definitely_unknown_command')
+    assert sem.tool_groups == ('read',)
+
+
+@pytest.mark.unit
+def test_tool_groups_in_to_dict():
+    sem = resolve_command_tool_semantics('task', args=['list'])
+    data = sem.to_dict()
+    assert data['tool_groups'] == ['observe']

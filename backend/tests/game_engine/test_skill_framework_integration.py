@@ -238,3 +238,37 @@ class TestSkillModificationRegression:
                                              skill_context_text=reg2.load_body("problem_framing").text, phase="plan")
         assert hash2 != hash1
         assert fp2 != fp1
+
+
+@pytest.mark.unit
+def test_active_skill_context_dto_built_in_payload(tmp_path):
+    """SPEC §4.3 step 1-2: _prepare_skill_context must store active_skill_context DTO.
+
+    The DTO is later copied by _phase_react_loop into runtime_tool_ctx.metadata
+    so execution_gate can read it. This test verifies the DTO construction side.
+    """
+    rec = _RecordingLlm()
+    reg = _seed_registry(tmp_path)
+    fw = LlmPDCAFramework(
+        memory=_FakeMem(),
+        llm_config=_basic_cfg(),
+        instance_phase_llm={},
+        instance_mode_models={},
+        llm=rec,
+        skill_refs=["problem_framing", "retrieval_reasoning"],
+        skill_injection=SkillInjection(registry=reg),
+    )
+    ctx = FrameworkRunContext(agent_node_id=1, payload={"message": "hi"})
+    fw._prepare_skill_context(ctx, "plan", [])
+    asc = ctx.payload.get('active_skill_context')
+    assert asc is not None
+    assert 'active_skill_ids' in asc
+    assert 'active_skill_allowed_tool_groups' in asc
+    assert 'problem_framing' in asc['active_skill_ids']
+    assert 'retrieval_reasoning' in asc['active_skill_ids']
+
+    # When skill_refs is empty, the DTO should be None
+    ctx2 = FrameworkRunContext(agent_node_id=1, payload={"message": "hi"})
+    fw._skill_refs = ()
+    fw._prepare_skill_context(ctx2, "plan", [])
+    assert ctx2.payload.get('active_skill_context') is None

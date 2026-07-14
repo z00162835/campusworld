@@ -1,9 +1,19 @@
-"""Runtime execution gate for caller policy + callee semantics."""
+"""Runtime execution gate for caller policy + callee semantics.
+
+Adapter contract: the external API and ``GateDecision`` structure are stable.
+Internally, after the legacy caller/callee checks pass, the gate delegates
+``side_effect_level`` / ``data_classification`` evaluation to the
+``PolicyEngine`` (``before_tool_call`` check-point). The legacy reason_code set
+is preserved; policy denials surface as ``guard_blocked_policy`` with the
+detailed ``policy_decision`` written to the trace by the caller.
+"""
 from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 from app.commands.command_tool_semantics import resolve_command_tool_semantics
+from app.game_engine.agent_runtime.policy import PolicyContext, PolicyDecision, PolicyEngine
+from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 _PROFILE_RANK = {'read': 1, 'mutate': 2}
 _EXECUTE_PATTERNS = ('\\b请执行\\b', '\\b确认执行\\b', '\\b继续执行\\b', '\\b马上创建\\b', '\\b帮我创建\\b', '\\byes,\\s*execute\\b', '\\bexecute now\\b')
 _VERIFY_PATTERNS = ('\\b是否存在\\b', '\\b现在是什么状态\\b', '\\b查一下\\b', '\\bcurrent state\\b', '\\bdoes it exist\\b')
@@ -72,6 +82,9 @@ def _load_callee_semantics(db_session, command_name: str, args: List[str]) -> Di
         'interaction_profile': sem.interaction_profile,
         'semantic_pending': sem.semantic_pending,
         'invocation_guard': dict(sem.invocation_guard or {}),
+        'side_effect_level': sem.side_effect_level,
+        'data_classification': sem.data_classification,
+        'tool_groups': tuple(sem.tool_groups or ()),
     }
 
 def _effective_guard(caller_policy: Dict[str, Any], callee_guard: Dict[str, Any], effective_profile: str) -> Dict[str, Any]:
@@ -109,7 +122,41 @@ def evaluate_execution_gate(*, db_session, command_name: str, args: List[str], c
         return GateDecision(allow=False, reason_code='guard_blocked_scope', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
     if effective_guard.get('requires_confirmation') and (not _is_confirmed(meta, callee_guard, user_message)):
         return GateDecision(allow=False, reason_code='guard_blocked_confirmation', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
+    # Delegate side_effect_level / data_classification to PolicyEngine.
+    policy_ctx = PolicyContext(
+        check_point=CheckPoint.BEFORE_TOOL_CALL,
+        command_name=command_name,
+        command_args=tuple(args or []),
+        interaction_profile=callee_profile,
+        side_effect_level=str(callee_sem.get('side_effect_level') or 'none'),
+        data_classification=callee_sem.get('data_classification'),
+        tool_groups=tuple(callee_sem.get('tool_groups') or ()),
+        user_message=user_message,
+        caller_profile=caller['caller_profile'],
+        active_skill_context=meta.get('active_skill_context'),
+    )
+    policy_decision = _policy_engine.evaluate(policy_ctx)
+    if policy_decision.is_block:
+        effective_guard_with_policy = dict(effective_guard)
+        effective_guard_with_policy['policy_decision'] = _policy_decision_to_trace(policy_decision)
+        return GateDecision(allow=False, reason_code='guard_blocked_policy', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard_with_policy, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
     return GateDecision(allow=True, reason_code='guard_pass', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
+
+def _policy_decision_to_trace(decision: PolicyDecision) -> Dict[str, Any]:
+    evidence = decision.evidence or {}
+    return {
+        'step': 'policy_decision',
+        'check_point': decision.check_point,
+        'decision': decision.decision,
+        'reason_code': decision.reason_code,
+        'detector': evidence.get('detector'),
+        'runtime_action': decision.runtime_action,
+        'evidence': evidence,
+    }
+
+
+# Module-level engine; detectors are stateless so reuse is safe.
+_policy_engine = PolicyEngine()
 
 def guard_error_message(command_name: str, reason_code: str) -> str:
     if reason_code == 'guard_blocked_profile_ceiling':
@@ -118,4 +165,6 @@ def guard_error_message(command_name: str, reason_code: str) -> str:
         return f'`{command_name}` requires explicit confirmation before execution. Use `help {command_name}` for usage details.'
     if reason_code == 'guard_blocked_scope':
         return f'`{command_name}` side effect scope is not allowed by caller policy. Use `help {command_name}` for non-mutating guidance.'
+    if reason_code == 'guard_blocked_policy':
+        return f'`{command_name}` was blocked by behaviour policy. Use `help {command_name}` or `primer commands` for non-mutating alternatives.'
     return f'`{command_name}` was blocked by execution guard due to intent mismatch. Use `help {command_name}` or `primer commands`.'

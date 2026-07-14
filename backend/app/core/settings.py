@@ -250,6 +250,18 @@ class CommandsConfig(BaseModel):
     """commands.* — per-command tunables."""
     find: FindCommandConfig = Field(default_factory=FindCommandConfig)
 
+class PolicyConfig(BaseModel):
+    """policy.* — Agent Policy Engine switches and platform defaults.
+
+    Platform default rules are implemented in code (Python dataclass +
+    registration); this config only parameterizes/toggles them.
+    """
+    model_config = ConfigDict(extra='ignore')
+    enable_prompt_fallback: bool = Field(default=True, description='Keep system_prompt safety text as fallback until output gates land')
+    enable_side_effect_detector: bool = Field(default=True, description='Block write_high side effects at before_tool_call')
+    enable_data_classification_detector: bool = Field(default=True, description='Block confidential/restricted data at before_tool_call')
+    enable_skill_tool_group_detector: bool = Field(default=False, description='Block commands whose tool_groups are not covered by active skills allowed_tool_groups (opt-in)')
+
 class WorldInteractionConfig(BaseModel):
     """HTTP world interaction / decision-center tunables."""
     aico_stream_worker_join_sec: float = Field(default=30.0, ge=1.0, description='Max seconds to wait for AICO stream worker exit after cancel')
@@ -275,6 +287,7 @@ class Settings(BaseModel):
     development: DevelopmentConfig = Field(default_factory=DevelopmentConfig)
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
     commands: CommandsConfig = Field(default_factory=CommandsConfig)
+    policy: PolicyConfig = Field(default_factory=PolicyConfig)
     world_interaction: WorldInteractionConfig = Field(default_factory=WorldInteractionConfig)
 
     @field_validator('security')

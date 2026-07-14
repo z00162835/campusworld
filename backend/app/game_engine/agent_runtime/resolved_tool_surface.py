@@ -83,7 +83,11 @@ class PreauthorizedToolExecutor:
         meta['agent_tool_invocation'] = True
         decision = evaluate_execution_gate(db_session=context.db_session, command_name=primary, args=args, context_metadata=meta)
         if not decision.allow:
-            return CommandResult.error_result(guard_error_message(primary, decision.reason_code), error=decision.reason_code)
+            blocked_res = CommandResult.error_result(guard_error_message(primary, decision.reason_code), error=decision.reason_code)
+            policy_trace = (decision.effective_guard or {}).get('policy_decision')
+            if policy_trace:
+                blocked_res.data = {'guard_decision': decision.reason_code, 'policy_decision': policy_trace}
+            return blocked_res
         ctx = CommandContext(user_id=context.user_id, username=context.username, session_id=context.session_id, permissions=list(context.permissions or []), roles=list(context.roles or []), db_session=context.db_session, caller=context.caller, game_state=context.game_state, metadata=meta)
         res = cmd.execute(ctx, args)
         data = dict(res.data or {}) if isinstance(res.data, dict) else {}

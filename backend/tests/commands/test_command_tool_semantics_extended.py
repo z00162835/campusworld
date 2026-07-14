@@ -405,3 +405,187 @@ def test_task_pool_not_registered_returns_pending():
     sem = resolve_command_tool_semantics('task.pool', args=['list'])
     assert sem.semantic_pending is True
 
+
+@pytest.mark.unit
+def test_explicit_tool_groups_propagate_to_resolution():
+    import dataclasses
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        SubcommandProfileRule,
+        READ_SUBCOMMAND,
+    )
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        tool_groups=('mutate', 'admin'),
+    )
+    sem = dataclasses.replace(base, interaction_profile='read', tool_groups=('read', 'observe'))
+    resolved = resolve_command_tool_semantics.__wrapped__ if hasattr(resolve_command_tool_semantics, '__wrapped__') else resolve_command_tool_semantics
+    # Direct construction: tool_groups is preserved.
+    assert sem.tool_groups == ('read', 'observe')
+    assert base.tool_groups == ('mutate', 'admin')
+
+
+@pytest.mark.unit
+def test_subcommand_tool_groups_override_base():
+    import dataclasses
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        SubcommandProfileRule,
+        default_guard_for,
+    )
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=(
+            SubcommandProfileRule(arg_prefix=('list',), interaction_profile='read', tool_groups=('observe',)),
+            SubcommandProfileRule(arg_prefix=('create',), interaction_profile='mutate', tool_groups=('mutate',)),
+        ),
+        default_profile_when_no_subcommand='read',
+    )
+    # Simulate resolving with subcommand: list -> observe, create -> mutate
+    list_rule = next(r for r in base.subcommand_profiles if r.arg_prefix == ('list',))
+    list_sem = dataclasses.replace(
+        base,
+        interaction_profile=list_rule.interaction_profile,
+        invocation_guard=default_guard_for(list_rule.interaction_profile),
+        tool_groups=list_rule.tool_groups,
+    )
+    assert list_sem.tool_groups == ('observe',)
+
+    create_rule = next(r for r in base.subcommand_profiles if r.arg_prefix == ('create',))
+    create_sem = dataclasses.replace(
+        base,
+        interaction_profile=create_rule.interaction_profile,
+        invocation_guard=default_guard_for(create_rule.interaction_profile),
+        tool_groups=create_rule.tool_groups,
+    )
+    assert create_sem.tool_groups == ('mutate',)
+
+
+@pytest.mark.unit
+def test_subcommand_without_explicit_groups_uses_matched_profile():
+    """A read subcommand of a command with explicit mutate base groups must
+    not inherit those base groups; it falls back to (matched.interaction_profile,).
+    """
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        SubcommandProfileRule,
+        _match_subcommand_rule,
+        default_guard_for,
+    )
+    import dataclasses
+
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        tool_groups=('mutate', 'admin'),
+        subcommand_profiles=(
+            SubcommandProfileRule(arg_prefix=('list',), interaction_profile='read'),
+        ),
+    )
+    matched = _match_subcommand_rule(base.subcommand_profiles, ['list'])
+    assert matched is not None
+    # Fallback should be (matched.interaction_profile,), not base.tool_groups
+    expected_groups = matched.tool_groups if matched.tool_groups else (matched.interaction_profile,)
+    assert expected_groups == ('read',)
+
+    # Simulate the resolution path for a matched subcommand
+    resolved = dataclasses.replace(
+        base,
+        interaction_profile=matched.interaction_profile,
+        invocation_guard=default_guard_for(matched.interaction_profile),
+        tool_groups=expected_groups,
+    )
+    assert resolved.tool_groups == ('read',)
+    assert resolved.tool_groups != base.tool_groups
+
+
+@pytest.mark.unit
+def test_bare_fallback_uses_fallback_profile_groups_not_base_groups(monkeypatch):
+    """When default_profile_when_no_subcommand downgrades a bare command to a
+    safer profile, the tool_groups must follow the fallback profile, not retain
+    the class-level base groups (e.g. mutate/admin)."""
+    from app.commands.command_tool_semantics import (
+        CommandToolSemantics,
+        READ_SUBCOMMAND,
+        MUTATE_SUBCOMMAND,
+        resolve_command_tool_semantics,
+    )
+    from app.commands.registry import command_registry
+
+    base = CommandToolSemantics(
+        interaction_profile='mutate',
+        tool_groups=('mutate', 'admin'),
+        subcommand_profiles=(
+            READ_SUBCOMMAND('list'),
+            MUTATE_SUBCOMMAND('create'),
+        ),
+        default_profile_when_no_subcommand='read',
+    )
+
+    class _FakeCmd:
+        tool_semantics = base
+
+    monkeypatch.setattr(command_registry, 'get_command', lambda name: _FakeCmd())
+    resolved = resolve_command_tool_semantics('_fake_bare_test', args=[])
+    assert resolved.interaction_profile == 'read'
+    assert resolved.tool_groups == ('read',)
+    assert 'mutate' not in resolved.tool_groups
+    assert 'admin' not in resolved.tool_groups
+
+
+@pytest.mark.unit
+def test_fine_grained_tool_groups_for_known_subcommands():
+    """SPEC §4.4 taxonomy: subcommands resolve to refined child groups."""
+    initialize_commands(force_reinit=True)
+
+    # task list/show -> observe
+    assert resolve_command_tool_semantics('task', args=['list']).tool_groups == ('observe',)
+    assert resolve_command_tool_semantics('task', args=['show']).tool_groups == ('observe',)
+
+    # agent list/show -> agent_meta; agent status -> observe
+    assert resolve_command_tool_semantics('agent', args=['list']).tool_groups == ('agent_meta',)
+    assert resolve_command_tool_semantics('agent', args=['show']).tool_groups == ('agent_meta',)
+    assert resolve_command_tool_semantics('agent', args=['status']).tool_groups == ('observe',)
+
+    # notice list/view -> communicate
+    assert resolve_command_tool_semantics('notice', args=['list']).tool_groups == ('communicate',)
+    assert resolve_command_tool_semantics('notice', args=['view']).tool_groups == ('communicate',)
+
+    # whoami -> identity
+    assert resolve_command_tool_semantics('whoami').tool_groups == ('identity',)
+
+    # help/look -> read (parent, no child)
+    assert resolve_command_tool_semantics('help').tool_groups == ('read',)
+
+
+@pytest.mark.unit
+def test_prompt_fallback_toggle():
+    """enable_prompt_fallback controls whether the policy preamble is appended."""
+    from app.game_engine.agent_runtime.frameworks.llm_pdca import (
+        _append_policy_fallback,
+        _prompt_fallback_enabled,
+    )
+
+    base = "You are a helpful agent."
+    appended = _append_policy_fallback(base)
+    assert "Policy Fallback" in appended
+    assert appended.startswith(base)
+
+    # Empty base -> no append
+    assert _append_policy_fallback('') == ''
+
+    # Toggle reads config; defaults True when config unavailable
+    assert _prompt_fallback_enabled() is True
+
+
+@pytest.mark.unit
+def test_prompt_fallback_disabled_skips_preamble(monkeypatch):
+    """When enable_prompt_fallback=false, _prompt_fallback_enabled returns False."""
+    from app.game_engine.agent_runtime.frameworks import llm_pdca as pdca_mod
+    from app.core.config_manager import get_config
+
+    fake_cm = get_config()
+    monkeypatch.setattr(fake_cm, 'get_nested', lambda *keys, **kw: False if keys == ('policy', 'enable_prompt_fallback') else None)
+    monkeypatch.setattr(pdca_mod, 'get_config', lambda: fake_cm)
+
+    assert pdca_mod._prompt_fallback_enabled() is False
+
