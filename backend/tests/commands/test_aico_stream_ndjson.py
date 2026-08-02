@@ -227,6 +227,44 @@ def test_npc_agent_nlp_stream_tick_exception_emits_error(stream_ndjson_mocks, mo
 
 
 @pytest.mark.unit
+def test_npc_agent_nlp_stream_cancel_emits_cancelled_kind(stream_ndjson_mocks, monkeypatch):
+    """D1-A: cancel via final_phase=fail + error_code=cancelled still emits kind=cancelled."""
+    mock_worker = stream_ndjson_mocks
+    mock_worker.tick.return_value = FrameworkRunResult(
+        ok=False, message="", final_phase="fail", error_code="cancelled"
+    )
+
+    lines: list[str] = []
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="sess-1",
+        permissions=[],
+        metadata={},
+    )
+    ctx.supports_aico_stream = True
+    ctx.stream_emit = lines.append
+
+    session = MagicMock()
+    node = MagicMock()
+    node.id = 42
+    node.attributes = {
+        "service_id": "aico",
+        "decision_mode": "llm",
+        "model_config_ref": "aico",
+    }
+
+    res = run_npc_agent_nlp_tick(session, node, ctx, "ping", memory_context=None)
+    assert not res.ok
+    evs = _parse_lines(lines)
+    assert evs[0]["phase"] == "start"
+    cancel_events = [e for e in evs if e.get("kind") == "cancelled"]
+    assert cancel_events, "expected a kind=cancelled NDJSON line"
+    meta = [e for e in evs if e.get("scope") == "tick" and e.get("phase") == "complete"]
+    assert meta and meta[-1].get("final_phase") == "cancelled"
+
+
+@pytest.mark.unit
 def test_npc_agent_nlp_no_stream_no_side_lines(stream_ndjson_mocks, monkeypatch):
     mock_worker = stream_ndjson_mocks
     mock_worker.tick.return_value = FrameworkRunResult(ok=True, message="hi", final_phase="act")

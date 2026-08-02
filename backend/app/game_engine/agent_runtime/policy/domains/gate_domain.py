@@ -1,21 +1,19 @@
-"""Detectors — pure functions that evaluate a single policy rule.
+"""Gate domain — F16 tool execution safety.
 
-Each detector returns ``None`` when the rule passes (no opinion) or a
-``PolicyDecision`` when it fires. Detectors are stateless and never call the
-LLM or the database. The engine applies them in registration order; the
-first non-``None`` deny/require_approval result wins.
+Owns the ``before_tool_call`` / ``after_tool_observation`` / ``before_final_answer``
+check_points. Detectors validate side-effect level, data classification, and
+(opt-in) skill tool-group coverage. Detector order is preserved from the legacy
+flat ``detectors.py``: ``[side_effect_level, data_classification, skill_tool_group]``.
+``pattern_match`` / ``pii_scanner`` are SPEC placeholders not yet implemented.
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
-from app.game_engine.agent_runtime.policy.check_points import CheckPoint
+from app.game_engine.agent_runtime.policy.config import GateDomainConfig
 from app.game_engine.agent_runtime.policy.context import PolicyContext
 from app.game_engine.agent_runtime.policy.decisions import PolicyDecision
-
-# ---------------------------------------------------------------------------
-# before_tool_call detectors
-# ---------------------------------------------------------------------------
+from app.game_engine.agent_runtime.policy.domain import Detector, Domain
 
 _BLOCKED_SIDE_EFFECT_LEVELS = {"write_high"}
 _BLOCKED_DATA_CLASSIFICATIONS = {"confidential", "restricted"}
@@ -23,6 +21,8 @@ _BLOCKED_DATA_CLASSIFICATIONS = {"confidential", "restricted"}
 
 def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
     """write_high → require_approval (v1: synchronous block)."""
+    from app.game_engine.agent_runtime.policy.check_points import CheckPoint
+
     if ctx.check_point != CheckPoint.BEFORE_TOOL_CALL:
         return None
     level = str(ctx.side_effect_level or "none").strip().lower()
@@ -37,6 +37,8 @@ def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
 
 def data_classification_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
     """confidential/restricted → require_approval (v1: synchronous block)."""
+    from app.game_engine.agent_runtime.policy.check_points import CheckPoint
+
     if ctx.check_point != CheckPoint.BEFORE_TOOL_CALL:
         return None
     cls = str(ctx.data_classification or "").strip().lower()
@@ -49,42 +51,20 @@ def data_classification_detector(ctx: PolicyContext) -> Optional[PolicyDecision]
     return None
 
 
-# ---------------------------------------------------------------------------
-# before_skill_activation detectors
-# ---------------------------------------------------------------------------
-
-_BLOCKED_SKILL_ACTIVATION_MODES: frozenset[str] = frozenset()
-
-
-def skill_activation_mode_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
-    """Optionally block skills whose activation_mode is administratively disabled."""
-    if ctx.check_point != CheckPoint.BEFORE_SKILL_ACTIVATION:
-        return None
-    mode = str(ctx.skill_activation_mode or "").strip().lower()
-    if mode in _BLOCKED_SKILL_ACTIVATION_MODES:
-        return PolicyDecision.deny(
-            CheckPoint.BEFORE_SKILL_ACTIVATION,
-            "policy_blocked_skill_activation_mode",
-            evidence={"skill_id": ctx.skill_id, "activation_mode": mode},
-        )
-    return None
-
-
-# ---------------------------------------------------------------------------
-# before_tool_call: skill_tool_group (opt-in via config toggle)
-# ---------------------------------------------------------------------------
-
 def skill_tool_group_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
     """Deny when the command's tool_groups are not covered by active skills.
 
-    If the agent has active skills, every command must have at least one
-    ``tool_group`` that is covered by the union of the active skills'
-    ``allowed_tool_groups`` (exact match or parent-group match).
+    Runs at ``before_tool_call`` (gate domain check_point) but reads skill
+    metadata (``active_skill_context``). If the agent has active skills, every
+    command must have at least one ``tool_group`` covered by the union of the
+    active skills' ``allowed_tool_groups``.
 
     When there are no active skills (``active_skill_context`` is missing or
     ``active_skill_ids`` is empty), the detector does **not** fire — this
     preserves forward compatibility with agents that have no ``skill_refs``.
     """
+    from app.game_engine.agent_runtime.policy.check_points import CheckPoint
+
     if ctx.check_point != CheckPoint.BEFORE_TOOL_CALL:
         return None
     asc = ctx.active_skill_context
@@ -115,3 +95,30 @@ def skill_tool_group_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
             },
         )
     return None
+
+
+class GateDomain(Domain):
+    domain_id = "gate"
+    check_points = (
+        "before_tool_call",
+        "after_tool_observation",
+        "before_final_answer",
+    )
+
+    def __init__(self, config: GateDomainConfig) -> None:
+        self._config = config
+
+    def detectors(self) -> List[Detector]:
+        # Order preserved from legacy _detectors_from_config:
+        # side_effect → data_classification → [skill_tool_group].
+        dets: List[Detector] = []
+        if self._config.enable_side_effect_detector:
+            dets.append(side_effect_level_detector)
+        if self._config.enable_data_classification_detector:
+            dets.append(data_classification_detector)
+        if self._config.enable_skill_tool_group_detector:
+            dets.append(skill_tool_group_detector)
+        return dets
+
+    def build_context(self, base: PolicyContext) -> PolicyContext:
+        return base

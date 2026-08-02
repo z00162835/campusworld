@@ -175,7 +175,7 @@ def run_npc_agent_nlp_tick(session, node: Node, context: CommandContext, message
             from app.game_engine.agent_runtime.llm_providers.http_utils import LlmRequestCancelled
 
             if isinstance(exc, LlmRequestCancelled):
-                return FrameworkRunResult(ok=False, message='', final_phase='cancelled')
+                return FrameworkRunResult(ok=False, message='', final_phase='fail', error_code='cancelled')
             if isinstance(exc, httpx.ReadTimeout):
                 _NPC_AGENT_NLP_LOG.exception('npc_agent_nlp tick timed out: service_id=%s session=%s', service_id, context.session_id)
                 profile.emit_stream_error(state=stream_state, code='llm_timeout', message=NPC_AGENT_LLM_TIMEOUT_USER_MSG)

@@ -124,7 +124,9 @@ class AicoRuntimeProfile:
             return
         import json
         from app.commands.aico_stream import emit_aico_error_ndjson, emit_tick_lifecycle_meta
-        if result.final_phase == 'cancelled':
+        # Cancel is signalled by error_code (D1-A: framework returns final_phase='fail'
+        # + error_code='cancelled'; adapter-layer LlmRequestCancelled does the same).
+        if getattr(result, 'error_code', None) == 'cancelled':
             state.emit(json.dumps({'kind': 'cancelled'}, ensure_ascii=False))
             emit_tick_lifecycle_meta(
                 state.emit,

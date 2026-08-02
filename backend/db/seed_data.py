@@ -197,6 +197,15 @@ _AICO_DEFAULT_SKILL_REFS = [
     "retrieval_reasoning",
     "final_synthesis",
 ]
+# Default outer-loop workflow (PDCA alias). Merge-if-missing only.
+_AICO_DEFAULT_WORKFLOW = {
+    "mode": "pdcp",
+}
+
+# F18 §7 node-level quality/stop overrides. Default empty → platform defaults
+# from backend/config/policy.yaml apply (byte-equivalent to pre-F18 behavior).
+_AICO_DEFAULT_SUCCESS_CHECKS: dict = {}
+_AICO_DEFAULT_STOP_POLICY: dict = {}
 
 
 def _aico_phase_llm_is_legacy(phase_llm: object) -> bool:
@@ -268,6 +277,15 @@ def ensure_aico_npc_agent(session) -> bool:
         if "skill_refs" not in merged:
             merged["skill_refs"] = list(_AICO_DEFAULT_SKILL_REFS)
             changed = True
+        if "workflow" not in merged:
+            merged["workflow"] = dict(_AICO_DEFAULT_WORKFLOW)
+            changed = True
+        if "success_checks" not in merged:
+            merged["success_checks"] = dict(_AICO_DEFAULT_SUCCESS_CHECKS)
+            changed = True
+        if "stop_policy" not in merged:
+            merged["stop_policy"] = dict(_AICO_DEFAULT_STOP_POLICY)
+            changed = True
         if changed:
             existing.attributes = merged
             session.commit()
@@ -315,6 +333,8 @@ def ensure_aico_npc_agent(session) -> bool:
             # skills this agent may use; resolved against the global SkillRegistry
             # at tick time. cognition_profile_ref above is inert.
             "skill_refs": list(_AICO_DEFAULT_SKILL_REFS),
+            # Outer-loop state machine. Missing → runtime loads PDCA template.
+            "workflow": dict(_AICO_DEFAULT_WORKFLOW),
             # Discovery suite (primer / whoami / look / find / describe) is the
             # backbone of "tool first" answering. ``find`` follows Evennia's
             # ``@find`` convention; ``describe`` is our ``examine`` equivalent.
@@ -336,6 +356,8 @@ def ensure_aico_npc_agent(session) -> bool:
             "version": "1",
             "mode_models": dict(_AICO_DEFAULT_MODE_MODELS),
             "phase_llm": {k: dict(v) for k, v in _AICO_DEFAULT_PHASE_LLM.items()},
+            "success_checks": dict(_AICO_DEFAULT_SUCCESS_CHECKS),
+            "stop_policy": dict(_AICO_DEFAULT_STOP_POLICY),
         },
         tags=["system", "aico", "default"],
     )

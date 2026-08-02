@@ -139,7 +139,7 @@ flowchart TB
 |----|-----------|------|
 | **L1** | `backend/app/models/graph.py`、`db/ontology/`、NodeType 种子 | 图与类型 |
 | **L2** | `app/commands/registry.py`、`agent_runtime/tooling.py`、`invoke.py` | ToolGather **契约** 见 F08；**实现缺口** 以 F08 §5.1 为准 |
-| **L3** | `agent_runtime/frameworks/`、`worker.py`、`npc_agent_nlp.py` | `LlmPDCAFramework` 等 |
+| **L3** | `agent_runtime/frameworks/`、`agent_runtime/state_machine/`、`worker.py`、`npc_agent_nlp.py` | `LlmPDCAFramework`、状态机 DSL（[F17](F17_AGENT_STATE_MACHINE.md)）等 |
 | **L4** | `backend/app/game_engine/agent_runtime/skills/`（`SkillDefinition`/`SkillRegistry`/`SkillRunner`/`SkillInjection`）+ `backend/config/skills/<id>/SKILL.md`；节点 `attributes.skill_refs` | **经验 Skill**：渐进式披露 + `skill-context` 经 user/input context 注入；细节契约见 [**F15**](F15_AGENT_SKILL_REGISTRY.md) |
 | **F07 注入** | `app/services/ltm_semantic_retrieval.py`、`npc_agent_nlp.py` | `memory_context` |
 

@@ -157,6 +157,7 @@ flowchart LR
   解析失败时：**降级** 为仅 LLM、或执行 **单条安全默认**（如仅 `help`），行为由实现与 **preflight_policy** 共同定义。
 - **调用形态**：与「用户在 SSH 输入 `look`」**语义等价**，但在实现上为 **进程内直接调用** `Command.execute`（经 `RegistryToolExecutor`），**不**经过外部客户端；须完整走 **`authorize_command`** 与 **`command_context_for_npc_agent`**（含 **`service_account_id`** 时的服务账号权限）。
 - **预留**：若 LLM 提供商支持 **tool_calls**，实现可选用 **结构化 tool_calls** 与上述 JSON 计划 **二选一**，本 SPEC 不强制唯一路径。
+- **`require_structured_turn=true`（[F17](F17_AGENT_STATE_MACHINE.md)）：** 由 `react_turn_schema` 强制每轮结构化 turn envelope；`commands` JSON 为解析/工具意图的降级路径。启用时关闭 native `tool_use` 并禁 prose 流式，避免双通道意图重复。
 
 ---
 
@@ -271,6 +272,7 @@ Check 阶段不再只做「通过/不通过」标签，而引入可选 **重试�
 - 若 `tool_gather_counters` 仍在预算内，framework 追加一条「Guardrail note: 要求调用 <tools>」的提示再跑一次 Plan → Do（每 tick 最多一次，避免无限递归）。
 - 该信号与失败标签共存：Check 仍可同时给出「error」语义；二者在 `command_trace` 中以 `check_retry_triggered` 条目显式记录。
 - `_DEFAULT_DEFERRAL_PATTERNS`（`draft_gate.py`）覆盖中英 deferral 与内部推理泄漏短语（如 `let me try` / `the output was truncated` / `让我再试`），以判定草稿是否尚属「推迟/未完成」。
+- **[F17](F17_AGENT_STATE_MACHINE.md) 状态机：** 外层 `replan` 映射本信号（`on_event: check_retry`）；mandatory-gap override 映射为 `on_event: mandatory_gap`；内层 draft retry 仍由 `agent_loop/` 负责，不计入状态机 `max_replans`。
 
 ### 12.5 默认工具面扩展 — Discovery Suite
 

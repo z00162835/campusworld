@@ -51,10 +51,14 @@ class ToolCall:
     id: str
     name: str
     args: List[str] = field(default_factory=list)
+    # Provider-native tool_use.input object (e.g. structured-turn emit_turn).
+    # CampusWorld command execution still uses ``args``; structured consumers
+    # may prefer ``input_payload`` when present.
+    input_payload: Optional[Dict[str, Any]] = None
 
     @classmethod
-    def new(cls, name: str, args: Optional[Sequence[str]]=None) -> 'ToolCall':
-        return cls(id=f'call_{uuid.uuid4().hex[:12]}', name=str(name), args=list(args or []))
+    def new(cls, name: str, args: Optional[Sequence[str]]=None, *, input_payload: Optional[Dict[str, Any]]=None) -> 'ToolCall':
+        return cls(id=f'call_{uuid.uuid4().hex[:12]}', name=str(name), args=list(args or []), input_payload=input_payload)
 
 @dataclass
 class ToolResult:

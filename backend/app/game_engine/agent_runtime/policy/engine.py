@@ -1,90 +1,98 @@
 """PolicyEngine — deterministic check-point evaluator.
 
 The engine is a pure function over ``PolicyContext``: no DB, no LLM, no I/O.
-Detectors are registered at import time and evaluated in order; the first
-non-allow decision short-circuits the chain. If no detector fires the engine
-returns ``allow``.
+Rules are registered per **domain** (see ``domain.py``); ``evaluate`` dispatches
+by ``check_point -> domain`` and runs only that domain's detector/evaluator
+chain. The first non-allow decision short-circuits the chain; if no detector
+fires the engine returns ``allow``.
 
-Registered detectors: ``side_effect_level``, ``data_classification``,
-``skill_activation_mode`` (always on, inert until modes are populated), and
-``skill_tool_group`` (opt-in via config toggle).
+Domain fields are populated by the owning domain's ``build_context`` before its
+detectors run (data sourced from ``base.extra['tick_state']``).
 """
 from __future__ import annotations
 
 import dataclasses
-from typing import Callable, List, Optional, Tuple
+import logging
+from typing import Optional, Tuple
 
+from app.game_engine.agent_runtime.policy.config import PolicyConfig, get_policy_config
 from app.game_engine.agent_runtime.policy.context import PolicyContext
 from app.game_engine.agent_runtime.policy.decisions import PolicyDecision
+from app.game_engine.agent_runtime.policy.domain import Domain, DomainRegistry, Detector
 
-Detector = Callable[[PolicyContext], Optional[PolicyDecision]]
+logger = logging.getLogger("campusworld.policy.engine")
 
 
 class PolicyEngine:
     """Stateless evaluator. Constructed once per process; safe to reuse."""
 
-    def __init__(self, detectors: Optional[List[Detector]] = None) -> None:
-        if detectors is None:
-            detectors = _detectors_from_config()
-        self._detectors: Tuple[Detector, ...] = tuple(detectors)
+    def __init__(
+        self,
+        registry: Optional[DomainRegistry] = None,
+        config: Optional[PolicyConfig] = None,
+    ) -> None:
+        if registry is None:
+            registry, config = _build_default_registry(config)
+        self._registry: DomainRegistry = registry
+        self._config: PolicyConfig = config or PolicyConfig()
 
     def evaluate(self, ctx: PolicyContext) -> PolicyDecision:
-        for detector in self._detectors:
+        domain = self._registry.domain_for(ctx.check_point)
+        if domain is None:
+            return PolicyDecision.allow(ctx.check_point)
+        ctx = domain.build_context(ctx)
+        for detector in domain.detectors():
             decision = detector(ctx)
             if decision is not None and not decision.is_allow:
                 evidence = dict(decision.evidence or {})
-                evidence['detector'] = detector.__name__
+                evidence["detector"] = detector.__name__
+                evidence["domain"] = domain.domain_id
+                tagged = dataclasses.replace(decision, evidence=evidence)
+                return tagged
+        for evaluator in domain.evaluators():
+            try:
+                decision = evaluator(ctx)
+            except Exception as exc:  # noqa: BLE001 — B7 evaluator safety net
+                logger.error("evaluator_error: %s raised by %s: %s", domain.domain_id, getattr(evaluator, "__name__", evaluator), exc)
+                decision = None
+            # Surface any explicit (non-default) decision. F18 evaluators emit
+            # final_success / replan / continue with runtime_action="pass" (is_allow);
+            # these carry audit signal the driver must observe, so we key on
+            # ``decision != "allow"`` rather than ``not is_allow``.
+            if decision is not None and decision.decision != 'allow':
+                evidence = dict(decision.evidence or {})
+                evidence["evaluator"] = getattr(evaluator, "__name__", "evaluator")
+                evidence["domain"] = domain.domain_id
                 tagged = dataclasses.replace(decision, evidence=evidence)
                 return tagged
         return PolicyDecision.allow(ctx.check_point)
 
     @property
-    def detectors(self) -> Tuple[Detector, ...]:
-        return self._detectors
+    def registry(self) -> DomainRegistry:
+        return self._registry
+
+    @property
+    def config(self) -> PolicyConfig:
+        return self._config
 
 
-def _default_detectors() -> List[Detector]:
-    # Local import to avoid module-level cycle when detectors import engine types.
-    from app.game_engine.agent_runtime.policy.detectors import (
-        data_classification_detector,
-        side_effect_level_detector,
-        skill_activation_mode_detector,
+def _build_default_registry(
+    config: Optional[PolicyConfig],
+) -> Tuple[DomainRegistry, PolicyConfig]:
+    from app.game_engine.agent_runtime.policy.domains.gate_domain import GateDomain
+    from app.game_engine.agent_runtime.policy.domains.quality_domain import (
+        QualityDomain,
     )
+    from app.game_engine.agent_runtime.policy.domains.skill_domain import SkillDomain
 
-    return [
-        side_effect_level_detector,
-        data_classification_detector,
-        skill_activation_mode_detector,
-    ]
+    if config is None:
+        config = get_policy_config()
 
-
-def _detectors_from_config() -> List[Detector]:
-    """Build the detector list honouring ``PolicyConfig`` toggles."""
-    from app.core.config_manager import get_config
-    from app.game_engine.agent_runtime.policy.detectors import (
-        data_classification_detector,
-        side_effect_level_detector,
-        skill_activation_mode_detector,
-        skill_tool_group_detector,
-    )
-
-    try:
-        cm = get_config()
-        enable_side_effect = cm.get_nested('policy', 'enable_side_effect_detector', default=True)
-        enable_data_cls = cm.get_nested('policy', 'enable_data_classification_detector', default=True)
-        enable_skill_group = cm.get_nested('policy', 'enable_skill_tool_group_detector', default=False)
-    except Exception:  # noqa: BLE001 — config may be unavailable in unit tests
-        return _default_detectors()
-
-    detectors: List[Detector] = []
-    if enable_side_effect:
-        detectors.append(side_effect_level_detector)
-    if enable_data_cls:
-        detectors.append(data_classification_detector)
-    if enable_skill_group:
-        detectors.append(skill_tool_group_detector)
-    detectors.append(skill_activation_mode_detector)
-    return detectors
+    registry = DomainRegistry()
+    registry.register(SkillDomain(config.skill))
+    registry.register(GateDomain(config.gate))
+    registry.register(QualityDomain(config.quality))
+    return registry, config
 
 
 # Module-level singleton; detectors are stateless so reuse is safe.

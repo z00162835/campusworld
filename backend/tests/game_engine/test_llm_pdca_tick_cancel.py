@@ -59,6 +59,7 @@ def test_run_returns_cancelled_when_cancel_check_set_before_plan():
     cancel.set()
     ctx = FrameworkRunContext(agent_node_id=1, stream_cancel_check=cancel.is_set)
     res = fw.run(ctx)
-    assert res.final_phase == 'cancelled'
+    assert res.final_phase == 'fail'
+    assert res.error_code == 'cancelled'
     assert res.ok is False
-    assert 'cancelled' in mem.finished
+    assert 'fail' in mem.finished

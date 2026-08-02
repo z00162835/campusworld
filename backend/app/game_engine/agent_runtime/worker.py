@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from app.commands.agent_command_context import command_context_for_npc_agent
 from app.commands.base import CommandContext
@@ -6,6 +7,8 @@ from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, T
 from app.game_engine.agent_runtime.memory_port import MemoryPort, SqlAlchemyMemoryPort
 from app.game_engine.agent_runtime.thinking_pipeline import AgentTickHooks
 from app.models.graph import Node
+
+logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from app.core.settings import AgentLlmServiceConfig
     from app.game_engine.agent_runtime.agent_tick_context import NpcAgentTickInputs
@@ -127,6 +130,25 @@ class LlmPdcaAssistantWorker(AgentWorker):
         (instance_phase_llm, instance_mode_models) = parse_phase_llm_from_attributes(attrs)
         skill_refs_raw = attrs.get('skill_refs') or []
         skill_refs = [str(x) for x in skill_refs_raw] if isinstance(skill_refs_raw, list) else []
+        from app.game_engine.agent_runtime.state_machine import (
+            build_pdca_state_machine,
+            is_pdca_executable,
+            load_state_machine_from_attributes,
+            non_pdca_state_ids,
+        )
+        loaded_sm = load_state_machine_from_attributes(attrs)
+        # v1 only executes the PDCA stage set; custom workflows are parse-only.
+        # Fall back to the PDCA template + warn so a misconfigured agent does
+        # not crash the tick on an unimplemented stage handler (D3-A).
+        if is_pdca_executable(loaded_sm):
+            state_machine = loaded_sm
+        else:
+            non_pdca = non_pdca_state_ids(loaded_sm)
+            logger.warning(
+                "agent_runtime: non-PDCA workflow loaded (states=%s) but v1 executes only PDCA; falling back to PDCA template",
+                non_pdca,
+            )
+            state_machine = build_pdca_state_machine()
         manifest_locale = None
         if invoker_context is not None and isinstance(getattr(invoker_context, 'metadata', None), dict):
             v = invoker_context.metadata.get('locale')
@@ -139,5 +161,5 @@ class LlmPdcaAssistantWorker(AgentWorker):
         from app.game_engine.agent_runtime.intent_classifier_runtime import build_intent_classifier_for_tick, resolve_intent_classifier_runtime
         ic_runtime = resolve_intent_classifier_runtime(dict(cfg.extra or {}), attrs)
         intent_classifier = build_intent_classifier_for_tick(ic_runtime)
-        fw = LlmPDCAFramework(memory=mem, llm_config=cfg, instance_phase_llm=instance_phase_llm, instance_mode_models=instance_mode_models, llm=llm_impl, tools=pre_ex, tool_command_context=tool_ctx, preauthorized_tool_executor=pre_ex, tool_gather_budgets=budgets, tick_hooks=tick_hooks, tool_schemas=tool_schemas, intent_classifier=intent_classifier, observability=runtime_observability, skill_refs=skill_refs)
+        fw = LlmPDCAFramework(memory=mem, llm_config=cfg, instance_phase_llm=instance_phase_llm, instance_mode_models=instance_mode_models, llm=llm_impl, tools=pre_ex, tool_command_context=tool_ctx, preauthorized_tool_executor=pre_ex, tool_gather_budgets=budgets, tick_hooks=tick_hooks, tool_schemas=tool_schemas, intent_classifier=intent_classifier, observability=runtime_observability, skill_refs=skill_refs, state_machine=state_machine)
         return cls(memory=mem, framework=fw, tools=pre_ex, tool_command_context=tool_ctx, tool_manifest_text=manifest_text, tool_schemas=tool_schemas, resolved_tool_surface=surface)

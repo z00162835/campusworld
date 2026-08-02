@@ -4,7 +4,7 @@
 
 **文档状态：Draft（契约先行；实现按本 SPEC 逐阶段优化）。**
 
-**交叉引用：** [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（`execution_gate`、`CommandToolSemantics` Tool Profile、`PreauthorizedToolExecutor`）、[**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（L2/L4 边界）、[**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)（意图分类，与 `before_tool_call` 同向）、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md)（execution_gate 仍负责最终允许）、[**F15**](F15_AGENT_SKILL_REGISTRY.md)（`before_skill_activation`、`SkillActivation.allowed_tool_groups`）、[**F18**](F18_AGENT_QUALITY_GATES.md)（`pause`/`require_approval` 停止决策、输出层脱敏/停止）。
+**交叉引用：** [**F08**](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md)（`execution_gate`、`CommandToolSemantics` Tool Profile、`PreauthorizedToolExecutor`）、[**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md)（L2/L4 边界）、[**F11**](F11_AGENT_INTENT_CLASSIFIER_RUNTIME.md)（意图分类，与 `before_tool_call` 同向）、[**F14**](F14_AGENT_TOOL_ROUTER_PREPLAN.md)（execution_gate 仍负责最终允许）、[**F15**](F15_AGENT_SKILL_REGISTRY.md)（`before_skill_activation`、`SkillActivation.allowed_tool_groups`）、[**F17**](F17_AGENT_STATE_MACHINE.md)（driver 在 stage 边界咨询 PolicyEngine）、[**F18**](F18_AGENT_QUALITY_GATES.md)（质量/停止 check_point 扩展：`after_state_execute` / `before_terminal` / `per_react_round`；`pause`/`require_approval` 停止决策、输出层脱敏/停止）。
 
 **决策状态：** 本章基于 F15 实现完成后的架构评审，D1–D10 已决策（见 §1.5）。
 
@@ -49,40 +49,145 @@
 
 ## 3. 核心定义
 
+### 3.0 规则分域（Domain Segmentation）
+
+PolicyEngine 是统一执行器，但其规则注册按 **域（domain）** 划分，不同域关注正交的决策面，各自拥有独立的规则定义、配置命名空间与 check_point 子集。参考 OPA/Rego 的 package 分域、Kubernetes admission webhook 的 by-domain 拆分实践。
+
+**v1 三个域：**
+
+| Domain | 关注面 | CheckPoints | 规则载体 | 配置命名空间 |
+|--------|--------|-------------|----------|--------------|
+| `skill` | F15 skill 激活合规（phase 映射、group 约束、react state 允许） | `before_skill_activation` | Python dataclass | `policy.skill.*` |
+| `gate` | F16 工具执行安全（副作用、数据分级、注入模式、PII） | `before_tool_call`、`after_tool_observation`、`before_final_answer` | Python dataclass | `policy.gate.*` |
+| `quality` | F18 质量/停止决策（budget、max_iterations、stagnation、grounding、criteria_coverage、quality_score） | `after_state_execute`、`before_terminal`、`per_react_round` | Python dataclass + YAML DSL（节点覆盖） | `policy.quality.*` / `attributes.success_checks` / `attributes.stop_policy` |
+
+**域边界不变量：**
+
+- 一个 check_point 只属于一个域；不允许跨域注册同一 check_point。
+- 域间无共享 detector/evaluator；detector 只读所属域语义的 `PolicyContext` 字段。
+- `PolicyEngine.evaluate(check_point, ctx)` 按 check_point → domain 派发，仅运行该域已注册的 detector/evaluator 链；首个非 `allow` 决策短路该域。
+- 域间无隐式优先级；同一 tick 内不同 check_point 串行触发，各自独立决策。**跨域仲裁由 driver 层显式组合多 `PolicyDecision`（D1 决策：v1 契约，engine 内部不隐式合并）**——engine 只对单 check_point 单域求值，多 check_point 决策的组合（如 gate 域 `deny` 与 quality 域 `fail` 同 tick 命中时的终态选择）由 driver 按 F17 transition 表显式裁决。
+
+**文件布局（v1）：**
+
+```
+backend/app/game_engine/agent_runtime/policy/
+├── engine.py              # PolicyEngine: 按 check_point → domain 派发
+├── domain.py              # Domain 基类 / DomainRegistry
+├── config.py              # PolicyConfig: 加载 backend/config/policy.yaml → 注入 Domain
+├── check_points.py        # CheckPoint 常量 + 域归属映射
+├── decisions.py           # PolicyDecision
+├── context.py             # PolicyContext（统一载体，字段按域分组注释）
+└── domains/
+    ├── __init__.py
+    ├── skill_domain.py    # skill 域: detectors + 平台默认规则
+    ├── gate_domain.py     # gate 域: detectors + 平台默认规则
+    └── quality_domain.py  # quality 域: evaluators + 平台默认规则（F18 落地）
+```
+
+**既有 `detectors.py` 迁移（D3 决策）：** 既有扁平 `detectors.py` 随 quality 域落地一并迁入 `domains/skill_domain.py` / `domains/gate_domain.py`，避免双轨期语义漂移。迁移为纯文件移动 + import 路径更新，**不改 detector 逻辑**；`detectors.py` 在迁移后删除，不留 re-export shim。
+
+**N2 域内 detector 顺序：** 域内 detector 执行顺序由 `Domain.detectors()` 返回顺序决定，迁移时保留既有 `_detectors_from_config` 顺序，确保 reason_code 命中分布 byte-equiv：
+- gate 域：`[side_effect_level, data_classification, skill_tool_group]`（`pattern_match`/`pii_scanner` 为 SPEC placeholder，未实现）
+- skill 域：`[skill_activation_mode]`
+
+**Domain 接口（`domain.py`）：**
+
+```python
+class Domain:
+    domain_id: str
+    check_points: tuple[str, ...]
+    def detectors(self) -> list[Detector]: ...      # skill/gate
+    def evaluators(self) -> list[Evaluator]: ...    # quality
+    def build_context(self, base: PolicyContext) -> PolicyContext: ...  # 域字段填充
+```
+
+`DomainRegistry` 在启动期注册三个域单例；`PolicyEngine` 持有 registry，`evaluate` 按 `check_point → domain` 派发。v1 域实例与 detector 均为代码注册（D7），YAML 节点覆盖延后。
+
+**`build_context` 落地（D2 决策）：** v1 实现 `build_context`——driver 构造域无关的 `base: PolicyContext`（仅含 `check_point` + 跨域公共字段），各域 `build_context` 负责填充本域语义字段（skill 域填 `skill_*`、gate 域填 `command_*`/`side_effect_level`、quality 域填 `draft_text`/`tool_results`/`turn_count` 等）。engine 在派发前依次调用目标域 `build_context`，确保 detector/evaluator 读到的 context 字段已就绪；driver 不再手工拼装全字段 context。
+
 ### 3.1 CheckPoint（`check_points.py`）
 
-| CheckPoint | 触发时机 | 今日可落地 | 依赖 |
-|------------|---------|-----------|------|
-| `before_skill_activation` | Skill body 激活前（F15 `SkillInjection` 内部 hook） | ✅ 是 | [F15](F15_AGENT_SKILL_REGISTRY.md) |
-| `before_tool_call` | 单次工具执行前 | ✅ 是 | — |
-| `after_tool_observation` | ToolObservation 生成后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
-| `before_final_answer` | 最终答复发出前（非流式） | ⚠️ 部分 | streaming 路径延后到 F18（D6） |
+| CheckPoint | Domain | 触发时机 | 今日可落地 | 依赖 |
+|------------|--------|---------|-----------|------|
+| `before_skill_activation` | `skill` | Skill body 激活前（F15 `SkillInjection` 内部 hook） | ✅ 是 | [F15](F15_AGENT_SKILL_REGISTRY.md) |
+| `before_tool_call` | `gate` | 单次工具执行前 | ✅ 是 | — |
+| `after_tool_observation` | `gate` | ToolObservation 生成后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
+| `before_final_answer` | `gate` | 最终答复发出前（非流式） | ❌ 未落地（P4 pending） | streaming / 非流式完整拦截延后到 [F18](F18_AGENT_QUALITY_GATES.md)（D6） |
+| `after_state_execute` | `quality` | `_execute_state` 后、`sm.next` 前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `stop_evaluator`；决策映射为 `runtime.stop_fail` / `event=stagnation` 供 F17 消费（`enable_stop_dimensions` 门控） |
+| `before_terminal` | `quality` | act 锚点 `_detect_tick_emit_deferral` 后、终态前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `final_success_evaluator`（audit/trace-only，`enable_final_success_gate` 门控） |
+| `per_react_round` | `quality` | 内层 ReAct 结构化 turn 校验后 | ✅ P5-A opt-in | [F18](F18_AGENT_QUALITY_GATES.md) `react_turn_success_evaluator`；随 `require_structured_turn`，写 `react_round_decision` payload |
 
 ### 3.2 PolicyDecision（`decisions.py`）
 
 ```python
 @dataclass(frozen=True)
 class PolicyDecision:
-    decision: Literal['deny', 'allow', 'require_approval', 'allow_with_transform']
+    decision: Literal[
+        'deny', 'allow', 'require_approval', 'allow_with_transform',
+        # F18 quality/stop 扩展（见 [F18] §3.4）
+        'fail', 'pause', 'final_success', 'replan', 'continue',
+    ]
     reason_code: str
     check_point: str
     runtime_action: Literal['block', 'pause', 'transform', 'block_and_rewrite', 'pass']
     transform_applied: Optional[Dict[str, Any]] = None
     evidence: Optional[Dict[str, Any]] = None  # 命中的 detector / 规则 id
+    # F18 扩展（可选，向后兼容；见 [F18] §3.4）
+    quality_score: Optional[Dict[str, float]] = None   # 分层子分 {surface, process, semantic}
+    degraded_action: Optional[str] = None              # pause→block/clarify 记降级动作
 ```
 
-### 3.3 Detectors（`detectors.py`）
+> **F18 扩展字段说明：** `decision` Literal 后 5 值（`fail`/`pause`/`final_success`/`replan`/`continue`）与 `quality_score` / `degraded_action` 两字段由 [F18](F18_AGENT_QUALITY_GATES.md) §3.4 定义，v1 在 F16 基类一并承载（向后兼容，缺省 `None`）。F16 既有 factory（`allow`/`deny`/`require_approval`）不变；F18 决策 factory（`fail`/`pause`/`final_success`/`replan`/`continue_`）内聚 B5 映射。
 
-纯函数检测器，读 `resolve_command_tool_semantics` 返回的 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 字段 + tick 上下文 + F15 `SkillActivation`（`allowed_tool_groups`），**不**读第二个元数据源：
+**B5 `decision → runtime_action` 派生映射（v1 契约）：** 保留双字段（不合并）——`decision`=语义/审计结果，`runtime_action`=当期命令式行为。F16 既有 factory 与 F18 evaluator 产出 `decision` 时按下表派生 `runtime_action`：
+
+| `decision` | `runtime_action` | 说明 |
+|-----------|------------------|------|
+| `allow` | `pass` | 正常通过 |
+| `deny` | `block` | 阻断 |
+| `require_approval` | `block` | D8：v1 同步降级 block，`decision` 保留 `require_approval` 供审计；post-v1 升级 `pause` |
+| `allow_with_transform` | `transform` | v2 |
+| F18 扩展 `fail` | `block` | 不可恢复终止 |
+| F18 扩展 `pause` | `pause` | v1 降级由 `degraded_action` 覆盖 |
+| F18 扩展 `final_success`/`continue` | `pass` | 正常通过 |
+| F18 扩展 `replan` | `pass` | 由 event 驱动 transition，不阻断 |
+
+运行时消费者统一走 `is_block`/`is_allow`，不直接读 `decision`/`runtime_action` 做控制流（见 §7）。`is_allow` 覆盖 `runtime_action ∈ {pass, transform}`——`allow_with_transform` 仍是「允许」决策（仅附加变形，不阻断）；`is_block` 覆盖 `runtime_action ∈ {block, block_and_rewrite}`。
+
+### 3.3 Detectors / Evaluators（按域注册）
+
+纯函数检测器/评估器，按域注册到 `DomainRegistry`，仅读所属域语义的 `PolicyContext` 字段。**不**读第二个元数据源。
+
+**`skill` 域**（`domains/skill_domain.py`，check_point `before_skill_activation`）：
+
+| Detector | 输入 | 用途 |
+|----------|------|------|
+| `skill_activation_mode` | `skill_activation_mode` / `current_react_state` | 校验激活模式与 react state 兼容（F15 `allowed_in_react_states`） |
+
+> **注：** `skill_tool_group` detector 运行于 `before_tool_call`（gate 域 check_point），虽读取 skill 元数据，但按「一个 check_point 只属于一个域」不变量归属 **gate 域**（见下表）。其开关 `enable_skill_tool_group_detector` 亦在 gate 域配置下。
+
+**`gate` 域**（`domains/gate_domain.py`，check_points `before_tool_call` / `after_tool_observation` / `before_final_answer`）：
 
 | Detector | 输入 | 用途 |
 |----------|------|------|
 | `action_type_match` | `interaction_profile` / `side_effect_level` | 校验提议动作类型与 caller ceiling |
 | `side_effect_level` | `side_effect_level` | `write_high` → `require_approval`（v1 降级 block） |
 | `data_classification` | `data_classification` | `confidential`/`restricted` → `require_approval`（v1 降级 block）；`allow_with_transform` 延后到 F18 输出层落地（D5） |
+| `skill_tool_group` | `SkillActivation.allowed_tool_groups` + 命令的 tool group | 命令 tool group ∉ 激活 skill 的 group 并集 → `deny`（D3，默认 off）；运行于 `before_tool_call`，归属 gate 域 |
 | `pattern_match` | `user_message` / `args` | Prompt 注入模式 / 越权短语 |
 | `pii_scanner` | `ToolObservation` / `final_answer` | v1 规则模式；PII 模式扫描 |
-| `skill_tool_group` | `SkillActivation.allowed_tool_groups` + 命令的 tool group | 命令 tool group ∉ 激活 skill 的 group 并集 → `deny`（D3） |
+
+**`quality` 域**（`domains/quality_domain.py`，check_points `after_state_execute` / `before_terminal` / `per_react_round`）：
+
+| Evaluator | 输入 | 用途 |
+|-----------|------|------|
+| `stop_evaluator` | `runtime.*` / `snapshot.turn_count` / `tool_failure_count` | `budget_exhausted` / `max_iterations_exceeded` / `max_consecutive_tool_failures_exceeded` → `fail` |
+| `final_success_evaluator` | act draft / `success_criteria` / grounding | hard gates 通过 → `allow`，否则 `degraded_action` |
+| `react_turn_success_evaluator` | structured turn | 结构化 turn 合规校验（随 `require_structured_turn`） |
+| `quality_score_evaluator` | draft / obs / criteria | 多维 `QualityScore`（surface/process/semantic/judge），offline-only |
+
+quality 域 evaluator 契约详见 [F18](F18_AGENT_QUALITY_GATES.md) §3。
 
 ---
 
@@ -161,25 +266,77 @@ class PolicyDecision:
 
 ---
 
-## 5. 规则来源与加载
+## 5. 规则来源与加载（按域）
 
-### 5.1 平台默认（`settings.yaml` 新增 `policy.platform_defaults`）
+### 5.1 平台默认（按域，独立配置文件 `backend/config/policy.yaml`）
 
-由 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 自动推导，以 Python dataclass 形式注册在代码中：
+平台默认规则按域以 Python dataclass 形式注册在 `domains/{skill,gate,quality}_domain.py`，配置仅开关/参数化。policy 配置 **独立于** `settings.yaml`，由专用配置文件 `backend/config/policy.yaml` 承载（当前 **不存在**，需新增），由 `PolicyConfig` 加载器（`backend/app/game_engine/agent_runtime/policy/config.py`）在启动期解析并注入 `DomainRegistry`。
 
-| `side_effect_level` | 默认 decision |
-|---------------------|--------------|
-| `none` / `read` | `allow` |
-| `write_low` | `allow`（caller `require_confirmation_for_mutate` 仍生效） |
-| `write_high` | `require_approval`（v1 降级 block） |
+**设计理由：** policy 规则（skill/gate/quality 三域开关与阈值）是与应用基础设施配置（DB、auth、logging）正交的关注点，独立文件便于 ops 单独管理、审计 diff、灰度切换，避免与 `settings.yaml` 混杂。
 
-`policy.platform_defaults` 位于 `backend/config/settings.yaml` 顶层 `policy:` block（与 `commands:` 并列；当前 **不存在**，需新增 `PolicyConfig` 于 `settings.py`）。平台默认规则在代码中实现，配置仅开关/参数化。
+**`backend/config/policy.yaml` 结构（三域顶层键）：**
+
+```yaml
+# PolicyEngine 平台默认配置（按域）
+skill:
+  # skill 域（before_skill_activation check_point）；无开关键（仅 skill_activation_mode detector，常开）
+
+gate:
+  enable_side_effect_detector: true
+  enable_data_classification_detector: true
+  enable_prompt_fallback: true              # pattern_match 命中后降级 rewrite
+  enable_skill_tool_group_detector: false   # D3 group 约束 detector（默认 off，前向兼容；运行于 before_tool_call，归属 gate 域）
+  # side_effect_level → 默认 decision（由 F08 §1.3 自动推导）
+  side_effect_defaults:
+    none: allow
+    read: allow
+    write_low: allow                        # caller require_confirmation_for_mutate 仍生效
+    write_high: require_approval             # v1 降级 block
+
+quality:
+  enable_quality_score: false               # 多维 QualityScore（offline-only）
+  enable_stop_dimensions: false             # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive），P5-A 门控
+  enable_final_success_gate: false          # final_success_evaluator 驱动门控（否则 audit/trace-only），P5-A 门控
+  max_iterations: 12                        # 总 state transition per tick 上限
+  max_consecutive_tool_failures: 3          # 连续工具失败停止阈值
+  stagnation_window: 3                      # stagnation 滑动窗口（连续 K round）
+```
+
+**`skill` 域：**
+
+无配置开关键（仅 `skill_activation_mode` detector，常开；`_BLOCKED_SKILL_ACTIVATION_MODES` 为空集，前向兼容）。
+
+**`gate` 域：**
+
+| 配置键 | 默认 | 用途 |
+|--------|------|------|
+| `enable_side_effect_detector` | `true` | 副作用 detector |
+| `enable_data_classification_detector` | `true` | 数据分级 detector |
+| `enable_prompt_fallback` | `true` | pattern_match 命中后降级 rewrite |
+| `enable_skill_tool_group_detector` | `false` | D3 group 约束 detector（默认 off，前向兼容；运行于 `before_tool_call`，归属 gate 域） |
+
+`side_effect_defaults` 由 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 自动推导 gate 默认 decision（`none`/`read`→`allow`、`write_low`→`allow`、`write_high`→`require_approval`，v1 降级 block）。
+
+**`quality` 域（F18 落地）：**
+
+| 配置键 | 默认 | 用途 |
+|--------|------|------|
+| `enable_quality_score` | `false` | 多维 QualityScore（offline-only） |
+| `enable_stop_dimensions` | `false` | stop_evaluator 新维度门控（stagnation / max_iterations / max_consecutive_tool_failures）；off 时 evaluator 返回 `None`，byte-equivalent |
+| `enable_final_success_gate` | `false` | final_success_evaluator 驱动门控；off 时 audit/trace-only（`_detect_tick_emit_deferral` 仍为 draft 权威），byte-equivalent |
+| `max_iterations` | `12` | 总 state transition per tick 上限 |
+| `max_consecutive_tool_failures` | `3` | 连续工具失败停止阈值 |
+| `stagnation_window` | `3` | stagnation 滑动窗口（连续 K round） |
+
+quality 域的 `success_checks` / `stop_policy` 节点级覆盖优先级详见 [F18](F18_AGENT_QUALITY_GATES.md) §7。
+
+**加载机制：** `PolicyConfig`（`policy/config.py`）启动期读取 `backend/config/policy.yaml`，按域解析为 dataclass，注入对应 `Domain` 实例；文件缺失或键缺失时回退代码内默认值（保单测无文件可跑）。`config_manager.py` 不再承载 policy 键。
 
 ### 5.2 实例规则（v1 代码注册，延后 YAML）
 
-v1 实例规则通过 Python dataclass + 代码注册（D7），与平台默认规则共享同一类型系统。规则在启动期加载到内存，check_point 仅在 4 个点位插入（性能：纯函数，无 DB / 无 LLM）。
+v1 各域实例规则通过 Python dataclass + 代码注册（D7），与平台默认规则共享同一类型系统，启动期加载到 `DomainRegistry`。check_point 按域插入（性能：纯函数，无 DB / 无 LLM）。既有扁平 `detectors.py` 随 quality 域落地迁入 `domains/{skill,gate}_domain.py`（D3，见 §3.0），迁移后 `detectors.py` 删除。
 
-节点级 YAML 规则覆盖（如 `nodes.attributes.safety.rules`）延后到有 UI/ops 配置需求时再引入；v1 不实现 `rules_loader` YAML 解析路径。
+节点级 YAML 规则覆盖按域命名空间组织（`attributes.policy.skill.*` / `attributes.policy.gate.*` / `attributes.policy.quality.*`），延后到有 UI/ops 配置需求时再引入；v1 不实现 `rules_loader` YAML 解析路径。
 
 ---
 
@@ -196,14 +353,18 @@ v1 实例规则通过 Python dataclass + 代码注册（D7），与平台默认�
 
 ## 7. check_point 在 `llm_pdca.py` 的插入点
 
-| CheckPoint | 插入位置（`llm_pdca.py`） | 备注 |
-|------------|-------------------------|------|
-| `before_tool_call` | `_phase_react_loop` 工具 gather 前（`609:641`，`gather_tool_observations` 前） | 今日 `PreauthorizedToolExecutor` 内已有 gate，适配器收敛 |
-| `after_tool_observation` | `build_round_tool_results` 后（`641:666`） | v1 仅审计，不 transform；脱敏由 F18 输出层处理（D5） |
-| `before_final_answer` | Act 阶段（`889:912`）`final_text` 赋值后 | 非流式路径拦截；streaming 路径延后到 F18（D6） |
-| `before_skill_activation` | `SkillInjection` 内部 hook，body 激活前 | 依赖 [F15](F15_AGENT_SKILL_REGISTRY.md)；policy 拒绝 skill 进入 `Blocked by policy` 段（D2），不混入 F15 `inactive` 段 |
+> **锚点约定：** 下表以 **函数名** 为锚（不再写死行号），避免 F17 状态机 driver 重构后行号漂移。函数定位以当前 `frameworks/llm_pdca.py` 为准。
 
-`_phase_react_loop` 被 Plan（`754`）/ Do（`780`/`869`）/ Check-retry Plan（`854`）调用，check_point 在所有 react 入口生效。
+| CheckPoint | 插入位置（`llm_pdca.py` 函数） | 今日可落地 | 备注 |
+|------------|-------------------------|-----------|------|
+| `before_tool_call` | `_phase_react_loop` 工具 gather 前（经 `PreauthorizedToolExecutor` → `execution_gate` 适配器，非直接 `PolicyEngine` 调用） | ✅ 是 | 适配器收敛（D4）；`active_skill_context` 经 `runtime_tool_ctx.metadata` 传入 |
+| `after_tool_observation` | `_phase_react_loop` 工具结果组装后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
+| `before_final_answer` | `_execute_act_state` 最终草稿赋值后 | ❌ 未落地（P4 pending） | v1 代码未插入 `PolicyEngine.evaluate(BEFORE_FINAL_ANSWER)`；`pattern_match` 拦截与 streaming 路径均延后（D6 / P4） |
+| `before_skill_activation` | `_prepare_skill_context` 内 `SkillInjection.inject(before_activate=...)` hook | ✅ 是 | policy 拒绝 skill 进 `Blocked by policy` 段（D2），不混入 F15 `inactive` 段 |
+
+`_phase_react_loop` 被 Plan / Do / Check-retry Plan 调用，`before_tool_call` / `after_tool_observation` 在所有 react 入口生效。`_execute_act_state` 为 Act 阶段执行体（F17 driver loop 的 act state handler）。
+
+**B5 trace 序列化修复：** `llm_pdca._prepare_skill_context` 当前硬编码 trace 字段 `'decision':'deny'`/`'runtime_action':'block'`，未序列化真实 `PolicyDecision`（今日无害因 skill detector 只发 deny，但若发 `require_approval` 会误审计）。修复：复用 `execution_gate._policy_decision_to_trace` helper 序列化真实 `PolicyDecision`（含 `decision`/`runtime_action`/`reason_code`/`evidence`）。运行时消费者统一走 `is_block`/`is_allow`，不直接读 `decision`/`runtime_action` 做控制流。
 
 ---
 
@@ -256,7 +417,7 @@ v1 实例规则通过 Python dataclass + 代码注册（D7），与平台默认�
 - [x] `before_tool_call` 读 `active_skill_context.allowed_tool_groups`，命令 tool group 不在并集时 deny（D3）；数据流协议见 §4.3；层级匹配（`read` 父组）已实现，config toggle `enable_skill_tool_group_detector` 默认 `false`（opt-in）
 - [x] `data_classification` `confidential`/`restricted` → `require_approval`（v1 同步降级 block）；`allow_with_transform` 延后到 F18 输出层（D5）
 - [ ] Prompt 注入模式被 `before_tool_call` / `before_final_answer` `pattern_match` 拦截
-- [x] `settings.yaml` 新增 `policy.platform_defaults` + `policy.enable_prompt_fallback`（默认 `true`）；`settings.py` 新增 `PolicyConfig`；实例规则用 Python 代码注册（D7）
+- [x] 策略配置独立于 `settings.yaml`，由专用文件 `backend/config/policy.yaml`（三域顶层键 `skill`/`gate`/`quality`）承载，`policy/config.py` 的 `PolicyConfig` 加载器解析并注入 `DomainRegistry`；`policy.enable_prompt_fallback`（默认 `true`）位于 `gate` 域配置；实例规则用 Python 代码注册（D7）
 - [x] `policy_decision` trace 行写入 `command_trace`，兼容现有 schema（D9）
 - [ ] `system_prompt` 安全规则文本段 **fallback 可开关**，移除为后置验收条件（需 F18 输出/流式 gate 落地）
 - [x] `command_policies` 授权平面不被 PolicyEngine 写入/替代

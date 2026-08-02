@@ -75,5 +75,6 @@ def test_run_returns_cancelled_when_cancel_during_plan_tools_call():
     threading.Thread(target=trigger_cancel, daemon=True).start()
     ctx = FrameworkRunContext(agent_node_id=1, stream_cancel_check=cancel.is_set)
     res = fw.run(ctx)
-    assert res.final_phase == 'cancelled'
+    assert res.final_phase == 'fail'
+    assert res.error_code == 'cancelled'
     assert res.ok is False

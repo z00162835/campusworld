@@ -34,3 +34,7 @@ class PolicyContext:
 
     # --- generic ----------------------------------------------------------
     extra: Dict[str, Any] = field(default_factory=dict)
+    # F18 per_react_round: the evaluator writes react_round_decision here for
+    # the inner ReAct loop to consume (B4). The driver passes a reference to
+    # the run context's payload dict so the loop sees the write.
+    payload: Dict[str, Any] = field(default_factory=dict)

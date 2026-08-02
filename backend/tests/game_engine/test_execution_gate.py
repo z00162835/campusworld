@@ -295,19 +295,21 @@ def test_tool_gather_emits_policy_decision_trace():
 
 def _skill_group_engine():
     """Build a PolicyEngine with skill_tool_group_detector enabled."""
-    from app.game_engine.agent_runtime.policy import PolicyEngine
-    from app.game_engine.agent_runtime.policy.detectors import (
-        data_classification_detector,
-        side_effect_level_detector,
-        skill_activation_mode_detector,
-        skill_tool_group_detector,
+    from app.game_engine.agent_runtime.policy import DomainRegistry, PolicyEngine
+    from app.game_engine.agent_runtime.policy.config import (
+        GateDomainConfig,
+        PolicyConfig,
+        SkillDomainConfig,
     )
-    return PolicyEngine(detectors=[
-        side_effect_level_detector,
-        data_classification_detector,
-        skill_tool_group_detector,
-        skill_activation_mode_detector,
-    ])
+    from app.game_engine.agent_runtime.policy.domains.gate_domain import GateDomain
+    from app.game_engine.agent_runtime.policy.domains.skill_domain import SkillDomain
+
+    gate_cfg = GateDomainConfig(enable_skill_tool_group_detector=True)
+    config = PolicyConfig(skill=SkillDomainConfig(), gate=gate_cfg)
+    registry = DomainRegistry()
+    registry.register(SkillDomain(config.skill))
+    registry.register(GateDomain(config.gate))
+    return PolicyEngine(registry=registry, config=config)
 
 
 def test_e2e_skill_tool_group_allows_covered_command(monkeypatch):

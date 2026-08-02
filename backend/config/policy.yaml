@@ -1,0 +1,33 @@
+# PolicyEngine 平台默认配置（按域）
+#
+# Policy 规则（skill/gate/quality 三域开关与阈值）独立于 settings.yaml
+# （DB/auth/logging 基础设施配置），由 PolicyConfig 加载器在启动期解析并
+# 注入 DomainRegistry。文件缺失或键缺失时回退代码默认值。
+# 详见 docs/models/SPEC/features/F16_AGENT_POLICY_ENGINE.md §5.1。
+
+skill:
+  # skill 域（before_skill_activation check_point）
+  # skill_tool_group detector 的开关在 gate 域下（它运行于 before_tool_call）。
+
+gate:
+  # gate 域（before_tool_call / after_tool_observation / before_final_answer）
+  enable_side_effect_detector: true
+  enable_data_classification_detector: true
+  enable_prompt_fallback: true
+  enable_skill_tool_group_detector: false   # D3 group 约束 detector（默认 off，前向兼容）
+  # side_effect_level → 默认 decision（由 F08 §1.3 自动推导）
+  side_effect_defaults:
+    none: allow
+    read: allow
+    write_low: allow                          # caller require_confirmation_for_mutate 仍生效
+    write_high: require_approval              # v1 降级 block
+
+quality:
+  # quality 域（after_state_execute / before_terminal / per_react_round，F18 落地）
+  # P5 driver 接线：以下两个门控默认 off，保 byte-equivalence；开启后 evaluator 驱动控制流。
+  enable_quality_score: false                 # 多维 QualityScore（offline-only）
+  enable_stop_dimensions: false               # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive）
+  enable_final_success_gate: false            # final_success_evaluator 驱动（否则 audit/trace-only）
+  max_iterations: 12                          # 总 state transition per tick 上限
+  max_consecutive_tool_failures: 3           # 连续工具失败停止阈值
+  stagnation_window: 3                        # stagnation 滑动窗口（连续 K round）

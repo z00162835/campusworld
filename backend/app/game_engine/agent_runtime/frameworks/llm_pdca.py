@@ -3,7 +3,7 @@ import logging
 import re
 import time
 import uuid
-from dataclasses import replace
+from dataclasses import dataclass, field, replace
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from app.commands.base import CommandContext
 from app.commands.registry import command_registry
@@ -12,7 +12,7 @@ from app.core.settings import AgentLlmServiceConfig, PhaseLlmMode, PhaseLlmPhase
 from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext, FrameworkRunResult, ThinkingFramework
 from app.game_engine.agent_runtime.frameworks.pdca import PDCAPhase
 from app.game_engine.agent_runtime.intent_classifier_interface import IntentClassifier, RuleFallbackIntentClassifier, classify_intent
-from app.game_engine.agent_runtime.llm_client import AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC, LlmCallSpec, LlmClient, StubLlmClient, complete_with_tools, supports_tools
+from app.game_engine.agent_runtime.llm_client import AGENT_EXTRA_KEYS_MERGED_INTO_LLM_CALL_SPEC, LlmCallSpec, LlmClient, StubLlmClient, complete, complete_with_tools, supports_tools
 from app.game_engine.agent_runtime.llm_providers.http_utils import LlmRequestCancelled
 from app.game_engine.agent_runtime.llm_streaming import complete_stream as llm_complete_stream
 from app.game_engine.agent_runtime.memory_port import MemoryPort
@@ -31,6 +31,16 @@ from app.game_engine.agent_runtime.skills import SkillInjection, get_default_ski
 from app.game_engine.agent_runtime.policy import PolicyContext, PolicyEngine
 from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 from app.game_engine.agent_runtime.prompt_fingerprint import compute_npc_prompt_fingerprint
+from app.game_engine.agent_runtime.agent_llm_extra import parse_bool_extra
+from app.game_engine.agent_runtime.state_machine import (
+    StateDef,
+    StateExecutionResult,
+    StateMachine,
+    StateMachineSnapshot,
+    TransitionContext,
+    build_pdca_state_machine,
+)
+from app.game_engine.agent_runtime.state_machine.react_turn_schema import emit_structured_turn
 from app.game_engine.agent_runtime.agent_loop import (
     AgentLoopConfig,
     DraftCompletenessVerdict,
@@ -41,7 +51,6 @@ from app.game_engine.agent_runtime.agent_loop import (
 )
 from app.game_engine.agent_runtime.agent_loop.draft_gate import assess_draft_completeness_with_budget, is_draft_streamable
 from app.game_engine.agent_runtime.agent_loop.signals import DraftReasonContext
-_CHECK_RETRY_RE = re.compile('RETRY\\s*:\\s*need_tools\\s*=\\s*([A-Za-z0-9_.\\-]+(?:\\s*,\\s*[A-Za-z0-9_.\\-]+)*)', flags=re.IGNORECASE)
 _DEFAULT_NPC_AGENT_EMPTY_REPLY = '抱歉，我没有能力处理此问题。你可以换一个问题。'
 
 _INTERNAL_PHASE_TAG_RE = re.compile(r'^\s*\[(?:plan|do|check|act|react|thought|thinking|reasoning)\]\s*', re.IGNORECASE)
@@ -232,20 +241,38 @@ def _phase_system(base_system: str, phase: str, phase_prompts: Dict[str, str]) -
         return base_system
     return f'{base_system.rstrip()}\n\n[{phase}] {suffix}'
 
-def _parse_check_retry_signal(text: str) -> Optional[List[str]]:
-    """Return the list of requested tool names from a ``RETRY: need_tools=...`` line.
 
-    Returns ``None`` when no RETRY marker is found. The list may be empty
-    when the Check phase asks for a retry without nominating tools.
-    """
-    if not text:
-        return None
-    m = _CHECK_RETRY_RE.search(text)
-    if not m:
-        return None
-    raw = m.group(1) or ''
-    tools = [t.strip() for t in raw.split(',') if t.strip()]
-    return tools
+@dataclass
+class _PdcaTickBag:
+    """Mutable per-tick workspace for the PDCA state-machine driver."""
+
+    user_msg: str
+    mem_for_do: str
+    plan_user: str
+    plan_sys: str
+    do_sys: str
+    check_sys: str
+    act_sys: str
+    do_spec: Any
+    act_spec: Any
+    chain_criteria_text: str
+    merged_phases: Dict[str, str]
+    base_system: str
+    slim_followup: Optional[str]
+    plan_out: str = ''
+    plan_tools_text: str = ''
+    reply: str = ''
+    do_tools_text: str = ''
+    check_out: str = ''
+    final_text: str = ''
+    check_ok: bool = True
+    check_skipped: bool = False
+    retry_tools: Optional[List[str]] = None
+    retry_event: Optional[str] = None
+    replan_guardrail_hint: Optional[str] = None
+    accumulated_tick_tool_results: List[ToolResult] = field(default_factory=list)
+    cancelled: bool = False
+
 
 class LlmPDCAFramework(ThinkingFramework):
     """PDCA with LLM calls and a ReAct tool loop per phase.
@@ -274,7 +301,26 @@ class LlmPDCAFramework(ThinkingFramework):
       allows.
     """
 
-    def __init__(self, memory: MemoryPort, llm_config: AgentLlmServiceConfig, *, instance_phase_llm: Dict[str, PhaseLlmPhaseConfig], instance_mode_models: Dict[str, str], llm: Optional[LlmClient]=None, tools: Optional[ToolExecutor]=None, tool_command_context: Optional[CommandContext]=None, preauthorized_tool_executor: Optional[PreauthorizedToolExecutor]=None, tool_gather_budgets: Optional[ToolGatherBudgets]=None, tick_hooks: Optional[AgentTickHooks]=None, tool_schemas: Optional[Sequence[ToolSchema]]=None, intent_classifier: Optional[IntentClassifier]=None, observability: Optional[AgentRuntimeObservability]=None, skill_refs: Optional[Sequence[str]]=None, skill_injection: Optional[SkillInjection]=None):
+    def __init__(
+        self,
+        memory: MemoryPort,
+        llm_config: AgentLlmServiceConfig,
+        *,
+        instance_phase_llm: Dict[str, PhaseLlmPhaseConfig],
+        instance_mode_models: Dict[str, str],
+        llm: Optional[LlmClient] = None,
+        tools: Optional[ToolExecutor] = None,
+        tool_command_context: Optional[CommandContext] = None,
+        preauthorized_tool_executor: Optional[PreauthorizedToolExecutor] = None,
+        tool_gather_budgets: Optional[ToolGatherBudgets] = None,
+        tick_hooks: Optional[AgentTickHooks] = None,
+        tool_schemas: Optional[Sequence[ToolSchema]] = None,
+        intent_classifier: Optional[IntentClassifier] = None,
+        observability: Optional[AgentRuntimeObservability] = None,
+        skill_refs: Optional[Sequence[str]] = None,
+        skill_injection: Optional[SkillInjection] = None,
+        state_machine: Optional[StateMachine] = None,
+    ):
         self._memory = memory
         self._cfg = llm_config
         self._instance_phase_llm = instance_phase_llm
@@ -297,6 +343,7 @@ class LlmPDCAFramework(ThinkingFramework):
         else:
             self._skill_injection = None
         self._policy_engine: PolicyEngine = PolicyEngine()
+        self._state_machine: StateMachine = state_machine or build_pdca_state_machine()
 
     @property
     def framework_id(self) -> str:
@@ -369,20 +416,26 @@ class LlmPDCAFramework(ThinkingFramework):
             })
         for blocked_def, reason_code in zip(result.blocked, result.blocked_reasons):
             dec = blocked_decisions.get(blocked_def.name)
-            evidence = dict(dec.evidence or {}) if dec else {}
+            if dec is not None:
+                from app.game_engine.agent_runtime.execution_gate import _policy_decision_to_trace
+                trace_row = _policy_decision_to_trace(dec)
+            else:
+                trace_row = {
+                    'step': 'policy_decision',
+                    'check_point': CheckPoint.BEFORE_SKILL_ACTIVATION,
+                    'decision': 'deny',
+                    'reason_code': reason_code,
+                    'detector': None,
+                    'runtime_action': 'block',
+                    'evidence': {},
+                }
+            evidence = dict(trace_row.get('evidence') or {})
             evidence.setdefault('skill_id', blocked_def.name)
             evidence.setdefault('phase', phase)
-            trace.append({
-                'step': 'policy_decision',
-                'check_point': CheckPoint.BEFORE_SKILL_ACTIVATION,
-                'decision': 'deny',
-                'reason_code': reason_code,
-                'detector': evidence.get('detector'),
-                'runtime_action': 'block',
-                'evidence': evidence,
-                'phase': phase,
-                'skill_id': blocked_def.name,
-            })
+            trace_row['evidence'] = evidence
+            trace_row['phase'] = phase
+            trace_row['skill_id'] = blocked_def.name
+            trace.append(trace_row)
 
     def _effective_tool_schemas(self, ctx: FrameworkRunContext, *, pdca_phase: str) -> List[ToolSchema]:
         """Narrow tool schemas for Plan only when F14 ``schema_subset`` set allowlist on payload."""
@@ -420,10 +473,19 @@ class LlmPDCAFramework(ThinkingFramework):
             reason_context=_draft_reason_context(ctx),
         )
 
+    def _require_structured_turn(self, ctx: FrameworkRunContext) -> bool:
+        """Opt-in structured turn (tool-as-schema / JSON). Default off."""
+        if parse_bool_extra(ctx.payload, 'require_structured_turn', default=False):
+            return True
+        return parse_bool_extra(getattr(self._cfg, 'extra', None), 'require_structured_turn', default=False)
+
     @staticmethod
     def _should_stream_user_prose(ctx: FrameworkRunContext, phase: str, *, stream_prose: bool = False) -> bool:
         """Stream only prose from the tick's presentation anchor (matches ``final_text`` source)."""
         if ctx.user_visible_stream is None:
+            return False
+        # Structured JSON turns are not incrementally streamable.
+        if parse_bool_extra(ctx.payload, 'require_structured_turn', default=False):
             return False
         if phase == PDCAPhase.check.value:
             return False
@@ -439,6 +501,42 @@ class LlmPDCAFramework(ThinkingFramework):
         check = ctx.stream_cancel_check
         return bool(check and check())
 
+    def _finish_tick_fail(
+        self,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        *,
+        correlation: Any,
+        error_code: str,
+        message: str = '',
+        graph_ops_summary: Optional[Dict[str, Any]] = None,
+    ) -> FrameworkRunResult:
+        """Terminal finish for the ``fail`` abort state (cancel / draft_incomplete)."""
+        if error_code == 'cancelled' and not any(e.get('step') == 'tick_cancelled' for e in trace):
+            trace.append({'step': 'tick_cancelled'})
+        summary = dict(graph_ops_summary or {})
+        summary.setdefault('fail', True)
+        summary.setdefault('error_code', error_code)
+        mem_status = 'cancelled' if error_code == 'cancelled' else 'failed'
+        self._memory.finish_run(
+            run_id,
+            'fail',
+            trace,
+            mem_status,
+            graph_ops_summary=summary,
+        )
+        self._memory.append_raw(
+            'audit',
+            {
+                'framework': self.framework_id,
+                'run_id': str(run_id),
+                'ok': False,
+                'final_phase': 'fail',
+                'error_code': error_code,
+            },
+        )
+        return FrameworkRunResult(ok=False, message=message or '', final_phase='fail', error_code=error_code)
+
     def _finish_tick_cancelled(
         self,
         run_id: uuid.UUID,
@@ -446,16 +544,180 @@ class LlmPDCAFramework(ThinkingFramework):
         *,
         correlation: Any,
     ) -> FrameworkRunResult:
-        trace.append({'step': 'tick_cancelled'})
-        self._memory.finish_run(
+        """Back-compat alias — cancel aborts via the ``fail`` terminal."""
+        return self._finish_tick_fail(
             run_id,
-            'cancelled',
             trace,
-            'cancelled',
+            correlation=correlation,
+            error_code='cancelled',
+            message='',
             graph_ops_summary={'cancelled': True},
         )
-        self._memory.append_raw('audit', {'framework': self.framework_id, 'run_id': str(run_id), 'ok': False, 'cancelled': True})
-        return FrameworkRunResult(ok=False, message='', final_phase='cancelled')
+
+    def _detect_tick_emit_deferral(
+        self,
+        ctx: FrameworkRunContext,
+        bag: '_PdcaTickBag',
+        trace: List[Dict[str, Any]],
+        user_msg: str,
+    ) -> bool:
+        """At the act anchor, authoritatively decide draft_incomplete from the final draft.
+
+        A deferral-only final draft with no grounding observations routes the
+        tick to fail. A complete (non-empty, non-deferral) final draft clears any
+        stale plan/do soft signal so the tick can succeed and the post-loop
+        mandatory-gap notice can still apply (SPEC §7.1: detection is anchored
+        at act, not plan/do). An empty final draft preserves an existing
+        plan/do signal rather than silently succeeding.
+        """
+        from app.game_engine.agent_runtime.agent_loop.draft_gate import has_successful_grounding_obs, is_deferral_prose
+        final_text = bag.final_text or bag.reply
+        final_stripped = (final_text or '').strip()
+        if (
+            user_msg
+            and final_stripped
+            and is_deferral_prose(final_text, config=self._agent_loop_config)
+            and not has_successful_grounding_obs(bag.accumulated_tick_tool_results)
+        ):
+            _LLM_PDCA_LOG.warning(
+                'draft_incomplete_detected anchor_phase=%s draft_chars=%s',
+                ctx.presentation_anchor_phase, len(final_stripped),
+            )
+            trace.append({
+                'step': 'draft_incomplete_detected',
+                'anchor_phase': ctx.presentation_anchor_phase,
+                'reason_codes': ['tick_emit_deferral'],
+                'draft_chars': len(final_stripped),
+            })
+            ctx.payload['_draft_incomplete'] = True
+            return True
+        if final_stripped:
+            ctx.payload.pop('_draft_incomplete', None)
+            return False
+        return bool(ctx.payload.get('_draft_incomplete'))
+
+    # ------------------------------------------------------------------
+    # P5: F18 quality/stop driver wiring (byte-equiv under default config).
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _update_tool_failure_counter(ctx: FrameworkRunContext, round_results: List[Any]) -> None:
+        """R11: track consecutive ToolResult.ok=False; any success resets to 0."""
+        if not round_results:
+            return
+        current = int(ctx.payload.get('_consecutive_tool_failures', 0))
+        for r in round_results:
+            if getattr(r, 'ok', True):
+                current = 0
+            else:
+                current += 1
+        ctx.payload['_consecutive_tool_failures'] = current
+
+    @staticmethod
+    def _append_obs_signatures(ctx: FrameworkRunContext, round_results: List[Any]) -> None:
+        """S4/R6: append per-result obs signatures for stagnation detection."""
+        if not round_results:
+            return
+        sigs: List[str] = ctx.payload.get('_recent_obs_signatures')
+        if not isinstance(sigs, list):
+            sigs = []
+        for r in round_results:
+            name = getattr(r, 'name', '') or ''
+            text = getattr(r, 'text', '') or ''
+            sigs.append(f'{name}:{hash(text)}')
+        ctx.payload['_recent_obs_signatures'] = sigs
+
+    def _build_quality_tick_state(
+        self,
+        *,
+        check_point: str,
+        ctx: FrameworkRunContext,
+        bag: '_PdcaTickBag',
+        snapshot: Optional['StateMachineSnapshot'],
+        state_id: str,
+        trace: List[Dict[str, Any]],
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Build the tick_state dict consumed by quality-domain evaluators.
+
+        Under default config (all gates off) only minimal fields are populated
+        so every evaluator returns None → no trace row, no control-flow override
+        (byte-equivalent). Gate flags and heavy fields (agent_loop_config,
+        success_criteria, react_turn) are only populated when their config gate
+        is on. ``snapshot`` may be None (per_react_round path); turn/replan
+        counts then fall back to values stashed on ctx.payload by the main loop.
+        """
+        qcfg = self._policy_engine.config.quality
+        turn_count = snapshot.turn_count if snapshot is not None else int(ctx.payload.get('_snapshot_turn_count', 0))
+        replan_count = snapshot.replan_count if snapshot is not None else int(ctx.payload.get('_snapshot_replan_count', 0))
+        ts: Dict[str, Any] = {
+            'current_state': state_id,
+            'turn_count': turn_count,
+            'replan_count': replan_count,
+            'draft_text': bag.final_text or bag.reply or '',
+            'tool_results': list(bag.accumulated_tick_tool_results),
+            'user_message': bag.user_msg or '',
+            'consecutive_tool_failures': int(ctx.payload.get('_consecutive_tool_failures', 0)),
+            'recent_signatures': list(ctx.payload.get('_recent_obs_signatures') or []),
+            # B4 (P5-B2): per_react_round verdict passed up for after_state_execute
+            # secondary confirmation. None under default config (no react_turn).
+            'react_round_decision': ctx.payload.get('react_round_decision'),
+            # B3 unify (P5-B1): detect_check_replan inputs routed through
+            # stop_evaluator. check_out/check_skipped are check-state specific;
+            # tool_router_snapshot + plan_trace feed mandatory_observation_gap.
+            'check_out': bag.check_out or '',
+            'check_skipped': bool(bag.check_skipped),
+            'tool_router_snapshot': ctx.payload.get('tool_router_snapshot'),
+            'plan_trace': trace,
+        }
+        if qcfg.enable_stop_dimensions:
+            ts['enable_stop_dimensions'] = True
+            ts['max_iterations'] = qcfg.max_iterations
+            ts['max_consecutive_tool_failures'] = qcfg.max_consecutive_tool_failures
+            ts['stagnation_window'] = qcfg.stagnation_window
+        if qcfg.enable_final_success_gate:
+            ts['enable_final_success_gate'] = True
+            ts['agent_loop_config'] = self._agent_loop_config
+            ts['reason_context'] = _draft_reason_context(ctx)
+            ts['rounds_remaining'] = 0
+            ts['draft_incomplete'] = bool(ctx.payload.get('_draft_incomplete'))
+        if qcfg.enable_quality_score:
+            ts['enable_quality_score'] = True
+            ts['success_criteria'] = list(ctx.payload.get('_success_criteria') or [])
+            ts['stagnation_window'] = qcfg.stagnation_window
+        if extra:
+            ts.update(extra)
+        return ts
+
+    def _evaluate_quality_check_point(
+        self,
+        check_point: str,
+        *,
+        ctx: FrameworkRunContext,
+        bag: '_PdcaTickBag',
+        snapshot: Optional['StateMachineSnapshot'],
+        state_id: str,
+        trace: List[Dict[str, Any]],
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> Optional['PolicyDecision']:
+        """Call PolicyEngine.evaluate at an F18 check_point and record a
+        ``quality_decision`` trace row when the decision is non-allow or carries
+        a quality_score. Returns the decision (None-safe)."""
+        ts = self._build_quality_tick_state(
+            check_point=check_point, ctx=ctx, bag=bag, snapshot=snapshot,
+            state_id=state_id, trace=trace, extra=extra,
+        )
+        policy_ctx = PolicyContext(check_point=check_point, extra={'tick_state': ts}, payload=ctx.payload)
+        decision = self._policy_engine.evaluate(policy_ctx)
+        if decision is None:
+            return None
+        # Record a trace row for any non-trivial F18 decision (anything other than
+        # a plain 'allow') or when a quality_score is attached. Under default
+        # config evaluators return None/allow with no score → no row → byte-equiv.
+        if decision.decision != 'allow' or decision.quality_score is not None:
+            from app.game_engine.agent_runtime.execution_gate import _policy_decision_to_trace
+            trace.append(_policy_decision_to_trace(decision, step='quality_decision'))
+        return decision
 
     @staticmethod
     def _write_user_prose_to_presentation(ctx: FrameworkRunContext, text: str) -> None:
@@ -489,7 +751,7 @@ class LlmPDCAFramework(ThinkingFramework):
             )
             return (out, {'step': phase, 'llm_output': out, 'mode': spec.mode.value, 'streamed': True})
         try:
-            out = self._llm.complete(system=system, user=user, call_spec=spec, cancel_check=ctx.stream_cancel_check)
+            out = complete(self._llm, system=system, user=user, call_spec=spec, cancel_check=ctx.stream_cancel_check)
         except LlmRequestCancelled:
             return ('', {'step': phase, 'cancelled': True, 'mode': spec.mode.value})
         return (out, {'step': phase, 'llm_output': out, 'mode': spec.mode.value})
@@ -531,6 +793,37 @@ class LlmPDCAFramework(ThinkingFramework):
             return ('', [], {'step': phase, 'skipped': True, 'mode': spec.mode.value})
         if self._tick_cancelled(ctx):
             return ('', [], {'step': phase, 'cancelled': True, 'mode': spec.mode.value})
+        if self._require_structured_turn(ctx):
+            # Mutually exclusive with native campus-tool tool_use; force emit_turn.
+            ctx.payload['require_structured_turn'] = True
+            structured = emit_structured_turn(
+                self._llm,
+                system=system,
+                turns=turns,
+                call_spec=spec,
+                force_tool=True,
+                cancel_check=ctx.stream_cancel_check,
+            )
+            text = structured.text
+            calls = list(structured.tool_calls)
+            entry: Dict[str, Any] = {
+                'step': phase,
+                'llm_output': text,
+                'mode': spec.mode.value,
+                'channel': structured.channel,
+                'structured_turn': True,
+                'structured_turn_ok': structured.ok,
+                'structured_turn_repaired': structured.repaired,
+                'structured_turn_degraded': structured.degraded,
+                'tool_call_count': len(calls),
+                'pre_filter_tool_calls': _serialize_tool_calls_for_entry(calls),
+            }
+            if structured.turn is not None:
+                entry['react_turn'] = structured.turn.model_dump()
+            if self._should_stream_user_prose(ctx, phase, stream_prose=stream_prose) and self._is_presentation_safe_prose(text, calls, ctx):
+                self._write_user_prose_to_presentation(ctx, text)
+                entry['streamed'] = True
+            return (text, calls, entry)
         channel = 'text'
         text = ''
         calls: List[ToolCall] = []
@@ -583,10 +876,10 @@ class LlmPDCAFramework(ThinkingFramework):
                     if not calls and finish_reason.lower() not in ('tool_use', 'tool_calls'):
                         calls = _tool_calls_from_text(text)
                 except NotImplementedError:
-                    text = self._llm.complete(system=system, user=user_text_for_log, call_spec=spec, cancel_check=ctx.stream_cancel_check)
+                    text = complete(self._llm, system=system, user=user_text_for_log, call_spec=spec, cancel_check=ctx.stream_cancel_check)
                     calls = _tool_calls_from_text(text)
             else:
-                text = self._llm.complete(system=system, user=user_text_for_log, call_spec=spec, cancel_check=ctx.stream_cancel_check)
+                text = complete(self._llm, system=system, user=user_text_for_log, call_spec=spec, cancel_check=ctx.stream_cancel_check)
                 calls = _tool_calls_from_text(text)
         except LlmRequestCancelled:
             return ('', [], {'step': phase, 'cancelled': True, 'mode': spec.mode.value})
@@ -615,7 +908,7 @@ class LlmPDCAFramework(ThinkingFramework):
             entry['channel'] = 'presentation_prose'
         return (text, calls, entry)
 
-    def _phase_react_loop(self, pdca_phase: str, system: str, initial_user: str, ctx: FrameworkRunContext, counters: ToolGatherCounters, trace: List[Dict[str, Any]]) -> Tuple[str, str, List[ToolResult], Dict[str, Any]]:
+    def _phase_react_loop(self, pdca_phase: str, system: str, initial_user: str, ctx: FrameworkRunContext, counters: ToolGatherCounters, trace: List[Dict[str, Any]], bag: Optional['_PdcaTickBag'] = None) -> Tuple[str, str, List[ToolResult], Dict[str, Any]]:
         """Run up to ``budgets.max_tool_rounds_per_phase`` reason-act-observe cycles.
 
         Returns ``(final_text, accumulated_observation_text, tool_results, last_entry)``.
@@ -651,6 +944,34 @@ class LlmPDCAFramework(ThinkingFramework):
                 entry = dict(entry)
                 entry['round'] = round_idx + 1
                 trace.append(entry)
+                # P5-4: per_react_round — react_turn_success_evaluator (opt-in via
+                # require_structured_turn). B4 loop consumption (P5-B2): a non-allow
+                # verdict breaks the inner loop; the flag is passed to
+                # after_state_execute (via ctx.payload['react_round_decision']) for
+                # secondary confirmation — per_react_round does not drive sm.next.
+                react_turn = entry.get('react_turn')
+                if react_turn is not None and bag is not None:
+                    rr_decision = self._evaluate_quality_check_point(
+                        CheckPoint.PER_REACT_ROUND,
+                        ctx=ctx, bag=bag, snapshot=None, state_id=pdca_phase, trace=trace,
+                        extra={'react_turn': react_turn},
+                    )
+                    # SPEC §4.4: write react_round_decision payload + break inner
+                    # loop on replan/fail (continue → keep looping).
+                    if rr_decision is not None and rr_decision.decision != 'allow':
+                        ctx.payload['react_round_decision'] = {
+                            'decision': rr_decision.decision,
+                            'reason_code': rr_decision.reason_code,
+                        }
+                        if rr_decision.decision in ('replan', 'fail'):
+                            trace.append({
+                                'step': 'react_round_break',
+                                'phase': pdca_phase,
+                                'decision': rr_decision.decision,
+                                'reason_code': rr_decision.reason_code,
+                                'round': round_idx + 1,
+                            })
+                            break
                 dropped_n = list(entry.get('dropped_tool_names') or [])
                 if dropped_n:
                     trace.append({'step': 'tool_call_filtered', 'phase': pdca_phase, 'dropped': dropped_n, 'round': round_idx + 1})
@@ -766,6 +1087,11 @@ class LlmPDCAFramework(ThinkingFramework):
                 if len(round_results) != len(calls):
                     _LLM_PDCA_LOG.warning('tool_result_count_mismatch phase=%s round=%s calls=%s results=%s', pdca_phase, round_idx + 1, len(calls), len(round_results))
                 all_results.extend(round_results)
+                # P5 prerequisite: collect consecutive-tool-failure counter (R11) and
+                # obs signatures (S4/R6 stagnation). Side-effect-free re: trace; only
+                # populates ctx.payload for stop_evaluator to read when enabled.
+                self._update_tool_failure_counter(ctx, round_results)
+                self._append_obs_signatures(ctx, round_results)
                 turns.append(AssistantToolUseTurn(text=text or '', tool_calls=[ToolCall(id=c.id, name=c.name, args=list(c.args)) for c in calls]))
                 turns.append(ToolResultsTurn(results=round_results))
                 obs_chunks.append(obs_text)
@@ -853,204 +1179,443 @@ class LlmPDCAFramework(ThinkingFramework):
             plan_user = _assemble_plan_user(user_msg=user_msg, memory=mem, world_snapshot=world_snapshot, tool_manifest_text=tool_manifest_text, intent_hint=intent_hint, tool_router_hint=tool_router_hint_text or None)
         if chain_criteria_text:
             plan_user += '\n\n' + chain_criteria_text
-        accumulated_tick_tool_results: List[ToolResult] = []
-        self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
-        if self._tick_cancelled(ctx):
-            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-        self._prepare_skill_context(ctx, PDCAPhase.plan.value, trace)
         plan_sys = _phase_system(base_system, PDCAPhase.plan.value, merged_phases)
-        (plan_out, plan_tools_text, plan_tool_results, plan_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan_user, ctx, gather_counters, trace)
-        if plan_entry.get('cancelled'):
-            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-        accumulated_tick_tool_results.extend(plan_tool_results)
-        ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
-        self._memory.update_run(run_id, PDCAPhase.plan.value, trace, 'running')
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.plan, ctx, phase_llm_output=plan_out or '', skipped=bool(plan_entry.get('skipped')))
-        if plan_tools_text:
-            trace.append({'step': 'plan_tool_observations', 'chars': len(plan_tools_text)})
-        plan_block = (plan_out or '').strip()
-        tool_blocks_plan = f'\n\nTool observations (plan phase):\n{plan_tools_text}' if plan_tools_text else ''
-        self._tick_hooks.on_before_phase(ThinkingPhaseId.do, ctx)
-        if self._tick_cancelled(ctx):
-            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-        if plan_block:
-            do_user = f"User message:\n{user_msg}\n\nPlan:\n{plan_out}\n{tool_blocks_plan}\n\nMemory:\n{mem_for_do or '(none)'}"
-        else:
-            do_user = f"User message:\n{user_msg}{tool_blocks_plan}\n\nMemory:\n{mem_for_do or '(none)'}"
-        self._prepare_skill_context(ctx, PDCAPhase.do.value, trace)
         do_sys = _phase_system_core(base_system, PDCAPhase.do.value, merged_phases, slim_followup)
-        do_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.do.value, ctx), ctx)
-        if do_spec.mode == PhaseLlmMode.skip:
-            reply = assemble_plan_skip_do_draft(plan_out or '', plan_tools_text or '')
-            do_tools_text = ''
-            do_entry: Dict[str, Any] = {'step': PDCAPhase.do.value, 'skipped': True, 'mode': PhaseLlmMode.skip.value, 'skip_do_draft_chars': len(reply or '')}
-            trace.append(do_entry)
-        else:
-            (reply, do_tools_text, do_tool_results, do_entry) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do_user, ctx, gather_counters, trace)
-            if do_entry.get('cancelled'):
-                return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-            accumulated_tick_tool_results.extend(do_tool_results)
-        ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
-        self._memory.update_run(run_id, PDCAPhase.do.value, trace, 'running')
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.do, ctx, phase_llm_output=reply or '', skipped=bool(do_entry.get('skipped')))
-        if do_tools_text:
-            trace.append({'step': 'do_tool_observations', 'chars': len(do_tools_text)})
-        tool_blocks_do = f'\n\nTool observations (do phase):\n{do_tools_text}' if do_tools_text else ''
-        plan_grounding_for_check = ''
-        if do_spec.mode == PhaseLlmMode.skip and (plan_tools_text or '').strip():
-            plan_grounding_for_check = f'\n\nPlan-phase tool observations (runtime grounding; not shown to user):\n{plan_tools_text}'
-        check_user = f'User message:\n{user_msg}\n\nDraft reply:\n{reply}{plan_grounding_for_check}{tool_blocks_do}'
-        snap = ctx.payload.get('tool_router_snapshot')
-        if isinstance(snap, dict) and snap.get('enforcement_level') == EnforcementLevel.hard_must_invoke.value:
-            mans = snap.get('mandatory_tool_names') or []
-            if mans:
-                check_user += '\n\nRouting mandatory tools (verify ToolObservation covers each): ' + ', '.join((str(x) for x in mans))
-        if chain_criteria_text:
-            check_user += '\n\n' + chain_criteria_text
-        self._prepare_skill_context(ctx, PDCAPhase.check.value, trace)
         check_sys = _phase_system_core(base_system, PDCAPhase.check.value, merged_phases, slim_followup)
-        self._tick_hooks.on_before_phase(ThinkingPhaseId.check, ctx)
-        if self._tick_cancelled(ctx):
-            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-        t_check = time.perf_counter()
-        (check_out, check_entry) = self._call_llm(PDCAPhase.check.value, check_sys, check_user, ctx)
-        if check_entry.get('cancelled'):
-            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-        _trace_phase_timing(trace, scope='llm', phase=PDCAPhase.check.value, elapsed_ms=(time.perf_counter() - t_check) * 1000.0)
-        retry_tools = None if check_entry.get('skipped') else _parse_check_retry_signal(check_out or '')
-        if check_entry.get('skipped'):
-            ok = True
-        else:
-            co = check_out or ''
-            ok = 'error' not in co.lower()[:80]
-        snap_gap_for_retry = ctx.payload.get('tool_router_snapshot')
-        if retry_tools is None and isinstance(snap_gap_for_retry, dict):
-            mans_retry = [str(x).strip() for x in (snap_gap_for_retry.get('mandatory_tool_names') or []) if str(x).strip()]
-            if mans_retry:
-                (has_gap_retry, gap_retry_detail) = mandatory_observation_gap(
-                    mans_retry,
-                    accumulated_tick_tool_results,
-                    plan_trace=trace,
-                )
-                if has_gap_retry:
-                    retry_tools = sorted(
-                        set(
-                            [str(x).strip() for x in (gap_retry_detail.get('missing') or []) if str(x).strip()]
-                            + [str(x).strip() for x in (gap_retry_detail.get('failed') or []) if str(x).strip()]
-                        )
-                    )
-                    check_entry['retry_reason'] = 'mandatory_tool_gap'
-                    trace.append(
-                        {
-                            'step': 'mandatory_gap_retry_override',
-                            'tools': retry_tools,
-                            'details': gap_retry_detail,
-                        }
-                    )
-        check_entry['passed'] = ok
-        if retry_tools is not None:
-            check_entry['retry_tools'] = retry_tools
-        trace.append(check_entry)
-        self._memory.update_run(run_id, PDCAPhase.check.value, trace, 'running')
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.check, ctx, phase_llm_output=check_out or '', skipped=bool(check_entry.get('skipped')))
-        final_text = reply
-        if retry_tools is not None and gather_counters.commands_run < self._tool_budgets.max_commands_per_tick:
-            uvs_retry = ctx.user_visible_stream
-            if uvs_retry is not None:
-                uvs_retry.coordinator.on_rewrite()
-            retry_hint = f"Check phase flagged that tool observations are required to answer. Requested tools: {', '.join(retry_tools) or '(any)'}."
-            trace.append({'step': 'check_retry_triggered', 'tools': retry_tools})
-            self._prepare_skill_context(ctx, PDCAPhase.plan.value, trace)
-            plan2_user = f'{plan_user}\n\nGuardrail note:\n{retry_hint}\nEmit a tool call plan now.'
-            (plan2_out, plan2_tools_text, plan2_tool_results, plan2_entry) = self._phase_react_loop(PDCAPhase.plan.value, plan_sys, plan2_user, ctx, gather_counters, trace)
-            if plan2_entry.get('cancelled'):
-                return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-            accumulated_tick_tool_results.extend(plan2_tool_results)
-            ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
-            if plan2_tools_text:
-                trace.append({'step': 'plan_retry_tool_observations', 'chars': len(plan2_tools_text)})
-            do2_blocks = f'\n\nTool observations (plan retry):\n{plan2_tools_text}' if plan2_tools_text else ''
-            do2_user = f"User message:\n{user_msg}\n\nPlan:\n{plan2_out or plan_out}\n{do2_blocks}\n\nMemory:\n{mem_for_do or '(none)'}"
-            reply2 = ''
-            do2_tools_text = ''
-            if do_spec.mode == PhaseLlmMode.skip:
-                reply2 = assemble_plan_skip_do_draft(plan2_out or plan_out or '', plan2_tools_text or '')
-                trace.append({'step': PDCAPhase.do.value, 'skipped': True, 'mode': PhaseLlmMode.skip.value, 'after_check_retry': True, 'skip_do_draft_chars': len(reply2 or '')})
+        act_sys = _phase_system_core(base_system, PDCAPhase.act.value, merged_phases, slim_followup)
+        do_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.do.value, ctx), ctx)
+        act_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.act.value, ctx), ctx)
+        bag = _PdcaTickBag(
+            user_msg=user_msg,
+            mem_for_do=mem_for_do,
+            plan_user=plan_user,
+            plan_sys=plan_sys,
+            do_sys=do_sys,
+            check_sys=check_sys,
+            act_sys=act_sys,
+            do_spec=do_spec,
+            act_spec=act_spec,
+            chain_criteria_text=chain_criteria_text,
+            merged_phases=merged_phases,
+            base_system=base_system,
+            slim_followup=slim_followup,
+        )
+        sm = self._state_machine
+        snapshot = StateMachineSnapshot(current_state=sm.initial)
+        state_id = sm.initial
+        while True:
+            state_def = sm.get_state(state_id)
+            if state_def.exit:
+                break
+            # Stash snapshot counts for per_react_round fallback (no snapshot in scope).
+            ctx.payload['_snapshot_turn_count'] = snapshot.turn_count
+            ctx.payload['_snapshot_replan_count'] = snapshot.replan_count
+            # Pre-state cancel: skip execute and let any→fail route the abort.
+            if self._tick_cancelled(ctx):
+                bag.cancelled = True
+                exec_result = StateExecutionResult()
             else:
-                self._prepare_skill_context(ctx, PDCAPhase.do.value, trace)
-                (reply2, do2_tools_text, do2_tool_results, de2) = self._phase_react_loop(PDCAPhase.do.value, do_sys, do2_user, ctx, gather_counters, trace)
-                if de2.get('cancelled'):
-                    return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-                accumulated_tick_tool_results.extend(do2_tool_results)
-            ctx.payload['_accumulated_tool_results'] = list(accumulated_tick_tool_results)
-            if reply2.strip():
-                final_text = reply2
-            if do2_tools_text:
-                trace.append({'step': 'do_retry_tool_observations', 'chars': len(do2_tools_text)})
+                exec_result = self._execute_pdca_state(
+                    state_def,
+                    ctx=ctx,
+                    run_id=run_id,
+                    trace=trace,
+                    gather_counters=gather_counters,
+                    bag=bag,
+                    snapshot=snapshot,
+                )
+            if bag.cancelled or (exec_result.gather_counters or {}).get('cancelled') or self._tick_cancelled(ctx):
+                bag.cancelled = True
+            event = exec_result.event
+            # Deferral-only final drafts are detected after act (presentation anchor),
+            # so any→fail can fire before act→end. Runs before after_state_execute so
+            # a stop/budget fail can override the draft verdict.
+            if state_id == PDCAPhase.act.value:
+                self._detect_tick_emit_deferral(ctx, bag, trace, user_msg)
+            # P5-1: after_state_execute — stop_evaluator (new dims gated, default off).
+            stop_decision = self._evaluate_quality_check_point(
+                CheckPoint.AFTER_STATE_EXECUTE,
+                ctx=ctx, bag=bag, snapshot=snapshot, state_id=state_id, trace=trace,
+            )
+            if stop_decision is not None and stop_decision.decision != 'allow':
+                if stop_decision.decision == 'fail':
+                    # Map fail (max_iterations / max_consecutive) → runtime.stop_fail
+                    # so *→fail routes the abort from any state (SPEC §4.4, D1).
+                    ctx.payload['_stop_fail'] = True
+                elif stop_decision.decision == 'replan':
+                    reason = stop_decision.reason_code
+                    ev = stop_decision.evidence or {}
+                    if reason in ('check_retry', 'mandatory_gap'):
+                        # B3 unify (P5-B1): apply detect_check_replan side-effects
+                        # formerly done inline in _execute_check_state. Set event
+                        # (sm.next handles replan cap/budget guard — over-cap falls
+                        # through to act, preserving byte-equiv).
+                        event = reason
+                        retry_tools = ev.get('retry_tools')
+                        bag.retry_tools = retry_tools
+                        bag.retry_event = reason
+                        if reason == 'mandatory_gap' and ev.get('gap_detail') is not None:
+                            trace.append({
+                                'step': 'mandatory_gap_retry_override',
+                                'tools': retry_tools,
+                                'details': ev.get('gap_detail'),
+                            })
+                    elif reason == 'stagnation' and not event:
+                        # stagnation (S4, B6-a): replan when budget remains and under
+                        # the replan cap; otherwise over-limit → stop_fail (D2).
+                        budget_remaining = gather_counters.commands_run < self._tool_budgets.max_commands_per_tick
+                        if snapshot.replan_count < sm.max_replans and budget_remaining:
+                            event = 'stagnation'
+                        else:
+                            ctx.payload['_stop_fail'] = True
+            # B4 (P5-B2): react_round_decision is consumed by stop_evaluator above;
+            # clear it so the next phase does not see a stale verdict.
+            ctx.payload.pop('react_round_decision', None)
+            # P5-3: before_terminal — final_success_evaluator (audit/trace-only;
+            # _detect_tick_emit_deferral remains authoritative for byte-equiv).
+            if state_id == PDCAPhase.act.value:
+                self._evaluate_quality_check_point(
+                    CheckPoint.BEFORE_TERMINAL,
+                    ctx=ctx, bag=bag, snapshot=snapshot, state_id=state_id, trace=trace,
+                )
+            runtime = {
+                'do_mode': do_spec.mode.value if hasattr(do_spec.mode, 'value') else str(do_spec.mode),
+                'act_mode': act_spec.mode.value if hasattr(act_spec.mode, 'value') else str(act_spec.mode),
+                'budget_remaining': gather_counters.commands_run < self._tool_budgets.max_commands_per_tick,
+                'mandatory_gap_missing': bool(event == 'mandatory_gap'),
+                'cancelled': bool(bag.cancelled),
+                'draft_incomplete': bool(ctx.payload.get('_draft_incomplete')),
+                'stop_fail': bool(ctx.payload.get('_stop_fail')),
+            }
+            tctx = TransitionContext(snapshot=snapshot, runtime=runtime, event=event)
+            next_id = sm.next(state_id, tctx)
+            replan_inc = bool(event in ('check_retry', 'mandatory_gap', 'stagnation') and next_id == PDCAPhase.plan.value)
+            matched_when = None
+            for tr in sm.transitions:
+                if tr.from_state in (state_id, '*') and tr.to_state == next_id:
+                    if tr.on_event and tr.on_event != event:
+                        continue
+                    matched_when = tr.when
+                    break
+            # When the machine jumps over do (skip-do) onto check/act, emit the
+            # skipped-do draft/trace so Check sees the same reply as before.
+            if (
+                state_id == PDCAPhase.plan.value
+                and next_id in (PDCAPhase.do.value, PDCAPhase.check.value, PDCAPhase.act.value)
+                and next_id != PDCAPhase.do.value
+                and do_spec.mode == PhaseLlmMode.skip
+            ):
+                self._emit_skip_do_draft(bag=bag, trace=trace, after_check_retry=bool(snapshot.replan_count > 0 or bag.retry_tools))
+            trace.append({
+                'step': 'state_transition',
+                'from': state_id,
+                'to': next_id,
+                'when': matched_when,
+                'event': event,
+                'replan_count': snapshot.replan_count + (1 if replan_inc else 0),
+            })
+            snapshot = snapshot.advance(to_state=next_id, event=event, incremented_replan=replan_inc)
+            if replan_inc and bag.retry_tools:
+                # Preserve guardrail hint injection for the subsequent plan state.
+                bag.replan_guardrail_hint = (
+                    f"Check phase flagged that tool observations are required to answer. "
+                    f"Requested tools: {', '.join(bag.retry_tools) or '(any)'}."
+                )
+                uvs_retry = ctx.user_visible_stream
+                if uvs_retry is not None:
+                    uvs_retry.coordinator.on_rewrite()
+                trace.append({'step': 'check_retry_triggered', 'tools': list(bag.retry_tools)})
+            state_id = next_id
+
+        # Abort terminal: cancel / draft_incomplete routed here by any→fail.
+        if state_id == 'fail':
+            fail_code = 'cancelled' if bag.cancelled else 'draft_incomplete'
+            fail_msg = ''
+            if fail_code == 'draft_incomplete' and user_msg:
+                fail_msg = _resolve_npc_agent_empty_reply_message(self._cfg)
+            self._tick_hooks.on_before_phase(ThinkingPhaseId.post, ctx)
+            self._tick_hooks.on_after_phase(ThinkingPhaseId.post, ctx, phase_llm_output=fail_msg, skipped=False)
+            return self._finish_tick_fail(
+                run_id,
+                trace,
+                correlation=correlation,
+                error_code=fail_code,
+                message=fail_msg,
+                graph_ops_summary={'cancelled': fail_code == 'cancelled', 'draft_incomplete': fail_code == 'draft_incomplete'},
+            )
+
+        final_text = bag.final_text or bag.reply
+        ok = bag.check_ok
+        # Post-loop: mandatory notice (success-path only; abort handled above)
         mandatory_notice = ''
         snap_gap = ctx.payload.get('tool_router_snapshot')
         if isinstance(snap_gap, dict):
             mans_gap = list(snap_gap.get('mandatory_tool_names') or [])
             if mans_gap:
-                (has_m_gap, gap_detail) = mandatory_observation_gap(mans_gap, accumulated_tick_tool_results, plan_trace=trace)
+                (has_m_gap, gap_detail) = mandatory_observation_gap(
+                    mans_gap, bag.accumulated_tick_tool_results, plan_trace=trace,
+                )
                 if has_m_gap:
                     mandatory_notice = format_mandatory_gap_user_notice(gap_detail)
-                    _LLM_PDCA_LOG.warning('mandatory_fallback', extra={'mandatory_fallback_reason': ','.join(gap_detail.get('reason_codes') or []), 'mandatory_missing': gap_detail.get('missing'), 'mandatory_failed': gap_detail.get('failed'), 'mandatory_permission_denied_tools': gap_detail.get('permission_denied_tools'), 'mandatory_gather_budget_limited': gap_detail.get('gather_budget_limited'), 'tool_router_threshold_revision': snap_gap.get('threshold_revision'), 'tool_router_registry_revision': snap_gap.get('tool_registry_revision')})
+                    _LLM_PDCA_LOG.warning(
+                        'mandatory_fallback',
+                        extra={
+                            'mandatory_fallback_reason': ','.join(gap_detail.get('reason_codes') or []),
+                            'mandatory_missing': gap_detail.get('missing'),
+                            'mandatory_failed': gap_detail.get('failed'),
+                            'mandatory_permission_denied_tools': gap_detail.get('permission_denied_tools'),
+                            'mandatory_gather_budget_limited': gap_detail.get('gather_budget_limited'),
+                            'tool_router_threshold_revision': snap_gap.get('threshold_revision'),
+                            'tool_router_registry_revision': snap_gap.get('tool_registry_revision'),
+                        },
+                    )
                     trace.append({'step': 'mandatory_observation_gap', **gap_detail})
                     ctx.payload['mandatory_observation_gap'] = gap_detail
+        if user_msg and (not (final_text or '').strip()):
+            final_text = _resolve_npc_agent_empty_reply_message(self._cfg)
+            trace.append({'step': 'empty_reply_fallback', 'user_message_len': len(user_msg)})
+        if mandatory_notice:
+            final_text = (final_text or '').rstrip() + mandatory_notice
+        self._memory.finish_run(
+            run_id, PDCAPhase.act.value, trace, 'success' if ok else 'failed',
+            graph_ops_summary={'reply_excerpt': (final_text or '')[:500]},
+        )
+        self._memory.append_raw('audit', {'framework': self.framework_id, 'run_id': str(run_id), 'ok': ok})
+        self._tick_hooks.on_before_phase(ThinkingPhaseId.post, ctx)
+        self._tick_hooks.on_after_phase(ThinkingPhaseId.post, ctx, phase_llm_output=final_text, skipped=False)
+        return FrameworkRunResult(ok=ok, message=final_text, final_phase=PDCAPhase.act.value, error_code=None)
+
+    def _emit_skip_do_draft(
+        self,
+        *,
+        bag: '_PdcaTickBag',
+        trace: List[Dict[str, Any]],
+        after_check_retry: bool = False,
+    ) -> None:
+        reply = assemble_plan_skip_do_draft(bag.plan_out or '', bag.plan_tools_text or '')
+        do_entry: Dict[str, Any] = {
+            'step': PDCAPhase.do.value,
+            'skipped': True,
+            'mode': PhaseLlmMode.skip.value,
+            'skip_do_draft_chars': len(reply or ''),
+        }
+        if after_check_retry:
+            do_entry['after_check_retry'] = True
+        trace.append(do_entry)
+        bag.reply = reply or ''
+        bag.do_tools_text = ''
+        bag.final_text = bag.reply
+
+    def _execute_pdca_state(
+        self,
+        state_def: StateDef,
+        *,
+        ctx: FrameworkRunContext,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        gather_counters: ToolGatherCounters,
+        bag: '_PdcaTickBag',
+        snapshot: StateMachineSnapshot,
+    ) -> StateExecutionResult:
+        sid = state_def.id
+        if sid == PDCAPhase.plan.value:
+            return self._execute_plan_state(ctx=ctx, run_id=run_id, trace=trace, gather_counters=gather_counters, bag=bag, snapshot=snapshot)
+        if sid == PDCAPhase.do.value:
+            return self._execute_do_state(ctx=ctx, run_id=run_id, trace=trace, gather_counters=gather_counters, bag=bag)
+        if sid == PDCAPhase.check.value:
+            return self._execute_check_state(ctx=ctx, run_id=run_id, trace=trace, gather_counters=gather_counters, bag=bag)
+        if sid == PDCAPhase.act.value:
+            return self._execute_act_state(ctx=ctx, run_id=run_id, trace=trace, bag=bag)
+        raise ValueError(f'unsupported pdca state: {sid}')
+
+    def _execute_plan_state(
+        self,
+        *,
+        ctx: FrameworkRunContext,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        gather_counters: ToolGatherCounters,
+        bag: '_PdcaTickBag',
+        snapshot: StateMachineSnapshot,
+    ) -> StateExecutionResult:
+        self._tick_hooks.on_before_phase(ThinkingPhaseId.plan, ctx)
+        if self._tick_cancelled(ctx):
+            bag.cancelled = True
+            return StateExecutionResult(gather_counters={'cancelled': True})
+        self._prepare_skill_context(ctx, PDCAPhase.plan.value, trace)
+        plan_user = bag.plan_user
+        if bag.replan_guardrail_hint:
+            plan_user = f'{bag.plan_user}\n\nGuardrail note:\n{bag.replan_guardrail_hint}\nEmit a tool call plan now.'
+            bag.replan_guardrail_hint = None
+        (plan_out, plan_tools_text, plan_tool_results, plan_entry) = self._phase_react_loop(
+            PDCAPhase.plan.value, bag.plan_sys, plan_user, ctx, gather_counters, trace, bag=bag,
+        )
+        if plan_entry.get('cancelled'):
+            bag.cancelled = True
+            return StateExecutionResult(gather_counters={'cancelled': True})
+        bag.plan_out = plan_out or ''
+        bag.plan_tools_text = plan_tools_text or ''
+        bag.accumulated_tick_tool_results.extend(plan_tool_results)
+        ctx.payload['_accumulated_tool_results'] = list(bag.accumulated_tick_tool_results)
+        self._memory.update_run(run_id, PDCAPhase.plan.value, trace, 'running')
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.plan, ctx, phase_llm_output=plan_out or '', skipped=bool(plan_entry.get('skipped')),
+        )
+        obs_step = 'plan_retry_tool_observations' if snapshot.replan_count > 0 else 'plan_tool_observations'
+        if plan_tools_text:
+            trace.append({'step': obs_step, 'chars': len(plan_tools_text)})
+        return StateExecutionResult(output_text=bag.plan_out, draft_text=bag.plan_out)
+
+    def _execute_do_state(
+        self,
+        *,
+        ctx: FrameworkRunContext,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        gather_counters: ToolGatherCounters,
+        bag: '_PdcaTickBag',
+    ) -> StateExecutionResult:
+        self._tick_hooks.on_before_phase(ThinkingPhaseId.do, ctx)
+        if self._tick_cancelled(ctx):
+            bag.cancelled = True
+            return StateExecutionResult(gather_counters={'cancelled': True})
+        after_retry = bool(bag.retry_tools)
+        obs_label = 'plan retry' if after_retry else 'plan phase'
+        tool_blocks_plan = (
+            f'\n\nTool observations ({obs_label}):\n{bag.plan_tools_text}' if bag.plan_tools_text else ''
+        )
+        plan_block = (bag.plan_out or '').strip()
+        if plan_block:
+            do_user = f"User message:\n{bag.user_msg}\n\nPlan:\n{bag.plan_out}\n{tool_blocks_plan}\n\nMemory:\n{bag.mem_for_do or '(none)'}"
+        else:
+            do_user = f"User message:\n{bag.user_msg}{tool_blocks_plan}\n\nMemory:\n{bag.mem_for_do or '(none)'}"
+        self._prepare_skill_context(ctx, PDCAPhase.do.value, trace)
+        if bag.do_spec.mode == PhaseLlmMode.skip:
+            reply = assemble_plan_skip_do_draft(bag.plan_out or '', bag.plan_tools_text or '')
+            do_tools_text = ''
+            do_entry: Dict[str, Any] = {
+                'step': PDCAPhase.do.value,
+                'skipped': True,
+                'mode': PhaseLlmMode.skip.value,
+                'skip_do_draft_chars': len(reply or ''),
+            }
+            if after_retry:
+                do_entry['after_check_retry'] = True
+            trace.append(do_entry)
+        else:
+            (reply, do_tools_text, do_tool_results, do_entry) = self._phase_react_loop(
+                PDCAPhase.do.value, bag.do_sys, do_user, ctx, gather_counters, trace, bag=bag,
+            )
+            if do_entry.get('cancelled'):
+                bag.cancelled = True
+                return StateExecutionResult(gather_counters={'cancelled': True})
+            bag.accumulated_tick_tool_results.extend(do_tool_results)
+        ctx.payload['_accumulated_tool_results'] = list(bag.accumulated_tick_tool_results)
+        bag.reply = reply or ''
+        bag.do_tools_text = do_tools_text or ''
+        bag.final_text = bag.reply
+        self._memory.update_run(run_id, PDCAPhase.do.value, trace, 'running')
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.do, ctx, phase_llm_output=reply or '', skipped=bool(do_entry.get('skipped')),
+        )
+        obs_step = 'do_retry_tool_observations' if after_retry else 'do_tool_observations'
+        if do_tools_text:
+            trace.append({'step': obs_step, 'chars': len(do_tools_text)})
+        return StateExecutionResult(output_text=bag.reply, draft_text=bag.reply)
+
+    def _execute_check_state(
+        self,
+        *,
+        ctx: FrameworkRunContext,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        gather_counters: ToolGatherCounters,
+        bag: '_PdcaTickBag',
+    ) -> StateExecutionResult:
+        tool_blocks_do = f'\n\nTool observations (do phase):\n{bag.do_tools_text}' if bag.do_tools_text else ''
+        plan_grounding_for_check = ''
+        if bag.do_spec.mode == PhaseLlmMode.skip and (bag.plan_tools_text or '').strip():
+            plan_grounding_for_check = (
+                f'\n\nPlan-phase tool observations (runtime grounding; not shown to user):\n{bag.plan_tools_text}'
+            )
+        check_user = f'User message:\n{bag.user_msg}\n\nDraft reply:\n{bag.reply}{plan_grounding_for_check}{tool_blocks_do}'
+        snap = ctx.payload.get('tool_router_snapshot')
+        if getattr(snap, 'get', None) and isinstance(snap, dict) and snap.get('enforcement_level') == EnforcementLevel.hard_must_invoke.value:
+            mans = snap.get('mandatory_tool_names') or []
+            if mans:
+                check_user += '\n\nRouting mandatory tools (verify ToolObservation covers each): ' + ', '.join((str(x) for x in mans))
+        if bag.chain_criteria_text:
+            check_user += '\n\n' + bag.chain_criteria_text
+        self._prepare_skill_context(ctx, PDCAPhase.check.value, trace)
+        self._tick_hooks.on_before_phase(ThinkingPhaseId.check, ctx)
+        if self._tick_cancelled(ctx):
+            bag.cancelled = True
+            return StateExecutionResult(gather_counters={'cancelled': True})
+        t_check = time.perf_counter()
+        (check_out, check_entry) = self._call_llm(PDCAPhase.check.value, bag.check_sys, check_user, ctx)
+        if check_entry.get('cancelled'):
+            bag.cancelled = True
+            return StateExecutionResult(gather_counters={'cancelled': True})
+        _trace_phase_timing(trace, scope='llm', phase=PDCAPhase.check.value, elapsed_ms=(time.perf_counter() - t_check) * 1000.0)
+        # B3 unify (P5-B1): detect_check_replan is no longer called inline.
+        # stop_evaluator (after_state_execute) runs it via PolicyEngine and
+        # emits the formal replan decision; the driver applies side-effects
+        # (bag.retry_tools, mandatory_gap_retry_override trace row).
+        if check_entry.get('skipped'):
+            ok = True
+        else:
+            co = check_out or ''
+            ok = 'error' not in co.lower()[:80]
+        check_entry['passed'] = ok
+        bag.check_out = check_out or ''
+        bag.check_ok = ok
+        bag.check_skipped = bool(check_entry.get('skipped'))
+        bag.final_text = bag.reply
+        trace.append(check_entry)
+        self._memory.update_run(run_id, PDCAPhase.check.value, trace, 'running')
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.check, ctx, phase_llm_output=check_out or '', skipped=bool(check_entry.get('skipped')),
+        )
+        return StateExecutionResult(output_text=bag.check_out, draft_text=bag.reply)
+
+    def _execute_act_state(
+        self,
+        *,
+        ctx: FrameworkRunContext,
+        run_id: uuid.UUID,
+        trace: List[Dict[str, Any]],
+        bag: '_PdcaTickBag',
+    ) -> StateExecutionResult:
         self._tick_hooks.on_before_phase(ThinkingPhaseId.action, ctx)
         if self._tick_cancelled(ctx):
-            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
-        tool_blocks_check = ''
-        act_user = f'User message:\n{user_msg}\n\nDraft reply:\n{final_text}{tool_blocks_check}\n\nPolish for final user-facing text.'
+            bag.cancelled = True
+            return StateExecutionResult(gather_counters={'cancelled': True})
+        final_text = bag.final_text or bag.reply
+        act_user = f'User message:\n{bag.user_msg}\n\nDraft reply:\n{final_text}\n\nPolish for final user-facing text.'
         self._prepare_skill_context(ctx, PDCAPhase.act.value, trace)
-        act_sys = _phase_system_core(base_system, PDCAPhase.act.value, merged_phases, slim_followup)
-        act_spec = self._augment_spec_from_ctx(self._spec_for_phase(PDCAPhase.act.value, ctx), ctx)
         uvs_act = ctx.user_visible_stream
         if (
             uvs_act is not None
-            and act_spec.mode != PhaseLlmMode.skip
+            and bag.act_spec.mode != PhaseLlmMode.skip
             and uvs_act.coordinator.body_emitted
         ):
             uvs_act.coordinator.on_rewrite()
         t_act = time.perf_counter()
-        (act_out, act_entry) = self._call_llm(PDCAPhase.act.value, act_sys, act_user, ctx)
+        (act_out, act_entry) = self._call_llm(PDCAPhase.act.value, bag.act_sys, act_user, ctx)
         if act_entry.get('cancelled'):
-            return self._finish_tick_cancelled(run_id, trace, correlation=correlation)
+            bag.cancelled = True
+            return StateExecutionResult(gather_counters={'cancelled': True})
         _trace_phase_timing(trace, scope='llm', phase=PDCAPhase.act.value, elapsed_ms=(time.perf_counter() - t_act) * 1000.0)
         if not act_entry.get('skipped') and (act_out or '').strip():
             final_text = act_out.strip()
         act_entry['step'] = PDCAPhase.act.value
         act_entry['final_reply'] = final_text
         trace.append(act_entry)
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.action, ctx, phase_llm_output=act_out or '', skipped=bool(act_entry.get('skipped')))
-        if user_msg and (not (final_text or '').strip()):
-            final_text = _resolve_npc_agent_empty_reply_message(self._cfg)
-            act_entry['final_reply'] = final_text
-            trace.append({'step': 'empty_reply_fallback', 'user_message_len': len(user_msg)})
-        if mandatory_notice:
-            final_text = (final_text or '').rstrip() + mandatory_notice
-            act_entry['final_reply'] = final_text
-        self._memory.finish_run(run_id, PDCAPhase.act.value, trace, 'success' if ok else 'failed', graph_ops_summary={'reply_excerpt': (final_text or '')[:500]})
-        self._memory.append_raw('audit', {'framework': self.framework_id, 'run_id': str(run_id), 'ok': ok})
-        self._tick_hooks.on_before_phase(ThinkingPhaseId.post, ctx)
-        self._tick_hooks.on_after_phase(ThinkingPhaseId.post, ctx, phase_llm_output=final_text, skipped=False)
-        tick_ok = ok
-        error_code: Optional[str] = None
-        if user_msg:
-            if ctx.payload.get('_draft_incomplete'):
-                tick_ok = False
-                error_code = 'draft_incomplete'
-            elif (final_text or '').strip():
-                from app.game_engine.agent_runtime.agent_loop.draft_gate import has_successful_grounding_obs, is_deferral_prose
-                if is_deferral_prose(final_text, config=self._agent_loop_config) and not has_successful_grounding_obs(accumulated_tick_tool_results):
-                    _LLM_PDCA_LOG.warning('draft_incomplete_detected anchor_phase=%s draft_chars=%s', ctx.presentation_anchor_phase, len((final_text or '').strip()))
-                    trace.append({'step': 'draft_incomplete_detected', 'anchor_phase': ctx.presentation_anchor_phase, 'reason_codes': ['tick_emit_deferral'], 'draft_chars': len((final_text or '').strip())})
-                    tick_ok = False
-                    error_code = 'draft_incomplete'
-        if error_code == 'draft_incomplete' and user_msg:
-            final_text = _resolve_npc_agent_empty_reply_message(self._cfg)
-        return FrameworkRunResult(ok=tick_ok, message=final_text, final_phase=PDCAPhase.act.value, error_code=error_code)
+        self._tick_hooks.on_after_phase(
+            ThinkingPhaseId.action, ctx, phase_llm_output=act_out or '', skipped=bool(act_entry.get('skipped')),
+        )
+        bag.final_text = final_text
+        return StateExecutionResult(output_text=final_text, draft_text=final_text)
 
 def _tool_calls_from_text(text: str) -> List[ToolCall]:
     """Parse JSON ``{"commands": [...]}`` text and convert to neutral ToolCalls."""

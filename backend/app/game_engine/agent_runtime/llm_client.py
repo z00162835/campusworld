@@ -8,10 +8,39 @@ Vendor-specific HTTP clients live under ``llm_providers/``; routing is in ``llm_
 Shared HTTP helpers: ``llm_providers/http_utils.py``.
 """
 from __future__ import annotations
+import inspect
 import os
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, runtime_checkable
 from app.core.settings import PhaseLlmMode
+
+
+def _callable_accepts_kwarg(fn: Callable[..., Any], name: str) -> bool:
+    """True when ``fn`` accepts ``name`` as a keyword (or has ``**kwargs``)."""
+    try:
+        sig = inspect.signature(fn)
+    except (TypeError, ValueError):
+        return False
+    for param in sig.parameters.values():
+        if param.kind == inspect.Parameter.VAR_KEYWORD:
+            return True
+        if param.name == name and param.kind in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        ):
+            return True
+    return False
+
+
+def _invoke_with_optional_cancel_check(fn: Callable[..., Any], *, cancel_check: Optional[Callable[[], bool]], **kwargs: Any) -> Any:
+    """Call ``fn`` with ``cancel_check`` only when the callable accepts it.
+
+    Keeps older test/stubs that omit the keyword working alongside providers
+    that honour mid-call cancellation.
+    """
+    if _callable_accepts_kwarg(fn, 'cancel_check'):
+        return fn(cancel_check=cancel_check, **kwargs)
+    return fn(**kwargs)
 
 @dataclass
 class LlmCallSpec:
@@ -57,6 +86,27 @@ def supports_tools(client: 'LlmClient') -> bool:
             return False
     return False
 
+def complete(
+    client: 'LlmClient',
+    *,
+    system: str,
+    user: str,
+    call_spec: Optional[LlmCallSpec] = None,
+    cancel_check: Optional[Callable[[], bool]] = None,
+) -> str:
+    """Invoke plain-text ``complete``; pass ``cancel_check`` only when accepted."""
+    fn = getattr(client, 'complete', None)
+    if not callable(fn):
+        raise NotImplementedError(f'{type(client).__name__} does not implement complete')
+    return _invoke_with_optional_cancel_check(
+        fn,
+        cancel_check=cancel_check,
+        system=system,
+        user=user,
+        call_spec=call_spec,
+    )
+
+
 def complete_with_tools(client: 'LlmClient', *, system: str, turns: Sequence[Any], tools: Sequence[Any], call_spec: Optional[LlmCallSpec]=None, cancel_check: Optional[Callable[[], bool]]=None):
     """Invoke native tool-use on a client or raise ``NotImplementedError``.
 
@@ -69,7 +119,14 @@ def complete_with_tools(client: 'LlmClient', *, system: str, turns: Sequence[Any
     fn = getattr(client, 'complete_with_tools', None)
     if not callable(fn):
         raise NotImplementedError(f'{type(client).__name__} does not implement complete_with_tools')
-    return fn(system=system, turns=list(turns), tools=list(tools), call_spec=call_spec, cancel_check=cancel_check)
+    return _invoke_with_optional_cancel_check(
+        fn,
+        cancel_check=cancel_check,
+        system=system,
+        turns=list(turns),
+        tools=list(tools),
+        call_spec=call_spec,
+    )
 
 class StubLlmClient:
     """Deterministic stub when no provider is configured (tests and dev).

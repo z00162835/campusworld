@@ -262,7 +262,11 @@ def _turns_to_anthropic_messages(turns: Sequence[ConversationTurn]) -> List[Dict
             if (t.text or '').strip():
                 blocks.append({'type': 'text', 'text': (t.text or '').strip()})
             for c in t.tool_calls:
-                blocks.append({'type': 'tool_use', 'id': (c.id or '').strip(), 'name': c.name, 'input': {'args': list(c.args)}})
+                if getattr(c, 'input_payload', None) and isinstance(c.input_payload, dict):
+                    tool_input: Dict[str, Any] = dict(c.input_payload)
+                else:
+                    tool_input = {'args': list(c.args)}
+                blocks.append({'type': 'tool_use', 'id': (c.id or '').strip(), 'name': c.name, 'input': tool_input})
             if blocks:
                 messages.append({'role': 'assistant', 'content': blocks})
         elif isinstance(t, ToolResultsTurn):
@@ -325,7 +329,13 @@ def _parse_anthropic_response(data: Dict[str, Any]) -> CompleteWithToolsResult:
         elif btype == 'tool_use':
             name = str(block.get('name') or '').strip()
             raw_input = block.get('input') or {}
-            args = normalize_tool_use_args(raw_input)
-            calls.append(ToolCall(id=str(block.get('id') or ''), name=name, args=args))
+            payload = dict(raw_input) if isinstance(raw_input, dict) else None
+            # Structured-turn tool-as-schema keeps the full object; command tools
+            # continue to normalize to argv via ``args``.
+            if name == 'emit_turn' and payload is not None:
+                args = []
+            else:
+                args = normalize_tool_use_args(raw_input)
+            calls.append(ToolCall(id=str(block.get('id') or ''), name=name, args=args, input_payload=payload))
     finish = str(data.get('stop_reason') or ('tool_use' if calls else 'stop'))
     return CompleteWithToolsResult(text='\n'.join((p.strip() for p in text_parts if p.strip())).strip(), tool_calls=calls, finish_reason=finish)

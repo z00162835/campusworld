@@ -112,6 +112,7 @@ def test_tick_emits_draft_incomplete_when_only_deferral():
     ctx = FrameworkRunContext(agent_node_id=1, payload={'message': '介绍Hicampus'})
     res = fw.run(ctx)
     assert res.error_code == 'draft_incomplete'
+    assert res.final_phase == 'fail'
     assert res.ok is False
     assert '抱歉' in res.message or '能力' in res.message
 

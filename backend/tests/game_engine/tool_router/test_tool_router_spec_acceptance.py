@@ -172,9 +172,27 @@ def test_llm_pdca_injects_tool_router_hint_when_enabled() -> None:
 
 @pytest.mark.unit
 def test_llm_pdca_mandatory_gap_trace_and_user_notice_when_plan_skips_tools() -> None:
-    """When rules mark whoami mandatory but Plan emits no tool observations, trace + suffix."""
+    """When rules mark whoami mandatory but Plan emits no tool observations, trace + suffix.
+
+    The scripted LLM emits complete (long, non-deferral) drafts without calling
+    any tool, so the agent-loop draft gate does not abort and the post-loop
+    mandatory-gap notice remains reachable.
+    """
     mem = _FakeMem()
-    llm = _SeqLlm()
+    long_draft = (
+        "I have considered your request and produced a complete, grounded answer "
+        "based on the available context and prior observations for this turn."
+    )
+
+    class _CompleteLlm:
+        """Always emits a complete (long, non-deferral) draft, never calling tools."""
+        i = 0
+
+        def complete(self, *, system: str, user: str, call_spec=None) -> str:
+            type(self).i += 1
+            return long_draft
+
+    llm = _CompleteLlm()
     fw = LlmPDCAFramework(
         memory=mem,
         llm_config=_basic_cfg(tool_router={"enabled": True}),

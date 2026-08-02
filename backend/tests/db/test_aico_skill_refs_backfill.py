@@ -44,6 +44,9 @@ def test_existing_aico_preserves_custom_skill_refs():
         "skill_refs": custom,
         "mode_models": {"fast": "gpt-4o-mini"},
         "phase_llm": {"plan": {"mode": "fast"}, "do": {"mode": "skip"}, "check": {"mode": "fast"}, "act": {"mode": "skip"}},
+        "workflow": {"mode": "pdcp"},
+        "success_checks": {},
+        "stop_policy": {},
     })
     session = _session_with_existing(node)
 

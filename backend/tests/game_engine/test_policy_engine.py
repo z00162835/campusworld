@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from app.game_engine.agent_runtime.policy import PolicyContext, PolicyDecision, PolicyEngine
 from app.game_engine.agent_runtime.policy.check_points import CheckPoint
-from app.game_engine.agent_runtime.policy.detectors import (
+from app.game_engine.agent_runtime.policy.domains.gate_domain import (
     data_classification_detector,
     side_effect_level_detector,
-    skill_activation_mode_detector,
     skill_tool_group_detector,
+)
+from app.game_engine.agent_runtime.policy.domains.skill_domain import (
+    skill_activation_mode_detector,
 )
 
 
@@ -297,7 +299,9 @@ class TestSkillToolGroupDetector:
 
 class TestPolicyEngine:
     def test_no_detectors_returns_allow(self):
-        engine = PolicyEngine(detectors=[])
+        from app.game_engine.agent_runtime.policy import DomainRegistry
+
+        engine = PolicyEngine(registry=DomainRegistry())
         ctx = PolicyContext(check_point=CheckPoint.BEFORE_TOOL_CALL)
         decision = engine.evaluate(ctx)
         assert decision.is_allow is True
@@ -386,17 +390,26 @@ class TestPolicyEngine:
 class TestPolicyEngineConfigToggles:
     """Verify that PolicyConfig switches actually control detector registration."""
 
-    def test_disabling_side_effect_detector_allows_write_high(self, monkeypatch):
-        from app.core.config_manager import get_config
-        cm = get_config()
-        original = cm.get_nested
-        def patched_get_nested(*keys, default=None):
-            if keys == ('policy', 'enable_side_effect_detector'):
-                return False
-            return original(*keys, default=default)
-        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
+    @staticmethod
+    def _engine(**gate_overrides):
+        from app.game_engine.agent_runtime.policy import DomainRegistry, PolicyEngine
+        from app.game_engine.agent_runtime.policy.config import (
+            GateDomainConfig,
+            PolicyConfig,
+            SkillDomainConfig,
+        )
+        from app.game_engine.agent_runtime.policy.domains.gate_domain import GateDomain
+        from app.game_engine.agent_runtime.policy.domains.skill_domain import SkillDomain
 
-        engine = PolicyEngine()
+        gate_cfg = GateDomainConfig(**gate_overrides)
+        config = PolicyConfig(skill=SkillDomainConfig(), gate=gate_cfg)
+        registry = DomainRegistry()
+        registry.register(SkillDomain(config.skill))
+        registry.register(GateDomain(config.gate))
+        return PolicyEngine(registry=registry, config=config)
+
+    def test_disabling_side_effect_detector_allows_write_high(self):
+        engine = self._engine(enable_side_effect_detector=False)
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TOOL_CALL,
             command_name="task",
@@ -405,17 +418,8 @@ class TestPolicyEngineConfigToggles:
         decision = engine.evaluate(ctx)
         assert decision.is_allow is True
 
-    def test_disabling_data_classification_detector_allows_restricted(self, monkeypatch):
-        from app.core.config_manager import get_config
-        cm = get_config()
-        original = cm.get_nested
-        def patched_get_nested(*keys, default=None):
-            if keys == ('policy', 'enable_data_classification_detector'):
-                return False
-            return original(*keys, default=default)
-        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
-
-        engine = PolicyEngine()
+    def test_disabling_data_classification_detector_allows_restricted(self):
+        engine = self._engine(enable_data_classification_detector=False)
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TOOL_CALL,
             command_name="task",
@@ -424,19 +428,11 @@ class TestPolicyEngineConfigToggles:
         decision = engine.evaluate(ctx)
         assert decision.is_allow is True
 
-    def test_enabling_both_detectors_blocks_write_high(self, monkeypatch):
-        from app.core.config_manager import get_config
-        cm = get_config()
-        original = cm.get_nested
-        def patched_get_nested(*keys, default=None):
-            if keys == ('policy', 'enable_side_effect_detector'):
-                return True
-            if keys == ('policy', 'enable_data_classification_detector'):
-                return True
-            return original(*keys, default=default)
-        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
-
-        engine = PolicyEngine()
+    def test_enabling_both_detectors_blocks_write_high(self):
+        engine = self._engine(
+            enable_side_effect_detector=True,
+            enable_data_classification_detector=True,
+        )
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TOOL_CALL,
             command_name="task",
@@ -445,18 +441,9 @@ class TestPolicyEngineConfigToggles:
         decision = engine.evaluate(ctx)
         assert decision.is_block is True
 
-    def test_skill_tool_group_detector_off_by_default(self, monkeypatch):
+    def test_skill_tool_group_detector_off_by_default(self):
         """P3 detector is opt-in; with default config it should not fire."""
-        from app.core.config_manager import get_config
-        cm = get_config()
-        original = cm.get_nested
-        def patched_get_nested(*keys, default=None):
-            if keys == ('policy', 'enable_skill_tool_group_detector'):
-                return False
-            return original(*keys, default=default)
-        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
-
-        engine = PolicyEngine()
+        engine = self._engine(enable_skill_tool_group_detector=False)
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TOOL_CALL,
             command_name="task",
@@ -470,18 +457,9 @@ class TestPolicyEngineConfigToggles:
         decision = engine.evaluate(ctx)
         assert decision.is_allow is True
 
-    def test_skill_tool_group_detector_blocks_when_enabled(self, monkeypatch):
+    def test_skill_tool_group_detector_blocks_when_enabled(self):
         """When enabled, mutate command denied by [read] skill."""
-        from app.core.config_manager import get_config
-        cm = get_config()
-        original = cm.get_nested
-        def patched_get_nested(*keys, default=None):
-            if keys == ('policy', 'enable_skill_tool_group_detector'):
-                return True
-            return original(*keys, default=default)
-        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
-
-        engine = PolicyEngine()
+        engine = self._engine(enable_skill_tool_group_detector=True)
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TOOL_CALL,
             command_name="task",
@@ -496,18 +474,9 @@ class TestPolicyEngineConfigToggles:
         assert decision.is_block is True
         assert decision.reason_code == "policy_blocked_skill_tool_group"
 
-    def test_skill_tool_group_detector_allows_read_when_enabled(self, monkeypatch):
+    def test_skill_tool_group_detector_allows_read_when_enabled(self):
         """When enabled, read command allowed by [read] skill."""
-        from app.core.config_manager import get_config
-        cm = get_config()
-        original = cm.get_nested
-        def patched_get_nested(*keys, default=None):
-            if keys == ('policy', 'enable_skill_tool_group_detector'):
-                return True
-            return original(*keys, default=default)
-        monkeypatch.setattr(cm, "get_nested", patched_get_nested)
-
-        engine = PolicyEngine()
+        engine = self._engine(enable_skill_tool_group_detector=True)
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TOOL_CALL,
             command_name="help",

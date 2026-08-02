@@ -194,7 +194,7 @@ Skills are split by activation status this turn. Active skills' guidance applies
 **L2 body 注入（每阶段，仅匹配 Skill）：**
 
 - **v1（确定性阶段映射）：** `activation_mode == phase_mapped` 且 phase ∈ `allowed_in_react_states` 的 Skill，其 body 自动注入为阶段后缀块。**`model_selected` 的 Skill body 在 v1 不自动注入**（model 自选未落地；仅 L1 清单暴露，待 F17 `selected_skill`）。
-- **目标（F17，延后）：** model 经 `react_turn_schema.selected_skill` 自选；`phase_mapped` 转为 **约束校验**，`model_selected` = 无约束（自由自选）；`description` 为选择信号（见 Q4）。
+- **目标（F17，延后）：** model 经 `react_turn_schema.selected_skill` 自选；`phase_mapped` 转为 **约束校验**，`model_selected` = 无约束（自由自选）；`description` 为选择信号（见 Q4）。**`selected_skill` 消费延后到 F17 D3-B / D6**（F17 v1 仅暴露 schema 字段，driver loop 不消费 `structured_turn.selected_skill`，故 `model_selected` Skill 的 L2 body 在 v1 不被注入；仅 L1 清单暴露）。
 
 **注入点与优先级（`skill-context` 注入 user/input context，与 platform system 隔离）：** Skill 内容经 **专门的 `skill-context` 通道** 注入 **user/input context**，**绝不**进入任何 platform system message。平台 system 段（`llm_pdca.py` `_phase_system` / `_phase_system_core`）仅放 **固定边界声明**（tier-1 primer、安全、command policy guardrails），**不含任何 Skill 文本**；`skill-context` 由每阶段 `SkillInjection.inject(phase, skill_refs)` 产出 = L1 清单块（前缀）+ L2 body 块（后缀），按需注入（非全量），受 F08 prompt 长度上限约束。**优先级：`skill-context` < 平台 system / 安全 / command policy**（Skill 为 advisory 经验/流程指引，不得覆盖 guardrails；对标 OpenAI/Claude Skills 的 provenance 上下文定位，非最高优先级 system 指令；物理隔离由 user/input context 通道保证，不靠 ordering）。**输入序列化顺序 = 平台 system 段 → user/input context 段（`skill-context` L1 → L2，turn 起始）→ user turn payload**。**provider 序列化（统一规则）：** `skill-context` 一律注入 **user/input context 通道**，**任何 provider 不得把 `skill-context` 拼入 system message**——Anthropic：作为 user turn 起始的独立 content block（非 system block）；OpenAI-compatible：注入 user/input context（turn 起始 context block），system message 仅含平台固定边界声明。
 
@@ -233,6 +233,7 @@ Skills are split by activation status this turn. Active skills' guidance applies
 
 - **冻结面不变量（F08 §5.1）：** `ResolvedToolSurface` 在 `LlmPdcaAssistantWorker.create` 时冻结（`tool_allowlist ∩ get_available_commands`），tick 内 `PreauthorizedToolExecutor` 不再收敛。
 - **v1 `allowed_tool_groups` 为声明式占位**：Skill 声明其意图工具组，但 **v1 既不动态收敛冻结面，也不在 trace 审计**。理由：AICO 为只读助手，所有 Skill 均为 `[read]`，二元组 **无判别力**，审计空约束不产生信号。
+- **与 F16 实现状态对齐：** F16 已实现 `skill_tool_group` detector 与 `read` 父组层级匹配，但 config toggle `enable_skill_tool_group_detector` **默认 `false`（opt-in）**，故等价 v1「不强制不审计」；启用后即升级为 `before_tool_call` 硬约束（F16 D3 / P3）。
 - **真实价值延迟：** 当引入更细 `tool_group` 分类（如 `info`/`observe`/`identity`/`agent_meta`，Q2）且 [F16](F16_AGENT_POLICY_ENGINE.md) `before_tool_call` 强制落地后，`allowed_tool_groups` 才具收敛/审计意义。
 - **未来硬收敛路径：** 若需硬收敛，应在 `build_resolved_tool_surface` 构造时按 `skill_refs` 并集组收敛冻结面（改 F08 §5.1），**非** tick 内动态收敛（Q1）。
 
@@ -255,16 +256,18 @@ Skills are split by activation status this turn. Active skills' guidance applies
 
 ## 9. 与 L3 思考管线的集成（实现锚点）
 
-| 集成点 | 文件:行 | v1 改动 |
+> **锚点约定：** 下表以 **函数名** 为锚（不再写死行号），避免 F17 状态机 driver 重构后行号漂移。函数定位以当前 `frameworks/llm_pdca.py` / `worker.py` 为准。
+
+| 集成点 | 文件:函数 | v1 改动 |
 |--------|---------|---------|
-| PDCA 编排 | `frameworks/llm_pdca.py` `_run_inner` (`699:940`) | **每阶段**（plan/do/check/act）调用 `SkillInjection.inject(phase, skill_refs)` 产出 `skill_context_text`，挂到 `LlmCallSpec`/context（**不**进 `_phase_system`） |
-| 平台 system 段 | `llm_pdca.py` `_phase_system` / `_phase_system_core` (`91:93`, `199:203`) | **只保留平台 system**（tier-1 primer、安全、command policy）；**不**拼接任何 Skill 文本 |
+| PDCA 编排（driver loop） | `frameworks/llm_pdca.py` `LlmPDCAFramework._run_inner`（F17 状态机 driver） | **每阶段**（plan/do/check/act）调用 `_prepare_skill_context(phase)` 产出 `skill_context_text`，挂到 `LlmCallSpec`/context（**不**进 `_phase_system`） |
+| 平台 system 段 | `llm_pdca.py` `_phase_system` / `_phase_system_core` | **只保留平台 system**（tier-1 primer、安全、command policy）；**不**拼接任何 Skill 文本 |
 | Skill-context 注入（user/input context） | call builder / provider adapter（`llm_pdca.py` call payload 组装点 / `llm_providers/*`） | 把 `skill_context_text`（L1 清单块 + L2 body 块）注入 **user/input context 通道**（turn 起始 content block），**不**进 system message；按 provider 角色序列化（§5.3 统一规则） |
-| Fingerprint（per-phase） | `prompt_fingerprint.py` `compute_npc_prompt_fingerprint` (`5:7`) | **改为 per-loop-phase 计算**（非 tick）；入参增 `skill_context_text`（该阶段 L1+L2）+ 既有 `phase_tool_manifest`（F14 阶段子集） |
-| Fingerprint 调用点 | `llm_pdca.py` per-phase call 组装 / `_augment_spec_from_ctx` (`271:275`) | **每阶段**计算 fingerprint 并写入 `spec.extra['prompt_fingerprint']`；移除 `npc_agent_nlp.py` tick 级计算 |
-| Worker 绑定 | `worker.py` `LlmPdcaAssistantWorker.create` (`104:140`) | 从节点 attrs 读 `skill_refs`，传入 framework |
-| 节点 attrs 解析 | `agent_node_phase_llm.py` / 新增 `skill_refs` 解析 | 解析 `attributes.skill_refs: List[str]` |
-| 节点种子 | `db/seed_data.py` `ensure_aico_npc_agent` (`286:327`) | AICO seed 增 `skill_refs`（端到端验证） |
+| Fingerprint（per-phase） | `prompt_fingerprint.py` `compute_npc_prompt_fingerprint` | **per-loop-phase 计算**（非 tick）；入参含 `skill_context_text`（该阶段 L1+L2）+ 既有 `phase_tool_manifest`（F14 阶段子集） |
+| Fingerprint 调用点 | `llm_pdca.py` `_augment_spec_from_ctx`（per-phase call 组装） | **每阶段**计算 fingerprint 并写入 `spec.extra['prompt_fingerprint']`；`npc_agent_nlp.py` tick 级计算已移除（仅留注释） |
+| Worker 绑定 | `worker.py` `LlmPdcaAssistantWorker.create` | 从节点 `attributes.skill_refs` 读 `skill_refs`，传入 framework |
+| 节点 attrs 解析 | `worker.py` `LlmPdcaAssistantWorker.create` 内 `attrs.get('skill_refs')` | 解析 `attributes.skill_refs: List[str]`（无独立 `agent_node_phase_llm.py` 解析路径） |
+| 节点种子 | `db/seed_data.py` `ensure_aico_npc_agent` | AICO seed 增 `skill_refs`（端到端验证） |
 
 **不修改：** `registry.py` 核心逻辑、`resolved_tool_surface.py` 冻结面构造、`command_policies` 授权路径。**`_phase_system`/`_phase_system_core` 不再承载 Skill 文本**（Skill-context 经 user/input context 通道，由 call builder / provider adapter 注入）。
 

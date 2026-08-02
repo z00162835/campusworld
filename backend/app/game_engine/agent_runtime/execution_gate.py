@@ -142,10 +142,10 @@ def evaluate_execution_gate(*, db_session, command_name: str, args: List[str], c
         return GateDecision(allow=False, reason_code='guard_blocked_policy', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard_with_policy, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
     return GateDecision(allow=True, reason_code='guard_pass', intent=intent, effective_profile=effective_profile, effective_guard=effective_guard, caller_profile=caller['caller_profile'], callee_profile=callee_profile)
 
-def _policy_decision_to_trace(decision: PolicyDecision) -> Dict[str, Any]:
+def _policy_decision_to_trace(decision: PolicyDecision, *, step: str = "policy_decision") -> Dict[str, Any]:
     evidence = decision.evidence or {}
-    return {
-        'step': 'policy_decision',
+    row: Dict[str, Any] = {
+        'step': step,
         'check_point': decision.check_point,
         'decision': decision.decision,
         'reason_code': decision.reason_code,
@@ -153,6 +153,11 @@ def _policy_decision_to_trace(decision: PolicyDecision) -> Dict[str, Any]:
         'runtime_action': decision.runtime_action,
         'evidence': evidence,
     }
+    if decision.quality_score is not None:
+        row['quality_score'] = decision.quality_score
+    if decision.degraded_action is not None:
+        row['degraded_action'] = decision.degraded_action
+    return row
 
 
 # Module-level engine; detectors are stateless so reuse is safe.
