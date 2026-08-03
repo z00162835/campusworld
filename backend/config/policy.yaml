@@ -26,8 +26,9 @@ quality:
   # quality 域（after_state_execute / before_terminal / per_react_round，F18 落地）
   # P5 driver 接线：以下两个门控默认 off，保 byte-equivalence；开启后 evaluator 驱动控制流。
   enable_quality_score: false                 # 多维 QualityScore（offline-only）
-  enable_stop_dimensions: false               # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive）
-  enable_final_success_gate: false            # final_success_evaluator 驱动（否则 audit/trace-only）
+  enable_stop_dimensions: false               # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive/budget_exceeded）
+  final_success_drive_mode: "off"            # final_success_evaluator 驱动模式：off / shadow（audit+divergence）/ enforce（驱动 draft_incomplete，D-B）
+  enable_budget_hard_fail: false              # budget_exceeded opt-in hard-fail 终态（Q1）；默认 soft-fail（经既有 fail_fallback 路径）
   max_iterations: 12                          # 总 state transition per tick 上限
   max_consecutive_tool_failures: 3           # 连续工具失败停止阈值
   stagnation_window: 3                        # stagnation 滑动窗口（连续 K round）

@@ -158,11 +158,18 @@ class PolicyDecision:
         )
 
     @classmethod
-    def continue_(cls, check_point: str, reason_code: str = "continue") -> "PolicyDecision":
+    def continue_(
+        cls,
+        check_point: str,
+        reason_code: str = "continue",
+        *,
+        evidence: Optional[Dict[str, Any]] = None,
+    ) -> "PolicyDecision":
         # B5: continue → pass. (Method named continue_ — `continue` is a Python keyword.)
         return cls(
             decision="continue",
             reason_code=reason_code,
             check_point=check_point,
             runtime_action="pass",
+            evidence=evidence,
         )

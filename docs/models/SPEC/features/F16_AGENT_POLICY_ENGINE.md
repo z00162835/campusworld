@@ -115,7 +115,7 @@ class Domain:
 | `after_tool_observation` | `gate` | ToolObservation 生成后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
 | `before_final_answer` | `gate` | 最终答复发出前（非流式） | ❌ 未落地（P4 pending） | streaming / 非流式完整拦截延后到 [F18](F18_AGENT_QUALITY_GATES.md)（D6） |
 | `after_state_execute` | `quality` | `_execute_state` 后、`sm.next` 前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `stop_evaluator`；决策映射为 `runtime.stop_fail` / `event=stagnation` 供 F17 消费（`enable_stop_dimensions` 门控） |
-| `before_terminal` | `quality` | act 锚点 `_detect_tick_emit_deferral` 后、终态前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `final_success_evaluator`（audit/trace-only，`enable_final_success_gate` 门控） |
+| `before_terminal` | `quality` | act 锚点 `_detect_tick_emit_deferral` 后、终态前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `final_success_evaluator`；驱动模式 `final_success_drive_mode`（off/shadow/enforce，D-B）；shadow 记 divergence，enforce 驱动 `draft_incomplete` |
 | `per_react_round` | `quality` | 内层 ReAct 结构化 turn 校验后 | ✅ P5-A opt-in | [F18](F18_AGENT_QUALITY_GATES.md) `react_turn_success_evaluator`；随 `require_structured_turn`，写 `react_round_decision` payload |
 
 ### 3.2 PolicyDecision（`decisions.py`）
@@ -182,7 +182,7 @@ class PolicyDecision:
 
 | Evaluator | 输入 | 用途 |
 |-----------|------|------|
-| `stop_evaluator` | `runtime.*` / `snapshot.turn_count` / `tool_failure_count` | `budget_exhausted` / `max_iterations_exceeded` / `max_consecutive_tool_failures_exceeded` → `fail` |
+| `stop_evaluator` | `runtime.*` / `snapshot.turn_count` / `tool_failure_count` / `ToolGatherBudgets` caps | `max_iterations_exceeded` / `max_consecutive_tool_failures_exceeded` / `budget_exceeded`（hard-fail）→ `fail`；`budget_exceeded`（soft-fail）→ `continue`（audit） |
 | `final_success_evaluator` | act draft / `success_criteria` / grounding | hard gates 通过 → `allow`，否则 `degraded_action` |
 | `react_turn_success_evaluator` | structured turn | 结构化 turn 合规校验（随 `require_structured_turn`） |
 | `quality_score_evaluator` | draft / obs / criteria | 多维 `QualityScore`（surface/process/semantic/judge），offline-only |
@@ -295,8 +295,9 @@ gate:
 
 quality:
   enable_quality_score: false               # 多维 QualityScore（offline-only）
-  enable_stop_dimensions: false             # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive），P5-A 门控
-  enable_final_success_gate: false          # final_success_evaluator 驱动门控（否则 audit/trace-only），P5-A 门控
+  enable_stop_dimensions: false             # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive/budget_exceeded），P5-A/P5-B3 门控
+  final_success_drive_mode: "off"           # final_success_evaluator 驱动模式：off / shadow（audit+divergence）/ enforce（驱动 draft_incomplete，D-B）
+  enable_budget_hard_fail: false            # budget_exceeded opt-in hard-fail 终态（Q1）；默认 soft-fail（经既有 fail_fallback 路径），P5-B3 门控
   max_iterations: 12                        # 总 state transition per tick 上限
   max_consecutive_tool_failures: 3          # 连续工具失败停止阈值
   stagnation_window: 3                      # stagnation 滑动窗口（连续 K round）
@@ -322,8 +323,9 @@ quality:
 | 配置键 | 默认 | 用途 |
 |--------|------|------|
 | `enable_quality_score` | `false` | 多维 QualityScore（offline-only） |
-| `enable_stop_dimensions` | `false` | stop_evaluator 新维度门控（stagnation / max_iterations / max_consecutive_tool_failures）；off 时 evaluator 返回 `None`，byte-equivalent |
-| `enable_final_success_gate` | `false` | final_success_evaluator 驱动门控；off 时 audit/trace-only（`_detect_tick_emit_deferral` 仍为 draft 权威），byte-equivalent |
+| `enable_stop_dimensions` | `false` | stop_evaluator 新维度门控（stagnation / max_iterations / max_consecutive_tool_failures / budget_exceeded）；off 时 evaluator 返回 `None`，byte-equivalent |
+| `final_success_drive_mode` | `"off"` | final_success_evaluator 驱动模式（D-B）：`off`（byte-equiv，不求值）/ `shadow`（audit + divergence 检测，`_detect_tick_emit_deferral` 仍为权威）/ `enforce`（evaluator 驱动 `draft_incomplete`，deferral 降为 fallback；`retry_loop→replan` 待 D-I 落地） |
+| `enable_budget_hard_fail` | `false` | budget_exceeded opt-in hard-fail 终态（Q1）；off 时 soft-fail `continue`（audit/trace-only，既有 fail_fallback 路径保持权威），byte-equivalent |
 | `max_iterations` | `12` | 总 state transition per tick 上限 |
 | `max_consecutive_tool_failures` | `3` | 连续工具失败停止阈值 |
 | `stagnation_window` | `3` | stagnation 滑动窗口（连续 K round） |

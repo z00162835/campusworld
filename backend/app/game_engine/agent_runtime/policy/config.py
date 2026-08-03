@@ -52,8 +52,9 @@ class GateDomainConfig:
 @dataclass(frozen=True)
 class QualityDomainConfig:
     enable_quality_score: bool = False
-    enable_stop_dimensions: bool = False   # gates stop_evaluator new dims (stagnation/max_iterations/max_consecutive)
-    enable_final_success_gate: bool = False  # gates final_success_evaluator driving (audit otherwise)
+    enable_stop_dimensions: bool = False   # gates stop_evaluator new dims (stagnation/max_iterations/max_consecutive/budget_exceeded)
+    final_success_drive_mode: str = "off"  # off / shadow (audit+divergence) / enforce (evaluator drives draft_incomplete)
+    enable_budget_hard_fail: bool = False  # opt-in hard-fail terminal for budget_exceeded (Q1); default soft-fail
     max_iterations: int = 12
     max_consecutive_tool_failures: int = 3
     stagnation_window: int = 3
@@ -81,6 +82,26 @@ def _coerce_int(value: Any, default: int) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+_VALID_DRIVE_MODES = frozenset({"off", "shadow", "enforce"})
+
+
+def _coerce_drive_mode(value: Any, default: str = "off") -> str:
+    """Coerce ``final_success_drive_mode`` (off/shadow/enforce).
+
+    Backward compat: a legacy boolean ``enable_final_success_gate: true`` maps
+    to ``"shadow"`` (audit + divergence, non-driving) so old configs that opted
+    into the audit gate keep the same non-driving semantics.
+    """
+    if isinstance(value, bool):
+        return "shadow" if value else "off"
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in _VALID_DRIVE_MODES:
+            return v
+        return default
+    return default
 
 
 def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
@@ -134,7 +155,13 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
     quality = QualityDomainConfig(
         enable_quality_score=_coerce_bool(quality_raw.get("enable_quality_score"), False),
         enable_stop_dimensions=_coerce_bool(quality_raw.get("enable_stop_dimensions"), False),
-        enable_final_success_gate=_coerce_bool(quality_raw.get("enable_final_success_gate"), False),
+        final_success_drive_mode=_coerce_drive_mode(
+            quality_raw.get("final_success_drive_mode")
+            if "final_success_drive_mode" in quality_raw
+            else quality_raw.get("enable_final_success_gate"),
+            "off",
+        ),
+        enable_budget_hard_fail=_coerce_bool(quality_raw.get("enable_budget_hard_fail"), False),
         max_iterations=_coerce_int(quality_raw.get("max_iterations"), 12),
         max_consecutive_tool_failures=_coerce_int(
             quality_raw.get("max_consecutive_tool_failures"), 3

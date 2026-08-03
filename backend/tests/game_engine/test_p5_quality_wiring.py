@@ -114,13 +114,14 @@ def test_stop_dimensions_max_iterations_drives_fail():
 
 @pytest.mark.unit
 def test_final_success_gate_emits_before_terminal_row():
-    """enable_final_success_gate → before_terminal quality_decision row appears (audit)."""
+    """final_success_drive_mode=shadow → before_terminal quality_decision row
+    appears (audit); deferral stays authoritative so tick still succeeds."""
     fw, mem = _build_fw(
-        quality=QualityDomainConfig(enable_final_success_gate=True)
+        quality=QualityDomainConfig(final_success_drive_mode="shadow")
     )
     res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
-    # final_success is audit/trace-only; _detect_tick_emit_deferral stays
-    # authoritative, so the tick still succeeds for a complete answer.
+    # shadow is audit/trace-only + divergence detection; _detect_tick_emit_deferral
+    # stays authoritative, so the tick still succeeds for a complete answer.
     assert res.ok
     rows = _quality_rows(mem.last_trace)
     before_terminal = [r for r in rows if r["check_point"] == "before_terminal"]
@@ -193,3 +194,210 @@ def test_stagnation_over_limit_drives_stop_fail(monkeypatch):
     assert not res.ok
     rows = _quality_rows(mem.last_trace)
     assert any(r["reason_code"] == "stagnation" for r in rows)
+
+
+@pytest.mark.unit
+def test_budget_soft_fail_continue_records_row_no_flow_change(monkeypatch):
+    """P5-B3: budget_exceeded soft-fail → ``continue`` decision. The driver
+    records a ``quality_decision`` trace row (audit) but does NOT change
+    control flow (no stop_fail, no replan) — the existing draft-gate
+    fail_fallback path remains authoritative. Tick still succeeds for a
+    complete draft."""
+    from app.game_engine.agent_runtime.policy.domains import quality_domain
+
+    def _force_budget_continue(ctx):
+        tick_state = ctx.extra.get("tick_state") or {}
+        if not tick_state.get("enable_stop_dimensions"):
+            return None
+        if tick_state.get("current_state") == "plan":
+            return PolicyDecision.continue_(
+                CheckPoint.AFTER_STATE_EXECUTE,
+                reason_code="budget_exceeded",
+                evidence={"mode": "soft_fail"},
+            )
+        return None
+
+    monkeypatch.setattr(quality_domain, "stop_evaluator", _force_budget_continue)
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(enable_stop_dimensions=True, max_iterations=12)
+    )
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    # soft-fail continue does not abort; complete draft → success.
+    assert res.ok
+    rows = _quality_rows(mem.last_trace)
+    budget_rows = [r for r in rows if r["reason_code"] == "budget_exceeded"]
+    assert budget_rows, "expected a budget_exceeded quality_decision row"
+    # No stop_fail state_transition (soft-fail does not drive *→fail).
+    transitions = [r for r in mem.last_trace if r.get("step") == "state_transition"]
+    assert all(r.get("to") != "fail" for r in transitions)
+
+
+# ---------------------------------------------------------------------------
+# D-B Step1: final_success_drive_mode (shadow / enforce)
+# ---------------------------------------------------------------------------
+
+def _divergence_rows(trace: list) -> list:
+    return [r for r in trace if r.get("step") == "final_success_divergence"]
+
+
+@pytest.mark.unit
+def test_final_success_shadow_byte_equiv_no_divergence(monkeypatch):
+    """D-B shadow: evaluator agrees with deferral (both complete) → no
+    divergence row; tick still succeeds (deferral authoritative)."""
+    from app.game_engine.agent_runtime.agent_loop import draft_gate
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+
+    monkeypatch.setattr(
+        draft_gate, "assess_draft_completeness_with_budget",
+        lambda **kw: DraftCompletenessVerdict.complete,
+    )
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="shadow")
+    )
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    assert res.ok
+    rows = _quality_rows(mem.last_trace)
+    assert any(r["check_point"] == "before_terminal" for r in rows)
+    assert _divergence_rows(mem.last_trace) == [], "no divergence when verdicts agree"
+
+
+@pytest.mark.unit
+def test_final_success_shadow_records_divergence_on_fail_disagreement(monkeypatch):
+    """D-B shadow: evaluator says fail_fallback but deferral says complete →
+    divergence row recorded; deferral stays authoritative so tick still succeeds."""
+    from app.game_engine.agent_runtime.agent_loop import draft_gate
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+
+    monkeypatch.setattr(
+        draft_gate, "assess_draft_completeness_with_budget",
+        lambda **kw: DraftCompletenessVerdict.fail_fallback,
+    )
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="shadow")
+    )
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    # deferral authoritative → complete draft → success despite evaluator fail.
+    assert res.ok
+    div = _divergence_rows(mem.last_trace)
+    assert div, "expected a final_success_divergence row"
+    assert div[0]["drive_mode"] == "shadow"
+    assert div[0]["verdict"] == "fail_fallback"
+    assert div[0]["deferral_draft_incomplete"] is False
+    assert div[0]["would_enforce_draft_incomplete"] is True
+
+
+@pytest.mark.unit
+def test_final_success_shadow_retry_loop_always_divergence(monkeypatch):
+    """D-B shadow: retry_loop is a third state the binary deferral gate can't
+    express → divergence row recorded regardless of deferral verdict."""
+    from app.game_engine.agent_runtime.agent_loop import draft_gate
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+
+    monkeypatch.setattr(
+        draft_gate, "assess_draft_completeness_with_budget",
+        lambda **kw: DraftCompletenessVerdict.retry_loop,
+    )
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="shadow")
+    )
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    assert res.ok  # deferral authoritative → complete draft → success
+    div = _divergence_rows(mem.last_trace)
+    assert div, "retry_loop always surfaces as divergence"
+    assert div[0]["verdict"] == "retry_loop"
+    assert div[0]["would_enforce_draft_incomplete"] is None
+
+
+@pytest.mark.unit
+def test_final_success_enforce_fail_drives_tick_to_fail(monkeypatch):
+    """D-B enforce: evaluator fail_fallback overrides deferral (complete) →
+    _draft_incomplete set → act→fail. deferral no longer authoritative."""
+    from app.game_engine.agent_runtime.agent_loop import draft_gate
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+
+    monkeypatch.setattr(
+        draft_gate, "assess_draft_completeness_with_budget",
+        lambda **kw: DraftCompletenessVerdict.fail_fallback,
+    )
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="enforce")
+    )
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    assert not res.ok, "enforce fail should drive the tick to fail"
+    transitions = [r for r in mem.last_trace if r.get("step") == "state_transition"]
+    assert any(r.get("to") == "fail" for r in transitions)
+
+
+@pytest.mark.unit
+def test_final_success_enforce_complete_keeps_success(monkeypatch):
+    """D-B enforce: evaluator complete agrees with deferral → no divergence,
+    _draft_incomplete cleared, tick succeeds."""
+    from app.game_engine.agent_runtime.agent_loop import draft_gate
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+
+    monkeypatch.setattr(
+        draft_gate, "assess_draft_completeness_with_budget",
+        lambda **kw: DraftCompletenessVerdict.complete,
+    )
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="enforce")
+    )
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    assert res.ok
+    assert _divergence_rows(mem.last_trace) == []
+
+
+@pytest.mark.unit
+def test_final_success_enforce_retry_loop_falls_back_to_deferral(monkeypatch):
+    """D-B enforce + D-I not landed: retry_loop→replan has no act→plan
+    transition yet → enforce treats retry_loop as audit-only and falls back to
+    the deferral verdict. A complete draft still succeeds; a divergence row is
+    recorded (retry_loop third state)."""
+    from app.game_engine.agent_runtime.agent_loop import draft_gate
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+
+    monkeypatch.setattr(
+        draft_gate, "assess_draft_completeness_with_budget",
+        lambda **kw: DraftCompletenessVerdict.retry_loop,
+    )
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="enforce")
+    )
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    # deferral fallback → complete draft → success (retry_loop not yet drivable).
+    assert res.ok
+    div = _divergence_rows(mem.last_trace)
+    assert div, "retry_loop surfaces as divergence even in enforce (D-I pending)"
+    assert div[0]["would_enforce_draft_incomplete"] is None
+
+
+@pytest.mark.unit
+def test_final_success_off_byte_equiv_no_rows(monkeypatch):
+    """D-B off (default): no before_terminal quality_decision row, no
+    divergence row — byte-equivalent to pre-D-B behavior."""
+    from app.game_engine.agent_runtime.agent_loop import draft_gate
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+
+    monkeypatch.setattr(
+        draft_gate, "assess_draft_completeness_with_budget",
+        lambda **kw: DraftCompletenessVerdict.fail_fallback,
+    )
+    fw, mem = _build_fw(quality=QualityDomainConfig(final_success_drive_mode="off"))
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+    assert res.ok  # deferral authoritative, complete draft
+    assert _quality_rows(mem.last_trace) == []
+    assert _divergence_rows(mem.last_trace) == []

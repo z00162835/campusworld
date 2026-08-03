@@ -71,7 +71,7 @@ class TestFinalSuccessException:
         )
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TERMINAL,
-            extra={"tick_state": {"agent_loop_config": MagicMock(), "enable_final_success_gate": True}},
+            extra={"tick_state": {"agent_loop_config": MagicMock(), "final_success_drive_mode": "shadow"}},
         )
         # The evaluator re-raises; the engine safety net catches it → allow.
         engine = PolicyEngine()

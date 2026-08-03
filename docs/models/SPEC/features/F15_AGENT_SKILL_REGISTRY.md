@@ -299,23 +299,23 @@ HiCampus 世界包存在 `data/concepts/skills.yaml`（schema: `id/world_id/conc
 
 ## 12. Acceptance Criteria
 
-- [ ] `SkillRegistry` 启动期扫描 `config/skills/*/SKILL.md`，解析 frontmatter；非法定义 fail-fast
-- [ ] **按阶段注入 L1**：每阶段（plan/do/check/act）`skill-context` 段含该阶段 **eligible 集**（`activation_mode == model_selected` 或 phase ∈ `allowed_in_react_states`）的 `name`+`description` 清单块，按 `skill_refs` 顺序，使用 §5.3 v1 模板
-- [ ] **按阶段注入 L2**：仅 `activation_mode == phase_mapped` 且 phase ∈ `allowed_in_react_states` 的 Skill body 被注入；`model_selected` 的 Skill body 在 v1 **不**自动注入（待 F17 model 自选）
-- [ ] **启动期校验**：`activation_mode` ↔ `allowed_in_react_states` 一致性（`phase_mapped` 必填 ≥1 / `model_selected` 须缺省）违规 fail-fast
-- [ ] **Fingerprint per-loop-phase（trace 完整性，非 v1 正确性契约，对齐 F17 §9）**：fingerprint 按 loop 阶段计算（非 tick），纳入该阶段 `skill_context_text`（L1 清单 + L2 body）+ `phase_tool_manifest`；HTTP 前剥离，v1 不驱动返回答案的缓存——纳入为 trace/dedup 完整性 + 前向兼容（未来接入缓存时无需返工）
-- [ ] AICO seed 节点含 `skill_refs: [problem_framing, retrieval_reasoning, final_synthesis]`，端到端 tick 每阶段注入 eligible L1 清单 + 阶段匹配 L2 body
-- [ ] `allowed_tool_groups` v1 **不强制、不审计**（冻结面不变量保持；trace 不含 group 违规行）
-- [ ] `tool`/`hybrid` 模式 `raise NotImplementedError`
-- [ ] trace 记录 `skill_activated`（`{skill_id, phase, states, definition_hash}`）；`definition_hash` = 启动期缓存的 sha256(full `SKILL.md`) 截断，**与 L1 manifest/L2 body 同源快照**（frontmatter/body/hash 同启动期，无半热更新），trace provenance
-- [ ] **Skill prompt-injection 边界测试**：验证 L1 清单仅含 eligible 集、L2 body 仅含匹配 Skill、非匹配/非 eligible 文本不进入 `skill-context`；**L1 active 段仅含 `phase_mapped`+phase 匹配、inactive 段仅含 `model_selected`、blocked 段仅含被 F16 policy 拒绝的 skill**（状态标记可区分）；空段省略；**平台 system message 不含任何 Skill 文本**（`_phase_system` 仅平台边界）；prompt 长度上限生效
-- [ ] **Skill 修改回归测试（重建 registry 后生效，v1 无 hot reload）**：修改 `SKILL.md` frontmatter/body 后 **重建 registry**（或重启），trace 中 `definition_hash` 变化 + fingerprint 输入变化（L1 描述改 → manifest 文本变；L2 body 改 → `skill_context_text` 变）；二者均可验证。**v1 不测运行期 hot reload**（进程运行中改文件 **L1/L2 均不更新**，见 §5.1 / Q10）
-- [ ] **L3 bundled 资源告警**：v1 prompt 模式 skill 目录含 `references/`/`assets/` 时启动期记录 warning；body 自包含契约文档化
-- [ ] **provider 优先级边界测试（统一 user/input context 规则）**：**所有 provider** `skill_context_text` 注入 user/input context 通道、**不**进 system message——Anthropic 路径 `skill-context` 为 user turn 起始 content block（非 system block）；OpenAI-compatible 路径注入 user/input context、不拼入 system message
-- [ ] **Skill 激活评估（v1 确定性）**：golden = phase → expected active skill ids（plan→`[problem_framing, retrieval_reasoning]`、do→`[retrieval_reasoning]`、check→`[final_synthesis]`、act→`[final_synthesis]`）；should-activate（映射阶段→active）与 should-not-activate（非映射阶段→不 active）用例覆盖
-- [ ] `cognition_profile_ref` 保留为 inert，不被新路径读取
-- [ ] 单元测试位于 `backend/tests/game_engine/`
-- [ ] **实施前置（同 PR 必做）**：[**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md) §3 L4 行 / §5 L4 行 / §6.4 / §7 L4 行 已同步本 SPEC（`agent_runtime/skills/` + `config/skills/` + `skill_refs` + `skill-context` 经 user/input context），分层真源无「无单一目录；未来」遗留
+- [x] `SkillRegistry` 启动期扫描 `config/skills/*/SKILL.md`，解析 frontmatter；非法定义 fail-fast
+- [x] **按阶段注入 L1**：每阶段（plan/do/check/act）`skill-context` 段含该阶段 **eligible 集**（`activation_mode == model_selected` 或 phase ∈ `allowed_in_react_states`）的 `name`+`description` 清单块，按 `skill_refs` 顺序，使用 §5.3 v1 模板
+- [x] **按阶段注入 L2**：仅 `activation_mode == phase_mapped` 且 phase ∈ `allowed_in_react_states` 的 Skill body 被注入；`model_selected` 的 Skill body 在 v1 **不**自动注入（待 F17 model 自选）
+- [x] **启动期校验**：`activation_mode` ↔ `allowed_in_react_states` 一致性（`phase_mapped` 必填 ≥1 / `model_selected` 须缺省）违规 fail-fast
+- [x] **Fingerprint per-loop-phase（trace 完整性，非 v1 正确性契约，对齐 F17 §9）**：fingerprint 按 loop 阶段计算（非 tick），纳入该阶段 `skill_context_text`（L1 清单 + L2 body）+ `phase_tool_manifest`；HTTP 前剥离，v1 不驱动返回答案的缓存——纳入为 trace/dedup 完整性 + 前向兼容（未来接入缓存时无需返工）
+- [x] AICO seed 节点含 `skill_refs: [problem_framing, retrieval_reasoning, final_synthesis]`，端到端 tick 每阶段注入 eligible L1 清单 + 阶段匹配 L2 body
+- [x] `allowed_tool_groups` v1 **不强制、不审计**（冻结面不变量保持；trace 不含 group 违规行）
+- [x] `tool`/`hybrid` 模式 `raise NotImplementedError`
+- [x] trace 记录 `skill_activated`（`{skill_id, phase, states, definition_hash}`）；`definition_hash` = 启动期缓存的 sha256(full `SKILL.md`) 截断，**与 L1 manifest/L2 body 同源快照**（frontmatter/body/hash 同启动期，无半热更新），trace provenance
+- [x] **Skill prompt-injection 边界测试**：验证 L1 清单仅含 eligible 集、L2 body 仅含匹配 Skill、非匹配/非 eligible 文本不进入 `skill-context`；**L1 active 段仅含 `phase_mapped`+phase 匹配、inactive 段仅含 `model_selected`、blocked 段仅含被 F16 policy 拒绝的 skill**（状态标记可区分）；空段省略；**平台 system message 不含任何 Skill 文本**（`_phase_system` 仅平台边界）；prompt 长度上限生效
+- [x] **Skill 修改回归测试（重建 registry 后生效，v1 无 hot reload）**：修改 `SKILL.md` frontmatter/body 后 **重建 registry**（或重启），trace 中 `definition_hash` 变化 + fingerprint 输入变化（L1 描述改 → manifest 文本变；L2 body 改 → `skill_context_text` 变）；二者均可验证。**v1 不测运行期 hot reload**（进程运行中改文件 **L1/L2 均不更新**，见 §5.1 / Q10）
+- [x] **L3 bundled 资源告警**：v1 prompt 模式 skill 目录含 `references/`/`assets/` 时启动期记录 warning；body 自包含契约文档化
+- [x] **provider 优先级边界测试（统一 user/input context 规则）**：**所有 provider** `skill_context_text` 注入 user/input context 通道、**不**进 system message——Anthropic 路径 `skill-context` 为 user turn 起始 content block（非 system block）；OpenAI-compatible 路径注入 user/input context、不拼入 system message
+- [x] **Skill 激活评估（v1 确定性）**：golden = phase → expected active skill ids（plan→`[problem_framing, retrieval_reasoning]`、do→`[retrieval_reasoning]`、check→`[final_synthesis]`、act→`[final_synthesis]`）；should-activate（映射阶段→active）与 should-not-activate（非映射阶段→不 active）用例覆盖
+- [x] `cognition_profile_ref` 保留为 inert，不被新路径读取
+- [x] 单元测试位于 `backend/tests/game_engine/`
+- [x] **实施前置（同 PR 必做）**：[**F09**](F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md) §3 L4 行 / §5 L4 行 / §6.4 / §7 L4 行 已同步本 SPEC（`agent_runtime/skills/` + `config/skills/` + `skill_refs` + `skill-context` 经 user/input context），分层真源无「无单一目录；未来」遗留
 
 ---
 

@@ -261,3 +261,132 @@ class TestStopEvaluatorReactRound:
 
         ctx = self._ctx(current_state="plan")
         assert stop_evaluator(ctx) is None
+
+
+class TestStopEvaluatorBudgetExceeded:
+    """P5-B3 (SPEC §4.2): budget_exceeded — soft-fail continue (default) + opt-in hard-fail."""
+
+    def _ctx(self, **tick_state):
+        from app.game_engine.agent_runtime.policy import PolicyContext
+        from app.game_engine.agent_runtime.policy.check_points import CheckPoint
+
+        return PolicyContext(
+            check_point=CheckPoint.AFTER_STATE_EXECUTE,
+            extra={"tick_state": {"enable_stop_dimensions": True, **tick_state}},
+        )
+
+    def test_no_budget_decision_when_gate_off(self):
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="do",
+            commands_run=100,
+            max_commands_per_tick=16,
+        )
+        ctx.extra["tick_state"]["enable_stop_dimensions"] = False
+        assert stop_evaluator(ctx) is None
+
+    def test_no_budget_decision_when_under_budget(self):
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="do",
+            commands_run=5,
+            max_commands_per_tick=16,
+            observation_chars=100,
+            max_chars_observations_per_tick=12000,
+        )
+        assert stop_evaluator(ctx) is None
+
+    def test_command_budget_exceeded_soft_fail_continue(self):
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="do",
+            commands_run=16,
+            max_commands_per_tick=16,
+            observation_chars=10,
+            max_chars_observations_per_tick=12000,
+        )
+        d = stop_evaluator(ctx)
+        assert d is not None
+        assert d.decision == "continue"
+        assert d.reason_code == "budget_exceeded"
+        assert d.evidence["mode"] == "soft_fail"
+        assert d.evidence["commands_run"] == 16
+
+    def test_char_budget_exceeded_soft_fail_continue(self):
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="plan",
+            commands_run=3,
+            max_commands_per_tick=16,
+            observation_chars=12000,
+            max_chars_observations_per_tick=12000,
+        )
+        d = stop_evaluator(ctx)
+        assert d is not None
+        assert d.decision == "continue"
+        assert d.reason_code == "budget_exceeded"
+
+    def test_hard_fail_when_enable_budget_hard_fail(self):
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="do",
+            commands_run=16,
+            max_commands_per_tick=16,
+            enable_budget_hard_fail=True,
+        )
+        d = stop_evaluator(ctx)
+        assert d is not None
+        assert d.decision == "fail"
+        assert d.reason_code == "budget_exceeded"
+        assert d.evidence["mode"] == "hard_fail"
+
+    def test_max_iterations_preempts_budget(self):
+        """fail-level precedence: max_iterations beats budget soft-fail."""
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="plan",
+            turn_count=12,
+            max_iterations=12,
+            commands_run=16,
+            max_commands_per_tick=16,
+        )
+        d = stop_evaluator(ctx)
+        assert d.decision == "fail"
+        assert d.reason_code == "max_iterations_exceeded"
+
+    def test_check_retry_preempts_budget_soft_fail(self):
+        """recoverable replan beats budget soft-fail (lower precedence)."""
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="check",
+            commands_run=16,
+            max_commands_per_tick=16,
+            check_out="RETRY: need_tools=task",
+            check_skipped=False,
+        )
+        d = stop_evaluator(ctx)
+        assert d.decision == "replan"
+        assert d.reason_code == "check_retry"
+
+    def test_hard_fail_budget_preempts_recoverable(self):
+        """hard-fail budget beats check_retry (fail-level precedence)."""
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import stop_evaluator
+
+        ctx = self._ctx(
+            current_state="check",
+            commands_run=16,
+            max_commands_per_tick=16,
+            enable_budget_hard_fail=True,
+            check_out="RETRY: need_tools=task",
+            check_skipped=False,
+        )
+        d = stop_evaluator(ctx)
+        assert d.decision == "fail"
+        assert d.reason_code == "budget_exceeded"

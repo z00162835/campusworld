@@ -637,6 +637,7 @@ class LlmPDCAFramework(ThinkingFramework):
         state_id: str,
         trace: List[Dict[str, Any]],
         extra: Optional[Dict[str, Any]] = None,
+        gather_counters: Optional['ToolGatherCounters'] = None,
     ) -> Dict[str, Any]:
         """Build the tick_state dict consumed by quality-domain evaluators.
 
@@ -675,8 +676,26 @@ class LlmPDCAFramework(ThinkingFramework):
             ts['max_iterations'] = qcfg.max_iterations
             ts['max_consecutive_tool_failures'] = qcfg.max_consecutive_tool_failures
             ts['stagnation_window'] = qcfg.stagnation_window
-        if qcfg.enable_final_success_gate:
-            ts['enable_final_success_gate'] = True
+            # P5-B3: budget_exceeded inputs from ToolGatherBudgets (tick-level caps).
+            # gather_counters may be None on the per_react_round path (budget is
+            # only meaningful at after_state_execute); default to 0 there.
+            ts['commands_run'] = gather_counters.commands_run if gather_counters is not None else 0
+            ts['max_commands_per_tick'] = self._tool_budgets.max_commands_per_tick
+            ts['observation_chars'] = gather_counters.observation_chars if gather_counters is not None else 0
+            ts['max_chars_observations_per_tick'] = self._tool_budgets.max_chars_observations_per_tick
+            ts['enable_budget_hard_fail'] = qcfg.enable_budget_hard_fail
+            # P5-B3 (SPEC §4.2): surface ToolGatherBudgets exhaustion to
+            # stop_evaluator as the budget_exceeded condition. Tick-level caps
+            # only (phase-level caps stay inline in the react loop).
+            ts['commands_run'] = int(getattr(gather_counters, 'commands_run', 0))
+            ts['max_commands_per_tick'] = int(getattr(self._tool_budgets, 'max_commands_per_tick', 0))
+            ts['observation_chars'] = int(getattr(gather_counters, 'observation_chars', 0))
+            ts['max_chars_observations_per_tick'] = int(
+                getattr(self._tool_budgets, 'max_chars_observations_per_tick', 0)
+            )
+            ts['enable_budget_hard_fail'] = bool(qcfg.enable_budget_hard_fail)
+        if qcfg.final_success_drive_mode in ("shadow", "enforce"):
+            ts['final_success_drive_mode'] = qcfg.final_success_drive_mode
             ts['agent_loop_config'] = self._agent_loop_config
             ts['reason_context'] = _draft_reason_context(ctx)
             ts['rounds_remaining'] = 0
@@ -699,13 +718,14 @@ class LlmPDCAFramework(ThinkingFramework):
         state_id: str,
         trace: List[Dict[str, Any]],
         extra: Optional[Dict[str, Any]] = None,
+        gather_counters: Optional['ToolGatherCounters'] = None,
     ) -> Optional['PolicyDecision']:
         """Call PolicyEngine.evaluate at an F18 check_point and record a
         ``quality_decision`` trace row when the decision is non-allow or carries
         a quality_score. Returns the decision (None-safe)."""
         ts = self._build_quality_tick_state(
             check_point=check_point, ctx=ctx, bag=bag, snapshot=snapshot,
-            state_id=state_id, trace=trace, extra=extra,
+            state_id=state_id, trace=trace, extra=extra, gather_counters=gather_counters,
         )
         policy_ctx = PolicyContext(check_point=check_point, extra={'tick_state': ts}, payload=ctx.payload)
         decision = self._policy_engine.evaluate(policy_ctx)
@@ -718,6 +738,64 @@ class LlmPDCAFramework(ThinkingFramework):
             from app.game_engine.agent_runtime.execution_gate import _policy_decision_to_trace
             trace.append(_policy_decision_to_trace(decision, step='quality_decision'))
         return decision
+
+    @staticmethod
+    def _apply_final_success_drive(
+        decision: Optional['PolicyDecision'],
+        ctx: FrameworkRunContext,
+        trace: List[Dict[str, Any]],
+    ) -> None:
+        """D-B: apply the ``before_terminal`` final_success verdict.
+
+        - ``shadow``: record a ``final_success_divergence`` trace row when the
+          evaluator's verdict disagrees with the ``_detect_tick_emit_deferral``
+          result (``ctx.payload['_draft_incomplete']``). The deferral result stays
+          authoritative (no override).
+        - ``enforce``: let the verdict drive ``_draft_incomplete`` —
+          ``final_success`` clears it, ``fail`` sets it. ``replan`` (retry_loop)
+          requires an ``act→plan`` transition (D-I) and is therefore audit-only
+          until D-I lands; it falls back to the deferral result and records a
+          divergence row. When the evaluator returns ``None`` (e.g. no config)
+          or raised (engine safety net returned allow), the deferral result stands.
+        """
+        if decision is None:
+            return
+        ev = decision.evidence or {}
+        drive_mode = str(ev.get('drive_mode') or 'off').strip().lower()
+        if drive_mode not in ('shadow', 'enforce'):
+            return
+        verdict = ev.get('verdict')
+        deferral_incomplete = bool(ctx.payload.get('_draft_incomplete'))
+        # Map evaluator verdict to the draft_incomplete value it would enforce.
+        if decision.decision == 'final_success':
+            would_enforce = False
+        elif decision.decision == 'fail':
+            would_enforce = True
+        else:  # replan (retry_loop) — no driving until D-I lands.
+            would_enforce = None
+        # Divergence: a real disagreement on the pass/fail boundary.
+        divergent = would_enforce is not None and would_enforce != deferral_incomplete
+        # retry_loop is a third state the deferral gate can't express — record as
+        # informational divergence regardless (surfaces recoverable cases the
+        # binary deferral gate misclassifies).
+        if would_enforce is None:
+            divergent = True
+        if divergent:
+            trace.append({
+                'step': 'final_success_divergence',
+                'drive_mode': drive_mode,
+                'verdict': verdict,
+                'decision': decision.decision,
+                'deferral_draft_incomplete': deferral_incomplete,
+                'would_enforce_draft_incomplete': would_enforce,
+            })
+        if drive_mode == 'enforce' and would_enforce is not None:
+            # Evaluator is authoritative; _detect_tick_emit_deferral already set
+            # the fallback value — override it with the evaluator verdict.
+            if would_enforce:
+                ctx.payload['_draft_incomplete'] = True
+            else:
+                ctx.payload.pop('_draft_incomplete', None)
 
     @staticmethod
     def _write_user_prose_to_presentation(ctx: FrameworkRunContext, text: str) -> None:
@@ -1236,6 +1314,7 @@ class LlmPDCAFramework(ThinkingFramework):
             stop_decision = self._evaluate_quality_check_point(
                 CheckPoint.AFTER_STATE_EXECUTE,
                 ctx=ctx, bag=bag, snapshot=snapshot, state_id=state_id, trace=trace,
+                gather_counters=gather_counters,
             )
             if stop_decision is not None and stop_decision.decision != 'allow':
                 if stop_decision.decision == 'fail':
@@ -1271,13 +1350,21 @@ class LlmPDCAFramework(ThinkingFramework):
             # B4 (P5-B2): react_round_decision is consumed by stop_evaluator above;
             # clear it so the next phase does not see a stale verdict.
             ctx.payload.pop('react_round_decision', None)
-            # P5-3: before_terminal — final_success_evaluator (audit/trace-only;
-            # _detect_tick_emit_deferral remains authoritative for byte-equiv).
+            # P5-3: before_terminal — final_success_evaluator (D-B drive_mode).
+            #   off     → not called (byte-equiv).
+            #   shadow  → audit/trace + divergence detection; _detect_tick_emit_deferral
+            #             remains authoritative.
+            #   enforce → evaluator verdict drives _draft_incomplete; _detect_tick_emit_deferral
+            #             is the fallback (used when evaluator returns None/raises). Note:
+            #             retry_loop→replan needs an act→plan transition (D-I) — until D-I
+            #             lands, retry_loop is audit-only and falls back to the deferral verdict.
             if state_id == PDCAPhase.act.value:
-                self._evaluate_quality_check_point(
+                fs_decision = self._evaluate_quality_check_point(
                     CheckPoint.BEFORE_TERMINAL,
                     ctx=ctx, bag=bag, snapshot=snapshot, state_id=state_id, trace=trace,
+                    gather_counters=gather_counters,
                 )
+                self._apply_final_success_drive(fs_decision, ctx, trace)
             runtime = {
                 'do_mode': do_spec.mode.value if hasattr(do_spec.mode, 'value') else str(do_spec.mode),
                 'act_mode': act_spec.mode.value if hasattr(act_spec.mode, 'value') else str(act_spec.mode),

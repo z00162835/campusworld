@@ -30,6 +30,32 @@ class TestFinalSuccessEvaluator:
         ctx = _ctx_with_tick_state(draft_text="hello", user_message="hi")
         assert final_success_evaluator(ctx) is None
 
+    def test_returns_none_when_drive_mode_off(self, monkeypatch):
+        """D-B: ``off`` (default) → byte-equiv, evaluator not consulted."""
+        monkeypatch.setattr(
+            draft_gate, "assess_draft_completeness_with_budget",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="a complete answer",
+            user_message="q",
+            agent_loop_config=MagicMock(), final_success_drive_mode="off",
+        )
+        assert final_success_evaluator(ctx) is None
+
+    def test_returns_none_when_drive_mode_missing(self, monkeypatch):
+        """D-B: missing drive_mode treated as ``off`` → byte-equiv."""
+        monkeypatch.setattr(
+            draft_gate, "assess_draft_completeness_with_budget",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="a complete answer",
+            user_message="q",
+            agent_loop_config=MagicMock(),
+        )
+        assert final_success_evaluator(ctx) is None
+
     def test_returns_none_at_wrong_check_point(self):
         ctx = PolicyContext(
             check_point=CheckPoint.AFTER_STATE_EXECUTE,
@@ -45,7 +71,7 @@ class TestFinalSuccessEvaluator:
         ctx = _ctx_with_tick_state(
             draft_text="a complete answer",
             user_message="what is x?",
-            agent_loop_config=MagicMock(), enable_final_success_gate=True,
+            agent_loop_config=MagicMock(), final_success_drive_mode="shadow",
         )
         decision = final_success_evaluator(ctx)
         assert decision.decision == "final_success"
@@ -60,12 +86,13 @@ class TestFinalSuccessEvaluator:
         ctx = _ctx_with_tick_state(
             draft_text="",
             user_message="what is x?",
-            agent_loop_config=MagicMock(), enable_final_success_gate=True,
+            agent_loop_config=MagicMock(), final_success_drive_mode="shadow",
         )
         decision = final_success_evaluator(ctx)
         assert decision.decision == "replan"
         assert decision.runtime_action == "pass"
         assert decision.reason_code == "final_success_retry_loop"
+        assert decision.evidence["drive_mode"] == "shadow"
 
     def test_fail_fallback_maps_to_fail(self, monkeypatch):
         monkeypatch.setattr(
@@ -75,12 +102,13 @@ class TestFinalSuccessEvaluator:
         ctx = _ctx_with_tick_state(
             draft_text="",
             user_message="what is x?",
-            agent_loop_config=MagicMock(), enable_final_success_gate=True,
+            agent_loop_config=MagicMock(), final_success_drive_mode="enforce",
         )
         decision = final_success_evaluator(ctx)
         assert decision.decision == "fail"
         assert decision.runtime_action == "block"
         assert decision.reason_code == "final_success_fail_fallback"
+        assert decision.evidence["drive_mode"] == "enforce"
 
     def test_evidence_carries_draft_incomplete_flag(self, monkeypatch):
         monkeypatch.setattr(
@@ -90,7 +118,7 @@ class TestFinalSuccessEvaluator:
         ctx = _ctx_with_tick_state(
             draft_text="answer",
             user_message="q",
-            agent_loop_config=MagicMock(), enable_final_success_gate=True,
+            agent_loop_config=MagicMock(), final_success_drive_mode="shadow",
             draft_incomplete=True,
         )
         decision = final_success_evaluator(ctx)
@@ -107,7 +135,7 @@ class TestFinalSuccessEvaluator:
         ctx = _ctx_with_tick_state(
             draft_text="x",
             user_message="q",
-            agent_loop_config=MagicMock(), enable_final_success_gate=True,
+            agent_loop_config=MagicMock(), final_success_drive_mode="shadow",
         )
         import pytest
 

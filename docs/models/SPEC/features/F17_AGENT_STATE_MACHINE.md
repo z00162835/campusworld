@@ -264,7 +264,7 @@ v1 最小语法：
 - [ ] `StateDef.skill` / `tools` 执行面绑定（D6，随 D3-B）
 - [ ] `selected_skill` 消费 → `model_selected` Skill L2 body 注入（随 D3-B / D6；F17 v1 仅暴露 schema 字段，driver loop 不消费 `structured_turn.selected_skill`，`SkillInjection` 仍按 `phase_mapped` 确定性映射激活 body）
 - [ ] Snapshot 持久化 + pause/resume replay（D7，归 F18）
-- [ ] 任意 loaded workflow 的转移图属性测试（默认 PDCA 已覆盖）
+- [x] 任意 loaded workflow 的转移图属性测试（默认 PDCA 已覆盖）
 
 ---
 

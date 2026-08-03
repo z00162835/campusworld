@@ -110,12 +110,21 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
       routed through PolicyEngine via :func:`detect_check_replan`. The driver
       maps the returned ``replan`` decision to ``event=check_retry`` /
       ``mandatory_gap`` and applies the bag/trace side-effects.
-    - **New dimensions** (stagnation / max_iterations / max_consecutive_tool_failures):
-      gated by ``tick_state['enable_stop_dimensions']`` (default off → byte-equiv).
+    - **New dimensions** (stagnation / max_iterations / max_consecutive_tool_failures
+      / budget_exceeded): gated by ``tick_state['enable_stop_dimensions']``
+      (default off → byte-equiv).
 
-    Precedence: max_iterations / max_consecutive (fail) → check_retry /
-    mandatory_gap (replan) → stagnation (replan). Returns ``None`` (no opinion)
-    when nothing fires.
+    ``budget_exceeded`` (P5-B3, SPEC §4.2): surfaces ``ToolGatherBudgets``
+    exhaustion (commands / observation chars) as a formal decision. v1 default
+    is **soft-fail** → ``continue`` (audit/trace-only; the existing draft-gate
+    ``fail_fallback`` path clears the draft + ``_draft_incomplete`` → ``act→fail``
+    remains authoritative). Opt-in **hard-fail** (``enable_budget_hard_fail``)
+    emits ``fail`` so ``*→fail on runtime.stop_fail`` aborts immediately (Q1).
+
+    Precedence: max_iterations / max_consecutive / budget hard-fail (fail) →
+    check_retry / mandatory_gap (replan) → react_round_decision (fail/replan)
+    → stagnation (replan) → budget soft-fail (continue, audit). Returns ``None``
+    (no opinion) when nothing fires.
     """
     from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 
@@ -127,6 +136,7 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     current_state = tick_state.get("current_state")
 
     enable_stop_dims = bool(tick_state.get("enable_stop_dimensions"))
+    budget_exceeded = False
     if enable_stop_dims:
         turn_count = int(tick_state.get("turn_count", 0))
         max_iterations = int(tick_state.get("max_iterations", 12))
@@ -145,6 +155,29 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
                 CheckPoint.AFTER_STATE_EXECUTE,
                 "max_consecutive_tool_failures_exceeded",
                 evidence={"consecutive_tool_failures": tool_failure_count, "threshold": max_consecutive},
+            )
+        # budget_exceeded detection (P5-B3, SPEC §4.2). Tick-level caps from
+        # ToolGatherBudgets; surfaced via tick_state by the driver.
+        commands_run = int(tick_state.get("commands_run", 0))
+        max_commands = int(tick_state.get("max_commands_per_tick", 0))
+        obs_chars = int(tick_state.get("observation_chars", 0))
+        max_obs_chars = int(tick_state.get("max_chars_observations_per_tick", 0))
+        budget_exceeded = (
+            (max_commands > 0 and commands_run >= max_commands)
+            or (max_obs_chars > 0 and obs_chars >= max_obs_chars)
+        )
+        # Opt-in hard-fail terminal (Q1): abort immediately from any state.
+        if budget_exceeded and bool(tick_state.get("enable_budget_hard_fail")):
+            return PolicyDecision.fail(
+                CheckPoint.AFTER_STATE_EXECUTE,
+                "budget_exceeded",
+                evidence={
+                    "commands_run": commands_run,
+                    "max_commands_per_tick": max_commands,
+                    "observation_chars": obs_chars,
+                    "max_chars_observations_per_tick": max_obs_chars,
+                    "mode": "hard_fail",
+                },
             )
 
     # B3 unify: legacy check_retry / mandatory_gap detection (check state only,
@@ -207,6 +240,23 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
                     "recent_signatures": list(recent_signatures[-(2 * stagnation_window):]),
                 },
             )
+    # budget_exceeded soft-fail (P5-B3): audit/trace-only ``continue``. The
+    # existing draft-gate ``fail_fallback`` path (clear draft + _draft_incomplete
+    # → act→fail) remains authoritative for the soft-fail outcome; this only
+    # surfaces the condition as a formal decision for provenance / future
+    # hard-fail opt-in (Q1). Lowest precedence — fires only when nothing else did.
+    if enable_stop_dims and budget_exceeded and not tick_state.get("enable_budget_hard_fail"):
+        return PolicyDecision.continue_(
+            CheckPoint.AFTER_STATE_EXECUTE,
+            reason_code="budget_exceeded",
+            evidence={
+                "commands_run": int(tick_state.get("commands_run", 0)),
+                "max_commands_per_tick": int(tick_state.get("max_commands_per_tick", 0)),
+                "observation_chars": int(tick_state.get("observation_chars", 0)),
+                "max_chars_observations_per_tick": int(tick_state.get("max_chars_observations_per_tick", 0)),
+                "mode": "soft_fail",
+            },
+        )
     return None
 
 
@@ -220,10 +270,19 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     - ``retry_loop``    → ``replan`` (recoverable)
     - ``fail_fallback`` → ``fail`` (unrecoverable)
 
-    The driver's actual control flow still uses ``_detect_tick_emit_deferral``
-    (which sets ``_draft_incomplete``) as the authoritative source to preserve
-    byte-equivalence; this evaluator is audit/trace-only in v1 and will replace
-    the inline logic once golden traces are updated (post-v1 wiring).
+    Driving is governed by ``tick_state['final_success_drive_mode']`` (D-B):
+    - ``"off"``     → return ``None`` (byte-equiv; no trace row).
+    - ``"shadow"`` → compute verdict + return decision (audit/trace-only; the
+      driver records a ``quality_decision`` row + a ``final_success_divergence``
+      row when the verdict disagrees with ``_detect_tick_emit_deferral``).
+      ``_detect_tick_emit_deferral`` remains the authoritative source.
+    - ``"enforce"`` → compute verdict + return decision; the driver lets the
+      verdict drive ``runtime.draft_incomplete`` (``_detect_tick_emit_deferral``
+      becomes the fallback, used only when the evaluator returns ``None`` or
+      raises). **Note:** ``retry_loop→replan`` enforcement requires an
+      ``act→plan`` transition (D-I) — until D-I lands, enforce mode treats
+      ``retry_loop`` as audit-only and falls back to ``_detect_tick_emit_deferral``
+      to avoid a no-op replan verdict.
 
     B7 exception handling: ``assess_draft_completeness`` self-exceptions are
     re-raised (caller falls back to ``fail_fallback``); outer logic exceptions
@@ -236,8 +295,9 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     tick_state = base_tick_state = ctx.extra.get("tick_state") if ctx.extra else None
     if not isinstance(tick_state, dict):
         return None
-    if not tick_state.get("enable_final_success_gate"):
-        # Audit/trace-only until the gate is enabled (byte-equiv).
+    drive_mode = str(tick_state.get("final_success_drive_mode") or "off").strip().lower()
+    if drive_mode not in ("shadow", "enforce"):
+        # "off" / missing → byte-equiv (no opinion, no trace row).
         return None
     draft_text = tick_state.get("draft_text") or ""
     user_message = tick_state.get("user_message") or ""
@@ -273,19 +333,19 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
         return PolicyDecision.final_success(
             CheckPoint.BEFORE_TERMINAL,
             reason_code="final_success_complete",
-            evidence={"verdict": "complete", "draft_incomplete": draft_incomplete},
+            evidence={"verdict": "complete", "draft_incomplete": draft_incomplete, "drive_mode": drive_mode},
         )
     if verdict == DraftCompletenessVerdict.retry_loop:
         return PolicyDecision.replan(
             CheckPoint.BEFORE_TERMINAL,
             reason_code="final_success_retry_loop",
-            evidence={"verdict": "retry_loop", "draft_incomplete": draft_incomplete},
+            evidence={"verdict": "retry_loop", "draft_incomplete": draft_incomplete, "drive_mode": drive_mode},
         )
     # fail_fallback
     return PolicyDecision.fail(
         CheckPoint.BEFORE_TERMINAL,
         reason_code="final_success_fail_fallback",
-        evidence={"verdict": "fail_fallback", "draft_incomplete": draft_incomplete},
+        evidence={"verdict": "fail_fallback", "draft_incomplete": draft_incomplete, "drive_mode": drive_mode},
     )
 
 
