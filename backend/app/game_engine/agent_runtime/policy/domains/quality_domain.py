@@ -1,9 +1,9 @@
-"""Quality domain — F18 quality/stop evaluators.
+"""Quality domain quality/stop evaluators.
 
 Owns the ``after_state_execute`` / ``before_terminal`` / ``per_react_round``
 check_points. ``stop_evaluator`` carries two families: the legacy
-``check_retry`` / ``mandatory_gap`` detection (B3 unify, routed through
-PolicyEngine — P5-B1) and new dimensions (stagnation, max_iterations,
+``check_retry`` / ``mandatory_gap`` detection (routed through
+PolicyEngine) and new dimensions (stagnation, max_iterations,
 max_consecutive_tool_failures, gated by ``enable_stop_dimensions``).
 
 The detection logic lives here (统一收归); ``stop_evaluator`` calls
@@ -20,6 +20,9 @@ from app.game_engine.agent_runtime.policy.config import QualityDomainConfig
 from app.game_engine.agent_runtime.policy.context import PolicyContext
 from app.game_engine.agent_runtime.policy.decisions import PolicyDecision
 from app.game_engine.agent_runtime.policy.domain import Domain, Evaluator
+from app.game_engine.agent_runtime.agent_loop.draft_gate import (
+    assess_draft_completeness as assess_final_draft_completeness,
+)
 
 logger = logging.getLogger("campusworld.policy.quality")
 
@@ -53,7 +56,7 @@ def detect_check_replan(
     accumulated_tick_tool_results: List[Any],
     plan_trace: List[Dict[str, Any]],
 ) -> Tuple[Optional[str], Optional[List[str]], Optional[Dict[str, Any]]]:
-    """Unified check-replan detection (B3): check_retry beats mandatory_gap.
+    """Unified check-replan detection: check_retry beats mandatory_gap.
 
     Returns ``(event, retry_tools, gap_detail)``:
     - ``('check_retry', tools, None)`` when Check LLM output has a RETRY marker.
@@ -105,7 +108,7 @@ def detect_check_replan(
 def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     """v1 stop_evaluator for the ``after_state_execute`` check_point.
 
-    Carries two families of stop signals (B3 unify, P5-B1):
+    Carries two families of stop signals:
     - **Legacy ``check_retry`` / ``mandatory_gap``** (always on, check state only):
       routed through PolicyEngine via :func:`detect_check_replan`. The driver
       maps the returned ``replan`` decision to ``event=check_retry`` /
@@ -114,12 +117,12 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
       / budget_exceeded): gated by ``tick_state['enable_stop_dimensions']``
       (default off → byte-equiv).
 
-    ``budget_exceeded`` (P5-B3, SPEC §4.2): surfaces ``ToolGatherBudgets``
+    ``budget_exceeded`` surfaces ``ToolGatherBudgets``
     exhaustion (commands / observation chars) as a formal decision. v1 default
     is **soft-fail** → ``continue`` (audit/trace-only; the existing draft-gate
     ``fail_fallback`` path clears the draft + ``_draft_incomplete`` → ``act→fail``
     remains authoritative). Opt-in **hard-fail** (``enable_budget_hard_fail``)
-    emits ``fail`` so ``*→fail on runtime.stop_fail`` aborts immediately (Q1).
+    emits ``fail`` so ``*→fail on runtime.stop_fail`` aborts immediately.
 
     Precedence: max_iterations / max_consecutive / budget hard-fail (fail) →
     check_retry / mandatory_gap (replan) → react_round_decision (fail/replan)
@@ -149,15 +152,14 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
                 "max_iterations_exceeded",
                 evidence={"turn_count": turn_count, "max_iterations": max_iterations},
             )
-        # max_consecutive_tool_failures_exceeded (R11).
+        # max_consecutive_tool_failures_exceeded.
         if max_consecutive > 0 and tool_failure_count >= max_consecutive:
             return PolicyDecision.fail(
                 CheckPoint.AFTER_STATE_EXECUTE,
                 "max_consecutive_tool_failures_exceeded",
                 evidence={"consecutive_tool_failures": tool_failure_count, "threshold": max_consecutive},
             )
-        # budget_exceeded detection (P5-B3, SPEC §4.2). Tick-level caps from
-        # ToolGatherBudgets; surfaced via tick_state by the driver.
+        # Tick-level budget exhaustion surfaced via tick_state by the driver.
         commands_run = int(tick_state.get("commands_run", 0))
         max_commands = int(tick_state.get("max_commands_per_tick", 0))
         obs_chars = int(tick_state.get("observation_chars", 0))
@@ -166,7 +168,7 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
             (max_commands > 0 and commands_run >= max_commands)
             or (max_obs_chars > 0 and obs_chars >= max_obs_chars)
         )
-        # Opt-in hard-fail terminal (Q1): abort immediately from any state.
+        # Opt-in hard-fail terminal: abort immediately from any state.
         if budget_exceeded and bool(tick_state.get("enable_budget_hard_fail")):
             return PolicyDecision.fail(
                 CheckPoint.AFTER_STATE_EXECUTE,
@@ -180,7 +182,7 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
                 },
             )
 
-    # B3 unify: legacy check_retry / mandatory_gap detection (check state only,
+    # Legacy check_retry / mandatory_gap detection (check state only,
     # always on). The driver applies side-effects (bag.retry_tools, trace rows).
     if current_state == "check":
         event, retry_tools, gap_detail = detect_check_replan(
@@ -207,7 +209,7 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
                 },
             )
 
-    # B4 (P5-B2): per_react_round secondary confirmation. A react_round `fail`
+    # Per-ReAct-round secondary confirmation. A react_round `fail`
     # routes to stop_fail (any state); a `replan` reuses the stagnation event
     # (*→plan, replan-cap guarded) — per_react_round does not drive sm.next
     # directly. Opt-in (react_turn present); None under default config.
@@ -227,7 +229,7 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
                 evidence={"react_round_decision": rr, "detector": "react_turn_success_evaluator"},
             )
 
-    # stagnation (S4): only plan/do/check (B6-a); act suppressed.
+    # Stagnation applies only to plan/do/check; act is suppressed.
     if enable_stop_dims and current_state in ("plan", "do", "check"):
         recent_signatures = tick_state.get("recent_signatures") or []
         stagnation_window = int(tick_state.get("stagnation_window", 3))
@@ -240,11 +242,11 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
                     "recent_signatures": list(recent_signatures[-(2 * stagnation_window):]),
                 },
             )
-    # budget_exceeded soft-fail (P5-B3): audit/trace-only ``continue``. The
+    # budget_exceeded soft-fail: audit/trace-only ``continue``. The
     # existing draft-gate ``fail_fallback`` path (clear draft + _draft_incomplete
     # → act→fail) remains authoritative for the soft-fail outcome; this only
     # surfaces the condition as a formal decision for provenance / future
-    # hard-fail opt-in (Q1). Lowest precedence — fires only when nothing else did.
+    # hard-fail opt-in. Lowest precedence — fires only when nothing else did.
     if enable_stop_dims and budget_exceeded and not tick_state.get("enable_budget_hard_fail"):
         return PolicyDecision.continue_(
             CheckPoint.AFTER_STATE_EXECUTE,
@@ -270,29 +272,24 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     - ``retry_loop``    → ``replan`` (recoverable)
     - ``fail_fallback`` → ``fail`` (unrecoverable)
 
-    Driving is governed by ``tick_state['final_success_drive_mode']`` (D-B):
+    Driving is governed by ``tick_state['final_success_drive_mode']``:
     - ``"off"``     → return ``None`` (byte-equiv; no trace row).
     - ``"shadow"`` → compute verdict + return decision (audit/trace-only; the
       driver records a ``quality_decision`` row + a ``final_success_divergence``
       row when the verdict disagrees with ``_detect_tick_emit_deferral``).
       ``_detect_tick_emit_deferral`` remains the authoritative source.
     - ``"enforce"`` → compute verdict + return decision; the driver lets the
-      verdict drive ``runtime.draft_incomplete`` (``_detect_tick_emit_deferral``
-      becomes the fallback, used only when the evaluator returns ``None`` or
-      raises). **Note:** ``retry_loop→replan`` enforcement requires an
-      ``act→plan`` transition (D-I) — until D-I lands, enforce mode treats
-      ``retry_loop`` as audit-only and falls back to ``_detect_tick_emit_deferral``
-      to avoid a no-op replan verdict.
+      verdict drive control flow. Recoverable drafts request an outer replan;
+      the driver owns transition capability and budget checks.
 
-    B7 exception handling: ``assess_draft_completeness`` self-exceptions are
-    re-raised (caller falls back to ``fail_fallback``); outer logic exceptions
-    are logged and degrade to the existing verdict.
+    Exceptions are re-raised to the policy engine safety net; the driver then
+    retains the existing deferral verdict rather than applying a partial result.
     """
     from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 
     if ctx.check_point != CheckPoint.BEFORE_TERMINAL:
         return None
-    tick_state = base_tick_state = ctx.extra.get("tick_state") if ctx.extra else None
+    tick_state = ctx.extra.get("tick_state") if ctx.extra else None
     if not isinstance(tick_state, dict):
         return None
     drive_mode = str(tick_state.get("final_success_drive_mode") or "off").strip().lower()
@@ -304,29 +301,23 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     tool_results = tick_state.get("tool_results") or []
     config = tick_state.get("agent_loop_config")
     reason_context = tick_state.get("reason_context")
-    rounds_remaining = tick_state.get("rounds_remaining", 0)
     draft_incomplete = bool(tick_state.get("draft_incomplete"))
     if config is None:
         return None
-    from app.game_engine.agent_runtime.agent_loop.draft_gate import (
-        assess_draft_completeness_with_budget,
-    )
     from app.game_engine.agent_runtime.agent_loop.signals import (
         DraftCompletenessVerdict,
     )
 
     try:
-        verdict = assess_draft_completeness_with_budget(
+        verdict = assess_final_draft_completeness(
             user_message=user_message,
             draft_text=draft_text,
             tool_results=tool_results,
             config=config,
             reason_context=reason_context,
-            rounds_remaining=rounds_remaining,
         )
     except Exception:
-        # assess_draft_completeness self-exception → re-raise so caller falls
-        # back to fail_fallback (B7: do not swallow existing exception path).
+        # Let the policy engine safety net preserve the existing deferral result.
         raise
 
     if verdict == DraftCompletenessVerdict.complete:
@@ -357,7 +348,7 @@ def _tokenize(text: str) -> List[str]:
 
 
 def _grounding_quality(draft_text: str, tool_results: List[Any]) -> float:
-    """S2: overlap between draft tokens and successful tool observation text.
+    """Overlap between draft tokens and successful tool observation text.
 
     Returns 0..1 — fraction of draft tokens covered by observation text. Pure
     function; no LLM. When there are no tool results, grounding is vacuously
@@ -382,7 +373,7 @@ def _grounding_quality(draft_text: str, tool_results: List[Any]) -> float:
 
 
 def _criteria_coverage(draft_text: str, success_criteria: List[str]) -> float:
-    """S3: fraction of success_criteria tokens present in the draft (structured turn)."""
+    """Fraction of success_criteria tokens present in the draft."""
     if not success_criteria:
         return 1.0
     draft_tokens = set(t.lower() for t in _tokenize(draft_text) if len(t) >= 2)
@@ -401,11 +392,10 @@ def _criteria_coverage(draft_text: str, success_criteria: List[str]) -> float:
 
 
 def _criteria_hit_count(draft_text: str, success_criteria: List[str]) -> int:
-    """S3: number of criteria whose tokens are all present in the draft.
+    """Number of criteria whose tokens are all present in the draft.
 
     A criterion is "hit" when every one of its tokens (len ≥ 2) appears in the
-    draft. Used by ``react_turn_success_evaluator`` for the N-hit pass rule
-    (SPEC S3: "至少 N 条命中，默认 N=1").
+    draft. Used by ``react_turn_success_evaluator`` for the N-hit pass rule.
     """
     if not success_criteria:
         return 0
@@ -423,18 +413,18 @@ def _criteria_hit_count(draft_text: str, success_criteria: List[str]) -> int:
 
 
 def _progress(stagnation_window: int, recent_signatures: List[str]) -> float:
-    """S4: 1.0 when not stagnating (recent signatures show progress), 0.0 when
+    """1.0 when not stagnating (recent signatures show progress), 0.0 when
     the last ``stagnation_window`` signatures are identical (adjacent repeat),
     or when the last ``2*stagnation_window`` signatures collapse to ≤ 2 distinct
-    values (R6 cycle mode, e.g. A→B→A→B)."""
+    values (cycle mode, e.g. A→B→A→B)."""
     if not recent_signatures:
         return 1.0
     k = stagnation_window if stagnation_window > 0 else 3
-    # S4 adjacent repeat: last K signatures all identical.
+    # Adjacent repeat: last K signatures all identical.
     recent_k = recent_signatures[-k:]
     if len(recent_k) >= 2 and len(set(recent_k)) == 1:
         return 0.0
-    # R6 cycle mode: last 2K signatures use ≤ 2 distinct values (A→B→A→B loop).
+    # Cycle mode: last 2K signatures use ≤ 2 distinct values.
     cycle_window = recent_signatures[-(2 * k):]
     if len(cycle_window) >= 2 * k and len(set(cycle_window)) <= 2:
         return 0.0
@@ -468,12 +458,12 @@ def compute_quality_score(
 
 
 def quality_score_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
-    """v1 quality_score_evaluator — layered scoring, default-off (B7 + R10).
+    """v1 quality_score_evaluator — layered scoring, default-off.
 
     Returns ``None`` (no opinion → allow) unless ``enable_quality_score`` is on.
     When enabled, computes the layered score and attaches it as ``quality_score``
     evidence on an ``allow`` decision (audit/trace-only; does not block in v1).
-    Threshold gating (``semantic_gte``) is a post-v1 concern (R10 shadow mode).
+    Threshold gating (``semantic_gte``) is a later enforcement concern.
     """
     from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 
@@ -497,7 +487,7 @@ def quality_score_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
             recent_signatures=recent_signatures,
             stagnation_window=stagnation_window,
         )
-    except Exception as exc:  # noqa: BLE001 — B7
+    except Exception as exc:  # noqa: BLE001 — evaluator safety net
         logger.error("evaluator_error: quality_score_evaluator raised: %s", exc)
         return None
     return PolicyDecision(
@@ -511,7 +501,7 @@ def quality_score_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
 
 
 # ---------------------------------------------------------------------------
-# Structured Check output parsing (S5) — replaces substring heuristics.
+# Structured Check output parsing — replaces substring heuristics.
 # ---------------------------------------------------------------------------
 
 _STRUCTURED_CHECK_RE = re.compile(
@@ -527,7 +517,7 @@ _REASON_RE = re.compile(
 
 
 def parse_structured_check_output(text: str) -> Dict[str, Any]:
-    """S5: parse a structured Check LLM output line.
+    """Parse a structured Check LLM output line.
 
     Recognized shapes (case-insensitive, prefix-anchored):
     - ``PASS``
@@ -565,9 +555,9 @@ def react_turn_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]
 
     **opt-in**: registered only when ``require_structured_turn`` is enabled
     (the driver gates registration; when free-text, this evaluator is not in
-    the chain). Consumes ``success_criteria`` (S3) and writes the decision to
+    the chain). Consumes ``success_criteria`` and writes the decision to
     ``ctx.payload['react_round_decision']`` for the inner ReAct loop to consume
-    (B4: continue → next round; replan/fail → break loop + flag propagation).
+    (continue → next round; replan/fail → break loop + flag propagation).
 
     Returns ``None`` (no opinion) when not at the per_react_round check_point or
     when no structured turn is available; otherwise writes the payload and
@@ -585,8 +575,7 @@ def react_turn_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]
     success_criteria = tick_state.get("success_criteria") or []
     if react_turn is None:
         return None
-    # N required criteria hits (SPEC S3: "至少 N 条命中，默认 N=1"). P5 will
-    # make N configurable via success_checks; v1 defaults to 1.
+    # Required criteria hits; defaults to 1 until success checks configure it.
     n_required = int(tick_state.get("react_turn_min_criteria_hits", 1))
     try:
         draft_text = ""
@@ -601,14 +590,14 @@ def react_turn_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]
                 decision = "continue"
                 reason_code = "react_turn_criteria_met"
             else:
-                # R4: criteria unmet is recoverable → replan (not fail).
+                # Criteria unmet is recoverable, so request a replan.
                 decision = "replan"
                 reason_code = "react_turn_criteria_unmet"
-    except Exception as exc:  # noqa: BLE001 — B7
+    except Exception as exc:  # noqa: BLE001 — evaluator safety net
         logger.error("evaluator_error: react_turn_success_evaluator raised: %s", exc)
         decision = "continue"
         reason_code = "react_turn_evaluator_error"
-    # Write the payload for the inner ReAct loop to consume (B4).
+    # Write the payload for the inner ReAct loop to consume.
     payload = ctx.payload if isinstance(ctx.payload, dict) else {}
     payload["react_round_decision"] = {"decision": decision, "reason_code": reason_code}
     return PolicyDecision.allow(CheckPoint.PER_REACT_ROUND, reason_code=reason_code)
@@ -628,8 +617,8 @@ class QualityDomain(Domain):
     def evaluators(self) -> List[Evaluator]:
         return [
             stop_evaluator,
-            final_success_evaluator,
             quality_score_evaluator,
+            final_success_evaluator,
             react_turn_success_evaluator,
         ]
 

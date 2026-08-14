@@ -62,6 +62,17 @@ def test_event_gated_transition():
 
 
 @pytest.mark.unit
+def test_snapshot_last_event_does_not_drive_current_transition():
+    sm = _sm()
+    ctx = TransitionContext(
+        snapshot=StateMachineSnapshot(current_state="b", last_event="retry"),
+        runtime={"budget_remaining": True},
+        event=None,
+    )
+    assert sm.next("b", ctx) == "end"
+
+
+@pytest.mark.unit
 def test_no_match_raises():
     sm = _sm()
     with pytest.raises(LookupError):

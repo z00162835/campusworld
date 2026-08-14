@@ -117,10 +117,10 @@ class StateMachine:
         Evaluation order:
         1. ``any → fail`` (from_state == '*') when condition matches
         2. event-matched transitions (on_event == ctx.event) with when;
-           ``*`` wildcards match any current state (e.g. F18 ``*→plan on_event=stagnation``)
+           ``*`` wildcards match any current state.
         3. non-event transitions with when
         """
-        event = ctx.event if ctx.event is not None else ctx.snapshot.last_event
+        event = ctx.event
         # 1) Wildcard fail transitions first
         for tr in self.transitions:
             if tr.from_state == "*" and tr.to_state == "fail":

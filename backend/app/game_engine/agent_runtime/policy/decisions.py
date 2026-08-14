@@ -6,7 +6,7 @@ from typing import Any, Dict, Literal, Optional
 
 DecisionType = Literal[
     "deny", "allow", "require_approval", "allow_with_transform",
-    # F18 quality/stop extensions (audit/trace in v1; driver wiring post-v1).
+    # Quality/stop extensions.
     "fail", "pause", "final_success", "replan", "continue",
 ]
 RuntimeAction = Literal["block", "pause", "transform", "block_and_rewrite", "pass"]
@@ -20,7 +20,7 @@ class PolicyDecision:
     runtime_action: RuntimeAction
     transform_applied: Optional[Dict[str, Any]] = None
     evidence: Optional[Dict[str, Any]] = None
-    # F18 extensions (optional, backward-compatible).
+    # Quality extensions (optional, backward-compatible).
     quality_score: Optional[Dict[str, float]] = None  # layered sub-scores {surface, process, semantic}
     degraded_action: Optional[str] = None  # pause→block/clarify records the degraded action
 
@@ -29,7 +29,7 @@ class PolicyDecision:
         # "passes through" — no blocking intervention. Covers:
         # - allow (runtime_action="pass")
         # - allow_with_transform (runtime_action="transform") — still an "allow" decision
-        # - F18 final_success / continue / replan (runtime_action="pass")
+        # - final_success / continue / replan (runtime_action="pass")
         # replan's transition is driven by event, not by blocking.
         return self.runtime_action in ("pass", "transform")
 
@@ -37,7 +37,7 @@ class PolicyDecision:
     def is_block(self) -> bool:
         return self.runtime_action in ("block", "block_and_rewrite")
 
-    # --- F16 base factories -------------------------------------------------
+    # --- Base factories -----------------------------------------------------
 
     @classmethod
     def allow(cls, check_point: str, reason_code: str = "policy_pass") -> "PolicyDecision":
@@ -81,7 +81,7 @@ class PolicyDecision:
             evidence=evidence,
         )
 
-    # --- F18 quality/stop factories (B5 mapping internalized) --------------
+    # --- Quality/stop factories -------------------------------------------
 
     @classmethod
     def fail(
@@ -92,7 +92,7 @@ class PolicyDecision:
         evidence: Optional[Dict[str, Any]] = None,
         degraded_action: Optional[str] = None,
     ) -> "PolicyDecision":
-        # B5: fail → block (unrecoverable terminal).
+        # fail → block (unrecoverable terminal).
         return cls(
             decision="fail",
             reason_code=reason_code,
@@ -111,7 +111,7 @@ class PolicyDecision:
         degraded_action: str,
         evidence: Optional[Dict[str, Any]] = None,
     ) -> "PolicyDecision":
-        # B5: pause → pause (v1 degraded_action overrides to block/clarify at consumer).
+        # pause → pause (v1 degraded_action overrides to block/clarify at consumer).
         return cls(
             decision="pause",
             reason_code=reason_code,
@@ -130,7 +130,7 @@ class PolicyDecision:
         evidence: Optional[Dict[str, Any]] = None,
         quality_score: Optional[Dict[str, float]] = None,
     ) -> "PolicyDecision":
-        # B5: final_success → pass.
+        # final_success → pass.
         return cls(
             decision="final_success",
             reason_code=reason_code,
@@ -148,7 +148,7 @@ class PolicyDecision:
         *,
         evidence: Optional[Dict[str, Any]] = None,
     ) -> "PolicyDecision":
-        # B5: replan → pass (transition driven by event, not by blocking).
+        # replan → pass (transition driven by event, not by blocking).
         return cls(
             decision="replan",
             reason_code=reason_code,
@@ -165,7 +165,7 @@ class PolicyDecision:
         *,
         evidence: Optional[Dict[str, Any]] = None,
     ) -> "PolicyDecision":
-        # B5: continue → pass. (Method named continue_ — `continue` is a Python keyword.)
+        # continue → pass. (Method named continue_ because `continue` is a Python keyword.)
         return cls(
             decision="continue",
             reason_code=reason_code,

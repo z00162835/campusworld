@@ -115,7 +115,7 @@ class Domain:
 | `after_tool_observation` | `gate` | ToolObservation 生成后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
 | `before_final_answer` | `gate` | 最终答复发出前（非流式） | ❌ 未落地（P4 pending） | streaming / 非流式完整拦截延后到 [F18](F18_AGENT_QUALITY_GATES.md)（D6） |
 | `after_state_execute` | `quality` | `_execute_state` 后、`sm.next` 前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `stop_evaluator`；决策映射为 `runtime.stop_fail` / `event=stagnation` 供 F17 消费（`enable_stop_dimensions` 门控） |
-| `before_terminal` | `quality` | act 锚点 `_detect_tick_emit_deferral` 后、终态前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `final_success_evaluator`；驱动模式 `final_success_drive_mode`（off/shadow/enforce，D-B）；shadow 记 divergence，enforce 驱动 `draft_incomplete` |
+| `before_terminal` | `quality` | act 锚点 `_detect_tick_emit_deferral` 后、终态前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `final_success_evaluator`；shadow 记 divergence；enforce 驱动 final success / fail / 外层 draft retry |
 | `per_react_round` | `quality` | 内层 ReAct 结构化 turn 校验后 | ✅ P5-A opt-in | [F18](F18_AGENT_QUALITY_GATES.md) `react_turn_success_evaluator`；随 `require_structured_turn`，写 `react_round_decision` payload |
 
 ### 3.2 PolicyDecision（`decisions.py`）
@@ -296,7 +296,7 @@ gate:
 quality:
   enable_quality_score: false               # 多维 QualityScore（offline-only）
   enable_stop_dimensions: false             # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive/budget_exceeded），P5-A/P5-B3 门控
-  final_success_drive_mode: "off"           # final_success_evaluator 驱动模式：off / shadow（audit+divergence）/ enforce（驱动 draft_incomplete，D-B）
+  final_success_drive_mode: "off"           # off / shadow（audit+divergence）/ enforce（驱动终态或外层 draft retry）
   enable_budget_hard_fail: false            # budget_exceeded opt-in hard-fail 终态（Q1）；默认 soft-fail（经既有 fail_fallback 路径），P5-B3 门控
   max_iterations: 12                        # 总 state transition per tick 上限
   max_consecutive_tool_failures: 3          # 连续工具失败停止阈值
@@ -313,7 +313,7 @@ quality:
 |--------|------|------|
 | `enable_side_effect_detector` | `true` | 副作用 detector |
 | `enable_data_classification_detector` | `true` | 数据分级 detector |
-| `enable_prompt_fallback` | `true` | pattern_match 命中后降级 rewrite |
+| `enable_prompt_fallback` | `true` | pattern_match 命中后降级 rewrite；**inert placeholder**（D-E-B）：P4 `pattern_match` detector 未落地，此 flag 仅加载无消费者；P4 落地前置 `false` 无意义 |
 | `enable_skill_tool_group_detector` | `false` | D3 group 约束 detector（默认 off，前向兼容；运行于 `before_tool_call`，归属 gate 域） |
 
 `side_effect_defaults` 由 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 自动推导 gate 默认 decision（`none`/`read`→`allow`、`write_low`→`allow`、`write_high`→`require_approval`，v1 降级 block）。
@@ -324,7 +324,7 @@ quality:
 |--------|------|------|
 | `enable_quality_score` | `false` | 多维 QualityScore（offline-only） |
 | `enable_stop_dimensions` | `false` | stop_evaluator 新维度门控（stagnation / max_iterations / max_consecutive_tool_failures / budget_exceeded）；off 时 evaluator 返回 `None`，byte-equivalent |
-| `final_success_drive_mode` | `"off"` | final_success_evaluator 驱动模式（D-B）：`off`（byte-equiv，不求值）/ `shadow`（audit + divergence 检测，`_detect_tick_emit_deferral` 仍为权威）/ `enforce`（evaluator 驱动 `draft_incomplete`，deferral 降为 fallback；`retry_loop→replan` 待 D-I 落地） |
+| `final_success_drive_mode` | `"off"` | `off`（byte-equiv，不求值）/ `shadow`（audit + divergence，deferral 仍为权威）/ `enforce`（`complete` 成功、`fail_fallback` 失败、`retry_loop` 经 `draft_retry` 外层 replan；缺 transition 或预算耗尽时 fail-closed） |
 | `enable_budget_hard_fail` | `false` | budget_exceeded opt-in hard-fail 终态（Q1）；off 时 soft-fail `continue`（audit/trace-only，既有 fail_fallback 路径保持权威），byte-equivalent |
 | `max_iterations` | `12` | 总 state transition per tick 上限 |
 | `max_consecutive_tool_failures` | `3` | 连续工具失败停止阈值 |
@@ -333,6 +333,8 @@ quality:
 quality 域的 `success_checks` / `stop_policy` 节点级覆盖优先级详见 [F18](F18_AGENT_QUALITY_GATES.md) §7。
 
 **加载机制：** `PolicyConfig`（`policy/config.py`）启动期读取 `backend/config/policy.yaml`，按域解析为 dataclass，注入对应 `Domain` 实例；文件缺失或键缺失时回退代码内默认值（保单测无文件可跑）。`config_manager.py` 不再承载 policy 键。
+
+布尔开关解析采用 fail-safe 策略：仅明确的 `true/1/yes/on` 与 `false/0/no/off` 字符串改变布尔值；未知字符串或异常数值记录英文 warning 并回退字段默认值，避免拼写错误关闭默认开启的安全 detector。
 
 ### 5.2 实例规则（v1 代码注册，延后 YAML）
 
@@ -449,10 +451,10 @@ v1 各域实例规则通过 Python dataclass + 代码注册（D7），与平台�
 | **P1** | `before_tool_call` 实现 `side_effect_level`（`write_high` → block）和 `data_classification`（`confidential`/`restricted` → block）路径；`policy_decision` trace 写入 | 无需依赖 F15 skill group；与现有 `execution_gate` 行为等价升级 |
 | **P2** | `before_skill_activation` hook 接入 `SkillInjection`；policy 拒绝 skill 进入 `Blocked by policy` 段；`policy_decision` trace 记录 | 依赖 F15 manifest 模板已支持 blocked 段（已完成） |
 | **P3** | `tool_group` 层级匹配（`read` 父组包含 `observe`/`agent_meta`/`identity`/`communicate`）落地；`skill_tool_group` detector 在 `before_tool_call` 硬过滤 | **必须在 P1 之后**，否则当前 `allowed_tool_groups: [read]` 的 seed skills 会误拒绝 `whoami`/`agent list`/`task list` 等只读命令 |
-| **P4** | `pattern_match` detector（Prompt 注入 / 越权短语）在 `before_tool_call` 和 `before_final_answer` 拦截 | 需 golden trace 验证，避免误伤 |
-| **P5** | 后置：F18 输出/流式 gate 落地后，关闭 `policy.enable_prompt_fallback` 并移除 prompt 安全规则文本 | 依赖 F18 |
+| **P4** | `pattern_match` detector（Prompt 注入 / 越权短语）在 `before_tool_call` 和 `before_final_answer` 拦截 | ⏸ **blocked-on F18 streaming gate**（D-E-B 决策）：`before_final_answer` 的主向量是 final-answer 注入，但 F18 v1 明确不做 mid-stream 求值（§4.1 streaming 张力），非流式插入覆盖不全；`before_tool_call` 已有 `side_effect`/`data_classification` detector，边际价值有限。完整 P4 应与 F18 流式 gate 一同落地，需 pattern 库策展 + golden trace 验证（误伤风险） |
+| **P5** | 后置：F18 输出/流式 gate 落地后，关闭 `policy.enable_prompt_fallback` 并移除 prompt 安全规则文本 | ⏸ **blocked-on P4 + F18**（D-E-B）：`enable_prompt_fallback` 当前为 inert placeholder（仅加载、无 detector 消费）；P4 未落地前置 `false` 无意义。落地前置 `false` 时应 log warning（无 detector 可 fallback） |
 
-**v1 最小可交付（MVP）：P0 + P1 + P2。** `tool_group` 硬过滤（P3）在 `read` 父组语义与层级匹配实现后再启用。
+**v1 最小可交付（MVP）：P0 + P1 + P2。** `tool_group` 硬过滤（P3）在 `read` 父组语义与层级匹配实现后再启用。**P4/P5 延后**（D-E-B）：blocked-on F18 流式 gate，prompt 安全文本保持权威 guard（`enable_prompt_fallback=true`）。
 
 ## 14. 后续
 

@@ -7,9 +7,13 @@ explicitly enabled. Under default config, no such trace row is produced
 """
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
+from app.game_engine.agent_runtime.agent_loop.signals import DraftCompletenessVerdict
 from app.game_engine.agent_runtime.policy import PolicyEngine
 from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 from app.game_engine.agent_runtime.policy.context import PolicyContext
+from app.game_engine.agent_runtime.policy.domains import quality_domain
 
 
 def test_default_config_no_quality_decision_trace():
@@ -44,7 +48,37 @@ def test_quality_decision_trace_schema_when_enabled():
     )
     decision = engine.evaluate(ctx)
     assert decision.is_allow is True
-    # quality_score is a first-class field (G2); evidence stays clean.
-    if decision.quality_score is not None:
-        assert "semantic" in decision.quality_score
-        assert "quality_score" not in (decision.evidence or {})
+    assert decision.quality_score is not None
+    assert "semantic" in decision.quality_score
+    assert "quality_score" not in (decision.evidence or {})
+
+
+def test_quality_score_survives_final_success_short_circuit(monkeypatch):
+    monkeypatch.setattr(
+        quality_domain,
+        "assess_final_draft_completeness",
+        lambda **kw: DraftCompletenessVerdict.complete,
+    )
+    engine = PolicyEngine()
+    ctx = PolicyContext(
+        check_point=CheckPoint.BEFORE_TERMINAL,
+        extra={
+            "tick_state": {
+                "enable_quality_score": True,
+                "final_success_drive_mode": "shadow",
+                "agent_loop_config": MagicMock(),
+                "draft_text": "hello world",
+                "user_message": "hello?",
+                "tool_results": [],
+                "success_criteria": [],
+                "recent_signatures": [],
+                "stagnation_window": 3,
+            }
+        },
+    )
+
+    decision = engine.evaluate(ctx)
+
+    assert decision.decision == "final_success"
+    assert decision.quality_score is not None
+    assert "semantic" in decision.quality_score

@@ -100,21 +100,24 @@ workflow:
 | check | plan | `state.replan_count < sm.max_replans and runtime.budget_remaining and runtime.mandatory_gap_missing` | `mandatory_gap` | mandatory gap |
 | any | plan | `state.replan_count < sm.max_replans and runtime.budget_remaining` | `stagnation` | F18 stagnation replan（R2 方案A；driver 映射 `stop_evaluator` stagnation → `event=stagnation`） |
 | check | act | — | — | 始终进入 act（skip-act 在态内 `mode=skip` 发迹） |
+| act | plan | `state.replan_count < sm.max_replans and runtime.budget_remaining` | `draft_retry` | F18 `final_success_evaluator` retry_loop→replan（D-I-B；enforce 模式驱动，计入 `replan_count`；超限 → `runtime.stop_fail` → `*→fail`） |
 | act | end | — | — | 成功终态 |
 | any | fail | `runtime.cancelled` | — | 取消：任意态即时终态 |
 | any | fail | `runtime.stop_fail` | — | F18 stop_evaluator 不可恢复终止（max_iterations / max_consecutive_tool_failures / stagnation 超限）；driver 映射 `stop_evaluator` fail → `runtime.stop_fail`（D1，`enable_stop_dimensions` 门控，默认 off） |
 | act | fail | `runtime.draft_incomplete` | — | 草稿不完整：仅 act（presentation anchor）终态 |
 
-转移求值顺序：`any → fail`（`cancelled` / `stop_fail`，phase 1 优先，忽略 `on_event`）→ `act → fail`（`draft_incomplete`）→ `on_event` 匹配（`check_retry` / `mandatory_gap` / `stagnation`）→ `when` 求值 → 首个匹配生效。
+转移求值顺序：`any → fail`（`cancelled` / `stop_fail`，phase 1 优先，忽略 `on_event`）→ `act → fail`（`draft_incomplete`）→ `on_event` 匹配（`check_retry` / `mandatory_gap` / `stagnation` / `draft_retry`）→ `when` 求值 → 首个匹配生效。
 
 Check RETRY → plan replan 路径 **保留** guardrail hint 注入（等价今日 `plan2_user`）。
+Draft retry → plan 路径注入上一版被拒草稿、质量判定原因和补全/grounding 指令；相同输入的盲重试不属于支持契约。
 
 **`fail` 终态契约（D1-A）：** abort 必须经状态机进入 `fail`，不得提前 `return` 绕过 `sm.next`。
 
 | 原因 | `runtime` 标志 | `FrameworkRunResult` |
 |------|----------------|----------------------|
 | 取消 | `cancelled=true` | `ok=false`, `final_phase=fail`, `error_code=cancelled` |
-| F18 stop 不可恢复终止 | `stop_fail=true` | `ok=false`, `final_phase=fail`, `error_code=draft_incomplete`（v1 复用 empty_reply_fallback UX；`enable_stop_dimensions` 门控） |
+| F18 stop 不可恢复终止 | `stop_fail=true` | `ok=false`, `final_phase=fail`, `error_code=<reason_code>`（如 `max_iterations_exceeded` / `stagnation_replan_exhausted`） |
+| Draft retry 不可执行 | `stop_fail=true` | `ok=false`, `final_phase=fail`, `error_code=draft_retry_exhausted` 或 `draft_retry_unsupported` |
 | 草稿不完整 | `draft_incomplete=true` | `ok=false`, `final_phase=fail`, `error_code=draft_incomplete` |
 
 - 态前 / 态内取消：置 `cancelled`，本轮不执行（或截断执行）后 `sm.next` → `fail`（任意态）。
@@ -210,7 +213,7 @@ v1 最小语法：
 
 - **外层状态机**驱动 stage 间转移。
 - **内层 ReAct**（`agent_loop/`）仍是 stage 内子循环；状态机不接管 round 控制。
-- v1 状态机 `replan` 仅映射 Check `RETRY` / mandatory-gap（外层）；内层 draft retry 保留 `agent_loop`。统一 `max_replans` 延后 [F18](F18_AGENT_QUALITY_GATES.md)。
+- v1 状态机 `replan` 映射 Check `RETRY` / mandatory-gap / stagnation / draft_retry（外层）；内层 draft retry 保留 `agent_loop`（`max_rounds` 预算）。**D-I-B 决策：** 外层 replan 共享 `max_replans` 计数器；内层 draft retry（同计划加 hint 重试）保留独立 `max_rounds` 预算——粒度不同不混用（业界实践：LangGraph `recursion_limit` vs per-node retry、AutoGen `max_consecutive_auto_reply` vs 外层轮次均分离）。
 
 ### 7.1 Driver 三段边界
 
@@ -279,7 +282,7 @@ v1 最小语法：
 ## 12. Open Questions / 决策
 
 - **Q1（结构化 turn 与 native tool_use）：** **已决策 v1 互斥**（启用结构化 turn 关 native tool_use）。
-- **Q2（replan 统一）：** 延后到 [F18](F18_AGENT_QUALITY_GATES.md) `StopPolicy`。
+- **Q2（replan 统一）：** **已决策（D-I-B）** — 外层 replan（check_retry / mandatory_gap / stagnation / draft_retry）共享 `max_replans`；内层 draft retry 保留 `agent_loop` `max_rounds`。`act→plan on_event=draft_retry` 已落地（§6）。
 - **Q3（`${skill.*}`）：** v1 不支持；待 Skill 结构化输出。
 - **Q4（provider json_schema）：** 不阻塞；v1 用 tool-as-schema / JSON repair。
 - **Q5（streaming）：** **已决策** `require_structured_turn=true` 时禁流式。

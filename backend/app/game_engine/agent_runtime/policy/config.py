@@ -52,9 +52,9 @@ class GateDomainConfig:
 @dataclass(frozen=True)
 class QualityDomainConfig:
     enable_quality_score: bool = False
-    enable_stop_dimensions: bool = False   # gates stop_evaluator new dims (stagnation/max_iterations/max_consecutive/budget_exceeded)
+    enable_stop_dimensions: bool = False   # gates stop_evaluator dimensions and tick budget checks
     final_success_drive_mode: str = "off"  # off / shadow (audit+divergence) / enforce (evaluator drives draft_incomplete)
-    enable_budget_hard_fail: bool = False  # opt-in hard-fail terminal for budget_exceeded (Q1); default soft-fail
+    enable_budget_hard_fail: bool = False  # opt-in hard-fail terminal for budget_exceeded; default soft-fail
     max_iterations: int = 12
     max_consecutive_tool_failures: int = 3
     stagnation_window: int = 3
@@ -67,13 +67,22 @@ class PolicyConfig:
     quality: QualityDomainConfig = field(default_factory=QualityDomainConfig)
 
 
-def _coerce_bool(value: Any, default: bool) -> bool:
+def _coerce_bool(value: Any, default: bool, *, key: str = "value") -> bool:
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
-        return value.strip().lower() in {"true", "1", "yes", "on"}
-    if isinstance(value, (int, float)):
-        return bool(value)
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+        logger.warning("Invalid boolean policy config for %s: %r; using default %s", key, value, default)
+        return default
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if value in (0, 1):
+            return bool(value)
+        logger.warning("Invalid numeric boolean policy config for %s: %r; using default %s", key, value, default)
+        return default
     return default
 
 
@@ -138,30 +147,36 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
 
     gate = GateDomainConfig(
         enable_side_effect_detector=_coerce_bool(
-            gate_raw.get("enable_side_effect_detector"), True
+            gate_raw.get("enable_side_effect_detector"), True, key="gate.enable_side_effect_detector"
         ),
         enable_data_classification_detector=_coerce_bool(
-            gate_raw.get("enable_data_classification_detector"), True
+            gate_raw.get("enable_data_classification_detector"), True, key="gate.enable_data_classification_detector"
         ),
         enable_prompt_fallback=_coerce_bool(
-            gate_raw.get("enable_prompt_fallback"), True
+            gate_raw.get("enable_prompt_fallback"), True, key="gate.enable_prompt_fallback"
         ),
         enable_skill_tool_group_detector=_coerce_bool(
-            gate_raw.get("enable_skill_tool_group_detector"), False
+            gate_raw.get("enable_skill_tool_group_detector"), False, key="gate.enable_skill_tool_group_detector"
         ),
         side_effect_defaults=merged_side_defaults,
     )
 
     quality = QualityDomainConfig(
-        enable_quality_score=_coerce_bool(quality_raw.get("enable_quality_score"), False),
-        enable_stop_dimensions=_coerce_bool(quality_raw.get("enable_stop_dimensions"), False),
+        enable_quality_score=_coerce_bool(
+            quality_raw.get("enable_quality_score"), False, key="quality.enable_quality_score"
+        ),
+        enable_stop_dimensions=_coerce_bool(
+            quality_raw.get("enable_stop_dimensions"), False, key="quality.enable_stop_dimensions"
+        ),
         final_success_drive_mode=_coerce_drive_mode(
             quality_raw.get("final_success_drive_mode")
             if "final_success_drive_mode" in quality_raw
             else quality_raw.get("enable_final_success_gate"),
             "off",
         ),
-        enable_budget_hard_fail=_coerce_bool(quality_raw.get("enable_budget_hard_fail"), False),
+        enable_budget_hard_fail=_coerce_bool(
+            quality_raw.get("enable_budget_hard_fail"), False, key="quality.enable_budget_hard_fail"
+        ),
         max_iterations=_coerce_int(quality_raw.get("max_iterations"), 12),
         max_consecutive_tool_failures=_coerce_int(
             quality_raw.get("max_consecutive_tool_failures"), 3

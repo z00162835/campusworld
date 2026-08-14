@@ -205,7 +205,7 @@ quality 域 v1 注册的 evaluator 见 §3.3；配置开关与默认阈值见 [F
 
 ## 4. 既有收敛点
 
-> **G1-A 决策（v1 evaluator 定位）：** v1 的 F18 evaluator（`stop_evaluator` / `final_success_evaluator` / `quality_score_evaluator` / `react_turn_success_evaluator`）注册进 `QualityDomain` + 单测覆盖。**P5-A 已接线**：driver 在 `_execute_state` / `_execute_act_state` / `_phase_react_loop` 调用 `PolicyEngine.evaluate` 并记录 `quality_decision` trace 行；新维度经 config 开关 `enable_stop_dimensions` 默认 off，`final_success_evaluator` 经 `final_success_drive_mode`（off/shadow/enforce，D-B）默认 off，默认 config 下 byte-equivalent。`final_success_evaluator` 在 `shadow` 下为 audit + divergence 检测（`_detect_tick_emit_deferral` 仍为权威），`enforce` 下驱动 `draft_incomplete`（`retry_loop→replan` 待 D-I）；`detect_check_replan` 已收归 `stop_evaluator`（P5-B1）；`per_react_round` B4 loop 消费已接线（P5-B2）。本节 §4.4 描述 P5 目标契约。
+> **G1-A 决策（v1 evaluator 定位）：** v1 的 F18 evaluator（`stop_evaluator` / `final_success_evaluator` / `quality_score_evaluator` / `react_turn_success_evaluator`）注册进 `QualityDomain` + 单测覆盖。**P5-A 已接线**：driver 在 `_execute_state` / `_execute_act_state` / `_phase_react_loop` 调用 `PolicyEngine.evaluate` 并记录 `quality_decision` trace 行；新维度经 config 开关 `enable_stop_dimensions` 默认 off，`final_success_evaluator` 经 `final_success_drive_mode`（off/shadow/enforce，D-B）默认 off，默认 config 下 byte-equivalent。`final_success_evaluator` 在 `shadow` 下为 audit + divergence 检测（`_detect_tick_emit_deferral` 仍为权威），`enforce` 下驱动控制流（`retry_loop→replan` 经 `act→plan on_event=draft_retry`，D-I-B 已落地）；`detect_check_replan` 已收归 `stop_evaluator`（P5-B1）；`per_react_round` B4 loop 消费已接线（P5-B2）。本节 §4.4 描述 P5 目标契约。
 
 ### 4.1 `draft_gate` → `final_success_evaluator`
 
@@ -215,8 +215,9 @@ quality 域 v1 注册的 evaluator 见 §3.3；配置开关与默认阈值见 [F
 - **驱动模式（D-B，`final_success_drive_mode`）：**
   - `off`（默认，byte-equiv）：evaluator 不求值，无 trace 行；`_detect_tick_emit_deferral` 为唯一权威。
   - `shadow`：evaluator 求值并记 `quality_decision` 行；`_detect_tick_emit_deferral` 仍为权威；当 evaluator verdict 与 deferral 结果在 pass/fail 边界上不一致（或为 `retry_loop` 第三态）时，记 `final_success_divergence` 行（不阻断）。
-  - `enforce`：evaluator verdict 驱动 `runtime.draft_incomplete`（`final_success` 清、`fail` 置）；`_detect_tick_emit_deferral` 降为 fallback（evaluator 返回 `None`/异常时生效）。`retry_loop→replan` 需 `act→plan` transition（D-I），D-I 落地前 enforce 对 `retry_loop` 仍 audit-only 并回退 deferral。
+  - `enforce`：evaluator verdict 驱动控制流；`final_success` 清 `runtime.draft_incomplete`，`fail` 置 `runtime.draft_incomplete`，`retry_loop` 发 `draft_retry` 事件并经 `act→plan` transition 触发外层 replan。evaluator 使用无预算版本的完整性判定返回原始 verdict；driver 独立检查 workflow transition、`max_replans`、命令数与 observation 字符数预算。缺 transition 时 `draft_retry_unsupported` fail-closed，预算/次数耗尽时 `draft_retry_exhausted` fail-closed。`_detect_tick_emit_deferral` 降为 fallback（evaluator 返回 `None`/异常时生效）。
 - **与 act 锚点顺序：** `final_success_evaluator` 在 `_detect_tick_emit_deferral` **之后**求值；`ctx.payload['_draft_incomplete']` 是其**输入**，不与 act 锚点竞争权威重判。
+- **与 `quality_score_evaluator` 组合：** 当 `enable_quality_score=true` 且 `final_success_drive_mode` 为 `shadow/enforce` 时，PolicyEngine 先保留 `allow + quality_score` 审计结果，再将该分数合并到后续 `final_success/replan/fail` 决策，避免 final_success 的非默认决策短路导致质量分丢失。
 - ⚠️ streaming 张力：`is_draft_streamable` gate SSE prose（`_phase_react_loop` / stream hooks）；收敛不得改变 mid-tick streaming 行为（`test_agent_loop.py` / `test_llm_pdca_*stream*` 锁定）。v1 **不**在 mid-stream 求值。
 
 ### 4.2 `ToolGatherBudgets` → `stop_evaluator.budget_exceeded`
@@ -272,7 +273,8 @@ _execute_state(act)
 | `PolicyDecision.decision` | 映射到 | `sm.next` 消费 | 用户可见 |
 |---------------------------|--------|----------------|---------|
 | `fail`（cancel） | `runtime.cancelled=true` | `*→fail` | 既有 cancel UX（`aico/profile` `kind: cancelled`） |
-| `fail`（draft / budget / max_iterations / max_consecutive_failures） | `runtime.stop_fail=true` | `*→fail`（F17 模板 `*→fail on runtime.stop_fail`，任意态生效） | `empty_reply_fallback` 消息（既有，`_resolve_npc_agent_empty_reply_message`） |
+| `fail`（budget / max_iterations / max_consecutive_failures） | `runtime.stop_fail=true` + 原始 `reason_code` | `*→fail`（F17 模板 `*→fail on runtime.stop_fail`，任意态生效） | 无伪造的 draft_incomplete 提示；`FrameworkRunResult.error_code` 保留原始原因 |
+| `replan`（final draft retry） | `event=draft_retry` + 修复上下文；缺 transition / 超预算则 `runtime.stop_fail=true` | `act→plan on_event=draft_retry`；失败关闭时 `*→fail` | 首次不可见；失败时返回 `draft_retry_unsupported` / `draft_retry_exhausted` |
 | `replan`（check_retry / mandatory_gap，B3 统一收归） | `event=check_retry` / `mandatory_gap` + `budget_remaining` | `check→plan` | **不可见**（用户不感知 replan） |
 | `replan`（stagnation，R2 方案A，B6-a 仅 plan/do/check 态） | `event=stagnation`（`replan_count < max_replans and budget_remaining`）；否则 `runtime.stop_fail=true` | `*→plan on_event=stagnation`（F17 模板已落地，受 `replan_count < max_replans` 约束）；超限 → `*→fail` | **不可见**（首次）；超限 → `empty_reply_fallback` |
 | `replan`（per_react_round，B4） | 写 `ctx.payload['react_round_decision']`，内层 loop break + flag 传递 | 外层 `after_state_execute` 二次确认 → `event=stagnation`（复用 `*→plan`，P5-B2）；`fail` → `stop_fail` | **不可见** |
@@ -511,11 +513,11 @@ DSL `stop_policy.fail.any` 列出但此前无定义。**R11 定义：**
 
 > **目标：** 把 P1-P4 注册的 evaluator 从 audit/trace-only 升级为控制流驱动。driver 在 F18 check_point 调用 `PolicyEngine.evaluate`，按 §4.4 映射表把 `PolicyDecision` 写入 `runtime.*` / event，由 `sm.next` 消费。
 
-> **P5-A 落地范围（本次）：** driver 已在三个 F18 check_point 调用 `PolicyEngine.evaluate` 并记录 `quality_decision` trace 行（复用 `_policy_decision_to_trace`，D4）；新维度（stagnation / max_iterations / max_consecutive_tool_failures）经 config 开关 `enable_stop_dimensions` 默认 off，`final_success_evaluator` 经 `final_success_drive_mode`（off/shadow/enforce，D-B）默认 off，默认 config 下不产生 trace 行、不覆盖 event/runtime（byte-equivalent）。stop `fail` 经 `runtime.stop_fail` + F17 `*→fail` 任意态终止（D1）；stagnation 经 F17 `*→plan on_event=stagnation` replan / 超限 `*→fail`（D2）；`per_react_round` 写 `ctx.payload['react_round_decision']`（D3）。**P5-B1：** `detect_check_replan` 已从 `_execute_check_state` 内联迁移至 `stop_evaluator`（B3 统一收归），check_retry/mandatory_gap 现经 PolicyEngine 决策；`mandatory_gap_retry_override` trace 行移至 `check_entry` 之后。**P5-B2：** B4 内层 ReAct loop 消费已接线——replan/fail→break + flag 传递，`after_state_execute` 二次确认（fail→`stop_fail`；replan→`event=stagnation`），flag 消费后清空。**D-B Step1：** `final_success_drive_mode` 引入 `shadow`（audit + `final_success_divergence` 检测，deferral 仍权威）与 `enforce`（evaluator 驱动 `draft_incomplete`，deferral 降为 fallback；`retry_loop→replan` 待 D-I）；默认 `off` 保 byte-equiv。
+> **P5-A 落地范围（本次）：** driver 已在三个 F18 check_point 调用 `PolicyEngine.evaluate` 并记录 `quality_decision` trace 行（复用 `_policy_decision_to_trace`，D4）；新维度（stagnation / max_iterations / max_consecutive_tool_failures）经 config 开关 `enable_stop_dimensions` 默认 off，`final_success_evaluator` 经 `final_success_drive_mode`（off/shadow/enforce，D-B）默认 off，默认 config 下不产生 trace 行、不覆盖 event/runtime（byte-equivalent）。stop `fail` 经 `runtime.stop_fail` + F17 `*→fail` 任意态终止并保留具体 `reason_code`；stagnation 经 F17 `*→plan on_event=stagnation` replan / 超限 `*→fail`；`retry_loop` 经 `draft_retry` 外层 replan，缺 transition 或预算耗尽时 fail-closed；`per_react_round` 写 `ctx.payload['react_round_decision']`。`detect_check_replan` 已从 `_execute_check_state` 内联迁移至 `stop_evaluator`；内层 ReAct loop 消费已接线。默认 `off` 保 byte-equiv。
 
 - [x] `_execute_state`（非 act 态）后调 `PolicyEngine.evaluate(check_point='after_state_execute')`，映射 `stop_evaluator` 决策：`fail`（max_iterations / max_consecutive）→ `runtime.stop_fail`（F17 `*→fail` 任意态，D1）；`replan`（stagnation）→ `event=stagnation`（F17 `*→plan`，受 `replan_count < max_replans`，超限 → `stop_fail`，D2）；单次 `sm.next` 消费；`check_retry` / `mandatory_gap` / `budget_exceeded` 仍走既有内联路径（保 byte-equiv，P5-B 统一）
 - [x] `_execute_act_state`：`_detect_tick_emit_deferral` 后 `after_state_execute` 仅设 flag（不调 `sm.next`），`before_terminal` 完成后单次 `sm.next` 消费合并 flag/event（B6-b）
-- [x] `before_terminal` 调 `PolicyEngine.evaluate`，`final_success_evaluator` 决策记 `quality_decision` trace 行；驱动模式 `final_success_drive_mode`（D-B）：`off` byte-equiv / `shadow` audit + `final_success_divergence` 检测（deferral 仍权威）/ `enforce` 驱动 `draft_incomplete`（deferral 降为 fallback；`retry_loop→replan` 待 D-I）
+- [x] `before_terminal` 调 `PolicyEngine.evaluate`，`final_success_evaluator` 决策记 `quality_decision` trace 行；驱动模式 `final_success_drive_mode`（D-B）：`off` byte-equiv / `shadow` audit + `final_success_divergence` 检测（deferral 仍权威）/ `enforce` 驱动控制流（`final_success` 清 / `fail` 置 `draft_incomplete`；`retry_loop→replan` 经 `act→plan on_event=draft_retry` 外层 replan，D-I-B 已落地，超限 → `stop_fail`）
 - [x] `_phase_react_loop` 每轮调 `PolicyEngine.evaluate(check_point='per_react_round')`（仅 `require_structured_turn=true` 且 `react_turn` 非空），写 `ctx.payload['react_round_decision']`（D3）+ trace 行；**B4 内层 loop 消费已接线**（P5-B2）：replan/fail→break + flag 传递，`after_state_execute` 二次确认（fail→`stop_fail`；replan→`event=stagnation`）；flag 消费后清空避免跨态污染
 - [x] `detect_check_replan` 调用从 `_execute_check_state` 内联迁移至 `stop_evaluator` 经 `PolicyEngine.evaluate` 路径触发（B3 统一收归，P5-B1）；`mandatory_gap_retry_override` trace 行随之移至 `check_entry` 之后（trace 顺序翻转，已确认 golden 测试不锁定该顺序）；driver 映射 `replan`(check_retry/mandatory_gap) → event + bag.retry_tools + trace 行，over-cap 由 `sm.next` 落到 act（保 byte-equiv）
 - [x] 计数器采集前置：`max_consecutive_tool_failures` 计数器在 `after_tool_observation` 更新（`_update_tool_failure_counter`）；`recent_signatures`（obs 哈希 / tool 签名）sliding window 由 `_append_obs_signatures` 维护
@@ -537,7 +539,7 @@ DSL `stop_policy.fail.any` 列出但此前无定义。**R11 定义：**
 - **Q2（quality_score 阈值标定）：** 默认 `semantic_gte` 0.75/0.85 可能阻断今日 `complete` 回复；标定需 offline eval rubric（见 §5.3）回归。
 - **Q3（配置面合并）：** `agents.llm.extra` + `phase_llm` + `success_checks`/`stop_policy` 三面何时合并为单一 quality 配置？
 - **Q4（wall-time deadline）：** F10 §6 tick deadline 未实现；`stop_evaluator.max_wall_time` 何时落地（需 deadline 传递）？
-- **Q5（replan 统一）：** `stop_evaluator` 的 replan 信号与 [F17](F17_AGENT_STATE_MACHINE.md) 状态机 `replan` / Check `RETRY` / `agent_loop` draft retry 何时统一为 `max_replans` 计数器？
+- **Q5（replan 统一）：** **已决策（D-I-B）** — 外层 replan（check_retry / mandatory_gap / stagnation / draft_retry）共享 `max_replans` 计数器；内层 draft retry（`agent_loop` 同计划加 hint 重试）保留独立 `max_rounds` 预算（粒度不同不混用，对齐业界实践）。`act→plan on_event=draft_retry` 已落地于 [F17](F17_AGENT_STATE_MACHINE.md) §6。
 - **Q6（LLM-as-judge 边界）：** **已决策（S6）** — offline-only；tick 热路径永不默认开启。tick 内 opt-in 需标注延迟代价。何时引入 offline judge rubric harness（见 §5.3）？
 - **Q7（`pause` 异步化）：** 跨 tick pause/resume 何时引入（与 [F16](F16_AGENT_POLICY_ENGINE.md) Q2 联动）？
 - **Q8（显式 `runtime.stop_decision`）：** v1 用 driver 映射到既有 flag/event；何时升级为 PDCA 模板显式 `runtime.stop_decision` transition（可配置 workflow 可直接引用）？

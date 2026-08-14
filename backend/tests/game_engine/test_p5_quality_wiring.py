@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.core.settings import PhaseLlmMode, PhaseLlmPhaseConfig
+from app.game_engine.agent_runtime.agent_loop.signals import DraftCompletenessVerdict
 from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext
 from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
 from app.game_engine.agent_runtime.policy.config import (
@@ -18,12 +19,18 @@ from app.game_engine.agent_runtime.policy.config import (
     QualityDomainConfig,
 )
 from app.game_engine.agent_runtime.policy.engine import PolicyEngine
+from app.game_engine.agent_runtime.policy.domains import quality_domain
 from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 from app.game_engine.agent_runtime.policy.decisions import PolicyDecision
+from app.game_engine.agent_runtime.state_machine.workflow_loader import load_workflow
 from app.game_engine.agent_runtime.thinking_pipeline import NoOpAgentTickHooks
 from app.game_engine.agent_runtime.tool_calling import (
     CompleteWithToolsResult,
     ToolSchema,
+)
+from app.game_engine.agent_runtime.tool_gather import (
+    ToolGatherBudgets,
+    ToolGatherCounters,
 )
 
 
@@ -38,6 +45,21 @@ class _CompleteLlm:
             text="这是一个足够长的完整回答，包含足够的内容以满足草稿完整性检查。" * 3,
             tool_calls=[],
             finish_reason="stop",
+        )
+
+
+class _RecordingCompleteLlm(_CompleteLlm):
+    def __init__(self) -> None:
+        self.prompts: list[str] = []
+
+    def complete_with_tools(self, *, system, turns, tools, call_spec=None, cancel_check=None):
+        self.prompts.append("\n".join(str(getattr(turn, "text", "")) for turn in turns))
+        return super().complete_with_tools(
+            system=system,
+            turns=turns,
+            tools=tools,
+            call_spec=call_spec,
+            cancel_check=cancel_check,
         )
 
 
@@ -61,7 +83,13 @@ class _TraceMem:
         return None
 
 
-def _build_fw(*, quality: QualityDomainConfig) -> tuple[LlmPDCAFramework, _TraceMem]:
+def _build_fw(
+    *,
+    quality: QualityDomainConfig,
+    llm=None,
+    state_machine=None,
+    tool_gather_budgets: ToolGatherBudgets | None = None,
+) -> tuple[LlmPDCAFramework, _TraceMem]:
     mem = _TraceMem()
     fw = LlmPDCAFramework(
         memory=mem,
@@ -78,9 +106,11 @@ def _build_fw(*, quality: QualityDomainConfig) -> tuple[LlmPDCAFramework, _Trace
             "act": PhaseLlmPhaseConfig(mode=PhaseLlmMode.skip),
         },
         instance_mode_models={},
-        llm=_CompleteLlm(),
+        llm=llm or _CompleteLlm(),
         tick_hooks=NoOpAgentTickHooks(),
         tool_schemas=[ToolSchema(name="look", description="look", input_schema={"type": "object"})],
+        state_machine=state_machine,
+        tool_gather_budgets=tool_gather_budgets,
     )
     fw._policy_engine = PolicyEngine(config=PolicyConfig(quality=quality))
     return fw, mem
@@ -107,6 +137,7 @@ def test_stop_dimensions_max_iterations_drives_fail():
     )
     res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
     assert not res.ok
+    assert res.error_code == "max_iterations_exceeded"
     rows = _quality_rows(mem.last_trace)
     assert rows, "expected at least one quality_decision row"
     assert any(r["reason_code"] == "max_iterations_exceeded" for r in rows)
@@ -192,6 +223,7 @@ def test_stagnation_over_limit_drives_stop_fail(monkeypatch):
     # First plan: stagnation, replan_count 0<1 → replan to plan (replan_count=1).
     # Second plan: stagnation, replan_count 1>=1 → stop_fail → *→fail.
     assert not res.ok
+    assert res.error_code == "stagnation_replan_exhausted"
     rows = _quality_rows(mem.last_trace)
     assert any(r["reason_code"] == "stagnation" for r in rows)
 
@@ -244,13 +276,8 @@ def _divergence_rows(trace: list) -> list:
 def test_final_success_shadow_byte_equiv_no_divergence(monkeypatch):
     """D-B shadow: evaluator agrees with deferral (both complete) → no
     divergence row; tick still succeeds (deferral authoritative)."""
-    from app.game_engine.agent_runtime.agent_loop import draft_gate
-    from app.game_engine.agent_runtime.agent_loop.signals import (
-        DraftCompletenessVerdict,
-    )
-
     monkeypatch.setattr(
-        draft_gate, "assess_draft_completeness_with_budget",
+        quality_domain, "assess_final_draft_completeness",
         lambda **kw: DraftCompletenessVerdict.complete,
     )
     fw, mem = _build_fw(
@@ -267,13 +294,8 @@ def test_final_success_shadow_byte_equiv_no_divergence(monkeypatch):
 def test_final_success_shadow_records_divergence_on_fail_disagreement(monkeypatch):
     """D-B shadow: evaluator says fail_fallback but deferral says complete →
     divergence row recorded; deferral stays authoritative so tick still succeeds."""
-    from app.game_engine.agent_runtime.agent_loop import draft_gate
-    from app.game_engine.agent_runtime.agent_loop.signals import (
-        DraftCompletenessVerdict,
-    )
-
     monkeypatch.setattr(
-        draft_gate, "assess_draft_completeness_with_budget",
+        quality_domain, "assess_final_draft_completeness",
         lambda **kw: DraftCompletenessVerdict.fail_fallback,
     )
     fw, mem = _build_fw(
@@ -294,13 +316,8 @@ def test_final_success_shadow_records_divergence_on_fail_disagreement(monkeypatc
 def test_final_success_shadow_retry_loop_always_divergence(monkeypatch):
     """D-B shadow: retry_loop is a third state the binary deferral gate can't
     express → divergence row recorded regardless of deferral verdict."""
-    from app.game_engine.agent_runtime.agent_loop import draft_gate
-    from app.game_engine.agent_runtime.agent_loop.signals import (
-        DraftCompletenessVerdict,
-    )
-
     monkeypatch.setattr(
-        draft_gate, "assess_draft_completeness_with_budget",
+        quality_domain, "assess_final_draft_completeness",
         lambda **kw: DraftCompletenessVerdict.retry_loop,
     )
     fw, mem = _build_fw(
@@ -318,13 +335,8 @@ def test_final_success_shadow_retry_loop_always_divergence(monkeypatch):
 def test_final_success_enforce_fail_drives_tick_to_fail(monkeypatch):
     """D-B enforce: evaluator fail_fallback overrides deferral (complete) →
     _draft_incomplete set → act→fail. deferral no longer authoritative."""
-    from app.game_engine.agent_runtime.agent_loop import draft_gate
-    from app.game_engine.agent_runtime.agent_loop.signals import (
-        DraftCompletenessVerdict,
-    )
-
     monkeypatch.setattr(
-        draft_gate, "assess_draft_completeness_with_budget",
+        quality_domain, "assess_final_draft_completeness",
         lambda **kw: DraftCompletenessVerdict.fail_fallback,
     )
     fw, mem = _build_fw(
@@ -340,13 +352,8 @@ def test_final_success_enforce_fail_drives_tick_to_fail(monkeypatch):
 def test_final_success_enforce_complete_keeps_success(monkeypatch):
     """D-B enforce: evaluator complete agrees with deferral → no divergence,
     _draft_incomplete cleared, tick succeeds."""
-    from app.game_engine.agent_runtime.agent_loop import draft_gate
-    from app.game_engine.agent_runtime.agent_loop.signals import (
-        DraftCompletenessVerdict,
-    )
-
     monkeypatch.setattr(
-        draft_gate, "assess_draft_completeness_with_budget",
+        quality_domain, "assess_final_draft_completeness",
         lambda **kw: DraftCompletenessVerdict.complete,
     )
     fw, mem = _build_fw(
@@ -358,42 +365,112 @@ def test_final_success_enforce_complete_keeps_success(monkeypatch):
 
 
 @pytest.mark.unit
-def test_final_success_enforce_retry_loop_falls_back_to_deferral(monkeypatch):
-    """D-B enforce + D-I not landed: retry_loop→replan has no act→plan
-    transition yet → enforce treats retry_loop as audit-only and falls back to
-    the deferral verdict. A complete draft still succeeds; a divergence row is
-    recorded (retry_loop third state)."""
-    from app.game_engine.agent_runtime.agent_loop import draft_gate
-    from app.game_engine.agent_runtime.agent_loop.signals import (
-        DraftCompletenessVerdict,
-    )
-
+def test_final_success_enforce_retry_loop_drives_draft_retry(monkeypatch):
+    """enforce + retry_loop drives one outer draft_retry replan."""
     monkeypatch.setattr(
-        draft_gate, "assess_draft_completeness_with_budget",
+        quality_domain, "assess_final_draft_completeness",
         lambda **kw: DraftCompletenessVerdict.retry_loop,
     )
     fw, mem = _build_fw(
         quality=QualityDomainConfig(final_success_drive_mode="enforce")
     )
     res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
-    # deferral fallback → complete draft → success (retry_loop not yet drivable).
-    assert res.ok
+    assert not res.ok
+    assert res.error_code == "draft_retry_exhausted"
+    rows = [r for r in mem.last_trace if r.get("step") == "state_transition"]
+    assert any(r.get("event") == "draft_retry" and r.get("to") == "plan" for r in rows)
     div = _divergence_rows(mem.last_trace)
-    assert div, "retry_loop surfaces as divergence even in enforce (D-I pending)"
+    assert div, "retry_loop surfaces as divergence in enforce"
     assert div[0]["would_enforce_draft_incomplete"] is None
+
+
+@pytest.mark.unit
+def test_final_success_retry_recovers_with_corrective_plan_context(monkeypatch):
+    verdicts = iter([
+        DraftCompletenessVerdict.retry_loop,
+        DraftCompletenessVerdict.complete,
+    ])
+    monkeypatch.setattr(
+        quality_domain,
+        "assess_final_draft_completeness",
+        lambda **kw: next(verdicts),
+    )
+    llm = _RecordingCompleteLlm()
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="enforce"),
+        llm=llm,
+    )
+
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+
+    assert res.ok
+    transitions = [r for r in mem.last_trace if r.get("step") == "state_transition"]
+    assert any(r.get("event") == "draft_retry" and r.get("to") == "plan" for r in transitions)
+    assert len(llm.prompts) == 2
+    assert "Previous rejected draft" in llm.prompts[1]
+    assert "final_success_retry_loop" in llm.prompts[1]
+
+
+@pytest.mark.unit
+def test_final_success_retry_fails_closed_without_workflow_transition(monkeypatch):
+    monkeypatch.setattr(
+        quality_domain,
+        "assess_final_draft_completeness",
+        lambda **kw: DraftCompletenessVerdict.retry_loop,
+    )
+    state_machine = load_workflow({
+        "mode": "pdca",
+        "stages": [
+            {"id": "plan"},
+            {"id": "do"},
+            {"id": "check"},
+            {"id": "act"},
+            {"id": "end", "exit": True},
+        ],
+        "transitions": [
+            {"from": "plan", "to": "do"},
+            {"from": "do", "to": "check"},
+            {"from": "check", "to": "act"},
+            {"from": "act", "to": "end"},
+        ],
+    })
+    fw, mem = _build_fw(
+        quality=QualityDomainConfig(final_success_drive_mode="enforce"),
+        state_machine=state_machine,
+    )
+
+    res = fw.run(FrameworkRunContext(agent_node_id=1, payload={"message": "hi"}))
+
+    assert not res.ok
+    assert res.error_code == "draft_retry_unsupported"
+    assert any(
+        row.get("step") == "draft_retry_blocked"
+        and row.get("reason_code") == "draft_retry_unsupported"
+        for row in mem.last_trace
+    )
+
+
+@pytest.mark.unit
+def test_tick_budget_requires_observation_capacity():
+    fw, _ = _build_fw(
+        quality=QualityDomainConfig(),
+        tool_gather_budgets=ToolGatherBudgets(
+            max_commands_per_tick=16,
+            max_chars_observations_per_tick=10,
+        ),
+    )
+
+    assert not fw._tick_budget_remaining(
+        ToolGatherCounters(commands_run=0, observation_chars=10)
+    )
 
 
 @pytest.mark.unit
 def test_final_success_off_byte_equiv_no_rows(monkeypatch):
     """D-B off (default): no before_terminal quality_decision row, no
     divergence row — byte-equivalent to pre-D-B behavior."""
-    from app.game_engine.agent_runtime.agent_loop import draft_gate
-    from app.game_engine.agent_runtime.agent_loop.signals import (
-        DraftCompletenessVerdict,
-    )
-
     monkeypatch.setattr(
-        draft_gate, "assess_draft_completeness_with_budget",
+        quality_domain, "assess_final_draft_completeness",
         lambda **kw: DraftCompletenessVerdict.fail_fallback,
     )
     fw, mem = _build_fw(quality=QualityDomainConfig(final_success_drive_mode="off"))

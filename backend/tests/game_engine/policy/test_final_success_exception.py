@@ -13,6 +13,7 @@ from app.game_engine.agent_runtime.policy.config import (
     SkillDomainConfig,
 )
 from app.game_engine.agent_runtime.policy.domain import DomainRegistry
+from app.game_engine.agent_runtime.policy.domains import quality_domain
 from app.game_engine.agent_runtime.policy.domains.gate_domain import GateDomain
 from app.game_engine.agent_runtime.policy.domains.quality_domain import (
     QualityDomain,
@@ -58,16 +59,11 @@ class TestFinalSuccessException:
         """B7: assess_draft_completeness self-exception re-raises from the evaluator
         (the engine safety net catches it and returns allow, since the evaluator
         chose to re-raise rather than handle)."""
-        from app.game_engine.agent_runtime.agent_loop import draft_gate
-        from app.game_engine.agent_runtime.agent_loop.signals import (
-            DraftCompletenessVerdict,
-        )
-
         def _raise(**kw):
             raise RuntimeError("assess exploded")
 
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget", _raise,
+            quality_domain, "assess_final_draft_completeness", _raise,
         )
         ctx = PolicyContext(
             check_point=CheckPoint.BEFORE_TERMINAL,

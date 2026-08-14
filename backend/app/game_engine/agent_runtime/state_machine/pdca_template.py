@@ -27,17 +27,17 @@ def build_pdca_state_machine(*, max_replans: int = 1) -> StateMachine:
             to_state="fail",
             when='runtime.cancelled',
         ),
-        # F18 stop_evaluator unrecoverable fail (max_iterations /
-        # max_consecutive_tool_failures / stagnation over-limit) — routes from
-        # any state (SPEC §4.4). Gated by runtime.stop_fail (default false →
-        # byte-equivalent; only set when enable_stop_dimensions is on).
+        # stop_evaluator unrecoverable fail (max_iterations /
+        # max_consecutive_tool_failures / stagnation over-limit) routes from
+        # any state. Gated by runtime.stop_fail (default false; only set when
+        # enable_stop_dimensions is on).
         Transition(
             from_state="*",
             to_state="fail",
             when='runtime.stop_fail',
         ),
         # Deferral-only final drafts are detected after act (presentation
-        # anchor), so draft_incomplete routes act→fail before act→end (SPEC §7.1).
+        # anchor), so draft_incomplete routes act→fail before act→end.
         # It must NOT fire from plan/do, or the post-loop mandatory-gap notice
         # and downstream phases become unreachable.
         Transition(
@@ -76,7 +76,7 @@ def build_pdca_state_machine(*, max_replans: int = 1) -> StateMachine:
             ),
             on_event="mandatory_gap",
         ),
-        # F18 stagnation replan (S4, B6-a: only fires when stop_evaluator emits
+        # Stagnation replan only fires when stop_evaluator emits
         # event='stagnation' from plan/do/check; act suppresses the event).
         # Over-limit (replan_count >= max_replans or no budget) is routed by the
         # driver to runtime.stop_fail → *→fail above.
@@ -89,6 +89,16 @@ def build_pdca_state_machine(*, max_replans: int = 1) -> StateMachine:
         # From check — always enter act so skip-act still emits the act trace
         # entry (mode=skip) matching today's hard-coded _run_inner.
         Transition(from_state="check", to_state="act"),
+        # From act — final_success_evaluator retry_loop→replan:
+        # recoverable draft detected at before_terminal drives an outer replan
+        # back to plan, counted by replan_count / max_replans. Over-limit is
+        # routed by the driver to runtime.stop_fail → *→fail (mirrors stagnation).
+        Transition(
+            from_state="act",
+            to_state="plan",
+            when="state.replan_count < sm.max_replans and runtime.budget_remaining",
+            on_event="draft_retry",
+        ),
         # From act
         Transition(from_state="act", to_state="end"),
     )

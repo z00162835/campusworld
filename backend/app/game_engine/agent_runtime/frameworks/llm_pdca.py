@@ -113,10 +113,11 @@ def _tool_schema_allowlist_from_payload(payload: Dict[str, Any]) -> Optional[Lis
     return out or None
 
 def resolve_tool_schemas_for_pdca_phase(all_schemas: Sequence[ToolSchema], payload: Optional[Dict[str, Any]], pdca_phase: str) -> List[ToolSchema]:
-    """Apply F14 ``schema_subset`` allowlist only for Plan-phase tool calls.
+    """Apply ``schema_subset`` allowlist only for Plan-phase tool calls.
 
-    §5: subset is emitted for the Plan LLM; Do / Check keep the full resolved surface
-    so execution and guardrails still see every allowed command on the node surface.
+    The subset is emitted for the Plan LLM; Do / Check keep the full resolved
+    surface so execution and guardrails still see every allowed command on the
+    node surface.
     """
     allow = _tool_schema_allowlist_from_payload(payload or {})
     if not allow or pdca_phase != PDCAPhase.plan.value:
@@ -219,7 +220,7 @@ def _filter_tool_calls_to_schemas(calls: List[ToolCall], tool_schemas: Sequence[
     return (kept, dropped)
 
 def _trace_phase_timing(trace: List[Dict[str, Any]], *, scope: str, phase: str, elapsed_ms: float, round_idx: Optional[int]=None, channel: Optional[str]=None, tool_call_count: Optional[int]=None) -> None:
-    """Append a small structured row for tick latency analysis (F10 observability)."""
+    """Append a small structured row for tick latency analysis."""
     row: Dict[str, Any] = {'step': 'phase_timing', 'scope': scope, 'phase': phase, 'elapsed_ms': round(float(elapsed_ms), 3)}
     if round_idx is not None:
         row['round'] = int(round_idx)
@@ -277,7 +278,7 @@ class _PdcaTickBag:
 class LlmPDCAFramework(ThinkingFramework):
     """PDCA with LLM calls and a ReAct tool loop per phase.
 
-    Behaviour highlights (F08 / v2 plan):
+    Behaviour highlights:
 
     * Per-phase **ReAct loop** — after each LLM call, any tool invocations
       are executed and their observations appended to the user turn; the
@@ -438,7 +439,7 @@ class LlmPDCAFramework(ThinkingFramework):
             trace.append(trace_row)
 
     def _effective_tool_schemas(self, ctx: FrameworkRunContext, *, pdca_phase: str) -> List[ToolSchema]:
-        """Narrow tool schemas for Plan only when F14 ``schema_subset`` set allowlist on payload."""
+        """Narrow tool schemas for Plan only when payload carries an allowlist."""
         return resolve_tool_schemas_for_pdca_phase(self._tool_schemas, ctx.payload, pdca_phase)
 
     def _resolve_presentation_anchor_phase(self, ctx: FrameworkRunContext) -> str:
@@ -511,7 +512,7 @@ class LlmPDCAFramework(ThinkingFramework):
         message: str = '',
         graph_ops_summary: Optional[Dict[str, Any]] = None,
     ) -> FrameworkRunResult:
-        """Terminal finish for the ``fail`` abort state (cancel / draft_incomplete)."""
+        """Finish a failed tick while preserving its machine-readable reason."""
         if error_code == 'cancelled' and not any(e.get('step') == 'tick_cancelled' for e in trace):
             trace.append({'step': 'tick_cancelled'})
         summary = dict(graph_ops_summary or {})
@@ -566,7 +567,7 @@ class LlmPDCAFramework(ThinkingFramework):
         A deferral-only final draft with no grounding observations routes the
         tick to fail. A complete (non-empty, non-deferral) final draft clears any
         stale plan/do soft signal so the tick can succeed and the post-loop
-        mandatory-gap notice can still apply (SPEC §7.1: detection is anchored
+        mandatory-gap notice can still apply; detection is anchored
         at act, not plan/do). An empty final draft preserves an existing
         plan/do signal rather than silently succeeding.
         """
@@ -597,12 +598,12 @@ class LlmPDCAFramework(ThinkingFramework):
         return bool(ctx.payload.get('_draft_incomplete'))
 
     # ------------------------------------------------------------------
-    # P5: F18 quality/stop driver wiring (byte-equiv under default config).
+    # Quality/stop driver wiring (byte-equiv under default config).
     # ------------------------------------------------------------------
 
     @staticmethod
     def _update_tool_failure_counter(ctx: FrameworkRunContext, round_results: List[Any]) -> None:
-        """R11: track consecutive ToolResult.ok=False; any success resets to 0."""
+        """Track consecutive ToolResult.ok=False; any success resets to 0."""
         if not round_results:
             return
         current = int(ctx.payload.get('_consecutive_tool_failures', 0))
@@ -615,7 +616,7 @@ class LlmPDCAFramework(ThinkingFramework):
 
     @staticmethod
     def _append_obs_signatures(ctx: FrameworkRunContext, round_results: List[Any]) -> None:
-        """S4/R6: append per-result obs signatures for stagnation detection."""
+        """Append per-result obs signatures for stagnation detection."""
         if not round_results:
             return
         sigs: List[str] = ctx.payload.get('_recent_obs_signatures')
@@ -660,12 +661,12 @@ class LlmPDCAFramework(ThinkingFramework):
             'user_message': bag.user_msg or '',
             'consecutive_tool_failures': int(ctx.payload.get('_consecutive_tool_failures', 0)),
             'recent_signatures': list(ctx.payload.get('_recent_obs_signatures') or []),
-            # B4 (P5-B2): per_react_round verdict passed up for after_state_execute
-            # secondary confirmation. None under default config (no react_turn).
+            # per_react_round verdict passed up for after_state_execute secondary
+            # confirmation. None under default config (no react_turn).
             'react_round_decision': ctx.payload.get('react_round_decision'),
-            # B3 unify (P5-B1): detect_check_replan inputs routed through
-            # stop_evaluator. check_out/check_skipped are check-state specific;
-            # tool_router_snapshot + plan_trace feed mandatory_observation_gap.
+            # detect_check_replan inputs routed through stop_evaluator.
+            # check_out/check_skipped are check-state specific; tool_router_snapshot
+            # and plan_trace feed mandatory_observation_gap.
             'check_out': bag.check_out or '',
             'check_skipped': bool(bag.check_skipped),
             'tool_router_snapshot': ctx.payload.get('tool_router_snapshot'),
@@ -676,17 +677,9 @@ class LlmPDCAFramework(ThinkingFramework):
             ts['max_iterations'] = qcfg.max_iterations
             ts['max_consecutive_tool_failures'] = qcfg.max_consecutive_tool_failures
             ts['stagnation_window'] = qcfg.stagnation_window
-            # P5-B3: budget_exceeded inputs from ToolGatherBudgets (tick-level caps).
-            # gather_counters may be None on the per_react_round path (budget is
-            # only meaningful at after_state_execute); default to 0 there.
-            ts['commands_run'] = gather_counters.commands_run if gather_counters is not None else 0
-            ts['max_commands_per_tick'] = self._tool_budgets.max_commands_per_tick
-            ts['observation_chars'] = gather_counters.observation_chars if gather_counters is not None else 0
-            ts['max_chars_observations_per_tick'] = self._tool_budgets.max_chars_observations_per_tick
-            ts['enable_budget_hard_fail'] = qcfg.enable_budget_hard_fail
-            # P5-B3 (SPEC §4.2): surface ToolGatherBudgets exhaustion to
-            # stop_evaluator as the budget_exceeded condition. Tick-level caps
-            # only (phase-level caps stay inline in the react loop).
+            # Surface ToolGatherBudgets exhaustion to stop_evaluator as the
+            # budget_exceeded condition. Phase-level caps stay inline in the
+            # react loop.
             ts['commands_run'] = int(getattr(gather_counters, 'commands_run', 0))
             ts['max_commands_per_tick'] = int(getattr(self._tool_budgets, 'max_commands_per_tick', 0))
             ts['observation_chars'] = int(getattr(gather_counters, 'observation_chars', 0))
@@ -698,7 +691,6 @@ class LlmPDCAFramework(ThinkingFramework):
             ts['final_success_drive_mode'] = qcfg.final_success_drive_mode
             ts['agent_loop_config'] = self._agent_loop_config
             ts['reason_context'] = _draft_reason_context(ctx)
-            ts['rounds_remaining'] = 0
             ts['draft_incomplete'] = bool(ctx.payload.get('_draft_incomplete'))
         if qcfg.enable_quality_score:
             ts['enable_quality_score'] = True
@@ -720,7 +712,7 @@ class LlmPDCAFramework(ThinkingFramework):
         extra: Optional[Dict[str, Any]] = None,
         gather_counters: Optional['ToolGatherCounters'] = None,
     ) -> Optional['PolicyDecision']:
-        """Call PolicyEngine.evaluate at an F18 check_point and record a
+        """Call PolicyEngine.evaluate at a quality check_point and record a
         ``quality_decision`` trace row when the decision is non-allow or carries
         a quality_score. Returns the decision (None-safe)."""
         ts = self._build_quality_tick_state(
@@ -731,7 +723,7 @@ class LlmPDCAFramework(ThinkingFramework):
         decision = self._policy_engine.evaluate(policy_ctx)
         if decision is None:
             return None
-        # Record a trace row for any non-trivial F18 decision (anything other than
+        # Record a trace row for any non-trivial decision (anything other than
         # a plain 'allow') or when a quality_score is attached. Under default
         # config evaluators return None/allow with no score → no row → byte-equiv.
         if decision.decision != 'allow' or decision.quality_score is not None:
@@ -739,24 +731,44 @@ class LlmPDCAFramework(ThinkingFramework):
             trace.append(_policy_decision_to_trace(decision, step='quality_decision'))
         return decision
 
+    def _tick_budget_remaining(self, counters: 'ToolGatherCounters') -> bool:
+        return (
+            counters.commands_run < self._tool_budgets.max_commands_per_tick
+            and counters.observation_chars < self._tool_budgets.max_chars_observations_per_tick
+        )
+
     @staticmethod
+    def _mark_stop_fail(ctx: FrameworkRunContext, reason_code: str) -> None:
+        ctx.payload['_stop_fail'] = True
+        ctx.payload.setdefault('_stop_fail_reason', reason_code)
+
     def _apply_final_success_drive(
+        self,
         decision: Optional['PolicyDecision'],
         ctx: FrameworkRunContext,
         trace: List[Dict[str, Any]],
+        *,
+        bag: '_PdcaTickBag',
+        snapshot: Optional['StateMachineSnapshot'],
+        sm: 'StateMachine',
+        gather_counters: 'ToolGatherCounters',
     ) -> None:
-        """D-B: apply the ``before_terminal`` final_success verdict.
+        """Apply the ``before_terminal`` final_success verdict.
 
         - ``shadow``: record a ``final_success_divergence`` trace row when the
           evaluator's verdict disagrees with the ``_detect_tick_emit_deferral``
           result (``ctx.payload['_draft_incomplete']``). The deferral result stays
           authoritative (no override).
-        - ``enforce``: let the verdict drive ``_draft_incomplete`` —
-          ``final_success`` clears it, ``fail`` sets it. ``replan`` (retry_loop)
-          requires an ``act→plan`` transition (D-I) and is therefore audit-only
-          until D-I lands; it falls back to the deferral result and records a
-          divergence row. When the evaluator returns ``None`` (e.g. no config)
-          or raised (engine safety net returned allow), the deferral result stands.
+        - ``enforce``: let the verdict drive control flow —
+          ``final_success`` clears ``_draft_incomplete`` (→ act→end success);
+          ``fail`` sets it (→ act→fail); ``replan`` (retry_loop) drives an outer
+          replan via ``act→plan on_event=draft_retry``, counted by
+          ``replan_count``/``max_replans``. Over-limit replan → ``runtime.stop_fail``
+          (mirrors stagnation over-limit). The driver signals replan by setting
+          ``ctx.payload['_draft_retry_event']``; the call site translates it to
+          ``event='draft_retry'`` for ``sm.next``. When the evaluator returns
+          ``None`` (e.g. no config) or raised (engine safety net returned allow),
+          the deferral result stands.
         """
         if decision is None:
             return
@@ -771,8 +783,10 @@ class LlmPDCAFramework(ThinkingFramework):
             would_enforce = False
         elif decision.decision == 'fail':
             would_enforce = True
-        else:  # replan (retry_loop) — no driving until D-I lands.
+        elif decision.decision == 'replan':
             would_enforce = None
+        else:
+            return
         # Divergence: a real disagreement on the pass/fail boundary.
         divergent = would_enforce is not None and would_enforce != deferral_incomplete
         # retry_loop is a third state the deferral gate can't express — record as
@@ -789,13 +803,74 @@ class LlmPDCAFramework(ThinkingFramework):
                 'deferral_draft_incomplete': deferral_incomplete,
                 'would_enforce_draft_incomplete': would_enforce,
             })
-        if drive_mode == 'enforce' and would_enforce is not None:
-            # Evaluator is authoritative; _detect_tick_emit_deferral already set
-            # the fallback value — override it with the evaluator verdict.
-            if would_enforce:
-                ctx.payload['_draft_incomplete'] = True
+        if drive_mode == 'enforce':
+            if would_enforce is not None:
+                # final_success / fail: evaluator drives _draft_incomplete.
+                if would_enforce:
+                    ctx.payload['_draft_incomplete'] = True
+                else:
+                    ctx.payload.pop('_draft_incomplete', None)
             else:
-                ctx.payload.pop('_draft_incomplete', None)
+                # A retry is valid only when the workflow can consume the event
+                # and both outer-loop and tool-gather budgets remain.
+                replan_count = snapshot.replan_count if snapshot is not None else 0
+                budget_remaining = self._tick_budget_remaining(gather_counters)
+                retry_ctx = TransitionContext(
+                    snapshot=snapshot or StateMachineSnapshot(current_state=PDCAPhase.act.value),
+                    runtime={
+                        'budget_remaining': budget_remaining,
+                        'cancelled': False,
+                        'draft_incomplete': False,
+                        'stop_fail': False,
+                    },
+                    event='draft_retry',
+                )
+                retry_transition_declared = any(
+                    tr.from_state in (PDCAPhase.act.value, '*')
+                    and tr.to_state == PDCAPhase.plan.value
+                    and tr.on_event == 'draft_retry'
+                    for tr in sm.transitions
+                )
+                try:
+                    retry_transition_applicable = (
+                        sm.next(PDCAPhase.act.value, retry_ctx) == PDCAPhase.plan.value
+                    )
+                except LookupError:
+                    retry_transition_applicable = False
+                if (
+                    replan_count < sm.max_replans
+                    and budget_remaining
+                    and retry_transition_declared
+                    and retry_transition_applicable
+                ):
+                    ctx.payload['_draft_retry_event'] = True
+                    ctx.payload.pop('_draft_incomplete', None)
+                    prior_draft = (bag.final_text or bag.reply or '').strip()
+                    hint = build_draft_retry_user_text()
+                    if prior_draft:
+                        hint += f'\n\nPrevious rejected draft (reference only):\n{prior_draft[:2000]}'
+                    hint += f'\n\nQuality gate reason: {decision.reason_code}.'
+                    bag.replan_guardrail_hint = hint
+                else:
+                    if not retry_transition_declared or (
+                        replan_count < sm.max_replans
+                        and budget_remaining
+                        and not retry_transition_applicable
+                    ):
+                        reason = 'draft_retry_unsupported'
+                    else:
+                        reason = 'draft_retry_exhausted'
+                    self._mark_stop_fail(ctx, reason)
+                    # Keep legacy custom workflows on their draft-incomplete
+                    # abort path even when they predate runtime.stop_fail.
+                    ctx.payload['_draft_incomplete'] = True
+                    trace.append({
+                        'step': 'draft_retry_blocked',
+                        'reason_code': reason,
+                        'replan_count': replan_count,
+                        'max_replans': sm.max_replans,
+                        'budget_remaining': budget_remaining,
+                    })
 
     @staticmethod
     def _write_user_prose_to_presentation(ctx: FrameworkRunContext, text: str) -> None:
@@ -1022,8 +1097,8 @@ class LlmPDCAFramework(ThinkingFramework):
                 entry = dict(entry)
                 entry['round'] = round_idx + 1
                 trace.append(entry)
-                # P5-4: per_react_round — react_turn_success_evaluator (opt-in via
-                # require_structured_turn). B4 loop consumption (P5-B2): a non-allow
+                # per_react_round — react_turn_success_evaluator (opt-in via
+                # require_structured_turn). A non-allow
                 # verdict breaks the inner loop; the flag is passed to
                 # after_state_execute (via ctx.payload['react_round_decision']) for
                 # secondary confirmation — per_react_round does not drive sm.next.
@@ -1034,8 +1109,8 @@ class LlmPDCAFramework(ThinkingFramework):
                         ctx=ctx, bag=bag, snapshot=None, state_id=pdca_phase, trace=trace,
                         extra={'react_turn': react_turn},
                     )
-                    # SPEC §4.4: write react_round_decision payload + break inner
-                    # loop on replan/fail (continue → keep looping).
+                    # Write react_round_decision payload and break the inner loop
+                    # on replan/fail (continue keeps looping).
                     if rr_decision is not None and rr_decision.decision != 'allow':
                         ctx.payload['react_round_decision'] = {
                             'decision': rr_decision.decision,
@@ -1165,8 +1240,8 @@ class LlmPDCAFramework(ThinkingFramework):
                 if len(round_results) != len(calls):
                     _LLM_PDCA_LOG.warning('tool_result_count_mismatch phase=%s round=%s calls=%s results=%s', pdca_phase, round_idx + 1, len(calls), len(round_results))
                 all_results.extend(round_results)
-                # P5 prerequisite: collect consecutive-tool-failure counter (R11) and
-                # obs signatures (S4/R6 stagnation). Side-effect-free re: trace; only
+                # Collect consecutive-tool-failure counter and obs signatures for
+                # stagnation detection. Side-effect-free re: trace; only
                 # populates ctx.payload for stop_evaluator to read when enabled.
                 self._update_tool_failure_counter(ctx, round_results)
                 self._append_obs_signatures(ctx, round_results)
@@ -1310,7 +1385,7 @@ class LlmPDCAFramework(ThinkingFramework):
             # a stop/budget fail can override the draft verdict.
             if state_id == PDCAPhase.act.value:
                 self._detect_tick_emit_deferral(ctx, bag, trace, user_msg)
-            # P5-1: after_state_execute — stop_evaluator (new dims gated, default off).
+            # after_state_execute — stop_evaluator (new dimensions gated, default off).
             stop_decision = self._evaluate_quality_check_point(
                 CheckPoint.AFTER_STATE_EXECUTE,
                 ctx=ctx, bag=bag, snapshot=snapshot, state_id=state_id, trace=trace,
@@ -1318,17 +1393,19 @@ class LlmPDCAFramework(ThinkingFramework):
             )
             if stop_decision is not None and stop_decision.decision != 'allow':
                 if stop_decision.decision == 'fail':
-                    # Map fail (max_iterations / max_consecutive) → runtime.stop_fail
-                    # so *→fail routes the abort from any state (SPEC §4.4, D1).
-                    ctx.payload['_stop_fail'] = True
+                    # Map fail (max_iterations / max_consecutive) to
+                    # runtime.stop_fail so *→fail routes the abort from any state.
+                    self._mark_stop_fail(
+                        ctx,
+                        stop_decision.reason_code or 'quality_gate_failed',
+                    )
                 elif stop_decision.decision == 'replan':
                     reason = stop_decision.reason_code
                     ev = stop_decision.evidence or {}
                     if reason in ('check_retry', 'mandatory_gap'):
-                        # B3 unify (P5-B1): apply detect_check_replan side-effects
-                        # formerly done inline in _execute_check_state. Set event
-                        # (sm.next handles replan cap/budget guard — over-cap falls
-                        # through to act, preserving byte-equiv).
+                        # Apply detect_check_replan side-effects formerly done
+                        # inline in _execute_check_state. sm.next handles the
+                        # replan cap/budget guard.
                         event = reason
                         retry_tools = ev.get('retry_tools')
                         bag.retry_tools = retry_tools
@@ -1340,35 +1417,46 @@ class LlmPDCAFramework(ThinkingFramework):
                                 'details': ev.get('gap_detail'),
                             })
                     elif reason == 'stagnation' and not event:
-                        # stagnation (S4, B6-a): replan when budget remains and under
-                        # the replan cap; otherwise over-limit → stop_fail (D2).
-                        budget_remaining = gather_counters.commands_run < self._tool_budgets.max_commands_per_tick
+                        # Stagnation replans when budget remains and the replan
+                        # cap allows it; otherwise route to stop_fail.
+                        budget_remaining = self._tick_budget_remaining(gather_counters)
                         if snapshot.replan_count < sm.max_replans and budget_remaining:
                             event = 'stagnation'
                         else:
-                            ctx.payload['_stop_fail'] = True
-            # B4 (P5-B2): react_round_decision is consumed by stop_evaluator above;
+                            self._mark_stop_fail(ctx, 'stagnation_replan_exhausted')
+            # react_round_decision is consumed by stop_evaluator above;
             # clear it so the next phase does not see a stale verdict.
             ctx.payload.pop('react_round_decision', None)
-            # P5-3: before_terminal — final_success_evaluator (D-B drive_mode).
+            # before_terminal — final_success_evaluator drive mode.
             #   off     → not called (byte-equiv).
             #   shadow  → audit/trace + divergence detection; _detect_tick_emit_deferral
             #             remains authoritative.
             #   enforce → evaluator verdict drives _draft_incomplete; _detect_tick_emit_deferral
             #             is the fallback (used when evaluator returns None/raises). Note:
-            #             retry_loop→replan needs an act→plan transition (D-I) — until D-I
-            #             lands, retry_loop is audit-only and falls back to the deferral verdict.
+            #             retry_loop→replan drives a draft_retry event when budget
+            #             and replan caps allow it.
+            fs_decision = None
             if state_id == PDCAPhase.act.value:
                 fs_decision = self._evaluate_quality_check_point(
                     CheckPoint.BEFORE_TERMINAL,
                     ctx=ctx, bag=bag, snapshot=snapshot, state_id=state_id, trace=trace,
                     gather_counters=gather_counters,
                 )
-                self._apply_final_success_drive(fs_decision, ctx, trace)
+                self._apply_final_success_drive(
+                    fs_decision,
+                    ctx,
+                    trace,
+                    bag=bag,
+                    snapshot=snapshot,
+                    sm=sm,
+                    gather_counters=gather_counters,
+                )
+                if ctx.payload.pop('_draft_retry_event', None) and not event:
+                    event = 'draft_retry'
             runtime = {
                 'do_mode': do_spec.mode.value if hasattr(do_spec.mode, 'value') else str(do_spec.mode),
                 'act_mode': act_spec.mode.value if hasattr(act_spec.mode, 'value') else str(act_spec.mode),
-                'budget_remaining': gather_counters.commands_run < self._tool_budgets.max_commands_per_tick,
+                'budget_remaining': self._tick_budget_remaining(gather_counters),
                 'mandatory_gap_missing': bool(event == 'mandatory_gap'),
                 'cancelled': bool(bag.cancelled),
                 'draft_incomplete': bool(ctx.payload.get('_draft_incomplete')),
@@ -1376,7 +1464,7 @@ class LlmPDCAFramework(ThinkingFramework):
             }
             tctx = TransitionContext(snapshot=snapshot, runtime=runtime, event=event)
             next_id = sm.next(state_id, tctx)
-            replan_inc = bool(event in ('check_retry', 'mandatory_gap', 'stagnation') and next_id == PDCAPhase.plan.value)
+            replan_inc = bool(event in ('check_retry', 'mandatory_gap', 'stagnation', 'draft_retry') and next_id == PDCAPhase.plan.value)
             matched_when = None
             for tr in sm.transitions:
                 if tr.from_state in (state_id, '*') and tr.to_state == next_id:
@@ -1402,6 +1490,14 @@ class LlmPDCAFramework(ThinkingFramework):
                 'replan_count': snapshot.replan_count + (1 if replan_inc else 0),
             })
             snapshot = snapshot.advance(to_state=next_id, event=event, incremented_replan=replan_inc)
+            if replan_inc and event == 'draft_retry':
+                uvs_retry = ctx.user_visible_stream
+                if uvs_retry is not None:
+                    uvs_retry.coordinator.on_rewrite()
+                trace.append({
+                    'step': 'draft_retry_triggered',
+                    'reason_code': (fs_decision.reason_code if fs_decision is not None else None),
+                })
             if replan_inc and bag.retry_tools:
                 # Preserve guardrail hint injection for the subsequent plan state.
                 bag.replan_guardrail_hint = (
@@ -1414,9 +1510,17 @@ class LlmPDCAFramework(ThinkingFramework):
                 trace.append({'step': 'check_retry_triggered', 'tools': list(bag.retry_tools)})
             state_id = next_id
 
-        # Abort terminal: cancel / draft_incomplete routed here by any→fail.
+        # Abort terminal: preserve the reason that selected the fail state.
         if state_id == 'fail':
-            fail_code = 'cancelled' if bag.cancelled else 'draft_incomplete'
+            stop_reason = str(ctx.payload.get('_stop_fail_reason') or '').strip()
+            if bag.cancelled:
+                fail_code = 'cancelled'
+            elif stop_reason:
+                fail_code = stop_reason
+            elif ctx.payload.get('_draft_incomplete'):
+                fail_code = 'draft_incomplete'
+            else:
+                fail_code = 'tick_failed'
             fail_msg = ''
             if fail_code == 'draft_incomplete' and user_msg:
                 fail_msg = _resolve_npc_agent_empty_reply_message(self._cfg)
@@ -1428,7 +1532,11 @@ class LlmPDCAFramework(ThinkingFramework):
                 correlation=correlation,
                 error_code=fail_code,
                 message=fail_msg,
-                graph_ops_summary={'cancelled': fail_code == 'cancelled', 'draft_incomplete': fail_code == 'draft_incomplete'},
+                graph_ops_summary={
+                    'cancelled': fail_code == 'cancelled',
+                    'draft_incomplete': bool(ctx.payload.get('_draft_incomplete')),
+                    'stop_reason': stop_reason or None,
+                },
             )
 
         final_text = bag.final_text or bag.reply
@@ -1644,7 +1752,7 @@ class LlmPDCAFramework(ThinkingFramework):
             bag.cancelled = True
             return StateExecutionResult(gather_counters={'cancelled': True})
         _trace_phase_timing(trace, scope='llm', phase=PDCAPhase.check.value, elapsed_ms=(time.perf_counter() - t_check) * 1000.0)
-        # B3 unify (P5-B1): detect_check_replan is no longer called inline.
+        # detect_check_replan is no longer called inline.
         # stop_evaluator (after_state_execute) runs it via PolicyEngine and
         # emits the formal replan decision; the driver applies side-effects
         # (bag.retry_tools, mandatory_gap_retry_override trace row).

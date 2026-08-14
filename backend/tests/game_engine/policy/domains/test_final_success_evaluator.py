@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from app.game_engine.agent_runtime.agent_loop import draft_gate
+from app.game_engine.agent_runtime.agent_loop import AgentLoopConfig
 from app.game_engine.agent_runtime.agent_loop.signals import (
     DraftCompletenessVerdict,
 )
@@ -12,6 +12,7 @@ from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 from app.game_engine.agent_runtime.policy.domains.quality_domain import (
     final_success_evaluator,
 )
+from app.game_engine.agent_runtime.policy.domains import quality_domain
 
 
 def _ctx_with_tick_state(**tick_state):
@@ -33,7 +34,7 @@ class TestFinalSuccessEvaluator:
     def test_returns_none_when_drive_mode_off(self, monkeypatch):
         """D-B: ``off`` (default) → byte-equiv, evaluator not consulted."""
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget",
+            quality_domain, "assess_final_draft_completeness",
             lambda **kw: DraftCompletenessVerdict.complete,
         )
         ctx = _ctx_with_tick_state(
@@ -46,7 +47,7 @@ class TestFinalSuccessEvaluator:
     def test_returns_none_when_drive_mode_missing(self, monkeypatch):
         """D-B: missing drive_mode treated as ``off`` → byte-equiv."""
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget",
+            quality_domain, "assess_final_draft_completeness",
             lambda **kw: DraftCompletenessVerdict.complete,
         )
         ctx = _ctx_with_tick_state(
@@ -65,7 +66,7 @@ class TestFinalSuccessEvaluator:
 
     def test_complete_maps_to_final_success(self, monkeypatch):
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget",
+            quality_domain, "assess_final_draft_completeness",
             lambda **kw: DraftCompletenessVerdict.complete,
         )
         ctx = _ctx_with_tick_state(
@@ -80,7 +81,7 @@ class TestFinalSuccessEvaluator:
 
     def test_retry_loop_maps_to_replan(self, monkeypatch):
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget",
+            quality_domain, "assess_final_draft_completeness",
             lambda **kw: DraftCompletenessVerdict.retry_loop,
         )
         ctx = _ctx_with_tick_state(
@@ -96,7 +97,7 @@ class TestFinalSuccessEvaluator:
 
     def test_fail_fallback_maps_to_fail(self, monkeypatch):
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget",
+            quality_domain, "assess_final_draft_completeness",
             lambda **kw: DraftCompletenessVerdict.fail_fallback,
         )
         ctx = _ctx_with_tick_state(
@@ -112,7 +113,7 @@ class TestFinalSuccessEvaluator:
 
     def test_evidence_carries_draft_incomplete_flag(self, monkeypatch):
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget",
+            quality_domain, "assess_final_draft_completeness",
             lambda **kw: DraftCompletenessVerdict.complete,
         )
         ctx = _ctx_with_tick_state(
@@ -130,7 +131,7 @@ class TestFinalSuccessEvaluator:
             raise RuntimeError("assess exploded")
 
         monkeypatch.setattr(
-            draft_gate, "assess_draft_completeness_with_budget", _raise,
+            quality_domain, "assess_final_draft_completeness", _raise,
         )
         ctx = _ctx_with_tick_state(
             draft_text="x",
@@ -141,3 +142,19 @@ class TestFinalSuccessEvaluator:
 
         with pytest.raises(RuntimeError, match="assess exploded"):
             final_success_evaluator(ctx)
+
+    def test_real_retry_verdict_is_not_downgraded_by_outer_budget(self):
+        """The evaluator returns the raw verdict; the driver owns retry budgets."""
+        ctx = _ctx_with_tick_state(
+            draft_text="Let me check",
+            user_message="Tell me about CampusWorld",
+            agent_loop_config=AgentLoopConfig(),
+            final_success_drive_mode="enforce",
+            rounds_remaining=0,
+        )
+
+        decision = final_success_evaluator(ctx)
+
+        assert decision is not None
+        assert decision.decision == "replan"
+        assert decision.reason_code == "final_success_retry_loop"

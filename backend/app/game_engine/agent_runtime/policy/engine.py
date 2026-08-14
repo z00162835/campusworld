@@ -49,22 +49,32 @@ class PolicyEngine:
                 evidence["domain"] = domain.domain_id
                 tagged = dataclasses.replace(decision, evidence=evidence)
                 return tagged
+        allow_with_score: Optional[PolicyDecision] = None
         for evaluator in domain.evaluators():
             try:
                 decision = evaluator(ctx)
-            except Exception as exc:  # noqa: BLE001 — B7 evaluator safety net
+            except Exception as exc:  # noqa: BLE001 — evaluator safety net
                 logger.error("evaluator_error: %s raised by %s: %s", domain.domain_id, getattr(evaluator, "__name__", evaluator), exc)
                 decision = None
-            # Surface any explicit (non-default) decision. F18 evaluators emit
-            # final_success / replan / continue with runtime_action="pass" (is_allow);
-            # these carry audit signal the driver must observe, so we key on
-            # ``decision != "allow"`` rather than ``not is_allow``.
+            if decision is not None and decision.decision == 'allow' and decision.quality_score is not None:
+                evidence = dict(decision.evidence or {})
+                evidence["evaluator"] = getattr(evaluator, "__name__", "evaluator")
+                evidence["domain"] = domain.domain_id
+                allow_with_score = dataclasses.replace(decision, evidence=evidence)
+                continue
+            # Surface any explicit non-default decision. Quality evaluators may
+            # emit pass-through decisions such as final_success / replan /
+            # continue; these carry audit signal the driver must observe.
             if decision is not None and decision.decision != 'allow':
                 evidence = dict(decision.evidence or {})
                 evidence["evaluator"] = getattr(evaluator, "__name__", "evaluator")
                 evidence["domain"] = domain.domain_id
-                tagged = dataclasses.replace(decision, evidence=evidence)
-                return tagged
+                quality_score = decision.quality_score
+                if quality_score is None and allow_with_score is not None:
+                    quality_score = allow_with_score.quality_score
+                return dataclasses.replace(decision, evidence=evidence, quality_score=quality_score)
+        if allow_with_score is not None:
+            return allow_with_score
         return PolicyDecision.allow(ctx.check_point)
 
     @property
