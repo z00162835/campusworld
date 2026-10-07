@@ -27,6 +27,11 @@ gate:
     - restricted
   tool_group_hierarchy:                       # H4: 父组→子组 层级（平台本体论，改动需协调 seed）
     read: [observe, agent_meta, identity, communicate]
+  # P4 pattern_match detector（prompt 注入 / 越权短语）。默认 off，保 byte-equiv；
+  # 空模式集 = 不拦截。模式保留大小写（detector 用 re.IGNORECASE 匹配）。
+  enable_pattern_match_detector: false
+  pattern_match_patterns: []                  # 命中正则列表；空集 = 不拦截
+  pattern_match_decision: "require_approval"  # 命中后决策（allow/require_approval/deny）
 
 quality:
   # quality 域（after_state_execute / before_terminal / per_react_round）

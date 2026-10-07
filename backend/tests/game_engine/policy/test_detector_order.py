@@ -20,6 +20,7 @@ from app.game_engine.agent_runtime.policy.domains.skill_domain import (
 )
 from app.game_engine.agent_runtime.policy.domains.gate_domain import (
     data_classification_detector,
+    pattern_match_detector,
     side_effect_level_detector,
     skill_tool_group_detector,
 )
@@ -27,12 +28,13 @@ from app.game_engine.agent_runtime.policy.domains.gate_domain import (
 
 class TestDetectorOrder:
     def test_gate_domain_order_with_all_enabled(self):
-        """gate domain order: side_effect → data_classification → skill_tool_group."""
+        """gate domain order: side_effect → data_classification → skill_tool_group → pattern_match."""
         domain = GateDomain(
             GateDomainConfig(
                 enable_side_effect_detector=True,
                 enable_data_classification_detector=True,
                 enable_skill_tool_group_detector=True,
+                enable_pattern_match_detector=True,
             )
         )
         dets = domain.detectors()
@@ -40,6 +42,7 @@ class TestDetectorOrder:
             side_effect_level_detector,
             data_classification_detector,
             skill_tool_group_detector,
+            pattern_match_detector,
         ]
 
     def test_gate_domain_order_with_skill_group_disabled(self):
@@ -56,6 +59,7 @@ class TestDetectorOrder:
                 enable_side_effect_detector=False,
                 enable_data_classification_detector=False,
                 enable_skill_tool_group_detector=False,
+                enable_pattern_match_detector=False,
             )
         )
         assert domain.detectors() == []

@@ -56,6 +56,13 @@ class GateDomainConfig:
             "read": ("observe", "agent_meta", "identity", "communicate"),
         }
     )
+    # P4 pattern_match detector (prompt injection / 越权短语). Default-off so
+    # default config is byte-equivalent; an empty pattern set is a no-op even
+    # when the detector is enabled. Patterns are kept case-sensitive (regex
+    # matching uses re.IGNORECASE at the detector); do not lowercase them.
+    enable_pattern_match_detector: bool = False
+    pattern_match_patterns: tuple[str, ...] = ()
+    pattern_match_decision: str = "require_approval"
 
 
 @dataclass(frozen=True)
@@ -167,6 +174,35 @@ def _coerce_str_list(value: Any, default: tuple[str, ...]) -> tuple[str, ...]:
     return default
 
 
+def _coerce_pattern_list(value: Any, default: tuple[str, ...]) -> tuple[str, ...]:
+    """Coerce a YAML list/str into a tuple of stripped **case-preserved** strings.
+
+    Unlike :func:`_coerce_str_list`, patterns keep their original case because
+    regex semantics may depend on it (matching itself uses ``re.IGNORECASE`` at
+    the detector). An explicitly empty list/str is preserved as an empty tuple
+    (no-op); only a missing key (``None``) or wrong type falls back to default.
+    """
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return (value.strip(),) if value.strip() else ()
+    if isinstance(value, (list, tuple)):
+        return tuple(str(v).strip() for v in value if str(v).strip())
+    return default
+
+
+_VALID_PATTERN_DECISIONS = frozenset({"allow", "require_approval", "deny"})
+
+
+def _coerce_pattern_decision(value: Any, default: str = "require_approval") -> str:
+    """Coerce ``pattern_match_decision``; fall back to default on invalid value."""
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in _VALID_PATTERN_DECISIONS:
+            return v
+    return default
+
+
 def _coerce_str_dict_of_lists(
     value: Any, default: dict[str, tuple[str, ...]]
 ) -> dict[str, tuple[str, ...]]:
@@ -270,6 +306,16 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
         tool_group_hierarchy=_coerce_str_dict_of_lists(
             gate_raw.get("tool_group_hierarchy"),
             {"read": ("observe", "agent_meta", "identity", "communicate")},
+        ),
+        enable_pattern_match_detector=_coerce_bool(
+            gate_raw.get("enable_pattern_match_detector"), False,
+            key="gate.enable_pattern_match_detector",
+        ),
+        pattern_match_patterns=_coerce_pattern_list(
+            gate_raw.get("pattern_match_patterns"), ()
+        ),
+        pattern_match_decision=_coerce_pattern_decision(
+            gate_raw.get("pattern_match_decision"), "require_approval"
         ),
     )
 

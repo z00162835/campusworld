@@ -597,6 +597,44 @@ class LlmPDCAFramework(ThinkingFramework):
             return False
         return bool(ctx.payload.get('_draft_incomplete'))
 
+    def _evaluate_before_final_answer(
+        self,
+        ctx: FrameworkRunContext,
+        bag: '_PdcaTickBag',
+        trace: List[Dict[str, Any]],
+    ) -> None:
+        """Evaluate the ``before_final_answer`` gate check_point (P4, non-streaming).
+
+        Invoked at the act anchor before ``_detect_tick_emit_deferral``. Under
+        default config (``enable_pattern_match_detector=false``) the gate domain
+        registers no ``pattern_match`` detector, so ``evaluate`` returns ``allow``
+        and this is a no-op (byte-equivalent). On a blocking decision, clear the
+        final draft and mark ``_draft_incomplete`` so the tick routes to
+        ``fail_fallback`` (v1 synchronous degrade of ``require_approval``).
+
+        Streaming ticks are not intercepted mid-stream (F18 §4.1); for streamed
+        drafts the text has already been flushed, but the block still routes the
+        tick to fail and records the policy decision for audit.
+        """
+        draft_text = bag.final_text or bag.reply or ''
+        policy_ctx = PolicyContext(
+            check_point=CheckPoint.BEFORE_FINAL_ANSWER,
+            user_message=bag.user_msg or '',
+            draft_text=draft_text,
+            payload=ctx.payload,
+        )
+        decision = self._policy_engine.evaluate(policy_ctx)
+        if decision is None or decision.is_allow:
+            return
+        # Non-allow decision: record trace and route to fail_fallback.
+        from app.game_engine.agent_runtime.execution_gate import _policy_decision_to_trace
+        trace.append(_policy_decision_to_trace(decision, step='policy_decision'))
+        # Clear the draft and mark incomplete so act→fail / fail_fallback fires.
+        bag.final_text = ''
+        bag.reply = ''
+        ctx.payload['_draft_incomplete'] = True
+        ctx.payload['_policy_block_final_answer'] = decision.reason_code
+
     # ------------------------------------------------------------------
     # Quality/stop driver wiring (byte-equiv under default config).
     # ------------------------------------------------------------------
@@ -1428,6 +1466,12 @@ class LlmPDCAFramework(ThinkingFramework):
             # so any→fail can fire before act→end. Runs before after_state_execute so
             # a stop/budget fail can override the draft verdict.
             if state_id == PDCAPhase.act.value:
+                # before_final_answer — pattern_match detector (P4, non-streaming).
+                # Default-off (byte-equiv): when the detector is disabled or the
+                # pattern set is empty, evaluate returns allow and nothing happens.
+                # On block, clear the draft and set _draft_incomplete so the tick
+                # routes to fail_fallback (v1 synchronous degrade of require_approval).
+                self._evaluate_before_final_answer(ctx, bag, trace)
                 self._detect_tick_emit_deferral(ctx, bag, trace, user_msg)
             # after_state_execute — stop_evaluator (new dimensions gated, default off).
             stop_decision = self._evaluate_quality_check_point(

@@ -3,12 +3,13 @@
 Owns the ``before_tool_call`` / ``after_tool_observation`` / ``before_final_answer``
 check_points. Detectors validate side-effect level, data classification, and
 (opt-in) skill tool-group coverage. Detector order is preserved from the legacy
-flat ``detectors.py``: ``[side_effect_level, data_classification, skill_tool_group]``.
-``pattern_match`` / ``pii_scanner`` are SPEC placeholders not yet implemented.
+flat ``detectors.py``: ``[side_effect_level, data_classification, skill_tool_group,
+pattern_match]``. ``pii_scanner`` is a SPEC placeholder not yet implemented.
 """
 from __future__ import annotations
 
 import logging
+import re
 from typing import List, Optional
 
 from app.game_engine.agent_runtime.policy.config import GateDomainConfig
@@ -173,6 +174,69 @@ def skill_tool_group_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
     return None
 
 
+def pattern_match_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
+    """Prompt injection / 越权短语 detector (P4).
+
+    Matches ``user_message`` + command ``args`` (at ``before_tool_call``) or
+    the final ``draft_text`` (at ``before_final_answer``, non-streaming only)
+    against configured regex patterns (``gate.pattern_match_patterns``). On hit,
+    emits the configured decision (default ``require_approval``). Default-off
+    so default config is byte-equivalent; an empty pattern set is a no-op even
+    when the detector is enabled.
+
+    Streaming path is explicitly post-v1 (F18 §4.1): mid-stream evaluation would
+    break first-token latency and streaming golden traces, so the driver only
+    invokes this check_point at the non-streaming act finalization boundary.
+    """
+    from app.game_engine.agent_runtime.policy.check_points import CheckPoint
+
+    if ctx.check_point not in (CheckPoint.BEFORE_TOOL_CALL, CheckPoint.BEFORE_FINAL_ANSWER):
+        return None
+    gate_cfg = ctx.extra.get("gate_config") if ctx.extra else None
+    if not isinstance(gate_cfg, dict):
+        return None
+    patterns = gate_cfg.get("pattern_match_patterns")
+    if not patterns:
+        return None  # empty set → no-op (byte-equiv)
+    # Select target text by check_point.
+    if ctx.check_point == CheckPoint.BEFORE_TOOL_CALL:
+        target = str(ctx.user_message or "")
+        args = ctx.command_args
+        if args:
+            target += " " + " ".join(str(a) for a in args)
+    else:  # BEFORE_FINAL_ANSWER (non-streaming)
+        target = str(ctx.draft_text or "")
+    if not target.strip():
+        return None
+    decision_str = str(gate_cfg.get("pattern_match_decision", "require_approval")).strip().lower()
+    for pat in patterns:
+        try:
+            if re.search(pat, target, re.IGNORECASE):
+                if decision_str == "deny":
+                    return PolicyDecision.deny(
+                        ctx.check_point,
+                        "policy_blocked_pattern_match",
+                        evidence={"pattern": pat, "check_point": ctx.check_point},
+                    )
+                if decision_str == "allow":
+                    # Misconfig: allow means audit-only; emit no blocking decision.
+                    logger.warning(
+                        "pattern_match_decision='allow' configured; pattern %r "
+                        "hit but not blocking (audit-only)", pat,
+                    )
+                    return None
+                # default + require_approval
+                return PolicyDecision.require_approval(
+                    ctx.check_point,
+                    "policy_blocked_pattern_match",
+                    evidence={"pattern": pat, "check_point": ctx.check_point},
+                )
+        except re.error as exc:
+            logger.warning("pattern_match regex %r invalid: %s; skipped", pat, exc)
+            continue
+    return None
+
+
 class GateDomain(Domain):
     domain_id = "gate"
     check_points = (
@@ -186,7 +250,7 @@ class GateDomain(Domain):
 
     def detectors(self) -> List[Detector]:
         # Order preserved from legacy _detectors_from_config:
-        # side_effect → data_classification → [skill_tool_group].
+        # side_effect → data_classification → [skill_tool_group] → [pattern_match].
         dets: List[Detector] = []
         if self._config.enable_side_effect_detector:
             dets.append(side_effect_level_detector)
@@ -194,6 +258,8 @@ class GateDomain(Domain):
             dets.append(data_classification_detector)
         if self._config.enable_skill_tool_group_detector:
             dets.append(skill_tool_group_detector)
+        if self._config.enable_pattern_match_detector:
+            dets.append(pattern_match_detector)
         return dets
 
     def build_context(self, base: PolicyContext) -> PolicyContext:
@@ -205,5 +271,7 @@ class GateDomain(Domain):
             "tool_group_hierarchy": {
                 k: tuple(v) for k, v in self._config.tool_group_hierarchy.items()
             },
+            "pattern_match_patterns": tuple(self._config.pattern_match_patterns),
+            "pattern_match_decision": self._config.pattern_match_decision,
         }
         return base

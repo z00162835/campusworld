@@ -25,6 +25,11 @@ class PolicyContext:
     caller_profile: str = "read"
     active_skill_context: Optional[Dict[str, Any]] = None
 
+    # --- before_final_answer (gate domain, non-streaming) -----------------
+    # Final draft text evaluated by pattern_match at before_final_answer.
+    # Streaming ticks set this only post-stream (mid-stream evaluation is post-v1).
+    draft_text: str = ""
+
     # --- before_skill_activation -----------------------------------------
     skill_id: Optional[str] = None
     skill_allowed_tool_groups: Tuple[str, ...] = field(default_factory=tuple)
