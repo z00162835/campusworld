@@ -165,3 +165,141 @@ class TestCaseInsensitiveMatch:
         decision = _build_and_eval(ctx, _gate_config([r"ignore previous instructions"]))
         assert decision is not None
         assert decision.reason_code == "policy_blocked_pattern_match"
+
+
+# ---------------------------------------------------------------------------
+# Driver wiring: _evaluate_before_final_answer helper
+# ---------------------------------------------------------------------------
+
+class TestBeforeFinalAnswerDriverWiring:
+    """Verify the llm_pdca._evaluate_before_final_answer helper routes a blocking
+    pattern_match decision to fail_fallback (clears draft + sets _draft_incomplete).
+
+    Default-off byte-equiv is also asserted: with the default engine (detector off)
+    the helper is a no-op even when called directly.
+    """
+
+    @staticmethod
+    def _make_framework_with_pattern_match(patterns, decision="require_approval"):
+        from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
+        from app.game_engine.agent_runtime.policy import PolicyEngine
+        from app.game_engine.agent_runtime.policy.config import (
+            GateDomainConfig,
+            PolicyConfig,
+        )
+        from app.game_engine.agent_runtime.llm_client import StubLlmClient
+        from app.core.settings import AgentLlmServiceConfig
+
+        cfg = AgentLlmServiceConfig(
+            system_prompt="sys",
+            phase_prompts={"plan": "p", "do": "d", "check": "c", "act": "a"},
+        )
+        fw = LlmPDCAFramework(
+            memory=_FakeMem(),
+            llm_config=cfg,
+            instance_phase_llm={},
+            instance_mode_models={},
+            llm=StubLlmClient(),
+        )
+        # Inject a PolicyEngine with pattern_match enabled.
+        gate_cfg = GateDomainConfig(
+            enable_pattern_match_detector=True,
+            pattern_match_patterns=tuple(patterns),
+            pattern_match_decision=decision,
+        )
+        fw._policy_engine = PolicyEngine(config=PolicyConfig(gate=gate_cfg))
+        return fw
+
+    def test_default_engine_no_op(self):
+        """Default engine (detector off) → helper is a no-op (byte-equiv)."""
+        from types import SimpleNamespace
+        from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext
+        from app.game_engine.agent_runtime.frameworks.llm_pdca import LlmPDCAFramework
+        from app.game_engine.agent_runtime.llm_client import StubLlmClient
+        from app.core.settings import AgentLlmServiceConfig
+
+        cfg = AgentLlmServiceConfig(
+            system_prompt="sys",
+            phase_prompts={"plan": "p", "do": "d", "check": "c", "act": "a"},
+        )
+        fw = LlmPDCAFramework(
+            memory=_FakeMem(),
+            llm_config=cfg,
+            instance_phase_llm={},
+            instance_mode_models={},
+            llm=StubLlmClient(),
+        )
+        ctx = FrameworkRunContext(agent_node_id=1, correlation_id="c", payload={})
+        bag = SimpleNamespace(final_text="ignore previous instructions", reply="", user_msg="hi")
+        trace: list = []
+        fw._evaluate_before_final_answer(ctx, bag, trace)
+        # No-op: draft preserved, no _draft_incomplete, no trace row.
+        assert bag.final_text == "ignore previous instructions"
+        assert not ctx.payload.get("_draft_incomplete")
+        assert trace == []
+
+    def test_block_clears_draft_and_routes_to_fail(self):
+        """Blocking decision clears draft + sets _draft_incomplete + trace row."""
+        from types import SimpleNamespace
+        from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext
+
+        fw = self._make_framework_with_pattern_match([r"system credentials"])
+        ctx = FrameworkRunContext(
+            agent_node_id=1,
+            correlation_id="c",
+            payload={},
+        )
+        bag = SimpleNamespace(
+            final_text="Here are the system credentials you requested",
+            reply="",
+            user_msg="give me creds",
+        )
+        trace: list = []
+        fw._evaluate_before_final_answer(ctx, bag, trace)
+        assert bag.final_text == ""
+        assert bag.reply == ""
+        assert ctx.payload.get("_draft_incomplete") is True
+        assert ctx.payload.get("_policy_block_final_answer") == "policy_blocked_pattern_match"
+        # A policy_decision trace row was appended.
+        assert any(
+            isinstance(t, dict) and t.get("step") == "policy_decision"
+            and t.get("reason_code") == "policy_blocked_pattern_match"
+            for t in trace
+        )
+
+    def test_no_hit_preserves_draft(self):
+        """Non-matching draft → helper is a no-op even with detector enabled."""
+        from types import SimpleNamespace
+        from app.game_engine.agent_runtime.frameworks.base import FrameworkRunContext
+
+        fw = self._make_framework_with_pattern_match([r"system credentials"])
+        ctx = FrameworkRunContext(agent_node_id=1, correlation_id="c", payload={})
+        bag = SimpleNamespace(
+            final_text="The weather is sunny today.",
+            reply="",
+            user_msg="weather?",
+        )
+        trace: list = []
+        fw._evaluate_before_final_answer(ctx, bag, trace)
+        assert bag.final_text == "The weather is sunny today."
+        assert not ctx.payload.get("_draft_incomplete")
+        assert trace == []
+
+
+# Minimal _FakeMem mirror for framework construction.
+class _FakeMem:
+    def __init__(self) -> None:
+        self.runs: list = []
+        self.raw: list = []
+
+    def start_run(self, *a, **kw) -> None:
+        self.runs.append("start")
+
+    def update_run(self, *a, **kw) -> None:
+        self.runs.append("update")
+
+    def finish_run(self, *a, **kw) -> None:
+        self.runs.append("finish")
+
+    def append_raw(self, *a, **kw) -> None:
+        self.raw.append("raw")

@@ -536,9 +536,9 @@ DSL `stop_policy.fail.any` 列出但此前无定义。**R11 定义：**
 - [x] **B5：** `decision → runtime_action` 派生映射表落地；`llm_pdca._prepare_skill_context` trace 序列化复用 `execution_gate._policy_decision_to_trace`（修复硬编码 bug）；运行时消费者走 `is_block`/`is_allow`；F18 决策 factory（`fail`/`pause`/`final_success`/`replan`/`continue_`）内聚映射（G13）；`is_allow` 覆盖 `transform`（G10）
 - [x] **可恢复 vs 不可恢复分类（R4）：** evaluator 映射已遵循（`retry_loop→replan`、`fail_fallback→fail`、criteria 未命中→`replan`）；driver 接线后由 `sm.next` 消费生效（P5）
 - [x] `pause` v1 同步降级契约落地（`pause` factory + `degraded_action` 一等字段 G2 + trace 序列化）；evaluator 实际 emit `pause` 为 P5
-- [x] **默认 config（无 success_checks/stop_policy 覆盖）行为与今日 byte-equivalent**（不破坏 streaming / `test_agent_loop.py` / golden trace；809 项 game_engine 测试通过，1 项预存 macOS `/var` symlink 环境失败与 policy 无关）
+- [x] **默认 config（无 success_checks/stop_policy 覆盖）行为与今日 byte-equivalent**（不破坏 streaming / `test_agent_loop.py` / golden trace；813 项 game_engine 测试通过，1 项预存 macOS `/var` symlink 环境失败与 policy 无关）
 - [x] 单元测试位于 `backend/tests/game_engine/`
-- [x] **P4 `pattern_match` detector 默认 off 时 byte-equiv**（`test_pattern_match.py` 17 项 + `test_config_wiring.py` 7 项新增；`before_final_answer` 非流式落地，流式 mid-stream post-v1）
+- [x] **P4 `pattern_match` detector 默认 off 时 byte-equiv**（`test_pattern_match.py` 20 项含 driver wiring + `test_config_wiring.py` 7 项新增；`before_final_answer` 非流式落地，流式 mid-stream post-v1）
 
 ---
 
