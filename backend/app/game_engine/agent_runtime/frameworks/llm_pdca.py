@@ -677,6 +677,10 @@ class LlmPDCAFramework(ThinkingFramework):
             ts['max_iterations'] = qcfg.max_iterations
             ts['max_consecutive_tool_failures'] = qcfg.max_consecutive_tool_failures
             ts['stagnation_window'] = qcfg.stagnation_window
+            # H7: stop_evaluator's stagnation check consumes the cycle-window
+            # multiplier (cycle window = multiplier × stagnation_window). Inject
+            # here so the control-flow-driving consumer honors config.
+            ts['stagnation_cycle_window_multiplier'] = qcfg.stagnation_cycle_window_multiplier
             # Surface ToolGatherBudgets exhaustion to stop_evaluator as the
             # budget_exceeded condition. Phase-level caps stay inline in the
             # react loop.
@@ -692,10 +696,50 @@ class LlmPDCAFramework(ThinkingFramework):
             ts['agent_loop_config'] = self._agent_loop_config
             ts['reason_context'] = _draft_reason_context(ctx)
             ts['draft_incomplete'] = bool(ctx.payload.get('_draft_incomplete'))
+            # S2/S3 hard_gate config (default-off, byte-equiv): surfaced to
+            # final_success_evaluator via tick_state.
+            ts['enable_obs_grounded_claims_gate'] = qcfg.enable_obs_grounded_claims_gate
+            ts['obs_grounded_gte'] = qcfg.obs_grounded_gte
+            ts['enable_success_criteria_gate'] = qcfg.enable_success_criteria_gate
+            # S3 / react_turn_success N-hit rule threshold (read by final_success
+            # S3 gate and react_turn_success_evaluator).
+            ts['react_turn_min_criteria_hits'] = qcfg.react_turn_min_criteria_hits
+            # success_criteria is needed by the S3 gate; populate it here when the
+            # gate is enabled even if quality_score is off.
+            if qcfg.enable_success_criteria_gate and 'success_criteria' not in ts:
+                ts['success_criteria'] = list(ctx.payload.get('_success_criteria') or [])
         if qcfg.enable_quality_score:
             ts['enable_quality_score'] = True
             ts['success_criteria'] = list(ctx.payload.get('_success_criteria') or [])
             ts['stagnation_window'] = qcfg.stagnation_window
+            # react_turn_success_evaluator (per_react_round) reads the same N-hit
+            # threshold; surface it whenever quality scoring is on.
+            if 'react_turn_min_criteria_hits' not in ts:
+                ts['react_turn_min_criteria_hits'] = qcfg.react_turn_min_criteria_hits
+            # H6/H7/H8: configurable semantic weights, cycle-window multiplier,
+            # and token min length — surfaced to compute_quality_score and the
+            # S2/S3 gates via tick_state.
+            ts['semantic_weight_grounding'] = qcfg.semantic_weight_grounding
+            ts['semantic_weight_criteria'] = qcfg.semantic_weight_criteria
+            ts['semantic_weight_progress'] = qcfg.semantic_weight_progress
+            ts['stagnation_cycle_window_multiplier'] = qcfg.stagnation_cycle_window_multiplier
+            ts['token_min_length'] = qcfg.token_min_length
+        # H8: token_min_length is consumed by quality_score_evaluator (under
+        # enable_quality_score), final_success_evaluator S2/S3 gates (under
+        # final_success_drive_mode), and react_turn_success_evaluator (under
+        # require_structured_turn). Inject unconditionally as a lightweight
+        # scalar so react_turn_success_evaluator honors config even when the
+        # other two gates are off. No evaluator reads it when its own gate is
+        # off, so this is byte-equivalent.
+        if 'token_min_length' not in ts:
+            ts['token_min_length'] = qcfg.token_min_length
+        # react_turn_min_criteria_hits is consumed by final_success_evaluator
+        # S3 gate (under final_success_drive_mode) and react_turn_success_evaluator
+        # (under require_structured_turn). Inject unconditionally so the
+        # per_react_round consumer honors config even when final_success_drive_mode
+        # and enable_quality_score are off. Byte-equivalent (default 1).
+        if 'react_turn_min_criteria_hits' not in ts:
+            ts['react_turn_min_criteria_hits'] = qcfg.react_turn_min_criteria_hits
         if extra:
             ts.update(extra)
         return ts

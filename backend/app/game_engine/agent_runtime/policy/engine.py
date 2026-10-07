@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import time
 from typing import Optional, Tuple
 
 from app.game_engine.agent_runtime.policy.config import PolicyConfig, get_policy_config
@@ -51,15 +52,18 @@ class PolicyEngine:
                 return tagged
         allow_with_score: Optional[PolicyDecision] = None
         for evaluator in domain.evaluators():
+            _t0 = time.perf_counter()
             try:
                 decision = evaluator(ctx)
             except Exception as exc:  # noqa: BLE001 — evaluator safety net
                 logger.error("evaluator_error: %s raised by %s: %s", domain.domain_id, getattr(evaluator, "__name__", evaluator), exc)
                 decision = None
+            _eval_ms = (time.perf_counter() - _t0) * 1000.0
             if decision is not None and decision.decision == 'allow' and decision.quality_score is not None:
                 evidence = dict(decision.evidence or {})
                 evidence["evaluator"] = getattr(evaluator, "__name__", "evaluator")
                 evidence["domain"] = domain.domain_id
+                evidence["eval_ms"] = round(_eval_ms, 3)
                 allow_with_score = dataclasses.replace(decision, evidence=evidence)
                 continue
             # Surface any explicit non-default decision. Quality evaluators may
@@ -69,6 +73,7 @@ class PolicyEngine:
                 evidence = dict(decision.evidence or {})
                 evidence["evaluator"] = getattr(evaluator, "__name__", "evaluator")
                 evidence["domain"] = domain.domain_id
+                evidence["eval_ms"] = round(_eval_ms, 3)
                 quality_score = decision.quality_score
                 if quality_score is None and allow_with_score is not None:
                     quality_score = allow_with_score.quality_score

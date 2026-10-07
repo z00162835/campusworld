@@ -23,6 +23,9 @@ from app.game_engine.agent_runtime.policy.domain import Domain, Evaluator
 from app.game_engine.agent_runtime.agent_loop.draft_gate import (
     assess_draft_completeness as assess_final_draft_completeness,
 )
+from app.game_engine.agent_runtime.agent_loop.draft_gate import (
+    _needs_runtime_grounding as _draft_needs_runtime_grounding,
+)
 
 logger = logging.getLogger("campusworld.policy.quality")
 
@@ -233,13 +236,21 @@ def stop_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     if enable_stop_dims and current_state in ("plan", "do", "check"):
         recent_signatures = tick_state.get("recent_signatures") or []
         stagnation_window = int(tick_state.get("stagnation_window", 3))
-        if _progress(stagnation_window, list(recent_signatures)) == 0.0:
+        # H7: cycle-window multiplier is @configurable (cycle window =
+        # multiplier × stagnation_window). Read from tick_state so the
+        # control-flow-driving consumer honors config.
+        cycle_mult = int(tick_state.get("stagnation_cycle_window_multiplier", 2))
+        if _progress(
+            stagnation_window, list(recent_signatures),
+            cycle_window_multiplier=cycle_mult,
+        ) == 0.0:
             return PolicyDecision.replan(
                 CheckPoint.AFTER_STATE_EXECUTE,
                 "stagnation",
                 evidence={
                     "stagnation_window": stagnation_window,
-                    "recent_signatures": list(recent_signatures[-(2 * stagnation_window):]),
+                    "stagnation_cycle_window_multiplier": cycle_mult,
+                    "recent_signatures": list(recent_signatures[-(cycle_mult * stagnation_window):]),
                 },
             )
     # budget_exceeded soft-fail: audit/trace-only ``continue``. The
@@ -321,6 +332,50 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
         raise
 
     if verdict == DraftCompletenessVerdict.complete:
+        # S2 obs_grounded_claims hard_gate (default-off): when runtime grounding is
+        # needed and the draft's token overlap with successful observations is
+        # below threshold, upgrade complete → replan (recoverable, R4). Upgrades
+        # "called tools" to "answer is grounded". R5: token overlap is a coarse
+        # proxy (default-off until offline calibration, see §5.3 R10).
+        if tick_state.get("enable_obs_grounded_claims_gate"):
+            gte = float(tick_state.get("obs_grounded_gte", 0.15))
+            tml = int(tick_state.get("token_min_length", 2))
+            if _draft_needs_runtime_grounding(user_message, context=reason_context):
+                gq = _grounding_quality(draft_text, tool_results, min_length=tml)
+                if gq < gte:
+                    return PolicyDecision.replan(
+                        CheckPoint.BEFORE_TERMINAL,
+                        reason_code="obs_grounded_claims_unmet",
+                        evidence={
+                            "verdict": "complete",
+                            "draft_incomplete": draft_incomplete,
+                            "drive_mode": drive_mode,
+                            "grounding_quality": gq,
+                            "obs_grounded_gte": gte,
+                        },
+                    )
+        # S3 success_criteria_addressed hard_gate (default-off): when success
+        # criteria are configured and the draft doesn't hit enough of them,
+        # upgrade complete → replan (recoverable, R4). Reuses the same
+        # hit-count rule as react_turn_success_evaluator.
+        if tick_state.get("enable_success_criteria_gate"):
+            success_criteria = tick_state.get("success_criteria") or []
+            if success_criteria:
+                n_required = int(tick_state.get("react_turn_min_criteria_hits", 1))
+                tml = int(tick_state.get("token_min_length", 2))
+                hit_count = _criteria_hit_count(draft_text, success_criteria, min_length=tml)
+                if hit_count < n_required:
+                    return PolicyDecision.replan(
+                        CheckPoint.BEFORE_TERMINAL,
+                        reason_code="success_criteria_addressed_unmet",
+                        evidence={
+                            "verdict": "complete",
+                            "draft_incomplete": draft_incomplete,
+                            "drive_mode": drive_mode,
+                            "criteria_hit_count": hit_count,
+                            "criteria_required": n_required,
+                        },
+                    )
         return PolicyDecision.final_success(
             CheckPoint.BEFORE_TERMINAL,
             reason_code="final_success_complete",
@@ -340,14 +395,14 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     )
 
 
-def _tokenize(text: str) -> List[str]:
+def _tokenize(text: str, *, min_length: int = 2) -> List[str]:
     """Cheap whitespace + punctuation tokenizer for overlap heuristics."""
     if not text:
         return []
-    return [t for t in re.split(r"[\s,，。.!！?？;；:：、()\[\]{}\"']+", text) if t]
+    return [t for t in re.split(r"[\s,，。.!！?？;；:：、()\[\]{}\"']+", text) if len(t) >= min_length]
 
 
-def _grounding_quality(draft_text: str, tool_results: List[Any]) -> float:
+def _grounding_quality(draft_text: str, tool_results: List[Any], *, min_length: int = 2) -> float:
     """Overlap between draft tokens and successful tool observation text.
 
     Returns 0..1 — fraction of draft tokens covered by observation text. Pure
@@ -355,7 +410,7 @@ def _grounding_quality(draft_text: str, tool_results: List[Any]) -> float:
     satisfied (1.0) only if the draft is empty (no claims to ground); a non-empty
     draft with no observations scores 0.
     """
-    draft_tokens = set(t.lower() for t in _tokenize(draft_text) if len(t) >= 2)
+    draft_tokens = set(t.lower() for t in _tokenize(draft_text, min_length=min_length))
     if not draft_tokens:
         return 1.0
     obs_text_parts: List[str] = []
@@ -365,24 +420,24 @@ def _grounding_quality(draft_text: str, tool_results: List[Any]) -> float:
             obs_text_parts.append(str(text))
     if not obs_text_parts:
         return 0.0
-    obs_tokens = set(t.lower() for t in _tokenize(" ".join(obs_text_parts)) if len(t) >= 2)
+    obs_tokens = set(t.lower() for t in _tokenize(" ".join(obs_text_parts), min_length=min_length))
     if not obs_tokens:
         return 0.0
     covered = draft_tokens & obs_tokens
     return len(covered) / len(draft_tokens)
 
 
-def _criteria_coverage(draft_text: str, success_criteria: List[str]) -> float:
+def _criteria_coverage(draft_text: str, success_criteria: List[str], *, min_length: int = 2) -> float:
     """Fraction of success_criteria tokens present in the draft."""
     if not success_criteria:
         return 1.0
-    draft_tokens = set(t.lower() for t in _tokenize(draft_text) if len(t) >= 2)
+    draft_tokens = set(t.lower() for t in _tokenize(draft_text, min_length=min_length))
     if not draft_tokens:
         return 0.0
     covered = 0
     total = 0
     for criterion in success_criteria:
-        crit_tokens = [t.lower() for t in _tokenize(criterion) if len(t) >= 2]
+        crit_tokens = [t.lower() for t in _tokenize(criterion, min_length=min_length)]
         if not crit_tokens:
             continue
         total += 1
@@ -391,20 +446,21 @@ def _criteria_coverage(draft_text: str, success_criteria: List[str]) -> float:
     return covered / total if total else 1.0
 
 
-def _criteria_hit_count(draft_text: str, success_criteria: List[str]) -> int:
+def _criteria_hit_count(draft_text: str, success_criteria: List[str], *, min_length: int = 2) -> int:
     """Number of criteria whose tokens are all present in the draft.
 
-    A criterion is "hit" when every one of its tokens (len ≥ 2) appears in the
-    draft. Used by ``react_turn_success_evaluator`` for the N-hit pass rule.
+    A criterion is "hit" when every one of its tokens (len ≥ ``min_length``)
+    appears in the draft. Used by ``react_turn_success_evaluator`` for the N-hit
+    pass rule.
     """
     if not success_criteria:
         return 0
-    draft_tokens = set(t.lower() for t in _tokenize(draft_text) if len(t) >= 2)
+    draft_tokens = set(t.lower() for t in _tokenize(draft_text, min_length=min_length))
     if not draft_tokens:
         return 0
     count = 0
     for criterion in success_criteria:
-        crit_tokens = [t.lower() for t in _tokenize(criterion) if len(t) >= 2]
+        crit_tokens = [t.lower() for t in _tokenize(criterion, min_length=min_length)]
         if not crit_tokens:
             continue
         if all(t in draft_tokens for t in crit_tokens):
@@ -412,21 +468,27 @@ def _criteria_hit_count(draft_text: str, success_criteria: List[str]) -> int:
     return count
 
 
-def _progress(stagnation_window: int, recent_signatures: List[str]) -> float:
+def _progress(
+    stagnation_window: int,
+    recent_signatures: List[str],
+    *,
+    cycle_window_multiplier: int = 2,
+) -> float:
     """1.0 when not stagnating (recent signatures show progress), 0.0 when
     the last ``stagnation_window`` signatures are identical (adjacent repeat),
-    or when the last ``2*stagnation_window`` signatures collapse to ≤ 2 distinct
-    values (cycle mode, e.g. A→B→A→B)."""
+    or when the last ``cycle_window_multiplier * stagnation_window`` signatures
+    collapse to ≤ 2 distinct values (cycle mode, e.g. A→B→A→B)."""
     if not recent_signatures:
         return 1.0
     k = stagnation_window if stagnation_window > 0 else 3
+    mult = cycle_window_multiplier if cycle_window_multiplier > 0 else 2
     # Adjacent repeat: last K signatures all identical.
     recent_k = recent_signatures[-k:]
     if len(recent_k) >= 2 and len(set(recent_k)) == 1:
         return 0.0
-    # Cycle mode: last 2K signatures use ≤ 2 distinct values.
-    cycle_window = recent_signatures[-(2 * k):]
-    if len(cycle_window) >= 2 * k and len(set(cycle_window)) <= 2:
+    # Cycle mode: last mult*K signatures use ≤ 2 distinct values.
+    cycle_window = recent_signatures[-(mult * k):]
+    if len(cycle_window) >= mult * k and len(set(cycle_window)) <= 2:
         return 0.0
     return 1.0
 
@@ -438,6 +500,11 @@ def compute_quality_score(
     success_criteria: List[str],
     recent_signatures: List[str],
     stagnation_window: int,
+    semantic_weight_grounding: float = 0.5,
+    semantic_weight_criteria: float = 0.3,
+    semantic_weight_progress: float = 0.2,
+    stagnation_cycle_window_multiplier: int = 2,
+    token_min_length: int = 2,
 ) -> Dict[str, float]:
     """Compute the layered QualityScore (surface / process / semantic).
 
@@ -445,11 +512,18 @@ def compute_quality_score(
     gates already judge form); ``process`` is a placeholder (default-off); the
     core dimension is ``semantic`` = grounding + criteria + progress.
     """
-    grounding = _grounding_quality(draft_text, tool_results)
-    criteria = _criteria_coverage(draft_text, success_criteria)
-    progress = _progress(stagnation_window, recent_signatures)
-    # semantic = weighted average; grounding is the dominant signal
-    semantic = 0.5 * grounding + 0.3 * criteria + 0.2 * progress
+    grounding = _grounding_quality(draft_text, tool_results, min_length=token_min_length)
+    criteria = _criteria_coverage(draft_text, success_criteria, min_length=token_min_length)
+    progress = _progress(
+        stagnation_window, recent_signatures,
+        cycle_window_multiplier=stagnation_cycle_window_multiplier,
+    )
+    # semantic = weighted average (weights @configurable, H6).
+    semantic = (
+        semantic_weight_grounding * grounding
+        + semantic_weight_criteria * criteria
+        + semantic_weight_progress * progress
+    )
     return {
         "surface": 1.0,  # recorded; hard gates already judged form
         "process": 1.0,  # placeholder (default-off)
@@ -486,6 +560,11 @@ def quality_score_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
             success_criteria=success_criteria,
             recent_signatures=recent_signatures,
             stagnation_window=stagnation_window,
+            semantic_weight_grounding=float(tick_state.get("semantic_weight_grounding", 0.5)),
+            semantic_weight_criteria=float(tick_state.get("semantic_weight_criteria", 0.3)),
+            semantic_weight_progress=float(tick_state.get("semantic_weight_progress", 0.2)),
+            stagnation_cycle_window_multiplier=int(tick_state.get("stagnation_cycle_window_multiplier", 2)),
+            token_min_length=int(tick_state.get("token_min_length", 2)),
         )
     except Exception as exc:  # noqa: BLE001 — evaluator safety net
         logger.error("evaluator_error: quality_score_evaluator raised: %s", exc)
@@ -577,6 +656,7 @@ def react_turn_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]
         return None
     # Required criteria hits; defaults to 1 until success checks configure it.
     n_required = int(tick_state.get("react_turn_min_criteria_hits", 1))
+    tml = int(tick_state.get("token_min_length", 2))
     try:
         draft_text = ""
         if isinstance(react_turn, dict):
@@ -585,7 +665,7 @@ def react_turn_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]
             decision = "continue"
             reason_code = "react_turn_no_criteria"
         else:
-            hit_count = _criteria_hit_count(draft_text, success_criteria)
+            hit_count = _criteria_hit_count(draft_text, success_criteria, min_length=tml)
             if hit_count >= n_required:
                 decision = "continue"
                 reason_code = "react_turn_criteria_met"

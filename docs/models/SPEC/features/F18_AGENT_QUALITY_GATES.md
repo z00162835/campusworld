@@ -74,7 +74,7 @@ selected_skill: Optional[str] = None   # F17 selected_skill（v1 inert，见 §3
 | Evaluator | check_point | 输出决策（映射后） | 说明 |
 |-----------|-------------|-------------------|------|
 | `stop_evaluator` | `after_state_execute` | `fail` / `pause` / `replan` / `continue` | 预算、迭代上限、clarification、approval、**check_retry/mandatory_gap 统一收归**（B3，仅 `current_state=='check'`）、**stagnation**（S4，plan/do/check 态，act 抑制 B6-a）等 |
-| `final_success_evaluator` | `before_terminal` | `final_success` / `fail` | 包装 `assess_draft_completeness` hard_gates + 分层 quality score（见 §5） |
+| `final_success_evaluator` | `before_terminal` | `final_success` / `replan` / `fail` | 包装 `assess_draft_completeness` hard_gates + 分层 quality score（见 §5）；S2/S3 hard_gate 可将 `complete → replan` 升级（reason_code `obs_grounded_claims_unmet` / `success_criteria_addressed_unmet`） |
 | `react_turn_success_evaluator` | `per_react_round` | `continue` / `replan` / `fail` | **opt-in**；始终注册但 **自守卫**（`react_turn is None` → 返回 `None`，等价空集）；消费 `success_criteria`（S3） |
 | `quality_score_evaluator` | （被 final / react_turn 调用） | `QualityScore`（多维） | 分层评分：surface / process / semantic（见 §5，S7） |
 
@@ -175,11 +175,11 @@ class PolicyDecision:
 | hard_gate | 既有逻辑 | 锚点（函数） | v1 状态 |
 |-----------|---------|-------------|---------|
 | `grounding_satisfied` | `_needs_runtime_grounding` + `has_successful_grounding_obs` | `draft_gate.py` | ✅（存在性布尔：grounding 工具成功过） |
-| `obs_grounded_claims`（S2） | 草稿与成功 obs 文本的 token/实体重叠 ≥ 阈值 | 新增纯函数 evaluator（`quality_score_evaluator` 内） | ⏸ **default-off**（保 byte-equivalent；启用后从「调过工具」升级为「答案有据」） |
+| `obs_grounded_claims`（S2） | 草稿与成功 obs 文本的 token/实体重叠 ≥ 阈值 | `final_success_evaluator` 内（`complete` 后追加检查） | ✅ **已实现（default-off）**（保 byte-equivalent；启用后从「调过工具」升级为「答案有据」） |
 | `min_complete_chars` | `len(draft) < config.min_complete_chars` | `draft_gate.assess_draft_completeness` | ✅ |
 | `no_deferral_prose` | `_DEFAULT_DEFERRAL_PATTERNS` / `is_deferral_prose` | `draft_gate.py` | ✅ |
 | `verification_passed` | Check 输出含 error 语义（今日子串启发式） | Check 态执行（`_execute_pdca_state` / check path） | ⚠️ v1 placeholder；**P1 升级为结构化 Check 输出**（`PASS\|RETRY\|FAIL` + `reason_codes`，见 S5 / §5.4） |
-| `success_criteria_addressed`（S3） | structured turn `success_criteria` 关键词/子串在草稿中命中 ≥ N 条 | 新增 evaluator（opt-in，随 `require_structured_turn`） | ⏸ **opt-in**（free-text 模式跳过） |
+| `success_criteria_addressed`（S3） | structured turn `success_criteria` 关键词/子串在草稿中命中 ≥ N 条 | `final_success_evaluator` 内（S2 之后追加检查） | ✅ **已实现（default-off）**（`enable_success_criteria_gate` 门控；free-text 模式无 criteria 来源时跳过） |
 | `no_pending_approval` | 无 `guard_blocked_confirmation` / policy block | `execution_gate.evaluate_execution_gate` | ✅ |
 | `policy_decision_recorded` | **若本轮需要 policy decision，则须为 allow；无 policy decision = pass**（非「trace 行必须存在」） | [F16](F16_AGENT_POLICY_ENGINE.md) §9 | ✅ 语义修正 |
 | `selected_skill_allowed` | `selected_skill ∈ skill_refs`（+ phase 约束） | [F15](F15_AGENT_SKILL_REGISTRY.md) / [F17](F17_AGENT_STATE_MACHINE.md) | ⏸ **inert** 直至 F17 D3-B / D6 `selected_skill` 消费落地 |
@@ -322,20 +322,28 @@ _execute_state(act)
 
 **S1 — 剔除路由置信度：** `intent_confidence` / `router_confidence` **不计入** `semantic` 维度。它们衡量「路由有多确信」，非「答案是否成立」——高置信误路由会抬高「语义分」造成误判。降为 **trace-only 旁路指标**（仍记录，不参与 `pass_condition`）。
 
-**S2 — `grounding_quality`（草稿↔obs 重叠）：** 当 `_needs_runtime_grounding` 为 true 时，对最终草稿做分词/关键名词提取，计算与成功 obs 文本的 token 重叠率（Jaccard 或覆盖率）。低于阈值 → `semantic` 维度低分 / `obs_grounded_claims` hard_gate fail。阈值保守（建议 0.15），default-off 保 byte-equivalent。将「调过工具」升级为「答案有据」。
+**S2 — `grounding_quality`（草稿↔obs 重叠）：** 当 `_needs_runtime_grounding` 为 true 时，对最终草稿做分词/关键名词提取，计算与成功 obs 文本的 token 重叠率（Jaccard 或覆盖率）。分词过滤短 token（`policy.quality.token_min_length`，H8，默认 2）。低于阈值 → `semantic` 维度低分 / `obs_grounded_claims` hard_gate fail。阈值保守（建议 0.15），default-off 保 byte-equivalent。将「调过工具」升级为「答案有据」。
+
+**`obs_grounded_claims` hard_gate（已实现，default-off）：** 在 `final_success_evaluator` 内，当 `assess_draft_completeness` 返回 `complete` 后追加检查：若 `enable_obs_grounded_claims_gate=true` 且 `_needs_runtime_grounding(user_message, context=reason_context)` 为 true，计算 `_grounding_quality(draft_text, tool_results)`；低于 `obs_grounded_gte`（默认 0.15）→ 升级 `complete → replan`（reason_code `obs_grounded_claims_unmet`，可恢复 R4）。chitchat / 无需 runtime grounding 时跳过。配置项 `policy.quality.enable_obs_grounded_claims_gate` / `obs_grounded_gte`。仅在 `final_success_drive_mode ∈ {shadow, enforce}` 时生效（evaluator 自守卫）。
 
 ⚠️ **局限（R5）：** token 重叠是语义对齐的 **粗代理**——无法区分反义（「在三楼」vs「不在三楼」高重叠但矛盾）、同义（「阅览室」vs「图书馆」低重叠但对齐）、词堆砌（高重叠但无意义）。**升级条件：** 当 offline judge（§5.3 rubric）标定后发现 token 重叠的误判率 **> 25%（@configurable）**，则升级为 NLI 或 LLM claim extraction（仍 offline 标定，不入热路径）。v1 分词用轻量策略（正则/字符级 bigram），不引入 jieba 等重依赖。
 
-**S3 — `criteria_coverage`（structured turn）：** `require_structured_turn=true` 时，读 F17 `ReactTurn.success_criteria`，检查草稿中是否出现 criteria 的关键词/子串——**pass 规则为「至少 N 条 criteria 命中」，默认 N=1**（@configurable via `success_checks.react_turn_success.react_turn_min_criteria_hits`，v1 由 evaluator 读 `tick_state['react_turn_min_criteria_hits']`，默认 1）。一条 criterion「命中」= 其所有 token（len≥2）均出现在草稿中。命中数 < N → `replan`（可恢复，R4）；free-text 模式跳过（无 criteria 来源）。先做 soft score（opt-in），稳定后可升 `success_criteria_addressed` hard_gate。
+**S3 — `criteria_coverage`（structured turn）：** `require_structured_turn=true` 时，读 F17 `ReactTurn.success_criteria`，检查草稿中是否出现 criteria 的关键词/子串——**pass 规则为「至少 N 条 criteria 命中」，默认 N=1**（@configurable via `policy.quality.react_turn_min_criteria_hits`，v1 由 evaluator 读 `tick_state['react_turn_min_criteria_hits']`，driver 从 `QualityDomainConfig` 注入，默认 1）。一条 criterion「命中」= 其所有 token（`len ≥ policy.quality.token_min_length`，H8，默认 2）均出现在草稿中。命中数 < N → `replan`（可恢复，R4）；free-text 模式跳过（无 criteria 来源）。**hard_gate 已实现（default-off，`enable_success_criteria_gate` 门控）**；soft score 由 `quality_score_evaluator` 的 `criteria_coverage` 子分提供（`enable_quality_score` 开启时）。
+
+**`success_criteria_addressed` hard_gate（已实现，default-off）：** 在 `final_success_evaluator` 内，当 `assess_draft_completeness` 返回 `complete` 后追加检查（在 S2 之后）：若 `enable_success_criteria_gate=true` 且 `success_criteria` 非空，用 `_criteria_hit_count(draft_text, success_criteria)` 计算命中数；命中数 < `react_turn_min_criteria_hits`（默认 1，@configurable via `policy.quality.react_turn_min_criteria_hits`）→ 升级 `complete → replan`（reason_code `success_criteria_addressed_unmet`，可恢复 R4）。无 criteria 时跳过。配置项 `policy.quality.enable_success_criteria_gate` / `react_turn_min_criteria_hits`。仅在 `final_success_drive_mode ∈ {shadow, enforce}` 时生效。同一 N-hit 阈值亦由 `react_turn_success_evaluator`（`per_react_round`）消费。
 
 **S4 — `progress`（非停滞）：** 检测连续 K 轮（默认 **K=3**，@configurable via `policy.quality.stagnation_window`）满足任一：
 - 相同 `(tool_name, tool_args)` 重复；
 - obs 文本哈希重复；
 - 草稿为同一 deferral 文案。
-**循环模式扩展（R6，已实现）：** 除相邻重复外，还检测 **sliding window 内无新 obs**——最近 2K 轮的 obs 哈希集合大小 ≤ 2（覆盖 A→B→A→B 循环）。纯函数实现：维护 obs 哈希 sliding window set，O(1) 检查。
+**循环模式扩展（R6，已实现）：** 除相邻重复外，还检测 **sliding window 内无新 obs**——最近 `multiplier × K` 轮（`policy.quality.stagnation_cycle_window_multiplier`，H7，默认 `2 × K`）的 obs 哈希集合大小 ≤ `multiplier`（覆盖 A→B→A→B 循环）。纯函数实现：维护 obs 哈希 sliding window set，O(1) 检查。
 命中 → `progress` 维度低分 → `stop_evaluator` 发 `replan`（`event=stagnation`，首次，受 `replan_count < max_replans` 约束）→ `fail`（超限）。操作化了 DSL 中的 `repeated_irrelevant_observations` / `current_strategy_not_progressing`（此前为空契约）。
 
-**`semantic` 维度评分：** `grounding_quality * w_g + criteria_coverage * w_c + progress * w_p`，权重 @configurable，默认 `w_g=0.5, w_c=0.3, w_p=0.2`。阈值 `semantic_gte` 默认 0.75（react_turn）/ 0.85（final），可经 `success_checks.<id>.pass_condition.quality_score.semantic_gte` 覆盖。默认 config 下可关掉 semantic 门槛以保持 byte-equivalent。
+**`semantic` 维度评分：** `grounding_quality * w_g + criteria_coverage * w_c + progress * w_p`，权重 @configurable via `policy.quality.semantic_weight_grounding/criteria/progress`（H6），默认 `w_g=0.5, w_c=0.3, w_p=0.2`。阈值 `semantic_gte` 默认 0.75（react_turn）/ 0.85（final），可经 `success_checks.<id>.pass_condition.quality_score.semantic_gte` 覆盖。默认 config 下可关掉 semantic 门槛以保持 byte-equivalent。
+
+**`progress` 循环模式窗口（H7）：** sliding window 大小 = `stagnation_cycle_window_multiplier × stagnation_window`（默认 `2 × 3 = 6`），@configurable via `policy.quality.stagnation_cycle_window_multiplier`；窗口内 obs 哈希集合大小 ≤ `multiplier` 判定循环（覆盖 A→B→A→B 模式）。
+
+**分词最小 token 长度（H8）：** `grounding_quality` / `criteria_coverage` / `criteria_hit_count` 分词时过滤短 token，阈值 @configurable via `policy.quality.token_min_length`（默认 `2`），避免单字符噪声抬高重叠率。
 
 ⚠️ 张力：固定阈值可能阻断今日 `complete` 出口的回复。`quality_score` 与 hard_gates **分立**：`pass_condition` 需 `all_hard_gates_pass: true` **且** `quality_score.semantic_gte`；hard_gates 失败即 fail/replan，quality_score 仅为额外门槛。阈值标定需 offline eval（见 §5.3）。
 
@@ -381,12 +389,12 @@ _execute_state(act)
 
 `verification_passed` 读结构化标记而非子串。需改 Check prompt + 解析逻辑。v1 接受 placeholder 至 P1 落地。
 
-### 5.5 Evaluator 性能预算（R8，预留不实现）
+### 5.5 Evaluator 性能预算（R8）
 
-v1 evaluator 为纯函数、O(n) 复杂度（n = draft/obs 文本长度），**无额外 LLM 调用**。SPEC 预留性能预算约束但 **v1 不实现** perf 测量函数：
+v1 evaluator 为纯函数、O(n) 复杂度（n = draft/obs 文本长度），**无额外 LLM 调用**。
 
-- **预留约束：** 单次评估目标 < 5ms；v1 分词用轻量策略（正则/字符级 bigram），不引入 jieba 等重依赖。
-- **预留函数：** `quality_score_evaluator` 接口预留 `eval_ms: Optional[float]` 返回字段（`PolicyDecision.evidence` 内），v1 不填充；post-v1 实现 perf 测量并写入 trace。
+- **性能约束：** 单次评估目标 < 5ms；分词用轻量策略（正则/字符级 bigram），不引入 jieba 等重依赖。
+- **`eval_ms` 字段（已实现）：** `PolicyEngine.evaluate` 在调用每个 evaluator 前后用 `time.perf_counter()` 计时，将 `eval_ms`（毫秒，float，3 位小数）写入返回 `PolicyDecision.evidence`。该字段随 `quality_decision` trace 行落盘，用于离线 profiling / 阈值标定（§5.3 R10）。默认 config 下 evaluator 返回 `None`（无 trace 行），`eval_ms` 不出现，保 byte-equivalent。
 - **`per_react_round` 限制（R9）：** v1 `react_turn_success_evaluator` 仅在 `require_structured_turn=true` 时注册（free-text 模式无 per-round 质量检查）。此为 v1 已知限制，不修改；free-text per-round progress 检查为 post-v1 增强（依赖 S4 stagnation 信号，不依赖 structured turn）。`per_react_round` evaluator 接口预留，v1 不在 free-text 模式注册。
 
 ### 5.6 `max_consecutive_tool_failures_exceeded`（R11）
@@ -491,10 +499,10 @@ DSL `stop_policy.fail.any` 列出但此前无定义。**R11 定义：**
 ### P3 — quality_score_evaluator（default-off）
 
 - [x] `quality_score_evaluator` v1 分层评分（surface / process / semantic），无 LLM 调用；`semantic` 维度含 `grounding_quality`（S2）+ `criteria_coverage`（S3）+ `progress`（S4）；**剔除** intent/router confidence（S1，降为 trace-only）；阈值 @configurable；默认 config 可关闭以保持等价
-- [ ] `obs_grounded_claims` hard_gate（S2）default-off；`success_criteria_addressed`（S3）opt-in **(P5)**
+- [x] `obs_grounded_claims` hard_gate（S2）default-off；`success_criteria_addressed`（S3）default-off **(P5)**
 - [x] `no_stagnation` / `current_strategy_not_progressing`（S4）操作化：连续 K=3 轮重复 tool/obs/deferral + **sliding window 2K 循环模式检测**（R6，已实现）→ `replan`（`event=stagnation`，P5-A）→ `fail`（超限，D2）**(P5)**
 - [ ] `observation_relevance`（R7）信号预留于 `process` 维度，default-off
-- [ ] Evaluator 性能预算（R8）预留 `eval_ms` 字段，v1 不实现 perf 测量
+- [x] Evaluator 性能预算（R8）`eval_ms` 字段已实现（`PolicyEngine.evaluate` 计时写入 evidence，随 trace 落盘）
 - [ ] 阈值标定工作流（R10）default off；shadow mode → 灰度 → 锁定
 - [ ] LLM-as-judge **offline-only**（S6）；tick 热路径永不默认开启
 - [x] `quality_decision`（或兼容 `policy_decision`）trace 行写入 `command_trace`，含 `check_point` / `quality_score`（多维子分，一等字段 G2） / `degraded_action`（一等字段 G2）

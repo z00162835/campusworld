@@ -20,12 +20,36 @@ _BLOCKED_DATA_CLASSIFICATIONS = {"confidential", "restricted"}
 
 
 def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
-    """write_high → require_approval (v1: synchronous block)."""
+    """Side-effect gate driven by ``side_effect_defaults`` config (H1+H5).
+
+    Reads ``gate_config['side_effect_defaults']`` (level → decision string) from
+    ``ctx.extra``. Emits ``require_approval``/``deny`` when the configured
+    decision for the current ``side_effect_level`` is non-allow; ``None`` (allow)
+    otherwise. Falls back to the hardcoded ``_BLOCKED_SIDE_EFFECT_LEVELS`` set
+    when no config is injected (byte-equiv for paths that bypass build_context).
+    """
     from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 
     if ctx.check_point != CheckPoint.BEFORE_TOOL_CALL:
         return None
     level = str(ctx.side_effect_level or "none").strip().lower()
+    gate_cfg = ctx.extra.get("gate_config") if ctx.extra else None
+    if isinstance(gate_cfg, dict) and "side_effect_defaults" in gate_cfg:
+        decision_str = str(gate_cfg["side_effect_defaults"].get(level, "allow")).strip().lower()
+        if decision_str == "require_approval":
+            return PolicyDecision.require_approval(
+                CheckPoint.BEFORE_TOOL_CALL,
+                "policy_blocked_side_effect_write_high",
+                evidence={"side_effect_level": level, "command_name": ctx.command_name},
+            )
+        if decision_str == "deny":
+            return PolicyDecision.deny(
+                CheckPoint.BEFORE_TOOL_CALL,
+                "policy_blocked_side_effect",
+                evidence={"side_effect_level": level, "command_name": ctx.command_name},
+            )
+        return None
+    # Fallback: hardcoded baseline (byte-equiv when config not injected).
     if level in _BLOCKED_SIDE_EFFECT_LEVELS:
         return PolicyDecision.require_approval(
             CheckPoint.BEFORE_TOOL_CALL,
@@ -36,13 +60,24 @@ def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
 
 
 def data_classification_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
-    """confidential/restricted → require_approval (v1: synchronous block)."""
+    """confidential/restricted → require_approval (v1: synchronous block).
+
+    Reads ``gate_config['blocked_data_classifications']`` from ``ctx.extra``;
+    falls back to hardcoded ``_BLOCKED_DATA_CLASSIFICATIONS`` (byte-equiv).
+    """
     from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 
     if ctx.check_point != CheckPoint.BEFORE_TOOL_CALL:
         return None
     cls = str(ctx.data_classification or "").strip().lower()
-    if cls in _BLOCKED_DATA_CLASSIFICATIONS:
+    if not cls:
+        return None
+    gate_cfg = ctx.extra.get("gate_config") if ctx.extra else None
+    if isinstance(gate_cfg, dict) and "blocked_data_classifications" in gate_cfg:
+        blocked = gate_cfg["blocked_data_classifications"]
+    else:
+        blocked = _BLOCKED_DATA_CLASSIFICATIONS
+    if cls in blocked:
         return PolicyDecision.require_approval(
             CheckPoint.BEFORE_TOOL_CALL,
             "policy_blocked_data_classification",
@@ -83,7 +118,10 @@ def skill_tool_group_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
         command_groups = (ctx.interaction_profile or "read",)
     from app.game_engine.agent_runtime.policy.tool_groups import is_any_group_allowed
 
-    if not is_any_group_allowed(command_groups, tuple(allowed_groups)):
+    gate_cfg = ctx.extra.get("gate_config") if ctx.extra else None
+    hierarchy = gate_cfg.get("tool_group_hierarchy") if isinstance(gate_cfg, dict) else None
+
+    if not is_any_group_allowed(command_groups, tuple(allowed_groups), hierarchy=hierarchy):
         return PolicyDecision.deny(
             CheckPoint.BEFORE_TOOL_CALL,
             "policy_blocked_skill_tool_group",
@@ -121,4 +159,13 @@ class GateDomain(Domain):
         return dets
 
     def build_context(self, base: PolicyContext) -> PolicyContext:
+        # Inject the gate-domain config snapshot so detectors read thresholds from
+        # config (H1/H2/H4/H5) instead of module-level hardcoded constants.
+        base.extra["gate_config"] = {
+            "side_effect_defaults": dict(self._config.side_effect_defaults),
+            "blocked_data_classifications": tuple(self._config.blocked_data_classifications),
+            "tool_group_hierarchy": {
+                k: tuple(v) for k, v in self._config.tool_group_hierarchy.items()
+            },
+        }
         return base

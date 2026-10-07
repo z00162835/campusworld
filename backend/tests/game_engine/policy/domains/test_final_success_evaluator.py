@@ -158,3 +158,171 @@ class TestFinalSuccessEvaluator:
         assert decision is not None
         assert decision.decision == "replan"
         assert decision.reason_code == "final_success_retry_loop"
+
+
+class TestObsGroundedClaimsGate:
+    """S2: obs_grounded_claims hard_gate (default-off)."""
+
+    def test_no_gate_when_disabled(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="answer",
+            user_message="what is the room?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_obs_grounded_claims_gate=False,
+            tool_results=[],
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "final_success"
+
+    def test_replan_when_grounding_below_threshold(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        # Draft tokens barely overlap with obs → low grounding quality.
+        ctx = _ctx_with_tick_state(
+            draft_text="zzz qqq xxx",
+            user_message="where is the library?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_obs_grounded_claims_gate=True,
+            obs_grounded_gte=0.5,
+            tool_results=[MagicMock(text="the library is on the second floor")],
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "replan"
+        assert decision.reason_code == "obs_grounded_claims_unmet"
+        assert decision.evidence["grounding_quality"] < 0.5
+
+    def test_pass_when_grounding_meets_threshold(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="the library is on the second floor",
+            user_message="where is the library?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_obs_grounded_claims_gate=True,
+            obs_grounded_gte=0.15,
+            tool_results=[MagicMock(text="the library is on the second floor")],
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "final_success"
+
+    def test_skip_when_chitchat_no_grounding_needed(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="hello there",
+            user_message="hi",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_obs_grounded_claims_gate=True,
+            obs_grounded_gte=0.99,
+            tool_results=[MagicMock(text="some observation")],
+        )
+        decision = final_success_evaluator(ctx)
+        # chitchat → _needs_runtime_grounding False → gate skipped → final_success
+        assert decision.decision == "final_success"
+
+
+class TestSuccessCriteriaGate:
+    """S3: success_criteria_addressed hard_gate (default-off)."""
+
+    def test_no_gate_when_disabled(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="answer",
+            user_message="what is x?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_success_criteria_gate=False,
+            success_criteria=["library", "floor"],
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "final_success"
+
+    def test_replan_when_criteria_unmet(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="the answer is something else entirely",
+            user_message="what is x?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_success_criteria_gate=True,
+            success_criteria=["library", "floor"],
+            react_turn_min_criteria_hits=1,
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "replan"
+        assert decision.reason_code == "success_criteria_addressed_unmet"
+
+    def test_pass_when_criteria_met(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="the library is on the second floor",
+            user_message="where is the library?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_success_criteria_gate=True,
+            success_criteria=["library", "floor"],
+            react_turn_min_criteria_hits=1,
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "final_success"
+
+    def test_skip_when_no_criteria(self, monkeypatch):
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        ctx = _ctx_with_tick_state(
+            draft_text="answer",
+            user_message="what is x?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_success_criteria_gate=True,
+            success_criteria=[],
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "final_success"
+
+    def test_replan_when_hits_below_configured_n(self, monkeypatch):
+        """D6: S3 gate honors a configured react_turn_min_criteria_hits > 1."""
+        monkeypatch.setattr(
+            quality_domain, "assess_final_draft_completeness",
+            lambda **kw: DraftCompletenessVerdict.complete,
+        )
+        # Draft hits 1 of 2 criteria; with N=2 → replan.
+        ctx = _ctx_with_tick_state(
+            draft_text="the library is nearby",
+            user_message="where is the library and what floor?",
+            agent_loop_config=MagicMock(),
+            final_success_drive_mode="enforce",
+            enable_success_criteria_gate=True,
+            success_criteria=["library", "floor"],
+            react_turn_min_criteria_hits=2,
+        )
+        decision = final_success_evaluator(ctx)
+        assert decision.decision == "replan"
+        assert decision.reason_code == "success_criteria_addressed_unmet"
+        assert decision.evidence["criteria_hit_count"] == 1
+        assert decision.evidence["criteria_required"] == 2

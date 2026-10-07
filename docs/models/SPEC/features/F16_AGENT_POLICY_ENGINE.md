@@ -163,7 +163,7 @@ class PolicyDecision:
 
 | Detector | 输入 | 用途 |
 |----------|------|------|
-| `skill_activation_mode` | `skill_activation_mode` / `current_react_state` | 校验激活模式与 react state 兼容（F15 `allowed_in_react_states`） |
+| `skill_activation_mode` | `skill_activation_mode` / `current_react_state` | 校验激活模式与 react state 兼容（F15 `allowed_in_react_states`）；`activation_mode ∈ policy.skill.blocked_skill_activation_modes`（H3，默认空集）→ deny |
 
 > **注：** `skill_tool_group` detector 运行于 `before_tool_call`（gate 域 check_point），虽读取 skill 元数据，但按「一个 check_point 只属于一个域」不变量归属 **gate 域**（见下表）。其开关 `enable_skill_tool_group_detector` 亦在 gate 域配置下。
 
@@ -172,9 +172,9 @@ class PolicyDecision:
 | Detector | 输入 | 用途 |
 |----------|------|------|
 | `action_type_match` | `interaction_profile` / `side_effect_level` | 校验提议动作类型与 caller ceiling |
-| `side_effect_level` | `side_effect_level` | `write_high` → `require_approval`（v1 降级 block） |
-| `data_classification` | `data_classification` | `confidential`/`restricted` → `require_approval`（v1 降级 block）；`allow_with_transform` 延后到 F18 输出层落地（D5） |
-| `skill_tool_group` | `SkillActivation.allowed_tool_groups` + 命令的 tool group | 命令 tool group ∉ 激活 skill 的 group 并集 → `deny`（D3，默认 off）；运行于 `before_tool_call`，归属 gate 域 |
+| `side_effect_level` | `side_effect_level` | `write_high` → `require_approval`（v1 降级 block）；decision 由 `policy.gate.side_effect_defaults`（H1+H5）查表 |
+| `data_classification` | `data_classification` | `data_classification ∈ policy.gate.blocked_data_classifications`（H2，默认 `confidential`/`restricted`）→ `require_approval`（v1 降级 block）；`allow_with_transform` 延后到 F18 输出层落地（D5） |
+| `skill_tool_group` | `SkillActivation.allowed_tool_groups` + 命令的 tool group | 命令 tool group ∉ 激活 skill 的 group 并集 → `deny`（D3，默认 off）；层级匹配由 `policy.gate.tool_group_hierarchy`（H4）驱动；运行于 `before_tool_call`，归属 gate 域 |
 | `pattern_match` | `user_message` / `args` | Prompt 注入模式 / 越权短语 |
 | `pii_scanner` | `ToolObservation` / `final_answer` | v1 规则模式；PII 模式扫描 |
 
@@ -251,6 +251,7 @@ quality 域 evaluator 契约详见 [F18](F18_AGENT_QUALITY_GATES.md) §3。
 
 - `read` 是 **父组**，包含 `observe`、`agent_meta`、`identity`、`communicate`。
 - `mutate` 当前无子组（v1）。
+- 父子层级映射由 `policy.gate.tool_group_hierarchy`（H4）配置驱动，默认 `{"read": ["observe", "agent_meta", "identity", "communicate"]}`；改动需协调 seed（F15 skill `allowed_tool_groups` 声明）。
 - 命令 group 与 skill `allowed_tool_groups` 匹配时，满足以下任一条件即允许：
   1. 命令的任一 group 精确存在于 skill 的 `allowed_tool_groups` 中；
   2. 命令的任一 group 的父组存在于 skill 的 `allowed_tool_groups` 中。
@@ -279,7 +280,8 @@ quality 域 evaluator 契约详见 [F18](F18_AGENT_QUALITY_GATES.md) §3。
 ```yaml
 # PolicyEngine 平台默认配置（按域）
 skill:
-  # skill 域（before_skill_activation check_point）；无开关键（仅 skill_activation_mode detector，常开）
+  # skill 域（before_skill_activation check_point）
+  blocked_skill_activation_modes: []        # H3: admin 可禁用的 activation_mode 集（v1 空，前向兼容）
 
 gate:
   enable_side_effect_detector: true
@@ -292,12 +294,26 @@ gate:
     read: allow
     write_low: allow                        # caller require_confirmation_for_mutate 仍生效
     write_high: require_approval             # v1 降级 block
+  blocked_data_classifications:             # H2: 触发 require_approval 的数据分级集
+    - confidential
+    - restricted
+  tool_group_hierarchy:                      # H4: 父组→子组 层级（平台本体论，改动需协调 seed）
+    read: [observe, agent_meta, identity, communicate]
 
 quality:
   enable_quality_score: false               # 多维 QualityScore（offline-only）
   enable_stop_dimensions: false             # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive/budget_exceeded），P5-A/P5-B3 门控
   final_success_drive_mode: "off"           # off / shadow（audit+divergence）/ enforce（驱动终态或外层 draft retry）
   enable_budget_hard_fail: false            # budget_exceeded opt-in hard-fail 终态（Q1）；默认 soft-fail（经既有 fail_fallback 路径），P5-B3 门控
+  enable_obs_grounded_claims_gate: false   # S2: 草稿↔obs token 重叠 hard_gate（default-off，保 byte-equiv）
+  obs_grounded_gte: 0.15                    # S2: grounding quality 阈值（token 覆盖率）
+  enable_success_criteria_gate: false      # S3: success_criteria 命中数 hard_gate（default-off，保 byte-equiv）
+  react_turn_min_criteria_hits: 1           # S3 / react_turn_success: pass 所需最小 criteria 命中数（N-hit 规则）
+  semantic_weight_grounding: 0.5           # H6: semantic 维度 grounding 权重
+  semantic_weight_criteria: 0.3             # H6: semantic 维度 criteria 权重
+  semantic_weight_progress: 0.2             # H6: semantic 维度 progress 权重
+  stagnation_cycle_window_multiplier: 2     # H7: 循环窗口 = multiplier × stagnation_window
+  token_min_length: 2                        # H8: token 最小长度（grounding/criteria 分词）
   max_iterations: 12                        # 总 state transition per tick 上限
   max_consecutive_tool_failures: 3          # 连续工具失败停止阈值
   stagnation_window: 3                      # stagnation 滑动窗口（连续 K round）
@@ -305,7 +321,9 @@ quality:
 
 **`skill` 域：**
 
-无配置开关键（仅 `skill_activation_mode` detector，常开；`_BLOCKED_SKILL_ACTIVATION_MODES` 为空集，前向兼容）。
+| 配置键 | 默认 | 用途 |
+|--------|------|------|
+| `blocked_skill_activation_modes` | `[]` | H3：admin 可禁用的 `activation_mode` 集；v1 空集（前向兼容），detector 常开 |
 
 **`gate` 域：**
 
@@ -315,6 +333,8 @@ quality:
 | `enable_data_classification_detector` | `true` | 数据分级 detector |
 | `enable_prompt_fallback` | `true` | pattern_match 命中后降级 rewrite；**inert placeholder**（D-E-B）：P4 `pattern_match` detector 未落地，此 flag 仅加载无消费者；P4 落地前置 `false` 无意义 |
 | `enable_skill_tool_group_detector` | `false` | D3 group 约束 detector（默认 off，前向兼容；运行于 `before_tool_call`，归属 gate 域） |
+| `blocked_data_classifications` | `["confidential", "restricted"]` | H2：触发 `require_approval` 的数据分级集；admin 可收紧/放宽 |
+| `tool_group_hierarchy` | `{"read": ["observe", "agent_meta", "identity", "communicate"]}` | H4：父组→子组层级映射；平台本体论，改动需协调 seed |
 
 `side_effect_defaults` 由 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 自动推导 gate 默认 decision（`none`/`read`→`allow`、`write_low`→`allow`、`write_high`→`require_approval`，v1 降级 block）。
 
@@ -326,11 +346,27 @@ quality:
 | `enable_stop_dimensions` | `false` | stop_evaluator 新维度门控（stagnation / max_iterations / max_consecutive_tool_failures / budget_exceeded）；off 时 evaluator 返回 `None`，byte-equivalent |
 | `final_success_drive_mode` | `"off"` | `off`（byte-equiv，不求值）/ `shadow`（audit + divergence，deferral 仍为权威）/ `enforce`（`complete` 成功、`fail_fallback` 失败、`retry_loop` 经 `draft_retry` 外层 replan；缺 transition 或预算耗尽时 fail-closed） |
 | `enable_budget_hard_fail` | `false` | budget_exceeded opt-in hard-fail 终态（Q1）；off 时 soft-fail `continue`（audit/trace-only，既有 fail_fallback 路径保持权威），byte-equivalent |
+| `enable_obs_grounded_claims_gate` | `false` | S2: 草稿↔obs token 重叠 hard_gate（`final_success_evaluator` 内，`complete` 后追加检查；default-off 保 byte-equiv） |
+| `obs_grounded_gte` | `0.15` | S2: grounding quality 阈值（token 覆盖率）；低于阈值 → `complete → replan` |
+| `enable_success_criteria_gate` | `false` | S3: success_criteria 命中数 hard_gate（`final_success_evaluator` 内，S2 之后；default-off 保 byte-equiv） |
+| `react_turn_min_criteria_hits` | `1` | S3 / react_turn_success: pass 所需最小 criteria 命中数（N-hit 规则） |
+| `semantic_weight_grounding` | `0.5` | H6: semantic 维度 grounding 权重（`semantic = w_g·grounding + w_c·criteria + w_p·progress`） |
+| `semantic_weight_criteria` | `0.3` | H6: semantic 维度 criteria 权重 |
+| `semantic_weight_progress` | `0.2` | H6: semantic 维度 progress 权重 |
+| `stagnation_cycle_window_multiplier` | `2` | H7: 循环窗口 = `multiplier × stagnation_window`（sliding window 内 obs 哈希集合大小 ≤ multiplier 判定循环） |
+| `token_min_length` | `2` | H8: token 最小长度（grounding/criteria 分词过滤；短 token 噪声） |
 | `max_iterations` | `12` | 总 state transition per tick 上限 |
 | `max_consecutive_tool_failures` | `3` | 连续工具失败停止阈值 |
 | `stagnation_window` | `3` | stagnation 滑动窗口（连续 K round） |
 
 quality 域的 `success_checks` / `stop_policy` 节点级覆盖优先级详见 [F18](F18_AGENT_QUALITY_GATES.md) §7。
+
+**保留为实现细节的硬编码（H9/H10，不外化配置）：**
+
+| 项 | 现状 | 保留理由 |
+|----|------|----------|
+| H9 — `pattern_match` / PII 正则模式库 | 代码内常量（`_PROMPT_INJECTION_PATTERNS` 等） | 模式库是 **策展产物**（curated corpus），非阈值参数；改动需安全评审 + golden trace 验证误伤率，不适合 ops 即时旋钮。P4 落地时随 detector 一同引入 |
+| H10 — 分词策略（正则/字符级 bigram） | 代码内 `_tokenize` 实现 | 分词算法是 **语义对齐的粗代理**（R5），升级条件（误判率 > 25%）触发 NLI/LLM claim extraction，非阈值可调；轻量策略避免 jieba 重依赖（R8 性能预算） |
 
 **加载机制：** `PolicyConfig`（`policy/config.py`）启动期读取 `backend/config/policy.yaml`，按域解析为 dataclass，注入对应 `Domain` 实例；文件缺失或键缺失时回退代码内默认值（保单测无文件可跑）。`config_manager.py` 不再承载 policy 键。
 

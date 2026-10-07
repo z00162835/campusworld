@@ -82,3 +82,39 @@ def test_quality_score_survives_final_success_short_circuit(monkeypatch):
     assert decision.decision == "final_success"
     assert decision.quality_score is not None
     assert "semantic" in decision.quality_score
+
+
+def test_eval_ms_recorded_in_evidence(monkeypatch):
+    """R8: evaluator evidence carries a non-negative eval_ms timing field."""
+    from app.game_engine.agent_runtime.agent_loop.signals import (
+        DraftCompletenessVerdict,
+    )
+    from app.game_engine.agent_runtime.policy.domains import quality_domain
+
+    monkeypatch.setattr(
+        quality_domain,
+        "assess_final_draft_completeness",
+        lambda **kw: DraftCompletenessVerdict.complete,
+    )
+    engine = PolicyEngine()
+    ctx = PolicyContext(
+        check_point=CheckPoint.BEFORE_TERMINAL,
+        extra={
+            "tick_state": {
+                "enable_quality_score": True,
+                "final_success_drive_mode": "shadow",
+                "agent_loop_config": MagicMock(),
+                "draft_text": "hello world",
+                "user_message": "hello?",
+                "tool_results": [],
+                "success_criteria": [],
+                "recent_signatures": [],
+                "stagnation_window": 3,
+            }
+        },
+    )
+    decision = engine.evaluate(ctx)
+    assert decision.decision == "final_success"
+    assert "eval_ms" in (decision.evidence or {})
+    assert isinstance(decision.evidence["eval_ms"], float)
+    assert decision.evidence["eval_ms"] >= 0.0

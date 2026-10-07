@@ -8,6 +8,7 @@
 skill:
   # skill 域（before_skill_activation check_point）
   # skill_tool_group detector 的开关在 gate 域下（它运行于 before_tool_call）。
+  blocked_skill_activation_modes: []          # H3: admin 可禁用的 activation_mode 集（v1 空）
 
 gate:
   # gate 域（before_tool_call / after_tool_observation / before_final_answer）
@@ -15,12 +16,17 @@ gate:
   enable_data_classification_detector: true
   enable_prompt_fallback: true
   enable_skill_tool_group_detector: false   # D3 group 约束 detector（默认 off，前向兼容）
-  # side_effect_level → 默认 decision（由命令元数据自动推导）
+  # side_effect_level → 默认 decision（detector 消费此映射，H1+H5）
   side_effect_defaults:
     none: allow
     read: allow
     write_low: allow                          # caller require_confirmation_for_mutate 仍生效
     write_high: require_approval              # v1 降级 block
+  blocked_data_classifications:              # H2: 触发 require_approval 的数据分级集
+    - confidential
+    - restricted
+  tool_group_hierarchy:                       # H4: 父组→子组 层级（平台本体论，改动需协调 seed）
+    read: [observe, agent_meta, identity, communicate]
 
 quality:
   # quality 域（after_state_execute / before_terminal / per_react_round）
@@ -29,6 +35,15 @@ quality:
   enable_stop_dimensions: false               # stop_evaluator 新维度（stagnation/max_iterations/max_consecutive/budget_exceeded）
   final_success_drive_mode: "off"            # final_success_evaluator 驱动模式：off / shadow（audit+divergence）/ enforce（驱动 draft_incomplete）
   enable_budget_hard_fail: false              # budget_exceeded opt-in hard-fail 终态；默认 soft-fail（经既有 fail_fallback 路径）
+  enable_obs_grounded_claims_gate: false     # S2: 草稿↔obs token 重叠 hard_gate（default-off，保 byte-equiv）
+  obs_grounded_gte: 0.15                      # S2: grounding quality 阈值（token 覆盖率）
+  enable_success_criteria_gate: false        # S3: success_criteria 命中数 hard_gate（default-off，保 byte-equiv）
+  react_turn_min_criteria_hits: 1            # S3 / react_turn_success: pass 所需最小 criteria 命中数（N-hit 规则）
+  semantic_weight_grounding: 0.5            # H6: semantic 维度 grounding 权重
+  semantic_weight_criteria: 0.3              # H6: semantic 维度 criteria 权重
+  semantic_weight_progress: 0.2              # H6: semantic 维度 progress 权重
+  stagnation_cycle_window_multiplier: 2      # H7: 循环窗口 = multiplier × stagnation_window
+  token_min_length: 2                         # H8: token 最小长度（grounding/criteria 分词）
   max_iterations: 12                          # 总 state transition per tick 上限
   max_consecutive_tool_failures: 3           # 连续工具失败停止阈值
   stagnation_window: 3                        # stagnation 滑动窗口（连续 K round）

@@ -32,6 +32,8 @@ class SkillDomainConfig:
     domain check_point), not ``before_skill_activation``.
     """
 
+    blocked_skill_activation_modes: tuple[str, ...] = ()
+
 
 @dataclass(frozen=True)
 class GateDomainConfig:
@@ -47,6 +49,12 @@ class GateDomainConfig:
             "write_high": "require_approval",
         }
     )
+    blocked_data_classifications: tuple[str, ...] = ("confidential", "restricted")
+    tool_group_hierarchy: Dict[str, tuple[str, ...]] = field(
+        default_factory=lambda: {
+            "read": ("observe", "agent_meta", "identity", "communicate"),
+        }
+    )
 
 
 @dataclass(frozen=True)
@@ -55,6 +63,15 @@ class QualityDomainConfig:
     enable_stop_dimensions: bool = False   # gates stop_evaluator dimensions and tick budget checks
     final_success_drive_mode: str = "off"  # off / shadow (audit+divergence) / enforce (evaluator drives draft_incomplete)
     enable_budget_hard_fail: bool = False  # opt-in hard-fail terminal for budget_exceeded; default soft-fail
+    enable_obs_grounded_claims_gate: bool = False  # S2: grounding_quality hard_gate at before_terminal (default-off, byte-equiv)
+    obs_grounded_gte: float = 0.15  # S2: grounding quality threshold (token overlap)
+    enable_success_criteria_gate: bool = False  # S3: success_criteria_addressed hard_gate at before_terminal (default-off, byte-equiv)
+    react_turn_min_criteria_hits: int = 1  # S3 / react_turn_success: min criteria hit count for pass (N-hit rule)
+    semantic_weight_grounding: float = 0.5  # H6: semantic dim weight for grounding_quality
+    semantic_weight_criteria: float = 0.3  # H6: semantic dim weight for criteria_coverage
+    semantic_weight_progress: float = 0.2  # H6: semantic dim weight for progress
+    stagnation_cycle_window_multiplier: int = 2  # H7: cycle window = multiplier * stagnation_window
+    token_min_length: int = 2  # H8: min token length for grounding/criteria tokenization
     max_iterations: int = 12
     max_consecutive_tool_failures: int = 3
     stagnation_window: int = 3
@@ -91,6 +108,46 @@ def _coerce_int(value: Any, default: int) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _coerce_float(value: Any, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _coerce_str_list(value: Any, default: tuple[str, ...]) -> tuple[str, ...]:
+    """Coerce a YAML list/str into a tuple of stripped lowercase strings."""
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return (value.strip().lower(),) if value.strip() else ()
+    if isinstance(value, (list, tuple)):
+        out = tuple(str(v).strip().lower() for v in value if str(v).strip())
+        return out if out else default
+    return default
+
+
+def _coerce_str_dict_of_lists(
+    value: Any, default: dict[str, tuple[str, ...]]
+) -> dict[str, tuple[str, ...]]:
+    """Coerce a YAML dict[str, list[str]] into a normalized dict."""
+    if not isinstance(value, dict):
+        return dict(default)
+    out: dict[str, tuple[str, ...]] = {}
+    for k, v in value.items():
+        key = str(k).strip().lower()
+        if not key:
+            continue
+        if isinstance(v, str):
+            children = (v.strip().lower(),) if v.strip() else ()
+        elif isinstance(v, (list, tuple)):
+            children = tuple(str(x).strip().lower() for x in v if str(x).strip())
+        else:
+            children = ()
+        out[key] = children
+    return out or dict(default)
 
 
 _VALID_DRIVE_MODES = frozenset({"off", "shadow", "enforce"})
@@ -135,7 +192,11 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
     gate_raw = raw.get("gate") or {}
     quality_raw = raw.get("quality") or {}
 
-    skill = SkillDomainConfig()
+    skill = SkillDomainConfig(
+        blocked_skill_activation_modes=_coerce_str_list(
+            skill_raw.get("blocked_skill_activation_modes"), ()
+        ),
+    )
 
     gate_side_defaults = gate_raw.get("side_effect_defaults")
     if not isinstance(gate_side_defaults, dict):
@@ -159,6 +220,14 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
             gate_raw.get("enable_skill_tool_group_detector"), False, key="gate.enable_skill_tool_group_detector"
         ),
         side_effect_defaults=merged_side_defaults,
+        blocked_data_classifications=_coerce_str_list(
+            gate_raw.get("blocked_data_classifications"),
+            ("confidential", "restricted"),
+        ),
+        tool_group_hierarchy=_coerce_str_dict_of_lists(
+            gate_raw.get("tool_group_hierarchy"),
+            {"read": ("observe", "agent_meta", "identity", "communicate")},
+        ),
     )
 
     quality = QualityDomainConfig(
@@ -177,6 +246,25 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
         enable_budget_hard_fail=_coerce_bool(
             quality_raw.get("enable_budget_hard_fail"), False, key="quality.enable_budget_hard_fail"
         ),
+        enable_obs_grounded_claims_gate=_coerce_bool(
+            quality_raw.get("enable_obs_grounded_claims_gate"), False,
+            key="quality.enable_obs_grounded_claims_gate",
+        ),
+        obs_grounded_gte=_coerce_float(quality_raw.get("obs_grounded_gte"), 0.15),
+        enable_success_criteria_gate=_coerce_bool(
+            quality_raw.get("enable_success_criteria_gate"), False,
+            key="quality.enable_success_criteria_gate",
+        ),
+        react_turn_min_criteria_hits=_coerce_int(
+            quality_raw.get("react_turn_min_criteria_hits"), 1
+        ),
+        semantic_weight_grounding=_coerce_float(quality_raw.get("semantic_weight_grounding"), 0.5),
+        semantic_weight_criteria=_coerce_float(quality_raw.get("semantic_weight_criteria"), 0.3),
+        semantic_weight_progress=_coerce_float(quality_raw.get("semantic_weight_progress"), 0.2),
+        stagnation_cycle_window_multiplier=_coerce_int(
+            quality_raw.get("stagnation_cycle_window_multiplier"), 2
+        ),
+        token_min_length=_coerce_int(quality_raw.get("token_min_length"), 2),
         max_iterations=_coerce_int(quality_raw.get("max_iterations"), 12),
         max_consecutive_tool_failures=_coerce_int(
             quality_raw.get("max_consecutive_tool_failures"), 3

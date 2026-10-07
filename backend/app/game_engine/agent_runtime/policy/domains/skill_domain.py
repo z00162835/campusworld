@@ -17,13 +17,22 @@ _BLOCKED_SKILL_ACTIVATION_MODES: frozenset[str] = frozenset()
 
 
 def skill_activation_mode_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
-    """Optionally block skills whose activation_mode is administratively disabled."""
+    """Optionally block skills whose activation_mode is administratively disabled.
+
+    Reads ``skill_config['blocked_skill_activation_modes']`` from ``ctx.extra``;
+    falls back to the hardcoded empty set (byte-equiv, inert in v1).
+    """
     from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 
     if ctx.check_point != CheckPoint.BEFORE_SKILL_ACTIVATION:
         return None
     mode = str(ctx.skill_activation_mode or "").strip().lower()
-    if mode in _BLOCKED_SKILL_ACTIVATION_MODES:
+    skill_cfg = ctx.extra.get("skill_config") if ctx.extra else None
+    if isinstance(skill_cfg, dict) and "blocked_skill_activation_modes" in skill_cfg:
+        blocked = skill_cfg["blocked_skill_activation_modes"]
+    else:
+        blocked = _BLOCKED_SKILL_ACTIVATION_MODES
+    if mode in blocked:
         return PolicyDecision.deny(
             CheckPoint.BEFORE_SKILL_ACTIVATION,
             "policy_blocked_skill_activation_mode",
@@ -43,4 +52,7 @@ class SkillDomain(Domain):
         return [skill_activation_mode_detector]
 
     def build_context(self, base: PolicyContext) -> PolicyContext:
+        base.extra["skill_config"] = {
+            "blocked_skill_activation_modes": tuple(self._config.blocked_skill_activation_modes),
+        }
         return base
