@@ -259,6 +259,21 @@ class TestSemanticWeightsConfig:
         # grounding=1.0, criteria=1.0 (empty), progress=1.0 → 0.5+0.3+0.2 = 1.0
         assert score["semantic"] == 1.0
 
+    def test_semantic_weights_are_normalized(self):
+        class _Obs:
+            text = "hello world"
+        score = compute_quality_score(
+            draft_text="hello world",
+            tool_results=[_Obs()],
+            success_criteria=[],
+            recent_signatures=["sig", "sig", "sig"],
+            stagnation_window=3,
+            semantic_weight_grounding=1.0,
+            semantic_weight_criteria=1.0,
+            semantic_weight_progress=1.0,
+        )
+        assert score["semantic"] == 0.6667
+
 
 # ---------------------------------------------------------------------------
 # H7 — stagnation_cycle_window_multiplier (quality domain)

@@ -561,11 +561,17 @@ def compute_quality_score(
         cycle_window_multiplier=stagnation_cycle_window_multiplier,
     )
     # semantic = weighted average (weights @configurable, H6).
-    semantic = (
-        semantic_weight_grounding * grounding
-        + semantic_weight_criteria * criteria
-        + semantic_weight_progress * progress
-    )
+    weight_grounding = max(float(semantic_weight_grounding), 0.0)
+    weight_criteria = max(float(semantic_weight_criteria), 0.0)
+    weight_progress = max(float(semantic_weight_progress), 0.0)
+    weight_total = weight_grounding + weight_criteria + weight_progress
+    semantic = 0.0
+    if weight_total > 0.0:
+        semantic = (
+            weight_grounding * grounding
+            + weight_criteria * criteria
+            + weight_progress * progress
+        ) / weight_total
     return {
         "surface": 1.0,  # recorded; hard gates already judged form
         "process": 1.0,  # placeholder (default-off)
