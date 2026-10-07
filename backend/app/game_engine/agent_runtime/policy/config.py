@@ -12,6 +12,7 @@ defaults apply — so unit tests run without the file present.
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -111,28 +112,70 @@ def _coerce_int(value: Any, default: int) -> int:
 
 
 def _coerce_float(value: Any, default: float) -> float:
+    """Coerce to float; reject NaN/inf and fall back to default on invalid input."""
     try:
-        return float(value)
+        result = float(value)
     except (TypeError, ValueError):
         return default
+    # Reject NaN and infinities — they silently break comparisons and scoring.
+    if math.isnan(result) or math.isinf(result):
+        logger.warning("Invalid float policy config (NaN/inf): %r; using default %s", value, default)
+        return default
+    return result
+
+
+def _coerce_float_range(
+    value: Any, default: float, *, lo: float, hi: float, key: str = "value"
+) -> float:
+    """Coerce to float within [lo, hi]; reject NaN/inf/out-of-range."""
+    result = _coerce_float(value, default)
+    if not (lo <= result <= hi):
+        logger.warning(
+            "Invalid float policy config for %s: %r out of range [%s, %s]; using default %s",
+            key, value, lo, hi, default,
+        )
+        return default
+    return result
+
+
+def _coerce_nonneg_float(value: Any, default: float, *, key: str = "value") -> float:
+    """Coerce to a non-negative float; reject NaN/inf/negative."""
+    result = _coerce_float(value, default)
+    if result < 0:
+        logger.warning(
+            "Invalid float policy config for %s: %r is negative; using default %s",
+            key, value, default,
+        )
+        return default
+    return result
 
 
 def _coerce_str_list(value: Any, default: tuple[str, ...]) -> tuple[str, ...]:
-    """Coerce a YAML list/str into a tuple of stripped lowercase strings."""
+    """Coerce a YAML list/str into a tuple of stripped lowercase strings.
+
+    Only falls back to ``default`` when the key is missing (``None``) or the
+    value is the wrong type. An **explicitly empty** list/string is preserved
+    as an empty tuple — this lets admins set ``blocked_data_classifications: []``
+    to mean "block nothing" rather than silently restoring the default.
+    """
     if value is None:
         return default
     if isinstance(value, str):
         return (value.strip().lower(),) if value.strip() else ()
     if isinstance(value, (list, tuple)):
-        out = tuple(str(v).strip().lower() for v in value if str(v).strip())
-        return out if out else default
+        return tuple(str(v).strip().lower() for v in value if str(v).strip())
     return default
 
 
 def _coerce_str_dict_of_lists(
     value: Any, default: dict[str, tuple[str, ...]]
 ) -> dict[str, tuple[str, ...]]:
-    """Coerce a YAML dict[str, list[str]] into a normalized dict."""
+    """Coerce a YAML dict[str, list[str]] into a normalized dict.
+
+    Only falls back to ``default`` when the value is not a dict. An **explicitly
+    empty** dict (``{}``) is preserved as an empty dict — this lets admins clear
+    the tool_group_hierarchy rather than silently restoring the default.
+    """
     if not isinstance(value, dict):
         return dict(default)
     out: dict[str, tuple[str, ...]] = {}
@@ -147,7 +190,7 @@ def _coerce_str_dict_of_lists(
         else:
             children = ()
         out[key] = children
-    return out or dict(default)
+    return out
 
 
 _VALID_DRIVE_MODES = frozenset({"off", "shadow", "enforce"})
@@ -250,7 +293,10 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
             quality_raw.get("enable_obs_grounded_claims_gate"), False,
             key="quality.enable_obs_grounded_claims_gate",
         ),
-        obs_grounded_gte=_coerce_float(quality_raw.get("obs_grounded_gte"), 0.15),
+        obs_grounded_gte=_coerce_float_range(
+            quality_raw.get("obs_grounded_gte"), 0.15, lo=0.0, hi=1.0,
+            key="quality.obs_grounded_gte",
+        ),
         enable_success_criteria_gate=_coerce_bool(
             quality_raw.get("enable_success_criteria_gate"), False,
             key="quality.enable_success_criteria_gate",
@@ -258,9 +304,18 @@ def load_policy_config(path: Optional[Path] = None) -> PolicyConfig:
         react_turn_min_criteria_hits=_coerce_int(
             quality_raw.get("react_turn_min_criteria_hits"), 1
         ),
-        semantic_weight_grounding=_coerce_float(quality_raw.get("semantic_weight_grounding"), 0.5),
-        semantic_weight_criteria=_coerce_float(quality_raw.get("semantic_weight_criteria"), 0.3),
-        semantic_weight_progress=_coerce_float(quality_raw.get("semantic_weight_progress"), 0.2),
+        semantic_weight_grounding=_coerce_nonneg_float(
+            quality_raw.get("semantic_weight_grounding"), 0.5,
+            key="quality.semantic_weight_grounding",
+        ),
+        semantic_weight_criteria=_coerce_nonneg_float(
+            quality_raw.get("semantic_weight_criteria"), 0.3,
+            key="quality.semantic_weight_criteria",
+        ),
+        semantic_weight_progress=_coerce_nonneg_float(
+            quality_raw.get("semantic_weight_progress"), 0.2,
+            key="quality.semantic_weight_progress",
+        ),
         stagnation_cycle_window_multiplier=_coerce_int(
             quality_raw.get("stagnation_cycle_window_multiplier"), 2
         ),

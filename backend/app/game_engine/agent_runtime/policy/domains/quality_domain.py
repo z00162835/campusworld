@@ -395,11 +395,43 @@ def final_success_evaluator(ctx: PolicyContext) -> Optional[PolicyDecision]:
     )
 
 
+_CJK_RE = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf]")
+
+
 def _tokenize(text: str, *, min_length: int = 2) -> List[str]:
-    """Cheap whitespace + punctuation tokenizer for overlap heuristics."""
+    """Cheap tokenizer for overlap heuristics.
+
+    Splits on whitespace and common punctuation (both ASCII and CJK). For text
+    containing CJK characters (Chinese/Japanese/Korean), the split segments are
+    further decomposed into **character-level bigrams** so that ``图书馆在二楼``
+    and ``图书馆位于二楼`` produce overlapping bigrams (``图书馆``, ``书馆在``,
+    etc.) instead of two non-overlapping whole-sentence tokens. This implements
+    the SPEC (F18 §5.1 R5) ``字符级 bigram`` strategy without a heavy CJK
+    segmentation dependency.
+
+    Note: tokens are returned in original case; callers lowercase as needed
+    (preserves the original contract).
+    """
     if not text:
         return []
-    return [t for t in re.split(r"[\s,，。.!！?？;；:：、()\[\]{}\"']+", text) if len(t) >= min_length]
+    tokens: List[str] = []
+    for segment in re.split(r"[\s,，。.!！?？;；:：、()\[\]{}\"']+", text):
+        if not segment:
+            continue
+        if _CJK_RE.search(segment):
+            # CJK segment: emit character-level bigrams (and the segment itself
+            # if it's long enough, so mixed CJK+ASCII content keeps whole-word
+            # coverage for the ASCII parts).
+            if len(segment) >= min_length:
+                tokens.append(segment)
+            for i in range(len(segment) - 1):
+                bigram = segment[i : i + 2]
+                if len(bigram) >= min_length:
+                    tokens.append(bigram)
+        else:
+            if len(segment) >= min_length:
+                tokens.append(segment)
+    return tokens
 
 
 def _grounding_quality(draft_text: str, tool_results: List[Any], *, min_length: int = 2) -> float:
@@ -409,12 +441,22 @@ def _grounding_quality(draft_text: str, tool_results: List[Any], *, min_length: 
     function; no LLM. When there are no tool results, grounding is vacuously
     satisfied (1.0) only if the draft is empty (no claims to ground); a non-empty
     draft with no observations scores 0.
+
+    **P1 fix:** only successful tool results (``tr.ok`` truthy, or missing ``ok``
+    attribute for backward compat) contribute observation text. A failed result
+    carrying answer keywords must not inflate the grounding score.
     """
     draft_tokens = set(t.lower() for t in _tokenize(draft_text, min_length=min_length))
     if not draft_tokens:
         return 1.0
     obs_text_parts: List[str] = []
     for tr in tool_results or []:
+        # Skip failed tool results — their text (often error messages) must not
+        # count as grounding evidence. Objects without an ``ok`` attribute are
+        # treated as successful (backward compat for test stubs).
+        ok = getattr(tr, "ok", True)
+        if ok is False:
+            continue
         text = getattr(tr, "text", None) or getattr(tr, "output", None) or ""
         if text:
             obs_text_parts.append(str(text))

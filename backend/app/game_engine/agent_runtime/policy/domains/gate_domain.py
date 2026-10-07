@@ -8,6 +8,7 @@ flat ``detectors.py``: ``[side_effect_level, data_classification, skill_tool_gro
 """
 from __future__ import annotations
 
+import logging
 from typing import List, Optional
 
 from app.game_engine.agent_runtime.policy.config import GateDomainConfig
@@ -15,8 +16,12 @@ from app.game_engine.agent_runtime.policy.context import PolicyContext
 from app.game_engine.agent_runtime.policy.decisions import PolicyDecision
 from app.game_engine.agent_runtime.policy.domain import Detector, Domain
 
+logger = logging.getLogger("campusworld.policy.gate")
+
 _BLOCKED_SIDE_EFFECT_LEVELS = {"write_high"}
 _BLOCKED_DATA_CLASSIFICATIONS = {"confidential", "restricted"}
+# Valid decision strings for side_effect_defaults (fail-closed on unknown).
+_VALID_SIDE_EFFECT_DECISIONS = frozenset({"allow", "require_approval", "deny"})
 
 
 def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
@@ -27,6 +32,11 @@ def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
     decision for the current ``side_effect_level`` is non-allow; ``None`` (allow)
     otherwise. Falls back to the hardcoded ``_BLOCKED_SIDE_EFFECT_LEVELS`` set
     when no config is injected (byte-equiv for paths that bypass build_context).
+
+    **Fail-closed (P1):** an unrecognized decision string (e.g. a typo like
+    ``require-approva1``) or an unknown ``side_effect_level`` not present in the
+    config map is treated as ``require_approval`` rather than silently allowed,
+    so a config typo cannot weaken the security boundary.
     """
     from app.game_engine.agent_runtime.policy.check_points import CheckPoint
 
@@ -35,7 +45,19 @@ def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
     level = str(ctx.side_effect_level or "none").strip().lower()
     gate_cfg = ctx.extra.get("gate_config") if ctx.extra else None
     if isinstance(gate_cfg, dict) and "side_effect_defaults" in gate_cfg:
-        decision_str = str(gate_cfg["side_effect_defaults"].get(level, "allow")).strip().lower()
+        defaults = gate_cfg["side_effect_defaults"]
+        if level not in defaults:
+            # Unknown level not in config map → fail-closed (require_approval).
+            logger.warning(
+                "side_effect_level %r not in side_effect_defaults config; "
+                "fail-closed to require_approval", level,
+            )
+            return PolicyDecision.require_approval(
+                CheckPoint.BEFORE_TOOL_CALL,
+                "policy_blocked_side_effect_unknown_level",
+                evidence={"side_effect_level": level, "command_name": ctx.command_name},
+            )
+        decision_str = str(defaults.get(level, "allow")).strip().lower()
         if decision_str == "require_approval":
             return PolicyDecision.require_approval(
                 CheckPoint.BEFORE_TOOL_CALL,
@@ -47,6 +69,22 @@ def side_effect_level_detector(ctx: PolicyContext) -> Optional[PolicyDecision]:
                 CheckPoint.BEFORE_TOOL_CALL,
                 "policy_blocked_side_effect",
                 evidence={"side_effect_level": level, "command_name": ctx.command_name},
+            )
+        if decision_str != "allow":
+            # Unrecognized decision string (typo) → fail-closed.
+            logger.warning(
+                "side_effect_defaults[%r]=%r is not a valid decision "
+                "(allow/require_approval/deny); fail-closed to require_approval",
+                level, decision_str,
+            )
+            return PolicyDecision.require_approval(
+                CheckPoint.BEFORE_TOOL_CALL,
+                "policy_blocked_side_effect_invalid_decision",
+                evidence={
+                    "side_effect_level": level,
+                    "configured_decision": decision_str,
+                    "command_name": ctx.command_name,
+                },
             )
         return None
     # Fallback: hardcoded baseline (byte-equiv when config not injected).

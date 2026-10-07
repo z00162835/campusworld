@@ -172,7 +172,7 @@ class PolicyDecision:
 | Detector | 输入 | 用途 |
 |----------|------|------|
 | `action_type_match` | `interaction_profile` / `side_effect_level` | 校验提议动作类型与 caller ceiling |
-| `side_effect_level` | `side_effect_level` | `write_high` → `require_approval`（v1 降级 block）；decision 由 `policy.gate.side_effect_defaults`（H1+H5）查表 |
+| `side_effect_level` | `side_effect_level` | `write_high` → `require_approval`（v1 降级 block）；decision 由 `policy.gate.side_effect_defaults`（H1+H5）查表；**fail-closed**：未知 level 或未识别 decision 值（typo）→ `require_approval`（非静默放行） |
 | `data_classification` | `data_classification` | `data_classification ∈ policy.gate.blocked_data_classifications`（H2，默认 `confidential`/`restricted`）→ `require_approval`（v1 降级 block）；`allow_with_transform` 延后到 F18 输出层落地（D5） |
 | `skill_tool_group` | `SkillActivation.allowed_tool_groups` + 命令的 tool group | 命令 tool group ∉ 激活 skill 的 group 并集 → `deny`（D3，默认 off）；层级匹配由 `policy.gate.tool_group_hierarchy`（H4）驱动；运行于 `before_tool_call`，归属 gate 域 |
 | `pattern_match` | `user_message` / `args` | Prompt 注入模式 / 越权短语 |
@@ -333,8 +333,8 @@ quality:
 | `enable_data_classification_detector` | `true` | 数据分级 detector |
 | `enable_prompt_fallback` | `true` | pattern_match 命中后降级 rewrite；**inert placeholder**（D-E-B）：P4 `pattern_match` detector 未落地，此 flag 仅加载无消费者；P4 落地前置 `false` 无意义 |
 | `enable_skill_tool_group_detector` | `false` | D3 group 约束 detector（默认 off，前向兼容；运行于 `before_tool_call`，归属 gate 域） |
-| `blocked_data_classifications` | `["confidential", "restricted"]` | H2：触发 `require_approval` 的数据分级集；admin 可收紧/放宽 |
-| `tool_group_hierarchy` | `{"read": ["observe", "agent_meta", "identity", "communicate"]}` | H4：父组→子组层级映射；平台本体论，改动需协调 seed |
+| `blocked_data_classifications` | `["confidential", "restricted"]` | H2：触发 `require_approval` 的数据分级集；admin 可收紧/放宽（显式空集 `[]` = 不拦截任何分级，仅在键缺失时回退默认） |
+| `tool_group_hierarchy` | `{"read": ["observe", "agent_meta", "identity", "communicate"]}` | H4：父组→子组层级映射；平台本体论，改动需协调 seed（显式空集 `{}` = 无父子层级，仅在键缺失时回退默认） |
 
 `side_effect_defaults` 由 [F08](F08_AICO_TOOL_CONTEXT_AND_AGENT_LOOP.md) §1.3 `side_effect_level` 自动推导 gate 默认 decision（`none`/`read`→`allow`、`write_low`→`allow`、`write_high`→`require_approval`，v1 降级 block）。
 
@@ -371,6 +371,10 @@ quality 域的 `success_checks` / `stop_policy` 节点级覆盖优先级详见 [
 **加载机制：** `PolicyConfig`（`policy/config.py`）启动期读取 `backend/config/policy.yaml`，按域解析为 dataclass，注入对应 `Domain` 实例；文件缺失或键缺失时回退代码内默认值（保单测无文件可跑）。`config_manager.py` 不再承载 policy 键。
 
 布尔开关解析采用 fail-safe 策略：仅明确的 `true/1/yes/on` 与 `false/0/no/off` 字符串改变布尔值；未知字符串或异常数值记录英文 warning 并回退字段默认值，避免拼写错误关闭默认开启的安全 detector。
+
+**数值范围校验：** `obs_grounded_gte` 等阈值校验 ∈ `[0, 1]`；`semantic_weight_*` 权重校验 ≥ 0（非负）；NaN/无穷大一律拒绝并回退默认值，避免 `obs_grounded_gte: NaN` 使比较恒 false 静默关闭门控。
+
+**集合语义：** `blocked_data_classifications` / `blocked_skill_activation_modes` / `tool_group_hierarchy` 等集合型配置仅在**键缺失或类型非法**时回退默认值；admin 显式设置的空集合（`[]` / `{}`）保留为空（如 `blocked_data_classifications: []` = 不拦截任何分级），符合「admin 可放宽」语义。
 
 ### 5.2 实例规则（v1 代码注册，延后 YAML）
 

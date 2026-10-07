@@ -517,3 +517,292 @@ class TestReactTurnMinCriteriaHitsConfig:
         d = react_turn_success_evaluator(ctx)
         assert d is not None
         assert d.reason_code == "react_turn_criteria_met"
+
+
+# ===========================================================================
+# Review-fix tests (P1/P2) — lock the 5 edge-case fixes
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# P1 #1 — side_effect_defaults fail-closed on unknown decision/level
+# ---------------------------------------------------------------------------
+
+class TestSideEffectFailClosed:
+    """P1 #1: unknown decision string (typo) and unknown level must fail-closed."""
+
+    def test_typo_decision_fails_closed(self):
+        """write_high: require-approva1 (typo) → require_approval, not allow."""
+        cfg = GateDomainConfig(side_effect_defaults={
+            "none": "allow", "read": "allow", "write_low": "allow",
+            "write_high": "require-approva1",  # typo
+        })
+        ctx = _gate_ctx(side_effect_level="write_high", command_name="go")
+        GateDomain(cfg).build_context(ctx)
+        decision = side_effect_level_detector(ctx)
+        assert decision is not None
+        assert decision.decision == "require_approval"
+        assert decision.reason_code == "policy_blocked_side_effect_invalid_decision"
+
+    def test_unknown_level_fails_closed(self):
+        """A new side_effect_level not in config map → require_approval."""
+        cfg = GateDomainConfig()  # default config has none/read/write_low/write_high
+        ctx = _gate_ctx(side_effect_level="write_critical", command_name="nuke")
+        GateDomain(cfg).build_context(ctx)
+        decision = side_effect_level_detector(ctx)
+        assert decision is not None
+        assert decision.decision == "require_approval"
+        assert decision.reason_code == "policy_blocked_side_effect_unknown_level"
+
+    def test_known_level_valid_decision_still_allows(self):
+        """Byte-equiv: known level with 'allow' decision still allows."""
+        cfg = GateDomainConfig()
+        ctx = _gate_ctx(side_effect_level="read", command_name="look")
+        GateDomain(cfg).build_context(ctx)
+        assert side_effect_level_detector(ctx) is None
+
+    def test_deny_decision_still_works(self):
+        cfg = GateDomainConfig(side_effect_defaults={
+            "none": "allow", "read": "deny", "write_low": "allow",
+            "write_high": "require_approval",
+        })
+        ctx = _gate_ctx(side_effect_level="read", command_name="look")
+        GateDomain(cfg).build_context(ctx)
+        decision = side_effect_level_detector(ctx)
+        assert decision is not None
+        assert decision.decision == "deny"
+
+
+# ---------------------------------------------------------------------------
+# P1 #2 — grounding excludes failed tool results
+# ---------------------------------------------------------------------------
+
+class TestGroundingExcludesFailedResults:
+    """P1 #2: failed tool results must not inflate grounding score."""
+
+    def test_failed_result_with_keywords_does_not_inflate(self):
+        """A failed result containing answer keywords must not count as evidence."""
+        class _Ok:
+            ok = True
+            text = "图书馆在二楼"
+
+        class _Fail:
+            ok = False
+            text = "图书馆位于二楼 error permission denied"
+
+        # Only the failed result has the draft's keywords. If we counted it,
+        # grounding would be > 0. With the fix, only the ok result counts.
+        score = _grounding_quality("图书馆位于二楼", [_Fail()])
+        assert score == 0.0  # failed result excluded → no overlap with ok obs
+
+        # With both, only the ok result counts.
+        score2 = _grounding_quality("图书馆在二楼", [_Ok(), _Fail()])
+        assert score2 > 0.0  # ok result provides overlap
+
+    def test_object_without_ok_attr_treated_as_success(self):
+        """Backward compat: objects without ok attribute are treated as successful."""
+        class _NoOk:
+            text = "hello world"
+
+        score = _grounding_quality("hello world", [_NoOk()])
+        assert score == 1.0
+
+
+# ---------------------------------------------------------------------------
+# P2 #3 — CJK character-level bigram tokenization
+# ---------------------------------------------------------------------------
+
+class TestCJKBigramTokenization:
+    """P2 #3: CJK text must produce overlapping bigrams, not whole-sentence tokens."""
+
+    def test_cjk_overlap_detected(self):
+        """图书馆在二楼 vs 图书馆位于二楼 → non-zero overlap via bigrams."""
+        class _Obs:
+            ok = True
+            text = "图书馆在二楼"
+
+        score = _grounding_quality("图书馆位于二楼", [_Obs()])
+        assert score > 0.0  # was 0.0 before the bigram fix
+
+    def test_cjk_no_false_overlap_for_unrelated(self):
+        """Unrelated CJK text should have low/zero overlap."""
+        class _Obs:
+            ok = True
+            text = "食堂在一楼"
+
+        score = _grounding_quality("图书馆位于二楼", [_Obs()])
+        assert score < 0.2  # minimal overlap
+
+    def test_english_tokenization_unchanged(self):
+        """English text still tokenizes by whitespace (byte-equiv)."""
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import _tokenize
+        tokens = _tokenize("hello world")
+        assert "hello" in tokens
+        assert "world" in tokens
+
+    def test_mixed_cjk_english(self):
+        """Mixed CJK+English text: both bigrams and whole-word tokens present."""
+        from app.game_engine.agent_runtime.policy.domains.quality_domain import _tokenize
+        tokens = _tokenize("task list 图书馆在二楼")
+        # English whole word
+        assert "task" in tokens
+        assert "list" in tokens
+        # CJK bigrams
+        assert "图书" in tokens
+        assert "书馆" in tokens
+
+
+# ---------------------------------------------------------------------------
+# P2 #4 — float range validation (NaN/inf/out-of-range/negative)
+# ---------------------------------------------------------------------------
+
+class TestFloatRangeValidation:
+    """P2 #4: reject NaN/inf; threshold ∈ [0,1]; weight ≥ 0."""
+
+    def test_nan_obs_grounded_gte_keeps_default(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+quality:
+  obs_grounded_gte: NaN
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.quality.obs_grounded_gte == 0.15  # default
+
+    def test_inf_weight_keeps_default(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+quality:
+  semantic_weight_grounding: inf
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.quality.semantic_weight_grounding == 0.5  # default
+
+    def test_out_of_range_threshold_keeps_default(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+quality:
+  obs_grounded_gte: 5.0
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.quality.obs_grounded_gte == 0.15  # default (out of [0,1])
+
+    def test_negative_weight_keeps_default(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+quality:
+  semantic_weight_criteria: -0.5
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.quality.semantic_weight_criteria == 0.3  # default
+
+    def test_valid_boundary_values_accepted(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+quality:
+  obs_grounded_gte: 0.0
+  semantic_weight_grounding: 0.0
+  semantic_weight_criteria: 1.0
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.quality.obs_grounded_gte == 0.0
+        assert config.quality.semantic_weight_grounding == 0.0
+        assert config.quality.semantic_weight_criteria == 1.0
+
+
+# ---------------------------------------------------------------------------
+# P2 #5 — empty collection semantics (preserve explicit empty)
+# ---------------------------------------------------------------------------
+
+class TestEmptyCollectionSemantics:
+    """P2 #5: explicit empty list/dict preserved, not replaced by default."""
+
+    def test_empty_blocked_data_classifications_stays_empty(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+gate:
+  blocked_data_classifications: []
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.gate.blocked_data_classifications == ()
+
+    def test_missing_blocked_data_classifications_uses_default(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+gate:
+  enable_side_effect_detector: true
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.gate.blocked_data_classifications == ("confidential", "restricted")
+
+    def test_empty_tool_group_hierarchy_stays_empty(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+gate:
+  tool_group_hierarchy: {}
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.gate.tool_group_hierarchy == {}
+
+    def test_missing_tool_group_hierarchy_uses_default(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+gate:
+  enable_side_effect_detector: true
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert "read" in config.gate.tool_group_hierarchy
+
+    def test_empty_blocked_skill_activation_modes_stays_empty(self, tmp_path):
+        from app.game_engine.agent_runtime.policy.config import load_policy_config
+        policy_path = tmp_path / "policy.yaml"
+        policy_path.write_text(
+            """
+skill:
+  blocked_skill_activation_modes: []
+""",
+            encoding="utf-8",
+        )
+        config = load_policy_config(policy_path)
+        assert config.skill.blocked_skill_activation_modes == ()
+
+    def test_detector_allows_all_when_blocked_classifications_empty(self):
+        """Admin sets [] → no classification is blocked (widening works)."""
+        cfg = GateDomainConfig(blocked_data_classifications=())
+        ctx = _gate_ctx(data_classification="confidential", command_name="task show")
+        GateDomain(cfg).build_context(ctx)
+        assert data_classification_detector(ctx) is None  # nothing blocked
