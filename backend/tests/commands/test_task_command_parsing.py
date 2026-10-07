@@ -227,6 +227,71 @@ def test_task_pool_create_without_pool_admin_perm_blocked():
     assert res.error == "commands.task.error.forbidden"
 
 
+@pytest.mark.unit
+def test_semantic_commands_registered_in_task_family():
+    from app.commands.game.task import TASK_COMMANDS
+
+    names = {cmd.name for cmd in TASK_COMMANDS}
+    assert {"task", "situation", "goal", "quest"}.issubset(names)
+
+
+@pytest.mark.unit
+def test_situation_create_without_permission_blocked():
+    from app.commands.game.task.semantic_commands import SituationCommand
+
+    cmd = SituationCommand()
+    res = cmd.execute(_ctx(permissions=[]), ["create", "--title", "x", "--assertion", "a"])
+    assert res.success is False
+    assert res.error == "commands.task.error.forbidden"
+
+
+@pytest.mark.unit
+def test_situation_create_passes_trigger_provenance_to_service(monkeypatch):
+    from app.commands.game.task import semantic_commands
+    from app.commands.game.task.semantic_commands import SituationCommand
+    from app.services.task.quest_semantic_service import SemanticNodeResult
+
+    seen = {}
+
+    def fake_create_situation(**kwargs):
+        seen.update(kwargs)
+        return SemanticNodeResult(
+            node_id=101,
+            type_code="situation",
+            title=kwargs["title"],
+            attributes={"assertion": kwargs["assertion"], "trigger_kind": kwargs["trigger_kind"]},
+        )
+
+    monkeypatch.setattr(semantic_commands, "create_situation", fake_create_situation)
+    cmd = SituationCommand()
+    res = cmd.execute(
+        _ctx(permissions=["task.create"]),
+        [
+            "create",
+            "--title",
+            "Hot room",
+            "--assertion",
+            "Room 101 is above comfort band.",
+            "--trigger-kind",
+            "hard_rule",
+            "--fact-ref",
+            "fact:room101-temp",
+            "--rule-ref",
+            "quality:comfort-band:v1",
+            "--confidence",
+            "0.9",
+            "--severity",
+            "high",
+        ],
+    )
+    assert res.success is True
+    assert res.data["id"] == 101
+    assert seen["trigger_kind"] == "hard_rule"
+    assert seen["fact_refs"] == ["fact:room101-temp"]
+    assert seen["rule_refs"] == ["quality:comfort-band:v1"]
+    assert seen["confidence"] == 0.9
+
+
 # ---------------------------------------------------------------------------
 # P0-security: refuse to act on unauthenticated actors at command boundary.
 # ---------------------------------------------------------------------------

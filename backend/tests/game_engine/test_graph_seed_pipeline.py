@@ -547,6 +547,73 @@ def test_ensure_graph_seed_ontology_applies_yaml_schema_definitions():
 
 @pytest.mark.game
 @pytest.mark.integration
+def test_ensure_graph_seed_ontology_registers_quest_semantic_shell_types():
+    _require_postgres_engine()
+    from sqlalchemy import text
+
+    from app.core.database import db_session_context, engine
+    from db.schema_migrations import ensure_graph_schema, ensure_graph_seed_ontology
+
+    ensure_graph_schema(engine)
+    ensure_graph_seed_ontology(engine)
+    ensure_graph_seed_ontology(engine)
+    with db_session_context() as session:
+        node_rows = session.execute(
+            text(
+                """
+                SELECT type_code, trait_class, schema_definition
+                  FROM node_types
+                 WHERE type_code = ANY(:type_codes)
+                """
+            ),
+            {"type_codes": ["situation", "goal", "quest"]},
+        ).fetchall()
+        rel_rows = session.execute(
+            text(
+                """
+                SELECT type_code, trait_class
+                  FROM relationship_types
+                 WHERE type_code = ANY(:type_codes)
+                """
+            ),
+            {
+                "type_codes": [
+                    "ABOUT",
+                    "SUPPORTED_BY",
+                    "TRIGGERED_BY_RULE",
+                    "TRIGGERED_BY_EXPERIENCE",
+                    "RAISES_GOAL",
+                    "GOAL_FOR",
+                    "RESPONDS_TO",
+                    "PURSUES",
+                    "HAS_OBJECTIVE",
+                    "OWNED_BY",
+                    "SCOPED_AT",
+                ]
+            },
+        ).fetchall()
+    nodes = {row.type_code: row for row in node_rows}
+    assert set(nodes) == {"situation", "goal", "quest"}
+    assert nodes["situation"].trait_class == "TASK"
+    assert "assertion" in nodes["situation"].schema_definition["properties"]
+    assert {row.type_code for row in rel_rows} == {
+        "ABOUT",
+        "SUPPORTED_BY",
+        "TRIGGERED_BY_RULE",
+        "TRIGGERED_BY_EXPERIENCE",
+        "RAISES_GOAL",
+        "GOAL_FOR",
+        "RESPONDS_TO",
+        "PURSUES",
+        "HAS_OBJECTIVE",
+        "OWNED_BY",
+        "SCOPED_AT",
+    }
+    assert all(row.trait_class == "TASK" for row in rel_rows)
+
+
+@pytest.mark.game
+@pytest.mark.integration
 def test_ensure_graph_seed_ontology_room_schema_from_yaml():
     _require_postgres_engine()
     from sqlalchemy import text

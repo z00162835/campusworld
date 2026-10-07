@@ -97,6 +97,8 @@ export interface TaskCard {
   title: string
   summary: string
   status: 'not_started' | 'active' | 'blocked' | 'completed'
+  questId?: string | null
+  questTitle?: string | null
   progress: number
   currentStep: TaskStep
   nextBestAction: DecisionOption

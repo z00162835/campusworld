@@ -216,7 +216,7 @@ commands:
     description: "任务命令(create/publish/claim/assign/complete/list/show/pool)"
     usage:
       root: "task <子命令> [参数]；可用：create/list/show/claim/assign/publish/complete/pool"
-      create: "task create --title <T> [--workflow <key>] [--to-pool <pool_key>] [--priority <p>] [--visibility <v>] [--idempotency-key <k>]"
+      create: "task create --title <T> [--workflow <key>] [--to-pool <pool_key>] [--quest <quest_id>] [--scoped-at <node_id>] [--objective-kind <kind>] [--requires-capability <a,b>] [--priority <p>] [--visibility <v>] [--idempotency-key <k>]"
       claim: "task claim <id> [--idempotency-key <k>]"
       assign: "task assign <id> --to <principal_id> [--kind user|agent|group] [--idempotency-key <k>]"
       publish: "task publish <id> --to-pool <pool_key> [--idempotency-key <k>]"
@@ -262,6 +262,48 @@ commands:
         success: "任务池已停用：{key}"
       enable:
         success: "任务池已启用：{key}"
+    situation:
+      usage:
+        root: "situation <create|list|show> [参数]"
+        create: "situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule|weak_experience|manual|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low|medium|high|critical]"
+        list: "situation list [--limit N]"
+        show: "situation show <id>"
+      create:
+        success: "Situation 已创建：#{id}"
+      list:
+        header: "Situation 清单（共 {total} 条）"
+        empty: "未匹配任何 Situation。"
+        row: "#{id}  title={title}"
+      show:
+        title: "Situation #{id}"
+    goal:
+      usage:
+        root: "goal <create|list|show> [参数]"
+        create: "goal create --title <T> --situation <id> [--priority low|normal|high|urgent]"
+        list: "goal list [--limit N]"
+        show: "goal show <id>"
+      create:
+        success: "Goal 已创建：#{id}"
+      list:
+        header: "Goal 清单（共 {total} 条）"
+        empty: "未匹配任何 Goal。"
+        row: "#{id}  title={title}"
+      show:
+        title: "Goal #{id}"
+    quest:
+      usage:
+        root: "quest <create|list|show> [参数]"
+        create: "quest create --situation <id> --goal <id> --title <T>"
+        list: "quest list [--limit N]"
+        show: "quest show <id>"
+      create:
+        success: "Quest 已创建：#{id}"
+      list:
+        header: "Quest 清单（共 {total} 条）"
+        empty: "未匹配任何 Quest。"
+        row: "#{id}  title={title}"
+      show:
+        title: "Quest #{id}"
     error:
       generic: "任务系统错误：{detail}"
       forbidden: "无权限执行任务操作：{detail}"
@@ -274,6 +316,7 @@ commands:
       workflow_not_found: "工作流定义未找到：{detail}"
       workflow_inactive: "工作流定义已停用：{detail}"
       pool_not_found: "任务池未找到：{detail}"
+      reference_not_found: "引用节点未找到：{detail}"
       pool_inactive: "任务池已停用：{detail}"
       publish_denied: "发布被池 ACL 拒绝：{detail}"
       consume_denied: "认领被池 ACL 拒绝：{detail}"

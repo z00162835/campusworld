@@ -187,6 +187,89 @@ def test_create_task_materializes_due_at_epoch_ms(session):
     assert assn[0].is_active is True
 
 
+def test_quest_semantic_shell_links_task_objective_and_scope(session):
+    from app.services.task.permissions import Principal
+    from app.services.task.quest_semantic_service import create_goal, create_quest, create_situation, show_quest
+    from app.services.task.task_state_machine import create_task
+
+    actor_id = _make_actor(session, name=f"quest-actor-{uuid.uuid4()}")
+    subject_id = _make_actor(session, name=f"quest-subject-{uuid.uuid4()}")
+    actor = Principal(id=actor_id, kind="user")
+
+    situation = create_situation(
+        title="Room over comfort band",
+        assertion="Room 101 temperature is above the comfort band.",
+        actor=actor,
+        subject_id=subject_id,
+        trigger_kind="hard_rule",
+        fact_refs=["fact:room-101-temperature"],
+        rule_refs=["quality:comfort-band:v1"],
+        db_session=session,
+    )
+    goal = create_goal(
+        title="Restore comfort",
+        situation_id=situation.node_id,
+        actor=actor,
+        desired_state="Room 101 returns to comfort band.",
+        db_session=session,
+    )
+    quest = create_quest(
+        title="Diagnose and restore Room 101",
+        situation_id=situation.node_id,
+        goal_id=goal.node_id,
+        actor=actor,
+        db_session=session,
+    )
+    task = create_task(
+        title="Inspect AHU-3 controls",
+        actor=actor,
+        quest_id=quest.node_id,
+        scoped_at_node_id=subject_id,
+        objective_kind="diagnose",
+        required_capabilities=["hvac"],
+        db_session=session,
+    )
+
+    rels = session.execute(
+        text(
+            """
+            SELECT type_code, source_id, target_id
+              FROM relationships
+             WHERE type_code = ANY(:types)
+               AND is_active = TRUE
+               AND (
+                    source_id IN (:situation_id, :goal_id, :quest_id, :task_id)
+                    OR target_id IN (:situation_id, :goal_id, :quest_id, :task_id, :subject_id, :actor_id)
+               )
+            """
+        ),
+        {
+            "types": ["ABOUT", "GOAL_FOR", "RAISES_GOAL", "RESPONDS_TO", "PURSUES", "HAS_OBJECTIVE", "SCOPED_AT", "OWNED_BY"],
+            "situation_id": situation.node_id,
+            "goal_id": goal.node_id,
+            "quest_id": quest.node_id,
+            "task_id": task.task_id,
+            "subject_id": subject_id,
+            "actor_id": actor_id,
+        },
+    ).fetchall()
+    rel_set = {(row.type_code, int(row.source_id), int(row.target_id)) for row in rels}
+    assert ("ABOUT", situation.node_id, subject_id) in rel_set
+    assert ("GOAL_FOR", goal.node_id, situation.node_id) in rel_set
+    assert ("RAISES_GOAL", situation.node_id, goal.node_id) in rel_set
+    assert ("RESPONDS_TO", quest.node_id, situation.node_id) in rel_set
+    assert ("PURSUES", quest.node_id, goal.node_id) in rel_set
+    assert ("HAS_OBJECTIVE", quest.node_id, task.task_id) in rel_set
+    assert ("SCOPED_AT", task.task_id, subject_id) in rel_set
+    assert ("OWNED_BY", task.task_id, actor_id) in rel_set
+
+    quest_view = show_quest(quest_id=quest.node_id, db_session=session)
+    assert quest_view["situation"]["assertion"] == "Room 101 temperature is above the comfort band."
+    assert quest_view["goal"]["id"] == goal.node_id
+    assert quest_view["objectives"][0]["task_id"] == task.task_id
+    assert quest_view["progress"]["total_objectives"] == 1
+
+
 def test_idempotent_replay_does_not_double_write(session):
     from app.services.task.permissions import Principal
     from app.services.task.task_state_machine import create_task, transition

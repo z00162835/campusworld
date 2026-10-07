@@ -608,13 +608,7 @@ class WorldInteractionService:
         task_id = row.id
         if state in {"open", "rejected"} and row.visibility == "pool_open" and row.assignee_kind == "pool":
             return [self._option(f"task_claim_{task_id}", "Claim task", "primary", "execute_command", command=f"task claim {task_id}", target=str(task_id))]
-        if state in {"open", "draft"}:
-            return [self._option(f"task_start_{task_id}", "Start task", "primary", "execute_command", command=f"task start {task_id}", target=str(task_id))]
-        if state == "claimed":
-            return [self._option(f"task_start_{task_id}", "Start task", "primary", "execute_command", command=f"task start {task_id}", target=str(task_id))]
-        if state == "in_progress":
-            return [self._option(f"task_complete_{task_id}", "Complete task", "primary", "execute_command", command=f"task complete {task_id}", target=str(task_id))]
-        if state == "approved":
+        if state in {"claimed", "in_progress", "approved"}:
             return [self._option(f"task_complete_{task_id}", "Complete task", "primary", "execute_command", command=f"task complete {task_id}", target=str(task_id))]
         return [self._option(f"task_show_{task_id}", "View task", "secondary", "execute_command", command=f"task show {task_id}", target=str(task_id))]
 
@@ -631,6 +625,8 @@ class WorldInteractionService:
             "title": row.title,
             "summary": f"State: {row.state}",
             "status": "active",
+            "questId": str(row.quest_id) if row.quest_id is not None else None,
+            "questTitle": row.quest_title,
             "progress": progress_map.get(row.state, 30),
             "currentStep": {
                 "id": f"task_step_{row.id}",

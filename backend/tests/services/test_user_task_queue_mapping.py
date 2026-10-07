@@ -5,7 +5,7 @@ from app.services.task.user_task_queue import QueueTaskRow
 from app.services.world_interaction import world_interaction_service
 
 
-def test_options_for_claimed_task_offers_start():
+def test_options_for_claimed_task_offers_complete():
     row = QueueTaskRow(
         id=42,
         state="claimed",
@@ -16,7 +16,7 @@ def test_options_for_claimed_task_offers_start():
         assignee_kind="user",
     )
     options = world_interaction_service._options_for_queue_task(row)
-    assert options[0]["command"] == "task start 42"
+    assert options[0]["command"] == "task complete 42"
 
 
 def test_task_queue_event_uses_task_id():
@@ -33,6 +33,20 @@ def test_task_queue_event_uses_task_id():
     assert event["id"] == "task_7"
     assert event["type"] == "task"
     assert event["options"][0]["command"] == "task complete 7"
+
+
+def test_open_non_pool_task_does_not_emit_unimplemented_start():
+    row = QueueTaskRow(
+        id=8,
+        state="open",
+        title="Review draft",
+        priority="normal",
+        pool_key=None,
+        visibility="private",
+        assignee_kind="user",
+    )
+    options = world_interaction_service._options_for_queue_task(row)
+    assert options[0]["command"] == "task show 8"
 
 
 def test_decision_center_prefers_queue_over_navigation(monkeypatch):
@@ -63,3 +77,20 @@ def test_decision_center_prefers_queue_over_navigation(monkeypatch):
     )
     assert payload["decisionEvents"][0]["id"] == "task_1"
     assert payload["activeTask"]["title"] == "Demo"
+
+
+def test_active_task_includes_quest_context():
+    row = QueueTaskRow(
+        id=2,
+        state="claimed",
+        title="Linked objective",
+        priority="normal",
+        pool_key=None,
+        visibility="private",
+        assignee_kind="user",
+        quest_id=77,
+        quest_title="Restore AC comfort",
+    )
+    payload = world_interaction_service._active_task_from_queue([row], None)
+    assert payload["questId"] == "77"
+    assert payload["questTitle"] == "Restore AC comfort"

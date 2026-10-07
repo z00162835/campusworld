@@ -31,6 +31,8 @@ class QueueTaskRow:
     pool_key: Optional[str]
     visibility: str
     assignee_kind: str
+    quest_id: Optional[int] = None
+    quest_title: Optional[str] = None
 
 
 def principal_from_actor(*, user_id: str, roles: Sequence[str], permissions: Sequence[str]) -> Principal:
@@ -71,9 +73,14 @@ def list_for_principal(
                n.attributes->>'priority' AS priority,
                n.attributes->>'visibility' AS visibility,
                n.attributes->>'assignee_kind' AS assignee_kind,
+               q.id AS quest_id,
+               q.name AS quest_title,
                p.key AS pool_key
           FROM nodes n
      LEFT JOIN task_pools p ON p.id = (n.attributes->>'pool_id')::bigint
+     LEFT JOIN nodes q ON q.id = NULLIF(n.attributes->>'quest_id', '')::bigint
+                      AND q.type_code = 'quest'
+                      AND q.is_active = TRUE
          WHERE n.type_code = 'task'
            AND n.is_active = TRUE
            AND {VISIBILITY_PREDICATE_SQL}
@@ -97,6 +104,8 @@ def list_for_principal(
             pool_key=str(row.pool_key) if row.pool_key else None,
             visibility=str(row.visibility or ""),
             assignee_kind=str(row.assignee_kind or ""),
+            quest_id=int(row.quest_id) if row.quest_id else None,
+            quest_title=str(row.quest_title) if row.quest_title else None,
         )
         for row in rows
     ]

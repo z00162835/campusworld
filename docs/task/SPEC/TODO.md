@@ -11,6 +11,7 @@
 - [x] `features/F03_TASK_COLLABORATION_WORKFLOW.md`
 - [x] `features/F04_TASK_RELATIONAL_SUBSTRATE_AND_OBSERVABILITY.md`
 - [x] `features/F05_TASK_POOL_FIRST_CLASS_REGISTRY.md`（v1 起池一等实体 + ACL + 默认值 + MQ-ready）
+- [x] `features/F06_AI_NATIVE_QUEST_RUNTIME_REFACTOR.md`（AI-native Quest Runtime 重构规格；`task` 演进为 Quest 下 Objective/Actionable Work Item）
 - [x] `docs/command/SPEC/features/CMD_task.md`（父命令 + 子命令概述节，含 `task pool *` 与 `task publish`）
 - [x] `docs/models/SPEC/SPEC.md` Feature Specs 列表追加 task 主 SPEC 链接
 - [x] `docs/models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md` §4 末追加"任务接单契约"段落
@@ -110,6 +111,27 @@
 - [ ] `task.expand_worker` 异步 expand worker（OQ-21）：`FOR UPDATE SKIP LOCKED` 拉取 `task_runs(phase=expansion, status=running)`；按 `cursor` 分批推进；并发 `expand_concurrent_runs=4`。
 - [ ] 集成测试覆盖 `agent1 → admin → agent2` 完整链路。
 - [ ] 属性测试（`hypothesis`）随机事件序列保持 I1–I6。
+
+## Phase R — AI-native Quest Runtime 重构（见 [`features/F06_AI_NATIVE_QUEST_RUNTIME_REFACTOR.md`](features/F06_AI_NATIVE_QUEST_RUNTIME_REFACTOR.md)）
+
+### R0 Foundation Repair
+
+- [x] 修正 `task_state_machine.transition()` 事务边界，确保幂等检查、锁、SSOT 更新、assignment、transition、outbox 在同一事务内。
+- [x] 补齐 `task create --scoped-at` 写入 `SCOPED_AT`；owner 关系/assignment 可审计。
+- [x] World UI 不再生成未实现的 `task start` 动作，或实现 `start` 事件。
+
+### R1 Semantic Shell
+
+- [x] 注册 `situation / goal / quest` 节点类型与 `RESPONDS_TO / PURSUES / HAS_OBJECTIVE` 关系。
+- [x] `task.attributes.quest_id` 与 Quest objective rollup 一致。
+- [x] 新增 `quest show/list`，能展示 Situation、Goal、Objectives、Progress。
+
+### R2-R4 Governed Runtime
+
+- [ ] 新增 Quest plan revision 与 deterministic policy gate。
+- [ ] 新增 evidence requirement、verification result、quality gate。
+- [ ] `quest accept` 要求 verification passed 或 human override evidence。
+- [ ] Quest close 后生成 outcome / learning proposal；LearningProposal 不直接修改正式知识版本。
 
 ## v2+ 备忘录（详见 [`SPEC.md`](SPEC.md) §10.2）
 

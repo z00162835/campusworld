@@ -62,7 +62,7 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 
 | 子命令 | 用法 | 行为 |
 |---|---|---|
-| `task create` | `--title <T> --scoped-at <node_id> [--workflow <key>:<ver>] [--selector @file] [--parent <id>] [--assignee <@handle\|group:<tag>>] [--to-pool <pool_key>] [--priority normal\|high\|...] [--visibility ...]` | 创建图节点 + `OWNED_BY` + `SCOPED_AT` 边 + 可选 `PARENT_OF`；指定 `--to-pool <key>` 时 `assignee_kind=pool`、`pool_id=resolve(key)`、合并池默认值（[F05 §3.3](../../../task/SPEC/features/F05_TASK_POOL_FIRST_CLASS_REGISTRY.md#33-默认值合并语义)）、evaluate `publish_acl`；初始事件 `open`（`--draft` 则保留 `draft`）；默认 `workflow_ref={key:default_v1, version:1}` |
+| `task create` | `--title <T> [--scoped-at <node_id>] [--quest <quest_id>] [--objective-kind <kind>] [--requires-capability <capability[,capability...]>] [--workflow <key>:<ver>] [--selector @file] [--parent <id>] [--assignee <@handle\|group:<tag>>] [--to-pool <pool_key>] [--priority normal\|high\|...] [--visibility ...]` | 创建图节点 + `OWNED_BY` + 可选 `SCOPED_AT` / `HAS_OBJECTIVE` 边 + 可选 `PARENT_OF`；指定 `--to-pool <key>` 时 `assignee_kind=pool`、`pool_id=resolve(key)`、合并池默认值（[F05 §3.3](../../../task/SPEC/features/F05_TASK_POOL_FIRST_CLASS_REGISTRY.md#33-默认值合并语义)）、evaluate `publish_acl`；未发布时保持 `draft`；默认 `workflow_ref={key:default_v1, version:1}` |
 | `task publish <id> --to-pool <key>` | 把 `draft\|open` 任务发布或迁移到目标池 | 状态机 `event=publish`：解析 pool_key、check `publish_acl`、写 `nodes.attributes.pool_id`、`task_state_transitions(event=publish, metadata={from_pool_id, to_pool_id})`、`task_outbox(event_kind=task.published, pool_key=<new_key>)`；前置：无 active executor |
 
 #### 池治理（admin）
@@ -91,6 +91,17 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 | `task cancel <id>` | `cancel` | 任意非终态（含 `failed`）→ `cancelled` |
 | `task expand <id>` | `expand` | 父任务子任务物化（≤ 50 同步；> 50 走异步协议见 [F01 §5.2](../../../task/SPEC/features/F01_TASK_ONTOLOGY_AND_NODE_TYPES.md#52-大范围-expand-的异步协议)）；异步时立刻返回 `{status:'pending', expansion_run_id}` |
 | `task expansion show <run_id>` | — | 只读；返回 `task_runs(phase=expansion)` 行 + `extra.expansion_state` |
+
+#### R1 Semantic Shell（同用 `task.*` 权限码）
+
+| 命令 | 行为 |
+|---|---|
+| `situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule\|weak_experience\|manual\|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low\|medium\|high\|critical]` | 创建陈述性 Situation assertion；校验事实依据与 hard/weak/manual/mixed trigger provenance。 |
+| `situation list [--limit N]` / `situation show <id>` | 列表与详情。 |
+| `goal create --title <T> --situation <id> [--priority low\|normal\|high\|urgent]` | 创建 Goal，并写 `GOAL_FOR` 与 `RAISES_GOAL`。 |
+| `goal list [--limit N]` / `goal show <id>` | 列表与详情。 |
+| `quest create --situation <id> --goal <id> --title <T>` | 创建 Quest draft，并写 `RESPONDS_TO` 与 `PURSUES`。 |
+| `quest list [--limit N]` / `quest show <id>` | 展示 Quest、Situation assertion/trigger、Goal、Objectives 与 Progress。 |
 
 #### Bulk（决策 14：逐个 transition）
 
@@ -121,6 +132,7 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 | `WorkflowDefinitionNotFound` | `commands.task.error.workflow_not_found` |
 | `WorkflowDefinitionInactive` | `commands.task.error.workflow_inactive` |
 | `PoolNotFound` | `commands.task.error.pool_not_found` |
+| `ReferenceNotFound` | `commands.task.error.reference_not_found` |
 | `PoolInactive` | `commands.task.error.pool_inactive` |
 | `PublishAclDenied` | `commands.task.error.publish_denied` |
 | `ConsumeAclDenied` | `commands.task.error.consume_denied` |

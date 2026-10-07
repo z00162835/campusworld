@@ -15,6 +15,7 @@
 - [ ] F05 池一等模型：`task_pools` 字段、ACL schema、默认值合并语义、命名规范、seed 池清单、MQ 路由键预留齐备；与 [F11 `data_access`](../../api/SPEC/features/F11_DATA_ACCESS_POLICY_FOR_GRAPH_API.md) 的级联关系明确。
 - [ ] 命令族 [`CMD_task`](../../command/SPEC/features/CMD_task.md) 与统一状态机入口约束一致；只读命令不经状态机；写命令均接受 `--idempotency-key`；含 `task pool list/show/create/update/disable/enable/stats` 与 `task publish` 子命令；`task create --to-pool <key>` 路径完整。
 - [ ] 与 [F02 npc_agent](../../models/SPEC/features/F02_INTELLIGENT_AGENT_SERVICE_TYPE.md) 的 `subscription_bindings.kind=pool, pool_key=...` 接单契约自洽，含通配 `pool_key='<x>.*'` 展开。
+- [ ] AI-native Quest Runtime 重构规格 [`F06`](features/F06_AI_NATIVE_QUEST_RUNTIME_REFACTOR.md) 评审通过：`Situation / Goal / Quest / Objective / Evidence / Outcome / Learning` 边界清晰，且 `task` 兼容演进为 Quest 下 Objective/Actionable Work Item。
 - [ ] §10 备忘录覆盖所有已答复决策与未来扩展项；OQ-11 ~ OQ-30 对照实现位置准确。
 - [ ] 性能基线（§1.8.2）与 Chaos 测试（§1.8.1）条款评审通过；基准脚本 `task_bench.py` 在 Phase B 发布前完成跑测。
 
@@ -72,3 +73,14 @@
 - [ ] 属性测试（`hypothesis`）随机事件序列保持 I1–I6。
 - [ ] Bulk 命令 `task bulk-approve / bulk-claim` 命令层循环 + 错误聚合返回；幂等键 `<bulk_id>:<task_id>` 衍生。
 - [ ] structlog 事件名清单与 F04 §"事件名" 一致：`task.created / published / claimed / assigned / state_changed / approved / rejected / completed / cancelled / handoff / consistency_drift / outbox_pending`。
+
+## R. Phase R — Quest Runtime 重构
+
+- [x] R0：`task_state_machine.transition()` 全写路径单事务覆盖；快速单元/命令测试通过，PostgreSQL 集成测试需在配置 DB 后验证。
+- [x] R0：`task create --scoped-at` 落 `SCOPED_AT`；owner 关系/assignment 可审计。
+- [x] R0：World UI 不再生成未实现的任务动作，或相应事件已实现。
+- [x] R1：`situation / goal / quest` 节点类型与核心关系注册完成。
+- [x] R1：Quest 可关联现有 `task` 作为 Objective，`quest show` 可展示 Situation、Goal、Objectives、Progress。
+- [ ] R2：Quest plan revision 与 deterministic policy gate 可审计。
+- [ ] R3：Evidence / Quality / Verification 对象可支撑 `quest accept`。
+- [ ] R4：Quest outcome 可生成 LearningProposal，且不会直接修改正式 Policy / SOP / QualitySpec。

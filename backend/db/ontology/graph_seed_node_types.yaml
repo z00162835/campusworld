@@ -695,3 +695,234 @@ node_types:
           title: 池归属（FK → task_pools.id；assignee_kind=pool 时必填）
           value_kind: static
           mutability: instance_managed
+  situation:
+    trait_class: TASK
+    trait_mask: 1089
+    tags:
+    - graph_seed
+    - task
+    - semantic_shell
+    schema_definition:
+      type: object
+      title: situation attributes (R1)
+      description: 对世界状态的陈述性业务描述；记录事实依据与触发依据。
+      properties:
+        current_state:
+          type: string
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        state_version:
+          type: integer
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        title:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        assertion:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        subject_ref:
+          type:
+          - integer
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        trigger_kind:
+          type: string
+          enum:
+          - hard_rule
+          - weak_experience
+          - manual
+          - mixed
+          value_kind: static
+          mutability: instance_managed
+        trigger_summary:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        fact_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        evidence_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        rule_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        experience_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        inference_trace_summary:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        confidence:
+          type:
+          - number
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        severity:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+          - critical
+          value_kind: static
+          mutability: instance_managed
+        business_impact:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        temporal_scope:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+  goal:
+    trait_class: TASK
+    trait_mask: 1089
+    tags:
+    - graph_seed
+    - task
+    - semantic_shell
+    schema_definition:
+      type: object
+      title: goal attributes (R1)
+      properties:
+        current_state:
+          type: string
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        state_version:
+          type: integer
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        title:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        desired_state:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        constraints:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+        priority:
+          type: string
+          enum:
+          - low
+          - normal
+          - high
+          - urgent
+          value_kind: static
+          mutability: instance_managed
+        deadline_at:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        owner_principal:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+        acceptance_summary:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+  quest:
+    trait_class: TASK
+    trait_mask: 1089
+    tags:
+    - graph_seed
+    - task
+    - semantic_shell
+    schema_definition:
+      type: object
+      title: quest attributes (R1)
+      properties:
+        current_state:
+          type: string
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        state_version:
+          type: integer
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        title:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        situation_id:
+          type: integer
+          value_kind: static
+          mutability: instance_managed
+        goal_id:
+          type: integer
+          value_kind: static
+          mutability: instance_managed
+        risk_level:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        progress:
+          type: object
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        plan_graph_summary:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        policy_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        process_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        quality_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed
+        case_refs:
+          type: array
+          items:
+            type: string
+          value_kind: static
+          mutability: instance_managed

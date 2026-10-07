@@ -33,7 +33,7 @@ from typing import Any, Dict, Iterator, Optional
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.services.task.acl import AclDecision, evaluate_acl
-from app.services.task.errors import AlreadyClaimedError, OptimisticLockError, PoolInactive, PoolNotFound, PreconditionFailed, ConsumeAclDenied, PublishAclDenied, RoleRequiredError, WorkflowDefinitionInactive, WorkflowDefinitionNotFound, WorkflowEventNotAllowed
+from app.services.task.errors import AlreadyClaimedError, OptimisticLockError, PoolInactive, PoolNotFound, PreconditionFailed, ReferenceNotFound, ConsumeAclDenied, PublishAclDenied, RoleRequiredError, WorkflowDefinitionInactive, WorkflowDefinitionNotFound, WorkflowEventNotAllowed
 from app.services.task.permissions import Principal
 logger = logging.getLogger(__name__)
 _PHASE_B_EVENTS = frozenset({'create', 'publish', 'claim', 'assign', 'complete'})
@@ -285,7 +285,27 @@ def _lock_task_node(session: Session, *, task_id: int) -> Dict[str, Any]:
     attrs = row[1] if isinstance(row[1], dict) else json.loads(row[1] or '{}')
     return {'id': int(row[0]), 'attributes': attrs}
 
-def create_task(*, title: str, actor: Principal, workflow_key: str='default_v1', pool_id: Optional[int]=None, priority: str='normal', visibility: str='private', assignee_kind: str='user', scope_selector: Optional[Dict[str, Any]]=None, tags: Optional[list[str]]=None, due_at: Optional[datetime]=None, correlation_id: Optional[str]=None, trace_id: Optional[str]=None, idempotency_key: Optional[str]=None, db_session: Optional[Session]=None) -> TransitionResult:
+def _load_node_ref(session: Session, *, node_id: int, expected_type_code: Optional[str]=None) -> Dict[str, Any]:
+    row = session.execute(text("\n            SELECT id, type_code, name, attributes\n              FROM nodes\n             WHERE id = :id AND is_active = TRUE\n            "), {'id': int(node_id)}).first()
+    if row is None:
+        raise ReferenceNotFound(f'node {node_id} not found or inactive')
+    if expected_type_code is not None and row.type_code != expected_type_code:
+        raise ReferenceNotFound(f'node {node_id} is type={row.type_code}, expected {expected_type_code}')
+    attrs = row.attributes if isinstance(row.attributes, dict) else json.loads(row.attributes or '{}')
+    return {'id': int(row.id), 'type_code': row.type_code, 'name': row.name, 'attributes': attrs}
+
+def _relationship_type_id(session: Session, *, type_code: str) -> int:
+    row = session.execute(text('SELECT id FROM relationship_types WHERE type_code = :type_code'), {'type_code': type_code}).first()
+    if row is None:
+        raise WorkflowDefinitionNotFound(f"relationship_types.type_code='{type_code}' missing; run schema migration first")
+    return int(row[0])
+
+def _insert_relationship(session: Session, *, source_id: int, target_id: int, type_code: str, attributes: Optional[Dict[str, Any]]=None, tags: Optional[list[str]]=None) -> int:
+    type_id = _relationship_type_id(session, type_code=type_code)
+    rel_row = session.execute(text("\n            INSERT INTO relationships\n                (uuid, type_id, type_code, source_id, target_id,\n                 attributes, tags, is_active)\n            VALUES\n                (:uuid, :type_id, :type_code, :source_id, :target_id,\n                 CAST(:attrs AS jsonb), CAST(:tags AS jsonb), TRUE)\n            RETURNING id\n            "), {'uuid': uuid.uuid4(), 'type_id': type_id, 'type_code': type_code, 'source_id': int(source_id), 'target_id': int(target_id), 'attrs': json.dumps(attributes or {}, ensure_ascii=False), 'tags': json.dumps(tags or [], ensure_ascii=False)}).first()
+    return int(rel_row[0])
+
+def create_task(*, title: str, actor: Principal, workflow_key: str='default_v1', pool_id: Optional[int]=None, priority: str='normal', visibility: str='private', assignee_kind: str='user', scope_selector: Optional[Dict[str, Any]]=None, tags: Optional[list[str]]=None, due_at: Optional[datetime]=None, scoped_at_node_id: Optional[int]=None, quest_id: Optional[int]=None, objective_kind: Optional[str]=None, required_capabilities: Optional[list[str]]=None, evidence_requirement_refs: Optional[list[str]]=None, correlation_id: Optional[str]=None, trace_id: Optional[str]=None, idempotency_key: Optional[str]=None, db_session: Optional[Session]=None) -> TransitionResult:
     """Create a new task node and emit the synthetic ``create`` transition.
 
     Atomically:
@@ -306,7 +326,19 @@ def create_task(*, title: str, actor: Principal, workflow_key: str='default_v1',
         version = _resolve_active_workflow_version(session, key=workflow_key)
         spec = _load_workflow_spec(session, key=workflow_key, version=version)
         initial_state = spec.get('initial_state', 'draft')
+        if scoped_at_node_id is not None:
+            _load_node_ref(session, node_id=int(scoped_at_node_id))
+        if quest_id is not None:
+            _load_node_ref(session, node_id=int(quest_id), expected_type_code='quest')
         attributes: Dict[str, Any] = {'current_state': initial_state, 'state_version': 1, 'workflow_ref': {'_schema_version': 1, 'key': workflow_key, 'version': version}, 'title': title, 'priority': priority, 'visibility': visibility, 'assignee_kind': assignee_kind, 'tags': list(tags or [])}
+        if quest_id is not None:
+            attributes['quest_id'] = int(quest_id)
+        if objective_kind:
+            attributes['objective_kind'] = str(objective_kind)
+        if required_capabilities:
+            attributes['required_capabilities'] = list(required_capabilities)
+        if evidence_requirement_refs:
+            attributes['evidence_requirement_refs'] = list(evidence_requirement_refs)
         if due_at is not None:
             due_at_utc = due_at.astimezone(tz=timezone.utc)
             attributes['due_at'] = due_at_utc.isoformat()
@@ -326,7 +358,13 @@ def create_task(*, title: str, actor: Principal, workflow_key: str='default_v1',
         node_row = session.execute(text("\n                INSERT INTO nodes (uuid, type_id, type_code, name, description,\n                                   attributes, tags, is_active, is_public)\n                VALUES (:uuid, :type_id, 'task', :name, :description,\n                        CAST(:attrs AS jsonb), CAST(:tag_array AS jsonb),\n                        TRUE, FALSE)\n                RETURNING id\n                "), {'uuid': task_uuid, 'type_id': type_id, 'name': title[:255], 'description': None, 'attrs': json.dumps(attributes, ensure_ascii=False), 'tag_array': json.dumps(list(tags or []), ensure_ascii=False)}).first()
         task_id = int(node_row[0])
         if actor.kind != 'system':
+            _load_node_ref(session, node_id=actor.id)
             _add_assignment(session, task_id=task_id, role='owner', stage=_STAGE_BY_TO_STATE[initial_state], actor=actor)
+            _insert_relationship(session, source_id=task_id, target_id=actor.id, type_code='OWNED_BY', attributes={'principal_kind': actor.kind})
+        if scoped_at_node_id is not None:
+            _insert_relationship(session, source_id=task_id, target_id=int(scoped_at_node_id), type_code='SCOPED_AT')
+        if quest_id is not None:
+            _insert_relationship(session, source_id=int(quest_id), target_id=task_id, type_code='HAS_OBJECTIVE', attributes={'objective_kind': objective_kind})
         event_seq = 1
         _insert_state_transition(session, task_id=task_id, event_seq=event_seq, idempotency_key=idempotency_key, from_state='__init__', to_state=initial_state, event='create', actor=actor, stage=_STAGE_BY_TO_STATE[initial_state], reason=None, correlation_id=correlation_id, trace_id=trace_id, metadata={'workflow_ref': attributes['workflow_ref'], 'pool_id': attributes.get('pool_id')})
         pool_key: Optional[str] = None
@@ -354,44 +392,44 @@ def transition(task_id: int, event: str, actor_principal: Principal, expected_ve
             if replay is not None:
                 logger.info('task.transition.replay', extra={'task_id': task_id, 'event': event, 'actor_id': actor_principal.id, 'actor_kind': actor_principal.kind, 'event_seq': replay.event_seq, 'state_version': replay.state_version, 'correlation_id': replay.correlation_id, 'trace_id': replay.trace_id})
                 return replay
-        node = _lock_task_node(session, task_id=task_id)
-        attrs = node['attributes']
-        current_state = attrs.get('current_state')
-        state_version = int(attrs.get('state_version') or 0)
-        workflow_ref = attrs.get('workflow_ref') or {}
-        workflow_key = workflow_ref.get('key', 'default_v1')
-        workflow_version = int(workflow_ref.get('version') or 0)
-        spec = _load_workflow_spec(session, key=workflow_key, version=workflow_version)
-        events = spec.get('events') or {}
-        event_def = events.get(event)
-        if event_def is None or current_state not in (event_def.get('from') or []):
-            raise WorkflowEventNotAllowed(f'event={event!r} not allowed from state={current_state!r} in workflow {workflow_key}:{workflow_version}')
-        if expected_version != state_version:
-            raise OptimisticLockError(f'task {task_id}: expected_version={expected_version} but current state_version={state_version}')
-        required_role = event_def.get('required_role') or 'owner'
-        if event != 'claim':
-            _check_required_role(session, task_id=task_id, actor=actor_principal, required_role=required_role)
-        new_state = event_def['to']
-        stage = _STAGE_BY_TO_STATE[new_state]
-        handler = _EVENT_HANDLERS.get(event)
-        if handler is None:
-            raise WorkflowEventNotAllowed(f'event {event!r} is not currently enabled')
-        effects = handler(session, task_id=task_id, actor_principal=actor_principal, payload=payload, attrs=attrs, stage=stage)
-        extra_node_updates = effects.extra_node_updates
-        outbox_pool_key = effects.outbox_pool_key
-        post_assignments = effects.post_assignments
-        retire_roles = effects.retire_roles
-        metadata = effects.metadata
-        new_state_version = _update_node_state(session, task_id=task_id, new_state=new_state, expected_version=expected_version, extra_updates=extra_node_updates)
-        _retire_assignments(session, task_id=task_id, roles=retire_roles)
-        for ass in post_assignments:
-            _add_assignment(session, task_id=task_id, role=ass['role'], stage=ass['stage'], actor=actor_principal, target_principal_id=ass.get('principal_id'), target_principal_kind=ass.get('principal_kind'), target_principal_tag=ass.get('principal_tag'))
-        event_seq = _next_event_seq(session, task_id=task_id)
-        _insert_state_transition(session, task_id=task_id, event_seq=event_seq, idempotency_key=idempotency_key, from_state=current_state, to_state=new_state, event=event, actor=actor_principal, stage=stage, reason=payload.get('reason'), correlation_id=correlation_id, trace_id=trace_id, metadata=metadata)
-        _insert_outbox(session, task_id=task_id, pool_key=outbox_pool_key, event_kind=_OUTBOX_EVENT_KIND[event], payload={'task_id': task_id, 'from_state': current_state, 'to_state': new_state, 'event': event, 'event_seq': event_seq, 'actor': {'id': actor_principal.id, 'kind': actor_principal.kind}, **({'pool_key': outbox_pool_key} if outbox_pool_key else {})}, correlation_id=correlation_id, trace_id=trace_id)
-        result = TransitionResult(task_id=task_id, from_state=current_state, to_state=new_state, event=event, event_seq=event_seq, state_version=new_state_version, idempotent_replay=False, correlation_id=correlation_id, trace_id=trace_id)
-        logger.info('task.transition.ok', extra={'task_id': task_id, 'event': event, 'from_state': current_state, 'to_state': new_state, 'event_seq': event_seq, 'state_version': new_state_version, 'actor_id': actor_principal.id, 'actor_kind': actor_principal.kind, 'correlation_id': correlation_id, 'trace_id': trace_id})
-        return result
+            node = _lock_task_node(session, task_id=task_id)
+            attrs = node['attributes']
+            current_state = attrs.get('current_state')
+            state_version = int(attrs.get('state_version') or 0)
+            workflow_ref = attrs.get('workflow_ref') or {}
+            workflow_key = workflow_ref.get('key', 'default_v1')
+            workflow_version = int(workflow_ref.get('version') or 0)
+            spec = _load_workflow_spec(session, key=workflow_key, version=workflow_version)
+            events = spec.get('events') or {}
+            event_def = events.get(event)
+            if event_def is None or current_state not in (event_def.get('from') or []):
+                raise WorkflowEventNotAllowed(f'event={event!r} not allowed from state={current_state!r} in workflow {workflow_key}:{workflow_version}')
+            if expected_version != state_version:
+                raise OptimisticLockError(f'task {task_id}: expected_version={expected_version} but current state_version={state_version}')
+            required_role = event_def.get('required_role') or 'owner'
+            if event != 'claim':
+                _check_required_role(session, task_id=task_id, actor=actor_principal, required_role=required_role)
+            new_state = event_def['to']
+            stage = _STAGE_BY_TO_STATE[new_state]
+            handler = _EVENT_HANDLERS.get(event)
+            if handler is None:
+                raise WorkflowEventNotAllowed(f'event {event!r} is not currently enabled')
+            effects = handler(session, task_id=task_id, actor_principal=actor_principal, payload=payload, attrs=attrs, stage=stage)
+            extra_node_updates = effects.extra_node_updates
+            outbox_pool_key = effects.outbox_pool_key
+            post_assignments = effects.post_assignments
+            retire_roles = effects.retire_roles
+            metadata = effects.metadata
+            new_state_version = _update_node_state(session, task_id=task_id, new_state=new_state, expected_version=expected_version, extra_updates=extra_node_updates)
+            _retire_assignments(session, task_id=task_id, roles=retire_roles)
+            for ass in post_assignments:
+                _add_assignment(session, task_id=task_id, role=ass['role'], stage=ass['stage'], actor=actor_principal, target_principal_id=ass.get('principal_id'), target_principal_kind=ass.get('principal_kind'), target_principal_tag=ass.get('principal_tag'))
+            event_seq = _next_event_seq(session, task_id=task_id)
+            _insert_state_transition(session, task_id=task_id, event_seq=event_seq, idempotency_key=idempotency_key, from_state=current_state, to_state=new_state, event=event, actor=actor_principal, stage=stage, reason=payload.get('reason'), correlation_id=correlation_id, trace_id=trace_id, metadata=metadata)
+            _insert_outbox(session, task_id=task_id, pool_key=outbox_pool_key, event_kind=_OUTBOX_EVENT_KIND[event], payload={'task_id': task_id, 'from_state': current_state, 'to_state': new_state, 'event': event, 'event_seq': event_seq, 'actor': {'id': actor_principal.id, 'kind': actor_principal.kind}, **({'pool_key': outbox_pool_key} if outbox_pool_key else {})}, correlation_id=correlation_id, trace_id=trace_id)
+            result = TransitionResult(task_id=task_id, from_state=current_state, to_state=new_state, event=event, event_seq=event_seq, state_version=new_state_version, idempotent_replay=False, correlation_id=correlation_id, trace_id=trace_id)
+            logger.info('task.transition.ok', extra={'task_id': task_id, 'event': event, 'from_state': current_state, 'to_state': new_state, 'event_seq': event_seq, 'state_version': new_state_version, 'actor_id': actor_principal.id, 'actor_kind': actor_principal.kind, 'correlation_id': correlation_id, 'trace_id': trace_id})
+            return result
     except Exception:
         logger.warning('task.transition.failed', extra={'task_id': task_id, 'event': event, 'actor_id': actor_principal.id, 'actor_kind': actor_principal.kind, 'expected_version': expected_version, 'idempotency_key': idempotency_key, 'correlation_id': correlation_id, 'trace_id': trace_id}, exc_info=True)
         raise

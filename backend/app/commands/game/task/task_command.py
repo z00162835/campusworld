@@ -39,6 +39,11 @@ _LIST_BOOL_FLAGS = {'mine', 'assigned'}
 _TRANSITION_BOOL_FLAGS: set[str] = set()
 _TASK_LIST_MAX_LIMIT = max(1, int(os.getenv('TASK_LIST_MAX_LIMIT', '200')))
 
+def _split_csv(value: Optional[str]) -> list[str]:
+    if not value:
+        return []
+    return [part.strip() for part in str(value).split(',') if part.strip()]
+
 class TaskCommand(GameCommand):
     """Phase B implementation of the ``task`` command family."""
 
@@ -120,6 +125,18 @@ class TaskCommand(GameCommand):
         workflow_key = workflow_flag.split(':', 1)[0] if workflow_flag else pool_default_workflow_key or 'default_v1'
         priority = parsed.flags.get('priority', pool_default_priority or 'normal')
         visibility = parsed.flags.get('visibility', pool_default_visibility or 'private')
+        scoped_at_node_id: Optional[int] = None
+        quest_id: Optional[int] = None
+        if parsed.flags.get('scoped-at') is not None:
+            try:
+                scoped_at_node_id = int(parsed.flags['scoped-at'])
+            except (TypeError, ValueError):
+                return usage_result(ctx, 'usage.create', 'task create --title <T> ...')
+        if parsed.flags.get('quest') is not None:
+            try:
+                quest_id = int(parsed.flags['quest'])
+            except (TypeError, ValueError):
+                return usage_result(ctx, 'usage.create', 'task create --title <T> ...')
         if not is_phase_b_supported(visibility):
             return CommandResult.error_result(i18n(ctx, 'error.visibility_unsupported', default=f'visibility={visibility!r} is not supported (allowed: {sorted(PHASE_B_SUPPORTED_VISIBILITIES)})', detail=visibility), error='commands.task.error.visibility_unsupported')
         keep_draft = 'draft' in parsed.bools
@@ -128,7 +145,7 @@ class TaskCommand(GameCommand):
         try:
             with db_session_context() as session:
                 with session.begin():
-                    created = create_task(title=title, actor=actor, workflow_key=workflow_key, pool_id=pool_id, priority=priority, visibility=visibility, assignee_kind='pool' if pool_id else parsed.flags.get('assignee-kind', 'user'), correlation_id=correlation_id, trace_id=trace_id, idempotency_key=idem, db_session=session)
+                    created = create_task(title=title, actor=actor, workflow_key=workflow_key, pool_id=pool_id, priority=priority, visibility=visibility, assignee_kind='pool' if pool_id else parsed.flags.get('assignee-kind', 'user'), scoped_at_node_id=scoped_at_node_id, quest_id=quest_id, objective_kind=parsed.flags.get('objective-kind'), required_capabilities=_split_csv(parsed.flags.get('requires-capability')), correlation_id=correlation_id, trace_id=trace_id, idempotency_key=idem, db_session=session)
                     if pool_id is None or keep_draft:
                         res = created
                     else:
@@ -243,7 +260,7 @@ class TaskCommand(GameCommand):
         if err is not None:
             return err
         with db_session_context() as session:
-            row = session.execute(text("\n                    SELECT n.id, n.name, n.created_at, n.attributes,\n                           p.key AS pool_key,\n                           p.is_active AS pool_is_active,\n                           p.consume_acl AS pool_consume_acl,\n                           EXISTS (\n                                SELECT 1 FROM task_assignments a\n                                 WHERE a.task_node_id = n.id\n                                   AND a.is_active\n                                   AND a.principal_id = :pid\n                                   AND a.principal_kind = :pkind\n                           ) AS has_active_assignment,\n                           EXISTS (\n                                SELECT 1 FROM task_assignments a\n                                 WHERE a.task_node_id = n.id\n                                   AND a.principal_id = :pid\n                                   AND a.principal_kind = :pkind\n                           ) AS has_any_assignment\n                      FROM nodes n\n                 LEFT JOIN task_pools p ON p.id = (n.attributes->>'pool_id')::bigint\n                     WHERE n.id = :id\n                       AND n.type_code = 'task'\n                       AND n.is_active = TRUE\n                    "), {'id': task_id, 'pid': actor.id, 'pkind': actor.kind}).first()
+            row = session.execute(text("\n                    SELECT n.id, n.name, n.created_at, n.attributes,\n                           n.attributes->>'current_state' AS state,\n                           n.attributes->>'visibility' AS visibility,\n                           n.attributes->>'assignee_kind' AS assignee_kind,\n                           p.key AS pool_key,\n                           p.is_active AS pool_is_active,\n                           p.consume_acl AS pool_consume_acl,\n                           q.id AS quest_id,\n                           q.name AS quest_title,\n                           EXISTS (\n                                SELECT 1 FROM task_assignments a\n                                 WHERE a.task_node_id = n.id\n                                   AND a.is_active\n                                   AND a.principal_id = :pid\n                                   AND a.principal_kind = :pkind\n                           ) AS has_active_assignment,\n                           EXISTS (\n                                SELECT 1 FROM task_assignments a\n                                 WHERE a.task_node_id = n.id\n                                   AND a.principal_id = :pid\n                                   AND a.principal_kind = :pkind\n                           ) AS has_any_assignment\n                      FROM nodes n\n                 LEFT JOIN task_pools p ON p.id = (n.attributes->>'pool_id')::bigint\n                 LEFT JOIN nodes q ON q.id = NULLIF(n.attributes->>'quest_id', '')::bigint\n                                  AND q.type_code = 'quest'\n                                  AND q.is_active = TRUE\n                     WHERE n.id = :id\n                       AND n.type_code = 'task'\n                       AND n.is_active = TRUE\n                    "), {'id': task_id, 'pid': actor.id, 'pkind': actor.kind}).first()
             if row is None:
                 return CommandResult.error_result(i18n(ctx, 'error.not_found', default=f'task {task_id} not found', task_id=task_id), error='commands.task.error.not_found')
             attrs = row.attributes if isinstance(row.attributes, dict) else json.loads(row.attributes or '{}')
@@ -252,11 +269,12 @@ class TaskCommand(GameCommand):
             recent = session.execute(text('\n                    SELECT event_seq, event, from_state, to_state, created_at\n                      FROM task_state_transitions\n                     WHERE task_node_id = :id\n                     ORDER BY event_seq DESC LIMIT 10\n                    '), {'id': task_id}).all()
             assignments = session.execute(text('\n                    SELECT principal_id, principal_kind, principal_tag, role, stage, is_active\n                      FROM task_assignments\n                     WHERE task_node_id = :id AND is_active = TRUE\n                    '), {'id': task_id}).all()
         title_line = i18n(ctx, 'show.title', default=f'Task #{task_id}', id=task_id)
-        lines = [title_line, f"  state          : {attrs.get('current_state')}", f"  state_version  : {attrs.get('state_version')}", f"  workflow_ref   : {attrs.get('workflow_ref')}", f"  pool           : {row.pool_key or '-'}", f"  priority       : {attrs.get('priority')}", f"  visibility     : {attrs.get('visibility')}", f'  title          : {row.name}', f'  active assigns : {len(assignments)}', '  recent events  :']
+        quest_label = f'#{row.quest_id} {row.quest_title}' if row.quest_id else '-'
+        lines = [title_line, f"  state          : {attrs.get('current_state')}", f"  state_version  : {attrs.get('state_version')}", f"  workflow_ref   : {attrs.get('workflow_ref')}", f"  pool           : {row.pool_key or '-'}", f"  quest          : {quest_label}", f"  priority       : {attrs.get('priority')}", f"  visibility     : {attrs.get('visibility')}", f"  objective_kind : {attrs.get('objective_kind') or '-'}", f'  title          : {row.name}', f'  active assigns : {len(assignments)}', '  recent events  :']
         for ev in recent:
             lines.append(f'    seq={ev.event_seq} {ev.event} {ev.from_state}→{ev.to_state} at={ev.created_at}')
-        safe_attrs = {'current_state': attrs.get('current_state'), 'state_version': attrs.get('state_version'), 'workflow_ref': attrs.get('workflow_ref'), 'title': attrs.get('title'), 'priority': attrs.get('priority'), 'visibility': attrs.get('visibility'), 'pool_id': attrs.get('pool_id'), 'due_at': attrs.get('due_at'), 'assignee_kind': attrs.get('assignee_kind')}
-        data = {'id': int(row.id), 'name': row.name, 'attributes': safe_attrs, 'pool_key': row.pool_key, 'active_assignments': [{'principal_id': a.principal_id, 'principal_kind': a.principal_kind, 'principal_tag': a.principal_tag, 'role': a.role, 'stage': a.stage} for a in assignments], 'recent_transitions': [{'event_seq': int(t.event_seq), 'event': t.event, 'from_state': t.from_state, 'to_state': t.to_state, 'created_at': t.created_at.isoformat() if t.created_at else None} for t in recent]}
+        safe_attrs = {'current_state': attrs.get('current_state'), 'state_version': attrs.get('state_version'), 'workflow_ref': attrs.get('workflow_ref'), 'title': attrs.get('title'), 'priority': attrs.get('priority'), 'visibility': attrs.get('visibility'), 'pool_id': attrs.get('pool_id'), 'due_at': attrs.get('due_at'), 'assignee_kind': attrs.get('assignee_kind'), 'quest_id': attrs.get('quest_id'), 'objective_kind': attrs.get('objective_kind'), 'required_capabilities': attrs.get('required_capabilities') or []}
+        data = {'id': int(row.id), 'name': row.name, 'attributes': safe_attrs, 'pool_key': row.pool_key, 'quest_id': int(row.quest_id) if row.quest_id else None, 'quest_title': row.quest_title, 'objective_kind': attrs.get('objective_kind'), 'required_capabilities': attrs.get('required_capabilities') or [], 'active_assignments': [{'principal_id': a.principal_id, 'principal_kind': a.principal_kind, 'principal_tag': a.principal_tag, 'role': a.role, 'stage': a.stage} for a in assignments], 'recent_transitions': [{'event_seq': int(t.event_seq), 'event': t.event, 'from_state': t.from_state, 'to_state': t.to_state, 'created_at': t.created_at.isoformat() if t.created_at else None} for t in recent]}
         return CommandResult.success_result('\n'.join(lines), data=data)
 
     @staticmethod

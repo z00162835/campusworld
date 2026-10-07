@@ -12,7 +12,7 @@ from typing import Optional, Tuple
 
 from sqlalchemy import text
 
-from app.constants.trait_mask import LOCATION_RELATIONSHIP_EDGE
+from app.constants.trait_mask import LOCATION_RELATIONSHIP_EDGE, TASK
 from db.ontology.load import load_graph_seed_node_type_overrides, node_type_jsonb_params
 
 
@@ -103,6 +103,30 @@ GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, st
         "task",
         "default_object",
         "任务",
+        "app.models.base.DefaultObject",
+        "DefaultObject",
+        "app.models.base",
+    ),
+    (
+        "situation",
+        "default_object",
+        "情境",
+        "app.models.base.DefaultObject",
+        "DefaultObject",
+        "app.models.base",
+    ),
+    (
+        "goal",
+        "default_object",
+        "目标",
+        "app.models.base.DefaultObject",
+        "DefaultObject",
+        "app.models.base",
+    ),
+    (
+        "quest",
+        "default_object",
+        "任务线",
         "app.models.base.DefaultObject",
         "DefaultObject",
         "app.models.base",
@@ -936,6 +960,17 @@ def ensure_graph_seed_ontology(engine) -> None:
             ("connects_to", "连接到", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
             ("contains", "包含", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
             ("located_in", "位于", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
+            ("ABOUT", "关于", "app.models.graph.Relationship", "TASK", TASK),
+            ("SUPPORTED_BY", "由事实支持", "app.models.graph.Relationship", "TASK", TASK),
+            ("TRIGGERED_BY_RULE", "由规则触发", "app.models.graph.Relationship", "TASK", TASK),
+            ("TRIGGERED_BY_EXPERIENCE", "由经验触发", "app.models.graph.Relationship", "TASK", TASK),
+            ("RAISES_GOAL", "提出目标", "app.models.graph.Relationship", "TASK", TASK),
+            ("GOAL_FOR", "目标对应", "app.models.graph.Relationship", "TASK", TASK),
+            ("RESPONDS_TO", "响应情境", "app.models.graph.Relationship", "TASK", TASK),
+            ("PURSUES", "追求目标", "app.models.graph.Relationship", "TASK", TASK),
+            ("HAS_OBJECTIVE", "包含任务目标", "app.models.graph.Relationship", "TASK", TASK),
+            ("OWNED_BY", "由账号拥有", "app.models.graph.Relationship", "TASK", TASK),
+            ("SCOPED_AT", "作用于节点", "app.models.graph.Relationship", "TASK", TASK),
         ]
         for type_code, type_name, typeclass, trait_class, trait_mask in rel_rows:
             _try_exec_mapped(
