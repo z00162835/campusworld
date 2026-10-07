@@ -218,7 +218,7 @@ quality 域 v1 注册的 evaluator 见 §3.3；配置开关与默认阈值见 [F
   - `enforce`：evaluator verdict 驱动控制流；`final_success` 清 `runtime.draft_incomplete`，`fail` 置 `runtime.draft_incomplete`，`retry_loop` 发 `draft_retry` 事件并经 `act→plan` transition 触发外层 replan。evaluator 使用无预算版本的完整性判定返回原始 verdict；driver 独立检查 workflow transition、`max_replans`、命令数与 observation 字符数预算。缺 transition 时 `draft_retry_unsupported` fail-closed，预算/次数耗尽时 `draft_retry_exhausted` fail-closed。`_detect_tick_emit_deferral` 降为 fallback（evaluator 返回 `None`/异常时生效）。
 - **与 act 锚点顺序：** `final_success_evaluator` 在 `_detect_tick_emit_deferral` **之后**求值；`ctx.payload['_draft_incomplete']` 是其**输入**，不与 act 锚点竞争权威重判。
 - **与 `quality_score_evaluator` 组合：** 当 `enable_quality_score=true` 且 `final_success_drive_mode` 为 `shadow/enforce` 时，PolicyEngine 先保留 `allow + quality_score` 审计结果，再将该分数合并到后续 `final_success/replan/fail` 决策，避免 final_success 的非默认决策短路导致质量分丢失。
-- ⚠️ streaming 张力：`is_draft_streamable` gate SSE prose（`_phase_react_loop` / stream hooks）；收敛不得改变 mid-tick streaming 行为（`test_agent_loop.py` / `test_llm_pdca_*stream*` 锁定）。v1 **不**在 mid-stream 求值。
+- ⚠️ streaming 张力：`is_draft_streamable` gate SSE prose（`_phase_react_loop` / stream hooks）；收敛不得改变 mid-tick streaming 行为（`test_agent_loop.py` / `test_llm_pdca_*stream*` 锁定）。v1 **不**在 mid-stream 求值。P4 `pattern_match` 在 `before_final_answer` 非流式路径落地（act 锚点 `_detect_tick_emit_deferral` 前）；流式 tick 的文本已 flush，但 block 仍路由 tick 到 `fail_fallback` 并记 `policy_decision` trace 行（post-hoc 审计）；mid-stream 求值/abort 为 post-v1。
 
 ### 4.2 `ToolGatherBudgets` → `stop_evaluator.budget_exceeded`
 
@@ -536,8 +536,9 @@ DSL `stop_policy.fail.any` 列出但此前无定义。**R11 定义：**
 - [x] **B5：** `decision → runtime_action` 派生映射表落地；`llm_pdca._prepare_skill_context` trace 序列化复用 `execution_gate._policy_decision_to_trace`（修复硬编码 bug）；运行时消费者走 `is_block`/`is_allow`；F18 决策 factory（`fail`/`pause`/`final_success`/`replan`/`continue_`）内聚映射（G13）；`is_allow` 覆盖 `transform`（G10）
 - [x] **可恢复 vs 不可恢复分类（R4）：** evaluator 映射已遵循（`retry_loop→replan`、`fail_fallback→fail`、criteria 未命中→`replan`）；driver 接线后由 `sm.next` 消费生效（P5）
 - [x] `pause` v1 同步降级契约落地（`pause` factory + `degraded_action` 一等字段 G2 + trace 序列化）；evaluator 实际 emit `pause` 为 P5
-- [x] **默认 config（无 success_checks/stop_policy 覆盖）行为与今日 byte-equivalent**（不破坏 streaming / `test_agent_loop.py` / golden trace；785 项 game_engine 测试全绿）
+- [x] **默认 config（无 success_checks/stop_policy 覆盖）行为与今日 byte-equivalent**（不破坏 streaming / `test_agent_loop.py` / golden trace；809 项 game_engine 测试通过，1 项预存 macOS `/var` symlink 环境失败与 policy 无关）
 - [x] 单元测试位于 `backend/tests/game_engine/`
+- [x] **P4 `pattern_match` detector 默认 off 时 byte-equiv**（`test_pattern_match.py` 17 项 + `test_config_wiring.py` 7 项新增；`before_final_answer` 非流式落地，流式 mid-stream post-v1）
 
 ---
 

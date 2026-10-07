@@ -113,7 +113,7 @@ class Domain:
 | `before_skill_activation` | `skill` | Skill body 激活前（F15 `SkillInjection` 内部 hook） | ✅ 是 | [F15](F15_AGENT_SKILL_REGISTRY.md) |
 | `before_tool_call` | `gate` | 单次工具执行前 | ✅ 是 | — |
 | `after_tool_observation` | `gate` | ToolObservation 生成后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
-| `before_final_answer` | `gate` | 最终答复发出前（非流式） | ❌ 未落地（P4 pending） | streaming / 非流式完整拦截延后到 [F18](F18_AGENT_QUALITY_GATES.md)（D6） |
+| `before_final_answer` | `gate` | 最终答复发出前（非流式） | ⚠️ 非流式落地（P4） | `pattern_match` detector（默认 off，byte-equiv）；流式 mid-stream 求值延后到 [F18](F18_AGENT_QUALITY_GATES.md) §4.1（D6/post-v1） |
 | `after_state_execute` | `quality` | `_execute_state` 后、`sm.next` 前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `stop_evaluator`；决策映射为 `runtime.stop_fail` / `event=stagnation` 供 F17 消费（`enable_stop_dimensions` 门控） |
 | `before_terminal` | `quality` | act 锚点 `_detect_tick_emit_deferral` 后、终态前 | ✅ P5-A | [F18](F18_AGENT_QUALITY_GATES.md) `final_success_evaluator`；shadow 记 divergence；enforce 驱动 final success / fail / 外层 draft retry |
 | `per_react_round` | `quality` | 内层 ReAct 结构化 turn 校验后 | ✅ P5-A opt-in | [F18](F18_AGENT_QUALITY_GATES.md) `react_turn_success_evaluator`；随 `require_structured_turn`，写 `react_round_decision` payload |
@@ -175,7 +175,7 @@ class PolicyDecision:
 | `side_effect_level` | `side_effect_level` | `write_high` → `require_approval`（v1 降级 block）；decision 由 `policy.gate.side_effect_defaults`（H1+H5）查表；**fail-closed**：未知 level 或未识别 decision 值（typo）→ `require_approval`（非静默放行） |
 | `data_classification` | `data_classification` | `data_classification ∈ policy.gate.blocked_data_classifications`（H2，默认 `confidential`/`restricted`）→ `require_approval`（v1 降级 block）；`allow_with_transform` 延后到 F18 输出层落地（D5） |
 | `skill_tool_group` | `SkillActivation.allowed_tool_groups` + 命令的 tool group | 命令 tool group ∉ 激活 skill 的 group 并集 → `deny`（D3，默认 off）；层级匹配由 `policy.gate.tool_group_hierarchy`（H4）驱动；运行于 `before_tool_call`，归属 gate 域 |
-| `pattern_match` | `user_message` / `args` | Prompt 注入模式 / 越权短语 |
+| `pattern_match` | `user_message` / `args` / `draft_text` | Prompt 注入模式 / 越权短语（P4 已落地，默认 off，byte-equiv）；`before_tool_call` 匹配 `user_message`+`args`，`before_final_answer` 非流式匹配 `draft_text`；流式 mid-stream 求值 post-v1（[F18](F18_AGENT_QUALITY_GATES.md) §4.1）；命中决策由 `policy.gate.pattern_match_decision`（默认 `require_approval`）驱动 |
 | `pii_scanner` | `ToolObservation` / `final_answer` | v1 规则模式；PII 模式扫描 |
 
 **`quality` 域**（`domains/quality_domain.py`，check_points `after_state_execute` / `before_terminal` / `per_react_round`）：
@@ -331,8 +331,11 @@ quality:
 |--------|------|------|
 | `enable_side_effect_detector` | `true` | 副作用 detector |
 | `enable_data_classification_detector` | `true` | 数据分级 detector |
-| `enable_prompt_fallback` | `true` | pattern_match 命中后降级 rewrite；**inert placeholder**（D-E-B）：P4 `pattern_match` detector 未落地，此 flag 仅加载无消费者；P4 落地前置 `false` 无意义 |
+| `enable_prompt_fallback` | `true` | pattern_match 命中后降级 rewrite；**inert placeholder**（D-E-B/D1-d 决策 B）：P4 `pattern_match` detector 已落地但默认 off；此 flag 控制 prompt 软提示文本（`_POLICY_FALLBACK_PREAMBLE`）是否追加，与 detector 独立（保留为双保险）；P5 移除文本作为独立后续，依赖 Q4 golden trace 验证 |
 | `enable_skill_tool_group_detector` | `false` | D3 group 约束 detector（默认 off，前向兼容；运行于 `before_tool_call`，归属 gate 域） |
+| `enable_pattern_match_detector` | `false` | P4 `pattern_match` detector 开关（默认 off，byte-equiv）；`before_tool_call` 匹配 `user_message`+`args`，`before_final_answer` 非流式匹配 `draft_text`；流式 post-v1 |
+| `pattern_match_patterns` | `[]` | P4 命中正则列表（保留大小写，detector 用 `re.IGNORECASE` 匹配）；空集 = 不拦截（byte-equiv） |
+| `pattern_match_decision` | `"require_approval"` | P4 命中后决策（`allow`/`require_approval`/`deny`）；`allow` = audit-only 不阻断；无效值回退 `require_approval` |
 | `blocked_data_classifications` | `["confidential", "restricted"]` | H2：触发 `require_approval` 的数据分级集；admin 可收紧/放宽（显式空集 `[]` = 不拦截任何分级，仅在键缺失时回退默认） |
 | `tool_group_hierarchy` | `{"read": ["observe", "agent_meta", "identity", "communicate"]}` | H4：父组→子组层级映射；平台本体论，改动需协调 seed（显式空集 `{}` = 无父子层级，仅在键缺失时回退默认） |
 
@@ -403,7 +406,7 @@ v1 各域实例规则通过 Python dataclass + 代码注册（D7），与平台�
 |------------|-------------------------|-----------|------|
 | `before_tool_call` | `_phase_react_loop` 工具 gather 前（经 `PreauthorizedToolExecutor` → `execution_gate` 适配器，非直接 `PolicyEngine` 调用） | ✅ 是 | 适配器收敛（D4）；`active_skill_context` 经 `runtime_tool_ctx.metadata` 传入 |
 | `after_tool_observation` | `_phase_react_loop` 工具结果组装后 | ⚠️ 仅审计 | v1 不 transform；脱敏由 F18 输出层处理（D5） |
-| `before_final_answer` | `_execute_act_state` 最终草稿赋值后 | ❌ 未落地（P4 pending） | v1 代码未插入 `PolicyEngine.evaluate(BEFORE_FINAL_ANSWER)`；`pattern_match` 拦截与 streaming 路径均延后（D6 / P4） |
+| `before_final_answer` | `_execute_act_state` `_detect_tick_emit_deferral` 前（`_evaluate_before_final_answer` helper） | ⚠️ 非流式落地（P4） | v1 代码在 act 锚点调用 `PolicyEngine.evaluate(BEFORE_FINAL_ANSWER)`（`pattern_match` detector，默认 off，byte-equiv）；命中清 draft + `_draft_incomplete` 路由 `fail_fallback`；流式 mid-stream 求值 post-v1（D6 / [F18](F18_AGENT_QUALITY_GATES.md) §4.1） |
 | `before_skill_activation` | `_prepare_skill_context` 内 `SkillInjection.inject(before_activate=...)` hook | ✅ 是 | policy 拒绝 skill 进 `Blocked by policy` 段（D2），不混入 F15 `inactive` 段 |
 
 `_phase_react_loop` 被 Plan / Do / Check-retry Plan 调用，`before_tool_call` / `after_tool_observation` 在所有 react 入口生效。`_execute_act_state` 为 Act 阶段执行体（F17 driver loop 的 act state handler）。
@@ -491,8 +494,8 @@ v1 各域实例规则通过 Python dataclass + 代码注册（D7），与平台�
 | **P1** | `before_tool_call` 实现 `side_effect_level`（`write_high` → block）和 `data_classification`（`confidential`/`restricted` → block）路径；`policy_decision` trace 写入 | 无需依赖 F15 skill group；与现有 `execution_gate` 行为等价升级 |
 | **P2** | `before_skill_activation` hook 接入 `SkillInjection`；policy 拒绝 skill 进入 `Blocked by policy` 段；`policy_decision` trace 记录 | 依赖 F15 manifest 模板已支持 blocked 段（已完成） |
 | **P3** | `tool_group` 层级匹配（`read` 父组包含 `observe`/`agent_meta`/`identity`/`communicate`）落地；`skill_tool_group` detector 在 `before_tool_call` 硬过滤 | **必须在 P1 之后**，否则当前 `allowed_tool_groups: [read]` 的 seed skills 会误拒绝 `whoami`/`agent list`/`task list` 等只读命令 |
-| **P4** | `pattern_match` detector（Prompt 注入 / 越权短语）在 `before_tool_call` 和 `before_final_answer` 拦截 | ⏸ **blocked-on F18 streaming gate**（D-E-B 决策）：`before_final_answer` 的主向量是 final-answer 注入，但 F18 v1 明确不做 mid-stream 求值（§4.1 streaming 张力），非流式插入覆盖不全；`before_tool_call` 已有 `side_effect`/`data_classification` detector，边际价值有限。完整 P4 应与 F18 流式 gate 一同落地，需 pattern 库策展 + golden trace 验证（误伤风险） |
-| **P5** | 后置：F18 输出/流式 gate 落地后，关闭 `policy.enable_prompt_fallback` 并移除 prompt 安全规则文本 | ⏸ **blocked-on P4 + F18**（D-E-B）：`enable_prompt_fallback` 当前为 inert placeholder（仅加载、无 detector 消费）；P4 未落地前置 `false` 无意义。落地前置 `false` 时应 log warning（无 detector 可 fallback） |
+| **P4** | `pattern_match` detector（Prompt 注入 / 越权短语）在 `before_tool_call` 和 `before_final_answer`（非流式）拦截 | ✅ **已落地（默认 off，byte-equiv）**：detector 注册进 gate 域，driver 在 act 锚点 `_detect_tick_emit_deferral` 前调用 `PolicyEngine.evaluate(BEFORE_FINAL_ANSWER)`；命中经 `require_approval`（v1 降级 block）清 draft + `_draft_incomplete` 路由 `fail_fallback`。流式 mid-stream 求值仍 post-v1（F18 §4.1 streaming 张力，首字延迟 + streaming golden trace 锁定）。模式库策展与 shadow 验证为独立后续（见 §5.1 `pattern_match_patterns` 默认空集） |
+| **P5** | 后置：F18 输出/流式 gate 落地后，关闭 `policy.enable_prompt_fallback` 并移除 prompt 安全规则文本 | ⏸ **blocked-on F18 流式 gate + Q4 golden trace**（D-E-B/D1-d 决策 B）：`enable_prompt_fallback` 当前为 inert placeholder（仅控制 `_POLICY_FALLBACK_PREAMBLE` 软提示文本追加，与 P4 detector 独立）；P4 已落地但保留文本为双保险；移除文本需 F18 流式 gate 落地 + Q4 golden trace 验证 AICO 工具选择不退化 |
 
 **v1 最小可交付（MVP）：P0 + P1 + P2。** `tool_group` 硬过滤（P3）在 `read` 父组语义与层级匹配实现后再启用。**P4/P5 延后**（D-E-B）：blocked-on F18 流式 gate，prompt 安全文本保持权威 guard（`enable_prompt_fallback=true`）。
 
