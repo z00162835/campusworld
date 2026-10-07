@@ -271,7 +271,7 @@ quality 域 evaluator 契约详见 [F18](F18_AGENT_QUALITY_GATES.md) §3。
 
 ### 5.1 平台默认（按域，独立配置文件 `backend/config/policy.yaml`）
 
-平台默认规则按域以 Python dataclass 形式注册在 `domains/{skill,gate,quality}_domain.py`，配置仅开关/参数化。policy 配置 **独立于** `settings.yaml`，由专用配置文件 `backend/config/policy.yaml` 承载（当前 **不存在**，需新增），由 `PolicyConfig` 加载器（`backend/app/game_engine/agent_runtime/policy/config.py`）在启动期解析并注入 `DomainRegistry`。
+平台默认规则按域以 Python dataclass 形式注册在 `domains/{skill,gate,quality}_domain.py`，配置仅开关/参数化。policy 配置 **独立于** `settings.yaml`，由专用配置文件 `backend/config/policy.yaml` 承载，由 `PolicyConfig` 加载器（`backend/app/game_engine/agent_runtime/policy/config.py`）在启动期解析并注入 `DomainRegistry`。
 
 **设计理由：** policy 规则（skill/gate/quality 三域开关与阈值）是与应用基础设施配置（DB、auth、logging）正交的关注点，独立文件便于 ops 单独管理、审计 diff、灰度切换，避免与 `settings.yaml` 混杂。
 

@@ -240,7 +240,7 @@ v1 `stop_evaluator` 为既有分支的 **统一前置评估器**：在 `after_st
 
 ### 4.4 消费契约（F18 → F17，解决控制流权威）
 
-> **状态：P5-A 已接线。** 以下流程描述 driver 接线后的目标行为。P5-A 已在三个 F18 check_point 调用 `PolicyEngine.evaluate` 并记录 `quality_decision` trace 行；stop `fail` 经 `runtime.stop_fail` + F17 `*→fail` 任意态终止（D1）；stagnation 经 F17 `*→plan on_event=stagnation` replan / 超限 `*→fail`（D2）；`per_react_round` 写 `ctx.payload['react_round_decision']`（D3，B4 loop 消费未接线）；trace 行复用 `_policy_decision_to_trace`（D4）。新维度经 config 开关默认 off（byte-equivalent）。`final_success_evaluator` 当前 audit/trace-only（`_detect_tick_emit_deferral` 仍为 draft 权威）；`detect_check_replan` 仍内联；B4 loop 消费未接线——这三项为 P5-B 后续（见 §4 收敛点引言 G1-A）。
+> **状态：P5-A/P5-B 已接线。** 以下流程描述 driver 接线后的目标行为。driver 已在三个 F18 check_point 调用 `PolicyEngine.evaluate` 并记录 `quality_decision` trace 行；stop `fail` 经 `runtime.stop_fail` + F17 `*→fail` 任意态终止（D1）；stagnation 经 F17 `*→plan on_event=stagnation` replan / 超限 `*→fail`（D2）；`per_react_round` 写 `ctx.payload['react_round_decision']`（D3，B4 loop 消费已接线 P5-B2）；trace 行复用 `_policy_decision_to_trace`（D4）。新维度经 config 开关默认 off（byte-equivalent）。`final_success_evaluator` 经 `final_success_drive_mode`（off/shadow/enforce）驱动，`enforce` 下驱动控制流（`retry_loop→replan` 经 `act→plan on_event=draft_retry`，D-I-B 已落地）；`detect_check_replan` 已收归 `stop_evaluator`（P5-B1）；B4 loop 消费已接线（P5-B2）。详见 §4 收敛点引言 G1-A。
 
 ```
 # 非 act 态（plan/do/check）：
@@ -536,7 +536,7 @@ DSL `stop_policy.fail.any` 列出但此前无定义。**R11 定义：**
 - [x] **B5：** `decision → runtime_action` 派生映射表落地；`llm_pdca._prepare_skill_context` trace 序列化复用 `execution_gate._policy_decision_to_trace`（修复硬编码 bug）；运行时消费者走 `is_block`/`is_allow`；F18 决策 factory（`fail`/`pause`/`final_success`/`replan`/`continue_`）内聚映射（G13）；`is_allow` 覆盖 `transform`（G10）
 - [x] **可恢复 vs 不可恢复分类（R4）：** evaluator 映射已遵循（`retry_loop→replan`、`fail_fallback→fail`、criteria 未命中→`replan`）；driver 接线后由 `sm.next` 消费生效（P5）
 - [x] `pause` v1 同步降级契约落地（`pause` factory + `degraded_action` 一等字段 G2 + trace 序列化）；evaluator 实际 emit `pause` 为 P5
-- [x] **默认 config（无 success_checks/stop_policy 覆盖）行为与今日 byte-equivalent**（不破坏 streaming / `test_agent_loop.py` / golden trace；642 项 game_engine 测试全绿）
+- [x] **默认 config（无 success_checks/stop_policy 覆盖）行为与今日 byte-equivalent**（不破坏 streaming / `test_agent_loop.py` / golden trace；785 项 game_engine 测试全绿）
 - [x] 单元测试位于 `backend/tests/game_engine/`
 
 ---
