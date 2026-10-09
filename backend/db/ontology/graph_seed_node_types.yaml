@@ -709,6 +709,12 @@ node_types:
       properties:
         current_state:
           type: string
+          enum:
+          - asserted
+          - triaged
+          - linked_goal
+          - resolved
+          - dismissed
           value_kind: dynamic_snapshot
           mutability: runtime
         state_version:
@@ -799,6 +805,14 @@ node_types:
           type: object
           value_kind: static
           mutability: instance_managed
+        actor_provenance:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+        asserted_at:
+          type: string
+          value_kind: static
+          mutability: instance_managed
   goal:
     trait_class: TASK
     trait_mask: 1089
@@ -812,6 +826,12 @@ node_types:
       properties:
         current_state:
           type: string
+          enum:
+          - proposed
+          - accepted
+          - active
+          - satisfied
+          - abandoned
           value_kind: dynamic_snapshot
           mutability: runtime
         state_version:
@@ -824,8 +844,8 @@ node_types:
           mutability: instance_managed
         desired_state:
           type:
+          - object
           - string
-          - 'null'
           value_kind: static
           mutability: instance_managed
         constraints:
@@ -857,6 +877,18 @@ node_types:
           - 'null'
           value_kind: static
           mutability: instance_managed
+        situation_id:
+          type: integer
+          value_kind: static
+          mutability: instance_managed
+        created_by:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+        created_at:
+          type: string
+          value_kind: static
+          mutability: instance_managed
   quest:
     trait_class: TASK
     trait_mask: 1089
@@ -870,6 +902,17 @@ node_types:
       properties:
         current_state:
           type: string
+          enum:
+          - draft
+          - planning
+          - awaiting_decision
+          - executing
+          - verifying
+          - accepted
+          - failed
+          - cancelled
+          - learned
+          - closed
           value_kind: dynamic_snapshot
           mutability: runtime
         state_version:
@@ -890,14 +933,26 @@ node_types:
           mutability: instance_managed
         risk_level:
           type: string
+          enum:
+          - low
+          - normal
+          - high
+          - critical
           value_kind: static
           mutability: instance_managed
         progress:
           type: object
           value_kind: dynamic_snapshot
           mutability: runtime
+        quest_ref:
+          type:
+          - object
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
         plan_graph_summary:
           type:
+          - object
           - string
           - 'null'
           value_kind: static
@@ -924,5 +979,19 @@ node_types:
           type: array
           items:
             type: string
+          value_kind: static
+          mutability: instance_managed
+        outcome_summary:
+          type:
+          - object
+          - 'null'
+          value_kind: dynamic_snapshot
+          mutability: runtime
+        created_by:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+        created_at:
+          type: string
           value_kind: static
           mutability: instance_managed

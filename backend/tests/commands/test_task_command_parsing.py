@@ -277,7 +277,7 @@ def test_situation_create_passes_trigger_provenance_to_service(monkeypatch):
             "--fact-ref",
             "fact:room101-temp",
             "--rule-ref",
-            "quality:comfort-band:v1",
+            "quality:comfort-band@v1",
             "--confidence",
             "0.9",
             "--severity",
@@ -288,8 +288,116 @@ def test_situation_create_passes_trigger_provenance_to_service(monkeypatch):
     assert res.data["id"] == 101
     assert seen["trigger_kind"] == "hard_rule"
     assert seen["fact_refs"] == ["fact:room101-temp"]
-    assert seen["rule_refs"] == ["quality:comfort-band:v1"]
+    assert seen["rule_refs"] == ["quality:comfort-band@v1"]
     assert seen["confidence"] == 0.9
+
+
+@pytest.mark.unit
+def test_goal_create_requires_desired_state_before_service_call(monkeypatch):
+    from app.commands.game.task import semantic_commands
+    from app.commands.game.task.semantic_commands import GoalCommand
+
+    called = False
+
+    def fake_create_goal(**_kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(semantic_commands, "create_goal", fake_create_goal)
+    cmd = GoalCommand()
+    res = cmd.execute(
+        _ctx(permissions=["task.create"]),
+        ["create", "--title", "Restore comfort", "--situation", "1"],
+    )
+
+    assert res.success is False
+    assert called is False
+
+
+@pytest.mark.unit
+def test_goal_create_passes_desired_state_to_service(monkeypatch):
+    from app.commands.game.task import semantic_commands
+    from app.commands.game.task.semantic_commands import GoalCommand
+    from app.services.task.quest_semantic_service import SemanticNodeResult
+
+    seen = {}
+
+    def fake_create_goal(**kwargs):
+        seen.update(kwargs)
+        return SemanticNodeResult(
+            node_id=202,
+            type_code="goal",
+            title=kwargs["title"],
+            attributes={"desired_state": kwargs["desired_state"]},
+        )
+
+    monkeypatch.setattr(semantic_commands, "create_goal", fake_create_goal)
+    cmd = GoalCommand()
+    res = cmd.execute(
+        _ctx(permissions=["task.create"]),
+        [
+            "create",
+            "--title",
+            "Restore comfort",
+            "--situation",
+            "1",
+            "--desired-state",
+            "Room 101 returns to comfort band.",
+        ],
+    )
+
+    assert res.success is True
+    assert seen["desired_state"] == "Room 101 returns to comfort band."
+
+
+@pytest.mark.unit
+def test_quest_show_renders_objectives_and_refs(monkeypatch):
+    from app.commands.game.task import semantic_commands
+    from app.commands.game.task.semantic_commands import QuestCommand
+
+    def fake_show_quest(**_kwargs):
+        return {
+            "quest": {
+                "id": 303,
+                "title": "Restore Room 101",
+                "attributes": {
+                    "policy_refs": ["policy:maintenance_safety@3.2"],
+                    "process_refs": ["process:bearing_response@4"],
+                    "quality_refs": ["quality:post_maintenance@2"],
+                    "case_refs": ["case:AHU-103:2026Q2"],
+                },
+            },
+            "situation": {
+                "id": 101,
+                "assertion": "Room 101 temperature is above comfort band.",
+                "trigger_kind": "hard_rule",
+                "fact_refs": ["fact:room-101-temperature"],
+                "evidence_refs": ["evidence:room-101-temp@1"],
+                "rule_refs": ["quality:comfort-band@1"],
+                "experience_refs": [],
+            },
+            "goal": {"id": 202, "title": "Restore comfort", "attributes": {}},
+            "objectives": [
+                {
+                    "task_id": 404,
+                    "title": "Inspect AHU-3 controls",
+                    "current_state": "claimed",
+                    "objective_kind": "diagnose",
+                    "required_capabilities": ["hvac"],
+                }
+            ],
+            "progress": {"total_objectives": 1, "completed_objectives": 0, "percent": 0},
+        }
+
+    monkeypatch.setattr(semantic_commands, "show_quest", fake_show_quest)
+    cmd = QuestCommand()
+    res = cmd.execute(_ctx(permissions=["task.read"]), ["show", "303"])
+
+    assert res.success is True
+    assert "objectives" in res.message
+    assert "#404 state=claimed kind=diagnose caps=hvac title=Inspect AHU-3 controls" in res.message
+    assert "policy:maintenance_safety@3.2" in res.message
+    assert "quality:comfort-band@1" in res.message
 
 
 # ---------------------------------------------------------------------------

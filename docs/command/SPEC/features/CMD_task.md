@@ -98,7 +98,7 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 |---|---|
 | `situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule\|weak_experience\|manual\|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low\|medium\|high\|critical]` | 创建陈述性 Situation assertion；校验事实依据与 hard/weak/manual/mixed trigger provenance。 |
 | `situation list [--limit N]` / `situation show <id>` | 列表与详情。 |
-| `goal create --title <T> --situation <id> [--priority low\|normal\|high\|urgent]` | 创建 Goal，并写 `GOAL_FOR` 与 `RAISES_GOAL`。 |
+| `goal create --title <T> --situation <id> --desired-state <state> [--priority low\|normal\|high\|urgent]` | 创建 Goal，并写 `GOAL_FOR` 与 `RAISES_GOAL`。 |
 | `goal list [--limit N]` / `goal show <id>` | 列表与详情。 |
 | `quest create --situation <id> --goal <id> --title <T>` | 创建 Quest draft，并写 `RESPONDS_TO` 与 `PURSUES`。 |
 | `quest list [--limit N]` / `quest show <id>` | 展示 Quest、Situation assertion/trigger、Goal、Objectives 与 Progress。 |

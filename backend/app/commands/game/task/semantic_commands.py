@@ -42,6 +42,10 @@ def _parse_float(value: Optional[str]) -> Optional[float]:
         return None
 
 
+def _format_refs(values: List[str]) -> str:
+    return ', '.join(values) if values else '-'
+
+
 class SituationCommand(GameCommand):
     """Command facade for declarative Situation assertions."""
 
@@ -103,9 +107,12 @@ class SituationCommand(GameCommand):
 
     def _do_list(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         parsed = parse_argv(args)
+        actor, err = resolve_principal_or_error(ctx)
+        if err is not None:
+            return err
         try:
             limit = int(parsed.flags.get('limit', '20'))
-            items = list_nodes(type_code='situation', limit=limit)
+            items = list_nodes(type_code='situation', actor=actor, limit=limit)
         except (ValueError, TaskSystemError) as exc:
             if isinstance(exc, TaskSystemError):
                 return task_error_to_result(ctx, exc)
@@ -115,8 +122,11 @@ class SituationCommand(GameCommand):
     def _do_show(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         if not args:
             return usage_result(ctx, 'situation.usage.show', 'situation show <id>')
+        actor, err = resolve_principal_or_error(ctx)
+        if err is not None:
+            return err
         try:
-            data = show_node(node_id=int(args[0]), type_code='situation')
+            data = show_node(node_id=int(args[0]), type_code='situation', actor=actor)
         except ValueError:
             return usage_result(ctx, 'situation.usage.show', 'situation show <id>')
         except TaskSystemError as exc:
@@ -157,8 +167,9 @@ class GoalCommand(GameCommand):
         parsed = parse_argv(args)
         title = parsed.flags.get('title')
         situation_id = _parse_int(parsed.flags.get('situation'))
-        if not title or situation_id is None:
-            return usage_result(ctx, 'goal.usage.create', 'goal create --title <T> --situation <id> [...]')
+        desired_state = parsed.flags.get('desired-state')
+        if not title or situation_id is None or not desired_state:
+            return usage_result(ctx, 'goal.usage.create', 'goal create --title <T> --situation <id> --desired-state <state> [...]')
         actor, err = resolve_principal_or_error(ctx)
         if err is not None:
             return err
@@ -167,7 +178,7 @@ class GoalCommand(GameCommand):
                 title=title,
                 situation_id=situation_id,
                 actor=actor,
-                desired_state=parsed.flags.get('desired-state'),
+                desired_state=desired_state,
                 priority=parsed.flags.get('priority', 'normal'),
                 deadline_at=parsed.flags.get('deadline-at'),
                 acceptance_summary=parsed.flags.get('acceptance-summary'),
@@ -179,8 +190,11 @@ class GoalCommand(GameCommand):
 
     def _do_list(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         parsed = parse_argv(args)
+        actor, err = resolve_principal_or_error(ctx)
+        if err is not None:
+            return err
         try:
-            items = list_nodes(type_code='goal', limit=int(parsed.flags.get('limit', '20')))
+            items = list_nodes(type_code='goal', actor=actor, limit=int(parsed.flags.get('limit', '20')))
         except (ValueError, TaskSystemError) as exc:
             if isinstance(exc, TaskSystemError):
                 return task_error_to_result(ctx, exc)
@@ -190,8 +204,11 @@ class GoalCommand(GameCommand):
     def _do_show(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         if not args:
             return usage_result(ctx, 'goal.usage.show', 'goal show <id>')
+        actor, err = resolve_principal_or_error(ctx)
+        if err is not None:
+            return err
         try:
-            data = show_node(node_id=int(args[0]), type_code='goal')
+            data = show_node(node_id=int(args[0]), type_code='goal', actor=actor)
         except ValueError:
             return usage_result(ctx, 'goal.usage.show', 'goal show <id>')
         except TaskSystemError as exc:
@@ -258,8 +275,11 @@ class QuestCommand(GameCommand):
 
     def _do_list(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         parsed = parse_argv(args)
+        actor, err = resolve_principal_or_error(ctx)
+        if err is not None:
+            return err
         try:
-            items = list_nodes(type_code='quest', limit=int(parsed.flags.get('limit', '20')))
+            items = list_nodes(type_code='quest', actor=actor, limit=int(parsed.flags.get('limit', '20')))
         except (ValueError, TaskSystemError) as exc:
             if isinstance(exc, TaskSystemError):
                 return task_error_to_result(ctx, exc)
@@ -269,20 +289,42 @@ class QuestCommand(GameCommand):
     def _do_show(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         if not args:
             return usage_result(ctx, 'quest.usage.show', 'quest show <id>')
+        actor, err = resolve_principal_or_error(ctx)
+        if err is not None:
+            return err
         try:
-            data = show_quest(quest_id=int(args[0]))
+            data = show_quest(quest_id=int(args[0]), actor=actor)
         except ValueError:
             return usage_result(ctx, 'quest.usage.show', 'quest show <id>')
         except TaskSystemError as exc:
             return task_error_to_result(ctx, exc)
         quest = data['quest']
         progress = data['progress']
+        situation = data['situation']
+        quest_attrs = quest.get('attributes') or {}
         lines = [
             i18n(ctx, 'quest.show.title', default='Quest #{id}', id=quest['id']),
-            f"  situation      : #{data['situation']['id']} {data['situation']['assertion']}",
+            f"  situation      : #{situation['id']} {situation['assertion']}",
+            f"  trigger_kind   : {situation.get('trigger_kind')}",
+            f"  fact_refs      : {_format_refs(situation.get('fact_refs') or [])}",
+            f"  evidence_refs  : {_format_refs(situation.get('evidence_refs') or [])}",
+            f"  rule_refs      : {_format_refs(situation.get('rule_refs') or [])}",
+            f"  experience_refs: {_format_refs(situation.get('experience_refs') or [])}",
             f"  goal           : #{data['goal']['id']} {data['goal']['title']}",
             f"  progress       : {progress['completed_objectives']}/{progress['total_objectives']} ({progress['percent']}%)",
+            f"  policy_refs    : {_format_refs(quest_attrs.get('policy_refs') or [])}",
+            f"  process_refs   : {_format_refs(quest_attrs.get('process_refs') or [])}",
+            f"  quality_refs   : {_format_refs(quest_attrs.get('quality_refs') or [])}",
+            f"  case_refs      : {_format_refs(quest_attrs.get('case_refs') or [])}",
+            "  objectives     :",
         ]
+        objectives = data.get('objectives') or []
+        if not objectives:
+            lines.append('    -')
+        for obj in objectives:
+            caps = _format_refs(obj.get('required_capabilities') or [])
+            kind = obj.get('objective_kind') or '-'
+            lines.append(f"    #{obj['task_id']} state={obj.get('current_state') or '-'} kind={kind} caps={caps} title={obj.get('title') or '-'}")
         return CommandResult.success_result('\n'.join(lines), data=data)
 
 

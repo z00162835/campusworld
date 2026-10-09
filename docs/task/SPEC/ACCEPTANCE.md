@@ -80,7 +80,7 @@
 - [x] R0：`task create --scoped-at` 落 `SCOPED_AT`；owner 关系/assignment 可审计。
 - [x] R0：World UI 不再生成未实现的任务动作，或相应事件已实现。
 - [x] R1：`situation / goal / quest` 节点类型与核心关系注册完成。
-- [x] R1：Quest 可关联现有 `task` 作为 Objective，`quest show` 可展示 Situation、Goal、Objectives、Progress。
+- [x] R1：Quest 可关联现有 `task` 作为 Objective，`quest show` 可展示 Situation、Goal、Objectives、Progress；QI1/QI4 enforcement 与 R1 图节点完整性契约已补齐。
 - [ ] R2：Quest plan revision 与 deterministic policy gate 可审计。
 - [ ] R3：Evidence / Quality / Verification 对象可支撑 `quest accept`。
 - [ ] R4：Quest outcome 可生成 LearningProposal，且不会直接修改正式 Policy / SOP / QualitySpec。

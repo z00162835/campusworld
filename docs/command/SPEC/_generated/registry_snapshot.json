@@ -1,8 +1,8 @@
 {
-  "git_commit": "9c27e307b10b8dbc96b32473fa1a1ac80129f0c2",
-  "generated_at_utc": "2026-05-31T09:08:42.927711+00:00",
+  "git_commit": "777f7817f6e9ee3e6e758fd313f1fbefec14850a",
+  "generated_at_utc": "2026-10-09T13:57:40.962987+00:00",
   "initialize_commands_ok": true,
-  "command_count": 36,
+  "command_count": 39,
   "commands": [
     {
       "name": "agent",
@@ -19,46 +19,94 @@
             "arg_prefix": [
               "list"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "agent_meta"
+            ]
           },
           {
             "arg_prefix": [
               "show"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "agent_meta"
+            ]
           },
           {
             "arg_prefix": [
               "status"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "tool"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": null
           },
           {
             "arg_prefix": [
               "tool",
               "add"
             ],
-            "interaction_profile": "mutate"
+            "interaction_profile": "mutate",
+            "tool_groups": null
           },
           {
             "arg_prefix": [
               "tool",
               "del"
             ],
-            "interaction_profile": "mutate"
+            "interaction_profile": "mutate",
+            "tool_groups": null
           }
         ],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "npc_agent"
+        ],
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -72,11 +120,23 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": null,
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -98,6 +158,7 @@
         "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
@@ -105,7 +166,67 @@
         "routing_hint_i18n": {
           "zh-CN": "create 会改变系统状态。示例/语法问题应使用 help create；仅在明确执行且确认后调用。",
           "en-US": "create mutates system state. Example/syntax requests should use `help create`; call only with explicit execution intent and confirmation."
-        }
+        },
+        "side_effect_level": "write_high",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "description": "entity kind to create"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "created_id": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT",
+                "NOT_AVAILABLE"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "building",
+          "world_object"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -125,11 +246,23 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": null,
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -149,11 +282,44 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -168,14 +334,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -190,14 +393,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -208,14 +448,52 @@
       "class": "app.commands.game.enter_world_command.EnterWorldCommand",
       "file": "backend/app/commands/game/enter_world_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "world",
+          "world_entrance"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -235,11 +513,44 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -254,14 +565,85 @@
       "class": "app.commands.game.direction_command.MovementCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
+      }
+    },
+    {
+      "name": "goal",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "goals"
+      ],
+      "registry_aliases": [
+        "goals"
+      ],
+      "class": "app.commands.game.task.semantic_commands.GoalCommand",
+      "file": "backend/app/commands/game/task/semantic_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": null,
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -281,11 +663,43 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "none",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Positional arguments; args[0] is the command name to get help for (e.g. [\"task\"])."
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "help_text": {
+              "type": "string"
+            }
+          }
+        },
+        "error_schema": null,
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -296,14 +710,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -318,14 +769,50 @@
       "class": "app.commands.game.leave_world_command.LeaveWorldCommand",
       "file": "backend/app/commands/game/leave_world_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "world",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -339,11 +826,23 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": null,
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -363,11 +862,74 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "none",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "target": {
+              "type": "string",
+              "description": "optional target name or disambiguation index"
+            }
+          }
+        },
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "room_name": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "exits": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "objects": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "data_classification": "public",
+        "data_scope": [
+          "room",
+          "world_object"
+        ],
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -382,14 +944,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -404,14 +1003,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -426,14 +1062,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -455,20 +1128,64 @@
             "arg_prefix": [
               "list"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "communicate"
+            ]
           },
           {
             "arg_prefix": [
               "view"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "communicate"
+            ]
           }
         ],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_high",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "system_notice"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -483,14 +1200,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -508,11 +1262,57 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "none",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
+      }
+    },
+    {
+      "name": "quest",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "quests"
+      ],
+      "registry_aliases": [
+        "quests"
+      ],
+      "class": "app.commands.game.task.semantic_commands.QuestCommand",
+      "file": "backend/app/commands/game/task/semantic_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "read",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": null,
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -529,14 +1329,60 @@
       "class": "app.commands.system_commands.QuitCommand",
       "file": "backend/app/commands/system_commands.py",
       "tool_semantics": {
+        "interaction_profile": "mutate",
+        "semantic_pending": false,
+        "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "informational",
+        "routing_hint": null,
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "mutate"
+        ]
+      }
+    },
+    {
+      "name": "situation",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "situations"
+      ],
+      "registry_aliases": [
+        "situations"
+      ],
+      "class": "app.commands.game.task.semantic_commands.SituationCommand",
+      "file": "backend/app/commands/game/task/semantic_commands.py",
+      "tool_semantics": {
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": null,
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -551,14 +1397,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -573,14 +1456,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -595,14 +1515,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -616,11 +1573,48 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "public",
+        "data_scope": [
+          "room",
+          "building",
+          "building_floor"
+        ],
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -640,11 +1634,25 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": true,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "internal",
+        "data_scope": [
+          "account"
+        ],
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -666,15 +1674,22 @@
             "arg_prefix": [
               "list"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "show"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           }
         ],
+        "default_profile_when_no_subcommand": "read",
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
@@ -682,7 +1697,44 @@
         "routing_hint_i18n": {
           "zh-CN": "若用户问 task 的例子/语法/用法，先走 help task（或 primer）；不要把示例请求当作执行请求。仅在用户明确执行且确认后才可调用会改状态的 task 子命令。",
           "en-US": "For task examples/syntax/usage, route to `help task` (or primer) first; do not treat example requests as execute intent. Call state-changing task subcommands only after explicit execution intent and confirmation."
-        }
+        },
+        "side_effect_level": "write_high",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "task"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -700,11 +1752,23 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "none",
+        "idempotent": true,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -718,11 +1782,23 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -737,14 +1813,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -762,11 +1875,23 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "none",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "public",
+        "data_scope": null,
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -781,14 +1906,51 @@
       "class": "app.commands.game.direction_command.FixedDirectionCommand",
       "file": "backend/app/commands/game/direction_command.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_low",
+        "idempotent": false,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "NOT_FOUND",
+                "NOT_AVAILABLE",
+                "POLICY_DENIED"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "room",
+          "character"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     },
     {
@@ -802,11 +1964,25 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": true,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "internal",
+        "data_scope": [
+          "account"
+        ],
+        "tool_groups": [
+          "read"
+        ]
       }
     },
     {
@@ -820,11 +1996,25 @@
         "interaction_profile": "read",
         "semantic_pending": false,
         "subcommand_profiles": [],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "informational",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "read",
+        "idempotent": true,
+        "deterministic": true,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": null,
+        "data_classification": "public",
+        "data_scope": [
+          "account"
+        ],
+        "tool_groups": [
+          "identity"
+        ]
       }
     },
     {
@@ -846,54 +2036,114 @@
             "arg_prefix": [
               "list"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "status"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "validate"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "bridge",
               "list"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "bridge",
               "validate"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "content",
               "validate"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           },
           {
             "arg_prefix": [
               "content",
               "diff"
             ],
-            "interaction_profile": "read"
+            "interaction_profile": "read",
+            "tool_groups": [
+              "observe"
+            ]
           }
         ],
+        "default_profile_when_no_subcommand": null,
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
-        "routing_hint_i18n": null
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_high",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT",
+                "NOT_AVAILABLE"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "world"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
       }
     }
   ]

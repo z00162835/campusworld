@@ -83,6 +83,24 @@ def _make_actor(session, *, name: str, kind: str = "user") -> int:
     return int(row[0])
 
 
+def _make_ref_node(session, *, name: str, semantic_ref: str, type_code: str = "default_object") -> int:
+    row = session.execute(
+        text(
+            """
+            INSERT INTO nodes (type_id, type_code, name, attributes, is_active, is_public)
+            SELECT id, type_code, :name,
+                   jsonb_build_object('semantic_ref', :semantic_ref, 'key', :semantic_ref),
+                   TRUE, FALSE
+              FROM node_types WHERE type_code = :type_code
+            RETURNING id
+            """
+        ),
+        {"name": name, "semantic_ref": semantic_ref, "type_code": type_code},
+    ).first()
+    session.commit()
+    return int(row[0])
+
+
 # ---------------------------------------------------------------------------
 # I1, I4, I5, I6 — happy path + idempotency
 # ---------------------------------------------------------------------------
@@ -203,7 +221,7 @@ def test_quest_semantic_shell_links_task_objective_and_scope(session):
         subject_id=subject_id,
         trigger_kind="hard_rule",
         fact_refs=["fact:room-101-temperature"],
-        rule_refs=["quality:comfort-band:v1"],
+        rule_refs=["quality:comfort-band@v1"],
         db_session=session,
     )
     goal = create_goal(
@@ -244,7 +262,7 @@ def test_quest_semantic_shell_links_task_objective_and_scope(session):
             """
         ),
         {
-            "types": ["ABOUT", "GOAL_FOR", "RAISES_GOAL", "RESPONDS_TO", "PURSUES", "HAS_OBJECTIVE", "SCOPED_AT", "OWNED_BY"],
+            "types": ["ABOUT", "GOAL_FOR", "RAISES_GOAL", "RESPONDS_TO", "PURSUES", "REALIZED_BY", "HAS_OBJECTIVE", "SCOPED_AT", "OWNED_BY"],
             "situation_id": situation.node_id,
             "goal_id": goal.node_id,
             "quest_id": quest.node_id,
@@ -259,15 +277,136 @@ def test_quest_semantic_shell_links_task_objective_and_scope(session):
     assert ("RAISES_GOAL", situation.node_id, goal.node_id) in rel_set
     assert ("RESPONDS_TO", quest.node_id, situation.node_id) in rel_set
     assert ("PURSUES", quest.node_id, goal.node_id) in rel_set
+    assert ("REALIZED_BY", goal.node_id, quest.node_id) in rel_set
     assert ("HAS_OBJECTIVE", quest.node_id, task.task_id) in rel_set
+    assert ("OWNED_BY", situation.node_id, actor_id) in rel_set
+    assert ("OWNED_BY", goal.node_id, actor_id) in rel_set
+    assert ("OWNED_BY", quest.node_id, actor_id) in rel_set
     assert ("SCOPED_AT", task.task_id, subject_id) in rel_set
     assert ("OWNED_BY", task.task_id, actor_id) in rel_set
 
-    quest_view = show_quest(quest_id=quest.node_id, db_session=session)
+    quest_view = show_quest(quest_id=quest.node_id, actor=actor, db_session=session)
+    assert situation.attributes["current_state"] == "asserted"
+    assert goal.attributes["current_state"] == "proposed"
+    assert quest.attributes["current_state"] == "draft"
+    assert "progress" not in quest.attributes
+    assert quest.attributes["outcome_summary"] == {}
     assert quest_view["situation"]["assertion"] == "Room 101 temperature is above the comfort band."
     assert quest_view["goal"]["id"] == goal.node_id
     assert quest_view["objectives"][0]["task_id"] == task.task_id
     assert quest_view["progress"]["total_objectives"] == 1
+    assert quest_view["quest"]["attributes"]["progress"]["total_objectives"] == 1
+
+
+def test_semantic_nodes_are_visible_only_to_owner_or_admin(session):
+    from app.services.task.errors import ReferenceNotFound
+    from app.services.task.permissions import Principal
+    from app.services.task.quest_semantic_service import create_situation, list_nodes, show_node
+
+    owner_id = _make_actor(session, name=f"semantic-owner-{uuid.uuid4()}")
+    other_id = _make_actor(session, name=f"semantic-other-{uuid.uuid4()}")
+    owner = Principal(id=owner_id, kind="user")
+    other = Principal(id=other_id, kind="user")
+    admin = Principal(id=other_id, kind="user", permissions=frozenset({"task.admin"}))
+
+    situation = create_situation(
+        title="Private situation",
+        assertion="Only the owner should see this situation.",
+        actor=owner,
+        trigger_kind="manual",
+        db_session=session,
+    )
+
+    owner_items = list_nodes(type_code="situation", actor=owner, db_session=session)
+    other_items = list_nodes(type_code="situation", actor=other, db_session=session)
+    admin_items = list_nodes(type_code="situation", actor=admin, db_session=session)
+
+    assert situation.node_id in {int(item["id"]) for item in owner_items}
+    assert situation.node_id not in {int(item["id"]) for item in other_items}
+    assert situation.node_id in {int(item["id"]) for item in admin_items}
+    assert show_node(node_id=situation.node_id, type_code="situation", actor=owner, db_session=session)["id"] == situation.node_id
+    with pytest.raises(ReferenceNotFound):
+        show_node(node_id=situation.node_id, type_code="situation", actor=other, db_session=session)
+
+
+def test_semantic_refs_resolve_to_graph_edges_when_nodes_exist(session):
+    from app.services.task.permissions import Principal
+    from app.services.task.quest_semantic_service import create_goal, create_quest, create_situation
+
+    actor_id = _make_actor(session, name=f"resolver-actor-{uuid.uuid4()}")
+    subject_id = _make_actor(session, name=f"resolver-subject-{uuid.uuid4()}")
+    evidence_id = _make_ref_node(session, name="Temperature evidence", semantic_ref="evidence:room-101-temp@1")
+    rule_id = _make_ref_node(session, name="Comfort rule", semantic_ref="quality:comfort-band@1")
+    experience_id = _make_ref_node(session, name="After-hours drift case", semantic_ref="case:after-hours-drift@1")
+    policy_id = _make_ref_node(session, name="Maintenance policy", semantic_ref="policy:maintenance_safety@3.2")
+    process_id = _make_ref_node(session, name="Bearing response", semantic_ref="process:bearing_response@4")
+    quality_id = _make_ref_node(session, name="Post-maintenance quality", semantic_ref="quality:post_maintenance@2")
+    case_id = _make_ref_node(session, name="Prior AHU case", semantic_ref="case:AHU-103:2026Q2")
+    actor = Principal(id=actor_id, kind="user")
+
+    situation = create_situation(
+        title="Room over comfort band",
+        assertion="Room 101 temperature is above the comfort band.",
+        actor=actor,
+        subject_id=subject_id,
+        trigger_kind="mixed",
+        evidence_refs=["evidence:room-101-temp@1"],
+        rule_refs=["quality:comfort-band@1"],
+        experience_refs=["case:after-hours-drift@1"],
+        db_session=session,
+    )
+    goal = create_goal(
+        title="Restore comfort",
+        situation_id=situation.node_id,
+        actor=actor,
+        desired_state="Room 101 returns to comfort band.",
+        db_session=session,
+    )
+    quest = create_quest(
+        title="Resolve comfort issue",
+        situation_id=situation.node_id,
+        goal_id=goal.node_id,
+        actor=actor,
+        policy_refs=["policy:maintenance_safety@3.2"],
+        process_refs=["process:bearing_response@4"],
+        quality_refs=["quality:post_maintenance@2"],
+        case_refs=["case:AHU-103:2026Q2"],
+        db_session=session,
+    )
+
+    rels = session.execute(
+        text(
+            """
+            SELECT type_code, source_id, target_id, attributes
+              FROM relationships
+             WHERE source_id IN (:situation_id, :quest_id)
+               AND type_code = ANY(:types)
+               AND is_active = TRUE
+            """
+        ),
+        {
+            "situation_id": situation.node_id,
+            "quest_id": quest.node_id,
+            "types": [
+                "SUPPORTED_BY",
+                "TRIGGERED_BY_RULE",
+                "TRIGGERED_BY_EXPERIENCE",
+                "GOVERNED_BY",
+                "GUIDED_BY",
+                "MEASURED_BY",
+                "INFORMED_BY",
+            ],
+        },
+    ).fetchall()
+    rel_set = {(row.type_code, int(row.source_id), int(row.target_id)) for row in rels}
+    assert ("SUPPORTED_BY", situation.node_id, evidence_id) in rel_set
+    assert ("TRIGGERED_BY_RULE", situation.node_id, rule_id) in rel_set
+    assert ("TRIGGERED_BY_EXPERIENCE", situation.node_id, experience_id) in rel_set
+    assert ("GOVERNED_BY", quest.node_id, policy_id) in rel_set
+    assert ("GUIDED_BY", quest.node_id, process_id) in rel_set
+    assert ("MEASURED_BY", quest.node_id, quality_id) in rel_set
+    assert ("INFORMED_BY", quest.node_id, case_id) in rel_set
+    assert any(row.attributes.get("semantic_ref") == "policy:maintenance_safety@3.2" for row in rels)
 
 
 def test_idempotent_replay_does_not_double_write(session):

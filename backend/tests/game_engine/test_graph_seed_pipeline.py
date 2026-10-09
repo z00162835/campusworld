@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 from typing import Any, Dict, FrozenSet
 
 import pytest
+import yaml
 from sqlalchemy import text
 
 from app.game_engine.graph_seed.errors import GraphSeedError
@@ -47,6 +49,54 @@ def test_hicampus_profile_maps_furniture_one_to_one():
     from app.games.hicampus.package.graph_profile import HiCampusGraphProfile
 
     assert HiCampusGraphProfile().map_node_type("furniture") == "furniture"
+
+
+@pytest.mark.game
+@pytest.mark.unit
+def test_quest_semantic_shell_yaml_schema_contract():
+    path = Path(__file__).resolve().parents[2] / "db" / "ontology" / "graph_seed_node_types.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    node_types = doc.get("node_types") or {}
+
+    situation_props = node_types["situation"]["schema_definition"]["properties"]
+    goal_props = node_types["goal"]["schema_definition"]["properties"]
+    quest_props = node_types["quest"]["schema_definition"]["properties"]
+
+    assert situation_props["current_state"]["enum"] == [
+        "asserted",
+        "triaged",
+        "linked_goal",
+        "resolved",
+        "dismissed",
+    ]
+    assert "actor_provenance" in situation_props
+    assert "asserted_at" in situation_props
+
+    assert goal_props["current_state"]["enum"] == [
+        "proposed",
+        "accepted",
+        "active",
+        "satisfied",
+        "abandoned",
+    ]
+    assert "situation_id" in goal_props
+    assert "created_by" in goal_props
+
+    assert quest_props["current_state"]["enum"] == [
+        "draft",
+        "planning",
+        "awaiting_decision",
+        "executing",
+        "verifying",
+        "accepted",
+        "failed",
+        "cancelled",
+        "learned",
+        "closed",
+    ]
+    assert quest_props["risk_level"]["enum"] == ["low", "normal", "high", "critical"]
+    assert "quest_ref" in quest_props
+    assert "outcome_summary" in quest_props
 
 
 class _MiniWorldProfile:
@@ -587,6 +637,12 @@ def test_ensure_graph_seed_ontology_registers_quest_semantic_shell_types():
                     "RESPONDS_TO",
                     "PURSUES",
                     "HAS_OBJECTIVE",
+                    "REALIZED_BY",
+                    "GOVERNED_BY",
+                    "GUIDED_BY",
+                    "MEASURED_BY",
+                    "INFORMED_BY",
+                    "PRODUCED",
                     "OWNED_BY",
                     "SCOPED_AT",
                 ]
@@ -606,6 +662,12 @@ def test_ensure_graph_seed_ontology_registers_quest_semantic_shell_types():
         "RESPONDS_TO",
         "PURSUES",
         "HAS_OBJECTIVE",
+        "REALIZED_BY",
+        "GOVERNED_BY",
+        "GUIDED_BY",
+        "MEASURED_BY",
+        "INFORMED_BY",
+        "PRODUCED",
         "OWNED_BY",
         "SCOPED_AT",
     }

@@ -125,6 +125,36 @@
 - [x] 注册 `situation / goal / quest` 节点类型与 `RESPONDS_TO / PURSUES / HAS_OBJECTIVE` 关系。
 - [x] `task.attributes.quest_id` 与 Quest objective rollup 一致。
 - [x] 新增 `quest show/list`，能展示 Situation、Goal、Objectives、Progress。
+- [x] R1 图节点完整性契约（F06 §9.1）：`OWNED_BY` 边（system 例外）、service 写入属性全量注册进 `schema_definition.properties`、semantic ref resolver 补边（`SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY`）、`REALIZED_BY / PRODUCED` 等 6 关系类型注册。
+
+### R1 评审跟进（2026-10-09 F06 一致性评审）
+
+> 来源：两轮 F06 SPEC ↔ 实现一致性评审。P1/P2 已裁决并完成 R1 对齐；P3 保留为后续整理项。
+
+**P1 — 已完成**
+
+- [x] QI1 后半（F06 §8）：`create_goal` 强制 `desired_state` 非空；R1 允许自然语言摘要。
+- [x] `quest.attributes.progress` 双真源（F06 §5.3）：创建时不再写持久 progress；`show_quest` 返回派生 progress，并在 SPEC 注明 progress 是派生视图。
+- [x] `quest show` SSH 文本渲染补齐 objectives 逐行与 situation evidence/trigger refs。
+- [x] QI4 版本 pin（F06 §8）：治理类 ref（`rule_refs / policy_refs / process_refs / quality_refs`）强制 `namespace:key@version` 格式校验。
+
+**P2 — 已完成或降级**
+
+- [x] Situation 状态与边漂移（F06 §6.1）：SPEC 注明 R1 只写初始状态，生命周期推进由 R2+ 状态机补齐。
+- [x] 语义壳对象可见性/RBAC：R1 使用 `OWNED_BY` 图边作为最小可见性锚点；`list/show` 按 owner 过滤，`task.admin/system` 可读全部。
+- [x] Resolver 解析优先级文档化（F06 §9.1）：显式 id → 精确属性引用 → key/code+version；未解析/多候选时输出 English debug log 留痕。
+- [x] `REALIZED_BY / PRODUCED` 注册理由修正（F06 §9.1 注记）：`REALIZED_BY` 由 `create_quest` 直写；`PRODUCED` R1 仅注册，R2+ outcome 流程启用。
+- [ ] Quest 边度预期（F06 §5.3 或 §9.1）：补 Objective 数量上限/边度说明，防 supernode（对齐 D1 的 Neo4j 教训）。
+- [x] TASK trait 检索说明（F06 §9.1）：补"按 TASK trait_class/trait_mask 检索须同时按 `type_code` 过滤"，避免 selector/检索误命中 situation/goal/quest（三者与 `task` 共用 `trait_mask=1089`）。
+
+**P3 — 顺手修**
+
+- [ ] `create_quest` 移除或忽略 `outcome_summary` 创建参数（F06 §5.3：R1 创建时为空，验证/关闭阶段再写入）。
+- [ ] `progress` 统计拆分 `terminal` vs `succeeded`：`failed/cancelled` 不计入 `completed_objectives`，避免 Mission Card 误读。
+- [ ] resolver 三函数去下划线转正（`_resolve_semantic_node_ref` 已入 `__all__` 但带私有前缀）；`quest_semantic_service` 对 `task_state_machine._insert_relationship / _load_node_ref / _transaction` 的私有导入提升为公开 helper。
+- [ ] `business_impact` YAML schema 与 F06 §5.1 `string/object` 对齐（当前仅 `string/null`）。
+- [ ] `task show` 补 Evidence requirements / Quality gate status 显示，或 F06 §10.2 给这两项标注阶段（`--evidence-required` 已标 R2+）。
+- [ ] Resolver 查询性能：R2 评估 GIN 索引或按候选 `type_code` 预过滤（当前每 ref 一次 8 条件 `attributes->>` OR 全表扫描）。
 
 ### R2-R4 Governed Runtime
 

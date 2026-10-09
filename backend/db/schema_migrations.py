@@ -969,6 +969,12 @@ def ensure_graph_seed_ontology(engine) -> None:
             ("RESPONDS_TO", "响应情境", "app.models.graph.Relationship", "TASK", TASK),
             ("PURSUES", "追求目标", "app.models.graph.Relationship", "TASK", TASK),
             ("HAS_OBJECTIVE", "包含任务目标", "app.models.graph.Relationship", "TASK", TASK),
+            ("REALIZED_BY", "由任务线实现", "app.models.graph.Relationship", "TASK", TASK),
+            ("GOVERNED_BY", "受规则治理", "app.models.graph.Relationship", "TASK", TASK),
+            ("GUIDED_BY", "由流程指导", "app.models.graph.Relationship", "TASK", TASK),
+            ("MEASURED_BY", "由质量标准衡量", "app.models.graph.Relationship", "TASK", TASK),
+            ("INFORMED_BY", "由案例经验提供信息", "app.models.graph.Relationship", "TASK", TASK),
+            ("PRODUCED", "产出结果", "app.models.graph.Relationship", "TASK", TASK),
             ("OWNED_BY", "由账号拥有", "app.models.graph.Relationship", "TASK", TASK),
             ("SCOPED_AT", "作用于节点", "app.models.graph.Relationship", "TASK", TASK),
         ]

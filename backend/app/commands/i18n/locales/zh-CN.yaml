@@ -279,7 +279,7 @@ commands:
     goal:
       usage:
         root: "goal <create|list|show> [参数]"
-        create: "goal create --title <T> --situation <id> [--priority low|normal|high|urgent]"
+        create: "goal create --title <T> --situation <id> --desired-state <state> [--priority low|normal|high|urgent]"
         list: "goal list [--limit N]"
         show: "goal show <id>"
       create:
