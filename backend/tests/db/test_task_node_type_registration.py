@@ -237,3 +237,10 @@ def test_goal_desired_state_schema_is_not_nullable():
     ov = load_graph_seed_node_type_overrides()
     desired_state_type = ov["goal"]["schema_definition"]["properties"]["desired_state"]["type"]
     assert set(desired_state_type) == {"object", "string"}
+
+
+@pytest.mark.unit
+def test_situation_business_impact_schema_matches_spec():
+    ov = load_graph_seed_node_type_overrides()
+    business_impact_type = ov["situation"]["schema_definition"]["properties"]["business_impact"]["type"]
+    assert set(business_impact_type) == {"object", "string", "null"}

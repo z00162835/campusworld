@@ -7,11 +7,12 @@ import pytest
 
 from app.services.task.errors import PreconditionFailed
 from app.services.task.quest_semantic_service import (
-    _explicit_node_id_ref,
-    _resolve_semantic_node_ref,
-    _split_semantic_ref,
     create_goal,
     create_quest,
+    explicit_node_id_ref,
+    resolve_semantic_node_ref,
+    split_semantic_ref,
+    summarize_objective_progress,
     validate_situation_semantics,
 )
 
@@ -150,26 +151,40 @@ def test_quest_governance_refs_must_be_version_pinned_before_db_access():
 
 
 @pytest.mark.unit
+def test_objective_progress_splits_terminal_and_succeeded_states():
+    progress = summarize_objective_progress(["done", "failed", "cancelled", "claimed"])
+
+    assert progress["total_objectives"] == 4
+    assert progress["terminal_objectives"] == 3
+    assert progress["completed_objectives"] == 1
+    assert progress["succeeded_objectives"] == 1
+    assert progress["failed_objectives"] == 1
+    assert progress["cancelled_objectives"] == 1
+    assert progress["percent"] == 75
+    assert progress["success_percent"] == 25
+
+
+@pytest.mark.unit
 def test_semantic_ref_parser_supports_namespace_key_version():
-    assert _split_semantic_ref("policy:maintenance_safety@3.2") == (
+    assert split_semantic_ref("policy:maintenance_safety@3.2") == (
         "policy",
         "maintenance_safety",
         "3.2",
     )
-    assert _split_semantic_ref("case:AHU-103:2026Q2") == (
+    assert split_semantic_ref("case:AHU-103:2026Q2") == (
         "case",
         "AHU-103:2026Q2",
         None,
     )
-    assert _split_semantic_ref("plain-key") == (None, "plain-key", None)
+    assert split_semantic_ref("plain-key") == (None, "plain-key", None)
 
 
 @pytest.mark.unit
 def test_explicit_node_id_ref_parser():
-    assert _explicit_node_id_ref("123") == 123
-    assert _explicit_node_id_ref("node:123") == 123
-    assert _explicit_node_id_ref("#123") == 123
-    assert _explicit_node_id_ref("policy:123") is None
+    assert explicit_node_id_ref("123") == 123
+    assert explicit_node_id_ref("node:123") == 123
+    assert explicit_node_id_ref("#123") == 123
+    assert explicit_node_id_ref("policy:123") is None
 
 
 @pytest.mark.unit
@@ -188,7 +203,7 @@ def test_namespaced_semantic_ref_does_not_fallback_to_unrelated_key_match():
         def execute(self, *_args, **_kwargs):
             return FakeResult()
 
-    assert _resolve_semantic_node_ref(FakeSession(), "policy:maintenance_safety@3.2") is None
+    assert resolve_semantic_node_ref(FakeSession(), "policy:maintenance_safety@3.2") is None
 
 
 @pytest.mark.unit
@@ -207,4 +222,4 @@ def test_namespaced_semantic_ref_accepts_exact_ref_across_storage_node_types():
         def execute(self, *_args, **_kwargs):
             return FakeResult()
 
-    assert _resolve_semantic_node_ref(FakeSession(), "policy:maintenance_safety@3.2") == 42
+    assert resolve_semantic_node_ref(FakeSession(), "policy:maintenance_safety@3.2") == 42

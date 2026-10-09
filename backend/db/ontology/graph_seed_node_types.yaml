@@ -798,6 +798,7 @@ node_types:
         business_impact:
           type:
           - string
+          - object
           - 'null'
           value_kind: static
           mutability: instance_managed

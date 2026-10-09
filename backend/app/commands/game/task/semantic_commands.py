@@ -311,7 +311,7 @@ class QuestCommand(GameCommand):
             f"  rule_refs      : {_format_refs(situation.get('rule_refs') or [])}",
             f"  experience_refs: {_format_refs(situation.get('experience_refs') or [])}",
             f"  goal           : #{data['goal']['id']} {data['goal']['title']}",
-            f"  progress       : {progress['completed_objectives']}/{progress['total_objectives']} ({progress['percent']}%)",
+            f"  progress       : terminal={progress['terminal_objectives']}/{progress['total_objectives']} ({progress['percent']}%) succeeded={progress['completed_objectives']} ({progress['success_percent']}%)",
             f"  policy_refs    : {_format_refs(quest_attrs.get('policy_refs') or [])}",
             f"  process_refs   : {_format_refs(quest_attrs.get('process_refs') or [])}",
             f"  quality_refs   : {_format_refs(quest_attrs.get('quality_refs') or [])}",

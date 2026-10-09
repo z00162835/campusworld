@@ -253,6 +253,8 @@ R1 只保存可审计引用和轻量摘要，不实现完整 Policy Gate、Evide
 | `INFORMED_BY` | `quest -> case` | 历史经验 |
 | `PRODUCED` | `quest -> evidence/outcome/lesson` | 证据与结果 |
 
+R1 `Quest -> Objective` 出边建议保持在 1-50 条的人工可审计范围内；超过该规模时应拆分为多个 Quest 或在 R2+ 引入 plan shard / batch objective，避免形成 supernode 并拖慢 Mission Card、relationship traversal 与 review UI。
+
 ### 5.4 `objective`
 
 Phase-compatible 方案：`Objective` 初期直接复用 `nodes.type_code='task'`。
@@ -649,6 +651,8 @@ R2+ 命令：
 - Required capabilities。
 - Evidence requirements。
 - Quality gate status。
+
+R1 `task show` 展示 `evidence_requirement_refs`，`quality_gate_status` 标注为 `R2+`；完整 Evidence / QualityGate 节点视图由 R2+ `quest verify` 接入。
 
 ### 10.3 World UI
 

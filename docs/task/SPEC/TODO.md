@@ -144,17 +144,17 @@
 - [x] 语义壳对象可见性/RBAC：R1 使用 `OWNED_BY` 图边作为最小可见性锚点；`list/show` 按 owner 过滤，`task.admin/system` 可读全部。
 - [x] Resolver 解析优先级文档化（F06 §9.1）：显式 id → 精确属性引用 → key/code+version；未解析/多候选时输出 English debug log 留痕。
 - [x] `REALIZED_BY / PRODUCED` 注册理由修正（F06 §9.1 注记）：`REALIZED_BY` 由 `create_quest` 直写；`PRODUCED` R1 仅注册，R2+ outcome 流程启用。
-- [ ] Quest 边度预期（F06 §5.3 或 §9.1）：补 Objective 数量上限/边度说明，防 supernode（对齐 D1 的 Neo4j 教训）。
+- [x] Quest 边度预期（F06 §5.3 或 §9.1）：补 Objective 数量上限/边度说明，防 supernode（对齐 D1 的 Neo4j 教训）。
 - [x] TASK trait 检索说明（F06 §9.1）：补"按 TASK trait_class/trait_mask 检索须同时按 `type_code` 过滤"，避免 selector/检索误命中 situation/goal/quest（三者与 `task` 共用 `trait_mask=1089`）。
 
 **P3 — 顺手修**
 
-- [ ] `create_quest` 移除或忽略 `outcome_summary` 创建参数（F06 §5.3：R1 创建时为空，验证/关闭阶段再写入）。
-- [ ] `progress` 统计拆分 `terminal` vs `succeeded`：`failed/cancelled` 不计入 `completed_objectives`，避免 Mission Card 误读。
-- [ ] resolver 三函数去下划线转正（`_resolve_semantic_node_ref` 已入 `__all__` 但带私有前缀）；`quest_semantic_service` 对 `task_state_machine._insert_relationship / _load_node_ref / _transaction` 的私有导入提升为公开 helper。
-- [ ] `business_impact` YAML schema 与 F06 §5.1 `string/object` 对齐（当前仅 `string/null`）。
-- [ ] `task show` 补 Evidence requirements / Quality gate status 显示，或 F06 §10.2 给这两项标注阶段（`--evidence-required` 已标 R2+）。
-- [ ] Resolver 查询性能：R2 评估 GIN 索引或按候选 `type_code` 预过滤（当前每 ref 一次 8 条件 `attributes->>` OR 全表扫描）。
+- [x] `create_quest` 移除或忽略 `outcome_summary` 创建参数（F06 §5.3：R1 创建时为空，验证/关闭阶段再写入）。
+- [x] `progress` 统计拆分 `terminal` vs `succeeded`：`failed/cancelled` 不计入 `completed_objectives`，避免 Mission Card 误读。
+- [x] resolver 三函数去下划线转正（`_resolve_semantic_node_ref` 已入 `__all__` 但带私有前缀）；`quest_semantic_service` 对 `task_state_machine._insert_relationship / _load_node_ref / _transaction` 的私有导入提升为公开 helper。
+- [x] `business_impact` YAML schema 与 F06 §5.1 `string/object` 对齐（当前仅 `string/null`）。
+- [x] `task show` 补 Evidence requirements / Quality gate status 显示，或 F06 §10.2 给这两项标注阶段（`--evidence-required` 已标 R2+）。
+- [x] Resolver 查询性能：R1 对带 namespace 的 key/version 候选按 `type_code` 预过滤；GIN 索引评估留 R2。
 
 ### R2-R4 Governed Runtime
 
@@ -162,6 +162,7 @@
 - [ ] 新增 evidence requirement、verification result、quality gate。
 - [ ] `quest accept` 要求 verification passed 或 human override evidence。
 - [ ] Quest close 后生成 outcome / learning proposal；LearningProposal 不直接修改正式知识版本。
+- [ ] Resolver 查询性能 R2：评估 `nodes.attributes` GIN/表达式索引，降低 semantic ref resolver 的 JSONB 条件扫描成本。
 
 ## v2+ 备忘录（详见 [`SPEC.md`](SPEC.md) §10.2）
 

@@ -386,7 +386,16 @@ def test_quest_show_renders_objectives_and_refs(monkeypatch):
                     "required_capabilities": ["hvac"],
                 }
             ],
-            "progress": {"total_objectives": 1, "completed_objectives": 0, "percent": 0},
+            "progress": {
+                "total_objectives": 1,
+                "terminal_objectives": 0,
+                "completed_objectives": 0,
+                "succeeded_objectives": 0,
+                "failed_objectives": 0,
+                "cancelled_objectives": 0,
+                "percent": 0,
+                "success_percent": 0,
+            },
         }
 
     monkeypatch.setattr(semantic_commands, "show_quest", fake_show_quest)
@@ -395,6 +404,7 @@ def test_quest_show_renders_objectives_and_refs(monkeypatch):
 
     assert res.success is True
     assert "objectives" in res.message
+    assert "terminal=0/1 (0%) succeeded=0 (0%)" in res.message
     assert "#404 state=claimed kind=diagnose caps=hvac title=Inspect AHU-3 controls" in res.message
     assert "policy:maintenance_safety@3.2" in res.message
     assert "quality:comfort-band@1" in res.message

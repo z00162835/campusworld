@@ -433,4 +433,9 @@ def transition(task_id: int, event: str, actor_principal: Principal, expected_ve
     except Exception:
         logger.warning('task.transition.failed', extra={'task_id': task_id, 'event': event, 'actor_id': actor_principal.id, 'actor_kind': actor_principal.kind, 'expected_version': expected_version, 'idempotency_key': idempotency_key, 'correlation_id': correlation_id, 'trace_id': trace_id}, exc_info=True)
         raise
-__all__ = ['TransitionResult', 'create_task', 'transition']
+
+insert_relationship = _insert_relationship
+load_node_ref = _load_node_ref
+task_transaction = _transaction
+
+__all__ = ['TransitionResult', 'create_task', 'insert_relationship', 'load_node_ref', 'task_transaction', 'transition']
