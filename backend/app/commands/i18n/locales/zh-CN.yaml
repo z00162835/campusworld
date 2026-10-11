@@ -213,13 +213,14 @@ commands:
   out:
     description: "向外/离开方向移动"
   task:
-    description: "任务命令(create/publish/claim/assign/complete/list/show/pool)"
+    description: "任务命令(create/publish/claim/assign/start/complete/list/show/pool)"
     usage:
-      root: "task <子命令> [参数]；可用：create/list/show/claim/assign/publish/complete/pool"
+      root: "task <子命令> [参数]；可用：create/list/show/claim/assign/publish/start/complete/pool"
       create: "task create --title <T> [--workflow <key>] [--to-pool <pool_key>] [--quest <quest_id>] [--scoped-at <node_id>] [--objective-kind <kind>] [--requires-capability <a,b>] [--priority <p>] [--visibility <v>] [--idempotency-key <k>]"
       claim: "task claim <id> [--idempotency-key <k>]"
       assign: "task assign <id> --to <principal_id> [--kind user|agent|group] [--idempotency-key <k>]"
       publish: "task publish <id> --to-pool <pool_key> [--idempotency-key <k>]"
+      start: "task start <id> [--idempotency-key <k>]"
       complete: "task complete <id> [--idempotency-key <k>]"
       list: "task list [--mine|--pool <key>|--assigned] [--limit N] [--offset O]"
       show: "task show <id>"
@@ -238,6 +239,8 @@ commands:
       success: "任务已认领：#{task_id} 状态={to_state} 版本={state_version}"
     assign:
       success: "任务已派发：#{task_id} 状态={to_state} 版本={state_version}"
+    start:
+      success: "任务已开始：#{task_id} 状态={to_state} 版本={state_version}"
     complete:
       success: "任务已完成：#{task_id} 状态={to_state} 版本={state_version}"
     list:

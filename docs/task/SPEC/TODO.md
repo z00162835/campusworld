@@ -18,7 +18,7 @@
 
 ## Phase B — 本体、表、基础命令
 
-> Phase B 实施归档：[`_generated/PHASE_B_ROLLOUT_2026Q2.md`](_generated/PHASE_B_ROLLOUT_2026Q2.md) — 6 PR 线性合并；I1/I3/I4/I5/I6/I2(局部) 全部覆盖；I7/I8 留 Phase C。事件集 = `create / publish / claim / assign / complete`。
+> Phase B 实施归档：[`_generated/PHASE_B_ROLLOUT_2026Q2.md`](_generated/PHASE_B_ROLLOUT_2026Q2.md) — 6 PR 线性合并；I1/I3/I4/I5/I6/I2(局部) 全部覆盖；I7/I8 留 Phase C。当前事件集 = `create / publish / claim / assign / start / complete`。
 
 ### B.1 Ontology
 
@@ -41,7 +41,7 @@
 ### B.3 服务层
 
 - [x] 新建 `app/services/task/__init__.py`、`app/services/task/task_state_machine.py`、`app/services/task/task_pool_service.py`。**(PR4)**
-- [x] 实现 `transition(task_id, event, actor_principal, expected_version, *, idempotency_key=None, correlation_id=None, payload=None) -> TransitionResult`，**Phase B 仅放行 5 事件 `create / publish / claim / assign / complete`**；其余 Phase C 事件由白名单显式拒绝（`WorkflowEventNotAllowed`）。**(PR4)**
+- [x] 实现 `transition(task_id, event, actor_principal, expected_version, *, idempotency_key=None, correlation_id=None, payload=None) -> TransitionResult`，**Phase B 仅放行 6 事件 `create / publish / claim / assign / start / complete`**；其余 Phase C 事件由白名单显式拒绝（`WorkflowEventNotAllowed`）。**(PR4 + R1 D3)**
 - [x] `workflow_ref` 创建时 pin 版本（B1-3 / OQ-23）：同事务 `SELECT MAX(version) WHERE is_active`；后续校验按 pin 版本。**(PR4)**
 - [ ] 父任务 rollup 逻辑（B2-3 / I8）：留 Phase C — Phase B 任务无父子 rollup（`children_summary` 字段已就位但不写入）。**(Phase C)**
 - [x] 单事务覆盖 F03 §3 模板的 8 步骤（不含 step 6' 父 rollup）；加锁顺序 `nodes → task_assignments → task_state_transitions → task_outbox`。**(PR4)**
@@ -57,7 +57,7 @@
 
 ### B.5 命令
 
-- [x] 新建命令族 `app/commands/game/task/`：`task_command.py`（实现 `create / list / show / claim / assign / publish / complete`）、`task_pool_command.py`（实现 pool `list / show / create / update / disable / enable`，`stats` 留 Phase C）；Phase C 事件命令 `start / submit-review / approve / reject / handoff / fail / cancel / expand` 留 Phase C。**(PR5)**
+- [x] 新建命令族 `app/commands/game/task/`：`task_command.py`（实现 `create / list / show / claim / assign / publish / start / complete`）、`task_pool_command.py`（实现 pool `list / show / create / update / disable / enable`，`stats` 留 Phase C）；Phase C 事件命令 `submit-review / approve / reject / handoff / fail / cancel / expand` 留 Phase C。**(PR5 + R1 D3)**
 - [x] `task create` 命令层执行 `scope_selector` bounds 校验（B2-6）；`--blocked-by` 环检测留 Phase C（命令未暴露该参数）。**(PR5 / PR3)**
 - [x] 通过 [`app/commands/game/__init__.py::GAME_COMMANDS`](../../../backend/app/commands/game/__init__.py) 注册到命令注册表。**(PR5)**
 - [x] i18n：`backend/app/commands/i18n/locales/{zh-CN,en-US}.yaml` 增补 `commands.task.*`（含 `pool_not_found / pool_inactive / publish_denied / consume_denied / cycle_detected / selector_bounds_exceeded` 等 Phase B 范围错误码）；`children_not_terminal / expansion_backpressure` 留 Phase C。**(PR5)**
@@ -65,14 +65,14 @@
 
 ### B.6 测试
 
-- [x] `tests/services/test_task_state_machine_unit.py`：状态/事件矩阵单元测试（5 事件白名单 + Phase C 拒绝路径）。**(PR4)**
+- [x] `tests/services/test_task_state_machine_unit.py`：状态/事件矩阵单元测试（6 事件白名单 + Phase C 拒绝路径）。**(PR4 + R1 D3)**
 - [x] `tests/services/test_task_acl.py`（含 `system` principal 与 ACL 各分支）。**(PR3)**
 - [x] `tests/services/test_task_selector_validate.py`：bounds min/max + 未知 trait 名称违规路径。**(PR3)**
 - [x] `tests/services/test_task_blocked_by_cycle.py`：环检测 + 深度 64 兜底。**(PR3)**
 - [x] `tests/integration/test_task_invariants.py`：I1 / I4 / I5 / I6 集成测试（真 PostgreSQL，含 ACL 拒绝 + workflow_pin）。**(PR4)**
-- [x] `tests/integration/test_task_invariants_i2.py`：I2 — `draft → open → claimed → done` 各状态 active roles ⊆ expected_roles。**(PR6)**
+- [x] `tests/integration/test_task_invariants_i2.py`：I2 — `draft → open → claimed → in_progress → done` 各状态 active roles ⊆ expected_roles。**(PR6 + R1 D3)**
 - [ ] `tests/integration/test_task_concurrency.py`：父子 rollup 并发 — Phase C；乐观锁 + 并发认领已在 `test_task_invariants.py` 与 `task_bench.py B2` 覆盖。**(Phase C)**
-- [x] `tests/integration/test_task_pool_lifecycle.py`：`pool create → publish → claim → complete` 端到端 + ACL 拒绝路径，落于 [`tests/contracts/test_task_dual_protocol.py`](../../../backend/tests/contracts/test_task_dual_protocol.py)。**(PR5)**
+- [x] `tests/integration/test_task_pool_lifecycle.py`：`pool create → publish → claim → start → complete` 端到端 + ACL 拒绝路径，落于 [`tests/contracts/test_task_dual_protocol.py`](../../../backend/tests/contracts/test_task_dual_protocol.py)。**(PR5 + R1 D3)**
 - [ ] `tests/integration/test_task_expand_async.py`：异步 expand worker — Phase C。
 - [x] workflow_pin：旧任务版本稳定（已并入 `tests/integration/test_task_invariants.py::test_workflow_pin_survives_new_version_seed`）。**(PR4)**
 - [ ] `tests/integration/test_task_idempotency_ttl.py`：7d 过期复用键 — Phase C（TTL 已落 `idempotency_expires_at` 列；过期回收由 audit worker 实现）。
@@ -86,7 +86,7 @@
 
 ### C.1 状态机扩展
 
-- [ ] `task_state_machine` 支持事件 `submit-review / approve / reject / handoff / cancel / expand`（基础事件已 B2 入 Phase B）。
+- [ ] `task_state_machine` 支持事件 `submit-review / approve / reject / handoff / cancel / expand`（`start` 已在 R1 D3 入 Phase B）。
 - [ ] Lease / Heartbeat 启用（OQ-19 方案 B Phase C）：新增事件 `heartbeat / lease_expired`；audit worker 检测项；`task_assignments.lease_expires_at / last_heartbeat_at` 开始写入。
 - [ ] `_resolve_effective_principal_for_event` 钩子点（为审批委托 v2 预留，v1 直接返回 `actor`）。
 
@@ -125,7 +125,7 @@
 - [x] 注册 `situation / goal / quest` 节点类型与 `RESPONDS_TO / PURSUES / HAS_OBJECTIVE` 关系。
 - [x] `task.attributes.quest_id` 与 Quest objective rollup 一致。
 - [x] 新增 `quest show/list`，能展示 Situation、Goal、Objectives、Progress。
-- [x] R1 图节点完整性契约（F06 §9.1）：`OWNED_BY` 边（system 例外）、service 写入属性全量注册进 `schema_definition.properties`、semantic ref resolver 补边（`SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY`）、`REALIZED_BY / PRODUCED` 等 6 关系类型注册。
+- [x] R1 图节点完整性契约（F06 §9.1）：`OWNED_BY` 边（system 例外）、service 写入属性全量注册进 `schema_definition.properties`、semantic ref resolver 补边（`BASED_ON_FACT / SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY`）、`REALIZED_BY / PRODUCED` 等关系类型注册。
 
 ### R1 评审跟进（2026-10-09 F06 一致性评审）
 
@@ -155,6 +155,17 @@
 - [x] `business_impact` YAML schema 与 F06 §5.1 `string/object` 对齐（当前仅 `string/null`）。
 - [x] `task show` 补 Evidence requirements / Quality gate status 显示，或 F06 §10.2 给这两项标注阶段（`--evidence-required` 已标 R2+）。
 - [x] Resolver 查询性能：R1 对带 namespace 的 key/version 候选按 `type_code` 预过滤；GIN 索引评估留 R2。
+
+### R1 裁决跟进（2026-10-10）
+
+- [x] D1：创建 Goal/Quest 时按语义壳 owner 可见性校验上游 Situation/Goal；非 owner/admin/system 不得跨 owner 派生。
+- [x] D2：`situation / goal / quest` 命令声明 command tool semantics，`create=mutate`、`list/show=read`。
+- [x] D3：不保留 `claimed -> done` 作为长期例外；已补齐 `task start` 与 UI `claimed -> start`，并移除 `complete.from=claimed`。
+- [x] D4：`experience_refs / case_refs` 与 rule/policy/process/quality refs 一样强制 `namespace:key@version`。
+- [x] D5：`fact_refs` resolver 边改为 `BASED_ON_FACT`；`evidence_refs` 保持 `SUPPORTED_BY`。
+- [x] D6：R1 命令层结构化字段只接收自然语言 string，object 形态留服务/API/R2+。
+- [x] D7：选择方案 B，保留 `quest.progress` node schema 作为 runtime snapshot/cache；非 SSOT，当前 R1 仍以 `show_quest` 现算派生结果为准，R2+ 再定义缓存刷新路径。
+- [x] D8：CMD_task 同步 `quest create` 直写 `REALIZED_BY`。
 
 ### R2-R4 Governed Runtime
 

@@ -25,6 +25,7 @@ def test_phase_b_events_whitelist_exact():
         "publish",
         "claim",
         "assign",
+        "start",
         "complete",
     }
 
@@ -36,13 +37,14 @@ def test_outbox_event_kind_mapping_complete():
         "publish": "task.published",
         "claim": "task.claimed",
         "assign": "task.assigned",
+        "start": "task.started",
         "complete": "task.completed",
     }
 
 
 @pytest.mark.unit
 def test_event_handler_registry_matches_phase_b_transition_events():
-    assert set(tsm._EVENT_HANDLERS.keys()) == {"publish", "claim", "assign", "complete"}
+    assert set(tsm._EVENT_HANDLERS.keys()) == {"publish", "claim", "assign", "start", "complete"}
 
 
 @pytest.mark.unit
@@ -63,7 +65,6 @@ def test_transition_rejects_create_event_explicitly():
 @pytest.mark.parametrize(
     "phase_c_event",
     [
-        "start",
         "submit-review",
         "approve",
         "reject",

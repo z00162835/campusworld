@@ -289,6 +289,8 @@ def validate_situation_semantics(
             raise PreconditionFailed("trigger_kind='mixed' requires at least one rule_ref")
         if not experiences and not inference:
             raise PreconditionFailed("trigger_kind='mixed' requires experience_ref or inference_trace_summary")
+    if experiences:
+        _require_version_pinned_refs(experiences, field_name='situation.experience_refs')
 
 
 def _load_node_type_id(session: Session, *, type_code: str) -> int:
@@ -431,7 +433,7 @@ def create_situation(
         _insert_owner_edge(session, node_id=situation_id, actor=actor)
         if subject_id is not None:
             insert_relationship(session, source_id=situation_id, target_id=int(subject_id), type_code='ABOUT')
-        _insert_resolved_ref_edges(session, source_id=situation_id, refs=attrs['fact_refs'], type_code='SUPPORTED_BY', ref_kind='fact')
+        _insert_resolved_ref_edges(session, source_id=situation_id, refs=attrs['fact_refs'], type_code='BASED_ON_FACT', ref_kind='fact')
         _insert_resolved_ref_edges(session, source_id=situation_id, refs=attrs['evidence_refs'], type_code='SUPPORTED_BY', ref_kind='evidence')
         _insert_resolved_ref_edges(session, source_id=situation_id, refs=attrs['rule_refs'], type_code='TRIGGERED_BY_RULE', ref_kind='rule')
         _insert_resolved_ref_edges(session, source_id=situation_id, refs=attrs['experience_refs'], type_code='TRIGGERED_BY_EXPERIENCE', ref_kind='experience')
@@ -457,6 +459,8 @@ def create_goal(
         raise PreconditionFailed('goal.desired_state is required')
     with task_transaction(db_session) as session:
         load_node_ref(session, node_id=int(situation_id), expected_type_code='situation')
+        if not _can_read_semantic_node(session, node_id=int(situation_id), actor=actor):
+            raise ReferenceNotFound(f'situation {situation_id} not found')
         attrs: Dict[str, Any] = {
             'current_state': SEMANTIC_NODE_INITIAL_STATES['goal'],
             'state_version': 1,
@@ -498,9 +502,14 @@ def create_quest(
     _require_version_pinned_refs(policy_refs, field_name='quest.policy_refs')
     _require_version_pinned_refs(process_refs, field_name='quest.process_refs')
     _require_version_pinned_refs(quality_refs, field_name='quest.quality_refs')
+    _require_version_pinned_refs(case_refs, field_name='quest.case_refs')
     with task_transaction(db_session) as session:
         load_node_ref(session, node_id=int(situation_id), expected_type_code='situation')
         goal = load_node_ref(session, node_id=int(goal_id), expected_type_code='goal')
+        if not _can_read_semantic_node(session, node_id=int(situation_id), actor=actor):
+            raise ReferenceNotFound(f'situation {situation_id} not found')
+        if not _can_read_semantic_node(session, node_id=int(goal_id), actor=actor):
+            raise ReferenceNotFound(f'goal {goal_id} not found')
         if int(goal['attributes'].get('situation_id') or 0) != int(situation_id):
             raise PreconditionFailed('quest.goal must belong to quest.situation')
         attrs: Dict[str, Any] = {

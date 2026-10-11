@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 
 # Phase B implements a strict subset of the events declared here.
 # The seed still installs the full default_v1 spec so that Phase C events
-# (start / submit-review / approve / reject / handoff / fail / cancel / expand)
+# (submit-review / approve / reject / handoff / fail / cancel / expand)
 # can be unlocked via in-process state-machine extensions without a re-seed.
 DEFAULT_WORKFLOW_SEED: Dict[str, Any] = {
     "key": "default_v1",
@@ -42,7 +42,7 @@ DEFAULT_WORKFLOW_SEED: Dict[str, Any] = {
             "cancelled": {"expected_roles": []},
         },
         "events": {
-            # Phase B minimum set (5 events): create / publish / claim / assign / complete
+            # Phase B minimum set (6 events): create / publish / claim / assign / start / complete
             "create": {
                 "from": ["__init__"],
                 "to": "draft",
@@ -107,10 +107,7 @@ DEFAULT_WORKFLOW_SEED: Dict[str, Any] = {
                 ],
             },
             "complete": {
-                # Phase B minimal event set has no `start`; allow direct
-                # completion from `claimed` for the create→publish→claim→complete
-                # happy path while keeping Phase C states intact.
-                "from": ["claimed", "in_progress", "approved"],
+                "from": ["in_progress", "approved"],
                 "to": "done",
                 "required_role": "executor",
                 "preconditions": ["children_all_terminal"],

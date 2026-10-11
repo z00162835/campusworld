@@ -48,6 +48,7 @@ _REQUIRED_SUCCESS_KEYS = [
     "publish",
     "claim",
     "assign",
+    "start",
     "complete",
 ]
 
@@ -57,6 +58,7 @@ _REQUIRED_USAGE_KEYS = [
     "claim",
     "assign",
     "publish",
+    "start",
     "complete",
     "list",
     "show",
@@ -118,5 +120,27 @@ def test_locale_files_share_same_error_key_set():
     en = _load("en-US").get("error", {})
     assert set(zh.keys()) == set(en.keys()), (
         f"locale drift in commands.task.error: zh-only={set(zh)-set(en)}, "
+        f"en-only={set(en)-set(zh)}"
+    )
+
+
+@pytest.mark.unit
+def test_locale_files_share_same_success_key_set():
+    zh = _load("zh-CN")
+    en = _load("en-US")
+    zh_success = {key for key, value in zh.items() if isinstance(value, dict) and value.get("success")}
+    en_success = {key for key, value in en.items() if isinstance(value, dict) and value.get("success")}
+    assert zh_success == en_success, (
+        f"locale drift in commands.task.*.success: zh-only={zh_success-en_success}, "
+        f"en-only={en_success-zh_success}"
+    )
+
+
+@pytest.mark.unit
+def test_locale_files_share_same_usage_key_set():
+    zh = _load("zh-CN").get("usage", {})
+    en = _load("en-US").get("usage", {})
+    assert set(zh.keys()) == set(en.keys()), (
+        f"locale drift in commands.task.usage: zh-only={set(zh)-set(en)}, "
         f"en-only={set(en)-set(zh)}"
     )

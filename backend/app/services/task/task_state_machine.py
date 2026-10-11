@@ -2,8 +2,8 @@
 
 SSOT: ``docs/task/SPEC/features/F03_TASK_COLLABORATION_WORKFLOW.md`` §3.
 
-Phase B implements **only** the five events ``create / publish / claim /
-assign / complete``. Phase C events (``start / submit-review / approve /
+Phase B implements **only** the six events ``create / publish / claim /
+assign / start / complete``. Phase C events (``submit-review / approve /
 reject / handoff / fail / cancel``) raise :class:`WorkflowEventNotAllowed` at
 the top of :func:`transition` even though the seeded workflow definition
 contains them. This keeps the state machine code path narrow and easy to
@@ -36,9 +36,9 @@ from app.services.task.acl import AclDecision, evaluate_acl
 from app.services.task.errors import AlreadyClaimedError, OptimisticLockError, PoolInactive, PoolNotFound, PreconditionFailed, ReferenceNotFound, ConsumeAclDenied, PublishAclDenied, RoleRequiredError, WorkflowDefinitionInactive, WorkflowDefinitionNotFound, WorkflowEventNotAllowed
 from app.services.task.permissions import Principal
 logger = logging.getLogger(__name__)
-_PHASE_B_EVENTS = frozenset({'create', 'publish', 'claim', 'assign', 'complete'})
+_PHASE_B_EVENTS = frozenset({'create', 'publish', 'claim', 'assign', 'start', 'complete'})
 _STAGE_BY_TO_STATE = {'draft': 'open', 'open': 'open', 'claimed': 'claimed', 'in_progress': 'in_progress', 'pending_review': 'pending_review', 'approved': 'approved', 'rejected': 'rejected', 'done': 'done', 'failed': 'done', 'cancelled': 'done'}
-_OUTBOX_EVENT_KIND = {'create': 'task.created', 'publish': 'task.published', 'claim': 'task.claimed', 'assign': 'task.assigned', 'complete': 'task.completed'}
+_OUTBOX_EVENT_KIND = {'create': 'task.created', 'publish': 'task.published', 'claim': 'task.claimed', 'assign': 'task.assigned', 'start': 'task.started', 'complete': 'task.completed'}
 
 @dataclass(frozen=True)
 class TransitionResult:
@@ -263,6 +263,14 @@ def _handle_assign_event(session: Session, *, task_id: int, actor_principal: Pri
         pool_key = _load_pool(session, pool_id=int(pool_id))['key']
     return _EventEffects(extra_node_updates={}, outbox_pool_key=pool_key, post_assignments=[{'role': 'executor', 'stage': stage, 'principal_kind': target_kind, 'principal_id': target_id, 'principal_tag': target_tag}], retire_roles=[], metadata={})
 
+def _handle_start_event(session: Session, *, task_id: int, actor_principal: Principal, payload: Dict[str, Any], attrs: Dict[str, Any], stage: str) -> _EventEffects:
+    del actor_principal, payload, stage
+    pool_key: Optional[str] = None
+    pool_id = attrs.get('pool_id')
+    if pool_id is not None:
+        pool_key = _load_pool(session, pool_id=int(pool_id))['key']
+    return _EventEffects(extra_node_updates={}, outbox_pool_key=pool_key, post_assignments=[], retire_roles=[], metadata={})
+
 def _handle_complete_event(session: Session, *, task_id: int, actor_principal: Principal, payload: Dict[str, Any], attrs: Dict[str, Any], stage: str) -> _EventEffects:
     del actor_principal, payload, stage
     cs = attrs.get('children_summary')
@@ -276,7 +284,7 @@ def _handle_complete_event(session: Session, *, task_id: int, actor_principal: P
     if pool_id is not None:
         pool_key = _load_pool(session, pool_id=int(pool_id))['key']
     return _EventEffects(extra_node_updates={}, outbox_pool_key=pool_key, post_assignments=[], retire_roles=['executor', 'approver', 'owner'], metadata={})
-_EVENT_HANDLERS = {'publish': _handle_publish_event, 'claim': _handle_claim_event, 'assign': _handle_assign_event, 'complete': _handle_complete_event}
+_EVENT_HANDLERS = {'publish': _handle_publish_event, 'claim': _handle_claim_event, 'assign': _handle_assign_event, 'start': _handle_start_event, 'complete': _handle_complete_event}
 
 def _lock_task_node(session: Session, *, task_id: int) -> Dict[str, Any]:
     row = session.execute(text("\n            SELECT id, attributes\n              FROM nodes\n             WHERE id = :tid AND type_code = 'task'\n             FOR UPDATE\n            "), {'tid': task_id}).first()
@@ -376,7 +384,7 @@ def create_task(*, title: str, actor: Principal, workflow_key: str='default_v1',
 def transition(task_id: int, event: str, actor_principal: Principal, expected_version: int, *, idempotency_key: Optional[str]=None, correlation_id: Optional[str]=None, trace_id: Optional[str]=None, payload: Optional[Dict[str, Any]]=None, db_session: Optional[Session]=None) -> TransitionResult:
     """Atomically apply ``event`` to ``task_id``.
 
-    Phase B handles ``publish / claim / assign / complete``. ``create`` is
+    Phase B handles ``publish / claim / assign / start / complete``. ``create`` is
     routed through :func:`create_task` since it must allocate a new node row.
     """
     if event == 'create':

@@ -100,6 +100,17 @@ def test_rule_refs_must_be_version_pinned():
 
 
 @pytest.mark.unit
+def test_experience_refs_must_be_version_pinned():
+    with pytest.raises(PreconditionFailed, match="experience_refs"):
+        validate_situation_semantics(
+            assertion="Temperature breach repeats a known pattern.",
+            trigger_kind="weak_experience",
+            fact_refs=["fact:ahu-3-temperature"],
+            experience_refs=["case:after-hours-drift"],
+        )
+
+
+@pytest.mark.unit
 def test_goal_requires_desired_state_before_db_access():
     with pytest.raises(PreconditionFailed, match="desired_state"):
         create_goal(
@@ -147,6 +158,14 @@ def test_quest_governance_refs_must_be_version_pinned_before_db_access():
             goal_id=2,
             actor=object(),  # type: ignore[arg-type]
             quality_refs=["quality:post_maintenance"],
+        )
+    with pytest.raises(PreconditionFailed, match="case_refs"):
+        create_quest(
+            title="Unpinned case quest",
+            situation_id=1,
+            goal_id=2,
+            actor=object(),  # type: ignore[arg-type]
+            case_refs=["case:AHU-103"],
         )
 
 

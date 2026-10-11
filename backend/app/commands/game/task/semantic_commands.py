@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 from app.commands.base import CommandContext, CommandResult, GameCommand
+from app.commands.command_tool_semantics import CommandToolSemantics, MUTATE_SUBCOMMAND, READ_SUBCOMMAND, build_error_schema
 from app.services.task.errors import TaskSystemError
 from app.services.task.permissions import TASK_CREATE, TASK_READ
 from app.services.task.quest_semantic_service import (
@@ -46,8 +47,26 @@ def _format_refs(values: List[str]) -> str:
     return ', '.join(values) if values else '-'
 
 
+_SEMANTIC_COMMAND_PROFILES = (
+    MUTATE_SUBCOMMAND('create'),
+    READ_SUBCOMMAND('list'),
+    READ_SUBCOMMAND('show'),
+)
+
+_SEMANTIC_ERROR_SCHEMA = build_error_schema(('INVALID_PARAM', 'NOT_FOUND', 'PERMISSION_DENIED', 'POLICY_DENIED', 'CONFLICT'))
+
+
 class SituationCommand(GameCommand):
     """Command facade for declarative Situation assertions."""
+
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=_SEMANTIC_COMMAND_PROFILES,
+        default_profile_when_no_subcommand='read',
+        data_classification='internal',
+        data_scope=('situation',),
+        error_schema=_SEMANTIC_ERROR_SCHEMA,
+    )
 
     def __init__(self) -> None:
         super().__init__(name='situation', description='Situation semantic assertions', aliases=['situations'], game_name='campusworld')
@@ -144,6 +163,15 @@ class SituationCommand(GameCommand):
 class GoalCommand(GameCommand):
     """Command facade for business goals raised by Situations."""
 
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=_SEMANTIC_COMMAND_PROFILES,
+        default_profile_when_no_subcommand='read',
+        data_classification='internal',
+        data_scope=('goal', 'situation'),
+        error_schema=_SEMANTIC_ERROR_SCHEMA,
+    )
+
     def __init__(self) -> None:
         super().__init__(name='goal', description='Goal semantic nodes', aliases=['goals'], game_name='campusworld')
 
@@ -225,6 +253,15 @@ class GoalCommand(GameCommand):
 
 class QuestCommand(GameCommand):
     """Command facade for Quest containers and task objectives."""
+
+    tool_semantics = CommandToolSemantics(
+        interaction_profile='mutate',
+        subcommand_profiles=_SEMANTIC_COMMAND_PROFILES,
+        default_profile_when_no_subcommand='read',
+        data_classification='internal',
+        data_scope=('quest', 'goal', 'situation', 'task'),
+        error_schema=_SEMANTIC_ERROR_SCHEMA,
+    )
 
     def __init__(self) -> None:
         super().__init__(name='quest', description='Quest semantic containers', aliases=['quests'], game_name='campusworld')

@@ -261,7 +261,7 @@ agent runtime tick
 3. **认领**：Agent 调 `task claim <id> --idempotency-key cleaning-bot-hicampus-01:run-uuid-...`：
    - 事务：评估 `consume_acl` 通过；`current_state open → claimed`、`state_version 1 → 2`、插入 `task_assignments(role=executor)`、追加 `task_state_transitions(event_seq=2)`、写 `task_outbox(pool_key='hicampus.cleaning', kind=task.claimed)`。
 4. **执行**：Agent 进入 PDCA Plan→Do，`task_runs(phase=do, started_at)` 创建；selector freeze 至 `graph_ops_summary.resolved_targets[]`。
-5. **完成**：`task complete <id>`：`claimed → done`（如 workflow 简单）或 `claimed → in_progress → pending_review`（如有审批）。
+5. **执行与完成**：`task start <id>`：`claimed → in_progress`；`task complete <id>`：`in_progress → done`（如有审批则进入 `pending_review / approved` 后再完成）。
 
 ## 9.1 Lease / Heartbeat 预留（OQ-19 方案 B）
 

@@ -8,6 +8,7 @@ a database.
 from __future__ import annotations
 
 import re
+import inspect
 
 import pytest
 
@@ -58,9 +59,9 @@ def test_default_workflow_states_match_f03_table():
 
 @pytest.mark.unit
 def test_default_workflow_phase_b_minimum_event_set_present():
-    """Phase B MUST be able to drive these 5 events (SPEC §6 / ACCEPTANCE B.2)."""
+    """Phase B MUST be able to drive these 6 events (SPEC §6 / ACCEPTANCE B.2)."""
     events = DEFAULT_WORKFLOW_SEED["spec"]["events"]
-    for required in ("create", "publish", "claim", "assign", "complete"):
+    for required in ("create", "publish", "claim", "assign", "start", "complete"):
         assert required in events, f"workflow missing Phase B required event {required}"
 
 
@@ -68,8 +69,23 @@ def test_default_workflow_phase_b_minimum_event_set_present():
 def test_default_workflow_phase_c_events_pre_provisioned():
     """Phase C events ship in the seed but transition() will gate them out (PR4)."""
     events = DEFAULT_WORKFLOW_SEED["spec"]["events"]
-    for future in ("submit-review", "approve", "reject", "handoff", "fail", "cancel", "start"):
+    for future in ("submit-review", "approve", "reject", "handoff", "fail", "cancel"):
         assert future in events
+
+
+@pytest.mark.unit
+def test_default_workflow_complete_requires_in_progress_or_approved():
+    events = DEFAULT_WORKFLOW_SEED["spec"]["events"]
+    assert events["complete"]["from"] == ["in_progress", "approved"]
+
+
+@pytest.mark.unit
+def test_workflow_seed_repairs_existing_default_v1_spec():
+    from db.schema_migrations import ensure_task_system_seed
+
+    source = inspect.getsource(ensure_task_system_seed)
+    assert "ON CONFLICT (key, version) DO UPDATE SET" in source
+    assert "spec = EXCLUDED.spec" in source
 
 
 @pytest.mark.unit

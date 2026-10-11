@@ -228,6 +228,37 @@ def test_task_pool_create_without_pool_admin_perm_blocked():
 
 
 @pytest.mark.unit
+def test_task_start_without_update_permission_blocked():
+    from app.commands.game.task.task_command import TaskCommand
+
+    cmd = TaskCommand()
+    res = cmd.execute(_ctx(permissions=[]), ["start", "1"])
+    assert res.success is False
+    assert res.error == "commands.task.error.forbidden"
+
+
+@pytest.mark.unit
+def test_task_start_dispatches_start_event(monkeypatch):
+    from app.commands.base import CommandResult
+    from app.commands.game.task.task_command import TaskCommand
+
+    seen = {}
+
+    def fake_run_transition(self, ctx, *, task_id, event, parsed, payload, sub_args):
+        del self, ctx, parsed, payload, sub_args
+        seen["task_id"] = task_id
+        seen["event"] = event
+        return CommandResult.success_result("ok", data={"task_id": task_id, "event": event})
+
+    monkeypatch.setattr(TaskCommand, "_run_transition", fake_run_transition)
+    cmd = TaskCommand()
+    res = cmd.execute(_ctx(permissions=["task.update"]), ["start", "123"])
+
+    assert res.success is True
+    assert seen == {"task_id": 123, "event": "start"}
+
+
+@pytest.mark.unit
 def test_semantic_commands_registered_in_task_family():
     from app.commands.game.task import TASK_COMMANDS
 
@@ -364,7 +395,7 @@ def test_quest_show_renders_objectives_and_refs(monkeypatch):
                     "policy_refs": ["policy:maintenance_safety@3.2"],
                     "process_refs": ["process:bearing_response@4"],
                     "quality_refs": ["quality:post_maintenance@2"],
-                    "case_refs": ["case:AHU-103:2026Q2"],
+                    "case_refs": ["case:AHU-103-2026Q2@1"],
                 },
             },
             "situation": {

@@ -271,7 +271,7 @@ def test_task_list_pushes_visibility_to_sql_with_global_total(schema_ready):
 
 
 def test_task_pool_lifecycle_create_to_complete(schema_ready):
-    """End-to-end: pool create → task create → publish → claim → complete."""
+    """End-to-end: pool create -> task create -> publish -> claim -> start -> complete."""
     from app.commands.game.task.task_command import TaskCommand
 
     Session = sessionmaker(bind=schema_ready, future=True, expire_on_commit=False)
@@ -313,10 +313,18 @@ def test_task_pool_lifecycle_create_to_complete(schema_ready):
     assert publish.success is True
     assert publish.data["to_state"] == "open"
 
-    # Claim then complete.
+    # Claim, start, then complete.
     claim = task_cmd.execute(ctx, ["claim", str(task_id)])
     assert claim.success is True
     assert claim.data["to_state"] == "claimed"
+
+    direct_complete = task_cmd.execute(ctx, ["complete", str(task_id)])
+    assert direct_complete.success is False
+    assert direct_complete.error == "commands.task.error.invalid_event"
+
+    start = task_cmd.execute(ctx, ["start", str(task_id)])
+    assert start.success is True
+    assert start.data["to_state"] == "in_progress"
 
     complete = task_cmd.execute(ctx, ["complete", str(task_id)])
     assert complete.success is True

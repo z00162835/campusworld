@@ -608,7 +608,9 @@ class WorldInteractionService:
         task_id = row.id
         if state in {"open", "rejected"} and row.visibility == "pool_open" and row.assignee_kind == "pool":
             return [self._option(f"task_claim_{task_id}", "Claim task", "primary", "execute_command", command=f"task claim {task_id}", target=str(task_id))]
-        if state in {"claimed", "in_progress", "approved"}:
+        if state == "claimed":
+            return [self._option(f"task_start_{task_id}", "Start task", "primary", "execute_command", command=f"task start {task_id}", target=str(task_id))]
+        if state in {"in_progress", "approved"}:
             return [self._option(f"task_complete_{task_id}", "Complete task", "primary", "execute_command", command=f"task complete {task_id}", target=str(task_id))]
         return [self._option(f"task_show_{task_id}", "View task", "secondary", "execute_command", command=f"task show {task_id}", target=str(task_id))]
 

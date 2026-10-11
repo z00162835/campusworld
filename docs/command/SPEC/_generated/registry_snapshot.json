@@ -1,6 +1,6 @@
 {
-  "git_commit": "777f7817f6e9ee3e6e758fd313f1fbefec14850a",
-  "generated_at_utc": "2026-10-09T13:57:40.962987+00:00",
+  "git_commit": "95db51a5041c7929f40b8722e1d344be9d8903ff",
+  "generated_at_utc": "2026-10-11T02:18:34.569069+00:00",
   "initialize_commands_ok": true,
   "command_count": 39,
   "commands": [
@@ -624,25 +624,74 @@
       "class": "app.commands.game.task.semantic_commands.GoalCommand",
       "file": "backend/app/commands/game/task/semantic_commands.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
-        "subcommand_profiles": [],
-        "default_profile_when_no_subcommand": null,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "create"
+            ],
+            "interaction_profile": "mutate",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "show"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          }
+        ],
+        "default_profile_when_no_subcommand": "read",
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
         "routing_hint_i18n": null,
-        "side_effect_level": "read",
+        "side_effect_level": "write_high",
         "idempotent": false,
         "deterministic": false,
         "input_schema": null,
         "output_schema": null,
-        "error_schema": null,
-        "data_classification": null,
-        "data_scope": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "goal",
+          "situation"
+        ],
         "tool_groups": [
-          "read"
+          "mutate"
         ]
       }
     },
@@ -1293,25 +1342,76 @@
       "class": "app.commands.game.task.semantic_commands.QuestCommand",
       "file": "backend/app/commands/game/task/semantic_commands.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
-        "subcommand_profiles": [],
-        "default_profile_when_no_subcommand": null,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "create"
+            ],
+            "interaction_profile": "mutate",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "show"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          }
+        ],
+        "default_profile_when_no_subcommand": "read",
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
         "routing_hint_i18n": null,
-        "side_effect_level": "read",
+        "side_effect_level": "write_high",
         "idempotent": false,
         "deterministic": false,
         "input_schema": null,
         "output_schema": null,
-        "error_schema": null,
-        "data_classification": null,
-        "data_scope": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "quest",
+          "goal",
+          "situation",
+          "task"
+        ],
         "tool_groups": [
-          "read"
+          "mutate"
         ]
       }
     },
@@ -1363,25 +1463,73 @@
       "class": "app.commands.game.task.semantic_commands.SituationCommand",
       "file": "backend/app/commands/game/task/semantic_commands.py",
       "tool_semantics": {
-        "interaction_profile": "read",
+        "interaction_profile": "mutate",
         "semantic_pending": false,
-        "subcommand_profiles": [],
-        "default_profile_when_no_subcommand": null,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "create"
+            ],
+            "interaction_profile": "mutate",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "show"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          }
+        ],
+        "default_profile_when_no_subcommand": "read",
         "observation_message_mode": null,
         "observation_data_keys": null,
         "manifest_tier": "none",
         "routing_hint": null,
         "routing_hint_i18n": null,
-        "side_effect_level": "read",
+        "side_effect_level": "write_high",
         "idempotent": false,
         "deterministic": false,
         "input_schema": null,
         "output_schema": null,
-        "error_schema": null,
-        "data_classification": null,
-        "data_scope": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "situation"
+        ],
         "tool_groups": [
-          "read"
+          "mutate"
         ]
       }
     },

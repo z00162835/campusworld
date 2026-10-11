@@ -301,7 +301,7 @@ def test_quest_semantic_shell_links_task_objective_and_scope(session):
 def test_semantic_nodes_are_visible_only_to_owner_or_admin(session):
     from app.services.task.errors import ReferenceNotFound
     from app.services.task.permissions import Principal
-    from app.services.task.quest_semantic_service import create_situation, list_nodes, show_node
+    from app.services.task.quest_semantic_service import create_goal, create_quest, create_situation, list_nodes, show_node
 
     owner_id = _make_actor(session, name=f"semantic-owner-{uuid.uuid4()}")
     other_id = _make_actor(session, name=f"semantic-other-{uuid.uuid4()}")
@@ -327,6 +327,30 @@ def test_semantic_nodes_are_visible_only_to_owner_or_admin(session):
     assert show_node(node_id=situation.node_id, type_code="situation", actor=owner, db_session=session)["id"] == situation.node_id
     with pytest.raises(ReferenceNotFound):
         show_node(node_id=situation.node_id, type_code="situation", actor=other, db_session=session)
+    with pytest.raises(ReferenceNotFound):
+        create_goal(
+            title="Unauthorized derived goal",
+            situation_id=situation.node_id,
+            actor=other,
+            desired_state="Unauthorized desired state.",
+            db_session=session,
+        )
+
+    goal = create_goal(
+        title="Authorized goal",
+        situation_id=situation.node_id,
+        actor=owner,
+        desired_state="Restore the asserted state.",
+        db_session=session,
+    )
+    with pytest.raises(ReferenceNotFound):
+        create_quest(
+            title="Unauthorized quest",
+            situation_id=situation.node_id,
+            goal_id=goal.node_id,
+            actor=other,
+            db_session=session,
+        )
 
 
 def test_semantic_refs_resolve_to_graph_edges_when_nodes_exist(session):
@@ -335,13 +359,14 @@ def test_semantic_refs_resolve_to_graph_edges_when_nodes_exist(session):
 
     actor_id = _make_actor(session, name=f"resolver-actor-{uuid.uuid4()}")
     subject_id = _make_actor(session, name=f"resolver-subject-{uuid.uuid4()}")
+    fact_id = _make_ref_node(session, name="Temperature fact", semantic_ref="fact:room-101-temp@1")
     evidence_id = _make_ref_node(session, name="Temperature evidence", semantic_ref="evidence:room-101-temp@1")
     rule_id = _make_ref_node(session, name="Comfort rule", semantic_ref="quality:comfort-band@1")
     experience_id = _make_ref_node(session, name="After-hours drift case", semantic_ref="case:after-hours-drift@1")
     policy_id = _make_ref_node(session, name="Maintenance policy", semantic_ref="policy:maintenance_safety@3.2")
     process_id = _make_ref_node(session, name="Bearing response", semantic_ref="process:bearing_response@4")
     quality_id = _make_ref_node(session, name="Post-maintenance quality", semantic_ref="quality:post_maintenance@2")
-    case_id = _make_ref_node(session, name="Prior AHU case", semantic_ref="case:AHU-103:2026Q2")
+    case_id = _make_ref_node(session, name="Prior AHU case", semantic_ref="case:AHU-103-2026Q2@1")
     actor = Principal(id=actor_id, kind="user")
 
     situation = create_situation(
@@ -350,6 +375,7 @@ def test_semantic_refs_resolve_to_graph_edges_when_nodes_exist(session):
         actor=actor,
         subject_id=subject_id,
         trigger_kind="mixed",
+        fact_refs=["fact:room-101-temp@1"],
         evidence_refs=["evidence:room-101-temp@1"],
         rule_refs=["quality:comfort-band@1"],
         experience_refs=["case:after-hours-drift@1"],
@@ -370,7 +396,7 @@ def test_semantic_refs_resolve_to_graph_edges_when_nodes_exist(session):
         policy_refs=["policy:maintenance_safety@3.2"],
         process_refs=["process:bearing_response@4"],
         quality_refs=["quality:post_maintenance@2"],
-        case_refs=["case:AHU-103:2026Q2"],
+        case_refs=["case:AHU-103-2026Q2@1"],
         db_session=session,
     )
 
@@ -388,6 +414,7 @@ def test_semantic_refs_resolve_to_graph_edges_when_nodes_exist(session):
             "situation_id": situation.node_id,
             "quest_id": quest.node_id,
             "types": [
+                "BASED_ON_FACT",
                 "SUPPORTED_BY",
                 "TRIGGERED_BY_RULE",
                 "TRIGGERED_BY_EXPERIENCE",
@@ -399,6 +426,7 @@ def test_semantic_refs_resolve_to_graph_edges_when_nodes_exist(session):
         },
     ).fetchall()
     rel_set = {(row.type_code, int(row.source_id), int(row.target_id)) for row in rels}
+    assert ("BASED_ON_FACT", situation.node_id, fact_id) in rel_set
     assert ("SUPPORTED_BY", situation.node_id, evidence_id) in rel_set
     assert ("TRIGGERED_BY_RULE", situation.node_id, rule_id) in rel_set
     assert ("TRIGGERED_BY_EXPERIENCE", situation.node_id, experience_id) in rel_set

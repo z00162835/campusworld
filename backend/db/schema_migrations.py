@@ -961,7 +961,8 @@ def ensure_graph_seed_ontology(engine) -> None:
             ("contains", "包含", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
             ("located_in", "位于", "app.models.relationships.LocationRelationship", "SPACE", LOCATION_RELATIONSHIP_EDGE),
             ("ABOUT", "关于", "app.models.graph.Relationship", "TASK", TASK),
-            ("SUPPORTED_BY", "由事实支持", "app.models.graph.Relationship", "TASK", TASK),
+            ("BASED_ON_FACT", "基于事实", "app.models.graph.Relationship", "TASK", TASK),
+            ("SUPPORTED_BY", "由证据支持", "app.models.graph.Relationship", "TASK", TASK),
             ("TRIGGERED_BY_RULE", "由规则触发", "app.models.graph.Relationship", "TASK", TASK),
             ("TRIGGERED_BY_EXPERIENCE", "由经验触发", "app.models.graph.Relationship", "TASK", TASK),
             ("RAISES_GOAL", "提出目标", "app.models.graph.Relationship", "TASK", TASK),
@@ -1148,7 +1149,8 @@ def ensure_task_system_seed(engine) -> None:
     """
     Phase B: seed `default_v1` workflow + 3 hicampus pools.
 
-    Idempotent via ON CONFLICT (key, version) / (key) DO NOTHING.
+    Idempotent via ON CONFLICT (key, version) DO UPDATE for workflow spec and
+    ON CONFLICT (key) DO NOTHING for pools.
 
     SSOT:
       - workflow spec: docs/task/SPEC/features/F03 §2.3
@@ -1169,7 +1171,10 @@ def ensure_task_system_seed(engine) -> None:
                 """
                 INSERT INTO task_workflow_definitions (key, version, spec, is_active, description)
                 VALUES (:key, :version, CAST(:spec AS jsonb), TRUE, :description)
-                ON CONFLICT (key, version) DO NOTHING
+                ON CONFLICT (key, version) DO UPDATE SET
+                    spec = EXCLUDED.spec,
+                    is_active = EXCLUDED.is_active,
+                    description = EXCLUDED.description
                 """
             ),
             {

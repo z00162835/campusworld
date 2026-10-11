@@ -174,18 +174,19 @@ R1 只保存可审计引用和轻量摘要，不实现完整 Policy Gate、Evide
 | 边 | 起 -> 止 | 含义 |
 |---|---|---|
 | `ABOUT` | `situation -> entity` | 涉及的设备/空间/系统 |
+| `BASED_ON_FACT` | `situation -> fact/observation` | assertion 基于的事实或观测 |
 | `SUPPORTED_BY` | `situation -> evidence` | 支撑该解释的证据 |
 | `TRIGGERED_BY_RULE` | `situation -> policy/control/quality` | 触发该 Situation 的强规则 |
 | `TRIGGERED_BY_EXPERIENCE` | `situation -> process/case/pattern` | 触发该 Situation 的弱经验 |
 | `RAISES_GOAL` | `situation -> goal` | 由该情况提出目标 |
-| `RELATED_TO` | `situation -> situation` | 相关情况 |
+| `RELATED_TO` | `situation -> situation` | 相关情况；R2+ 启用，R1 不注册/不创建 |
 
 语义不变式：
 
 - `Situation` 必须有 `assertion`。
 - 非人工 Situation 必须至少有一个 `fact_ref` 或 `evidence_ref`。
 - `trigger_kind='hard_rule'` 必须 pin `rule_refs`，R1 enforcement 使用 `namespace:key@version` 格式。
-- `trigger_kind='weak_experience'` 必须记录 `experience_refs` 或 `inference_trace_summary`。
+- `trigger_kind='weak_experience'` 必须记录 `experience_refs` 或 `inference_trace_summary`；存在 `experience_refs` 时，R1 enforcement 使用 `namespace:key@version` 格式。
 - `trigger_kind='mixed'` 必须同时满足强规则与弱经验 provenance。
 - 弱经验只能提出/更新 Situation，不得直接触发高风险 Quest 执行。
 - 强规则触发的 Situation 不代表自动批准行动，仍需 Quest/Policy gate。
@@ -201,12 +202,12 @@ R1 只保存可审计引用和轻量摘要，不实现完整 Policy Gate、Evide
 | `current_state` | enum | `proposed / accepted / active / satisfied / abandoned` |
 | `state_version` | int | 乐观锁 |
 | `title` | string | 目标标题 |
-| `desired_state` | string/object | 必填；指标、阈值、评价函数；R1 命令可先保存自然语言摘要，结构化 GoalSpec 留 R2+ |
+| `desired_state` | string/object | 必填；指标、阈值、评价函数；R1 命令仅接收自然语言 string，结构化 object 仅保留给服务/API 或 R2+ GoalSpec |
 | `constraints` | jsonb | downtime、成本、安全、时间等约束 |
 | `priority` | enum | `low / normal / high / urgent` |
 | `deadline_at` | timestamptz | 业务截止时间 |
 | `owner_principal` | object | 目标 owner |
-| `acceptance_summary` | object | 验收标准摘要 |
+| `acceptance_summary` | string/null | 验收标准摘要；R1 命令仅接收自然语言 string，结构化 object 留 R2+ |
 
 关系：
 
@@ -230,13 +231,13 @@ R1 只保存可审计引用和轻量摘要，不实现完整 Policy Gate、Evide
 | `situation_id` | int | 主情况 |
 | `goal_id` | int | 主目标 |
 | `quest_ref` | object | `{key, version}`，可引用 quest template |
-| `plan_graph_summary` | string/object | 计划图摘要；R1 可为自然语言摘要，R2+ 进入版本化 plan graph |
-| `policy_refs` | array | `policy@version` 引用 |
-| `process_refs` | array | `process_pattern@version` 引用 |
-| `quality_refs` | array | `quality_spec@version` 引用 |
-| `case_refs` | array | 历史案例引用 |
+| `plan_graph_summary` | string/object | 计划图摘要；R1 命令仅接收自然语言 string，结构化 object 留 R2+ 版本化 plan graph |
+| `policy_refs` | array | `namespace:key@version` policy 引用 |
+| `process_refs` | array | `namespace:key@version` process/process_pattern 引用 |
+| `quality_refs` | array | `namespace:key@version` quality/quality_spec 引用 |
+| `case_refs` | array | `namespace:key@version` 历史案例引用 |
 | `risk_level` | enum | 当前风险等级 |
-| `progress` | object | Objective 汇总派生视图；R1 不把创建时快照作为持久 SSOT |
+| `progress` | object | Objective 汇总 runtime snapshot/cache；非 SSOT，可由 `HAS_OBJECTIVE` + task states 重建 |
 | `outcome_summary` | object/null | 结果摘要；R1 创建时为空，Quest 验证/关闭阶段再写入 |
 
 关系：
@@ -254,6 +255,20 @@ R1 只保存可审计引用和轻量摘要，不实现完整 Policy Gate、Evide
 | `PRODUCED` | `quest -> evidence/outcome/lesson` | 证据与结果 |
 
 R1 `Quest -> Objective` 出边建议保持在 1-50 条的人工可审计范围内；超过该规模时应拆分为多个 Quest 或在 R2+ 引入 plan shard / batch objective，避免形成 supernode 并拖慢 Mission Card、relationship traversal 与 review UI。
+
+`progress` 采用方案 B：保留在 `node_types.schema_definition.properties` 中作为 runtime/dynamic snapshot 字段，但它不是 Quest 的权威状态。当前 R1 实现把 progress 作为 `show_quest` 派生视图返回，不在创建 Quest 时写入持久 SSOT；后续 Mission Card / 列表性能需要缓存时，可以写入 `quest.attributes.progress`，但该字段必须可丢弃、可重建，并以 `HAS_OBJECTIVE` + task states 的现算结果为权威来源。业界对照：
+
+- ServiceNow Task 共享基础 task 字段，但 SLA/escalation 等运行视图由规则动态填充，说明“列表/看板视图字段”和业务记录 SSOT 可以分离。
+- Jira work item 以 status/resolution 表达完成语义，进度通常由 workflow category、resolution 或 agile board/report 派生，不把“百分比进度”作为 issue 的核心一致性字段。
+- Temporal 明确区分 visibility store 与 authoritative workflow state；visibility 适合列表和过滤，单个 workflow 的权威状态仍通过 describe/query 获取。
+- SAP maintenance order 更强调系统状态、变更文档和结算/释放等审计状态，进度性汇总通常来自 order/operation 状态与报表，而不是覆盖 order header 的单一 SSOT 百分比。
+
+落地约束：
+
+- R1 创建 Quest 时不得写入 progress 快照，避免把空进度误当作 SSOT。
+- `show_quest` 返回的 progress 以现算结果为准；若 attributes 中存在 progress cache，也必须被现算结果覆盖。
+- R2+ 若启用缓存写入，刷新责任应归属 Objective 状态变更路径、read-side projection updater 或一致性 worker；漂移处理以现算重建为准。
+- 一致性巡检发现 progress cache 与现算结果不一致时，应记录 drift 并重建/刷新 cache，不得反向修改 Objective 状态。
 
 ### 5.4 `objective`
 
@@ -385,6 +400,15 @@ draft -> open -> claimed -> in_progress -> pending_review -> approved -> done
 
 Quest Runtime 不直接绕过 `task_state_machine` 改写 Objective；它通过命令层或服务层调用现有状态机。
 
+R1 不再把 `claimed -> done` 作为长期例外。已落地优化方案：
+
+1. 补齐最小 `task start` 事件与命令，严格走 `claimed / rejected -> in_progress`，沿用现有 workflow seed 中的 `start` 定义。
+2. World UI 对 `claimed` 任务生成 `task start`，对 `in_progress / approved` 任务生成 `task complete`。
+3. 移除 seed 中 `complete.from` 的 `claimed`，恢复为 `in_progress / approved -> done`。
+4. 测试同步覆盖 `claim -> start -> complete`，并断言 `claim -> complete` 返回稳定错误。
+
+该方案保持完整协作流语义，避免继续扩大 direct-complete 依赖。
+
 ---
 
 ## 7. 运行时组件
@@ -482,7 +506,7 @@ Agent 不可以：
 | QI1 | Quest 必须引用至少一个 Goal；Goal 必须声明非空 DesiredState。 |
 | QI2 | Quest 所有执行型 Objective 必须有 `quest_id` 且由 `HAS_OBJECTIVE` 或等价 FK 关联。 |
 | QI3 | `accepted / closed` Quest 必须至少有一个 `verification_result.status='passed'` 或明确的 human override evidence。 |
-| QI4 | Policy / Quality / Process 引用必须 pin 到版本；R1 使用 `namespace:key@version` enforcement；in-flight Quest 不随新版本漂移。 |
+| QI4 | Policy / Quality / Process / Case / Experience 引用必须 pin 到版本；R1 使用 `namespace:key@version` enforcement；in-flight Quest 不随新版本漂移。 |
 | QI5 | Hard Policy / Control 拒绝后，Planner 不得通过改写 Objective 绕过同一约束。 |
 | QI6 | Quest Plan 每次重写必须记录 `plan_revision`、actor、reason、correlation_id。 |
 | QI7 | Agent 内部 Action 不自动持久化为 Objective；只有改变世界状态、产生审计要求或需要人/Agent/设备认领的 Action 才升级。 |
@@ -502,9 +526,10 @@ R1 图节点完整性契约：
 
 - `Situation / Goal / Quest` 必须是 `nodes` 实例，分别使用 `type_code='situation' / 'goal' / 'quest'`，并在 `node_types.schema_definition.properties` 注册 service 写入的全部 attributes。
 - `Situation / Goal / Quest` 创建时必须写 `OWNED_BY semantic_node -> actor`（system actor 例外），attributes 中的 `actor_provenance/created_by` 只是审计摘要，不替代图边。
+- R1 创建下游语义节点时必须校验调用者可读上游节点：`goal create` 要求 actor 可读对应 Situation，`quest create` 要求 actor 可读对应 Situation 与 Goal；`task.admin` 与 system 可跨 owner 读取。
 - `Objective` 必须是 `nodes.type_code='task'`，通过 `HAS_OBJECTIVE quest -> task` 与 `task.attributes.quest_id` 双向可审计关联。
 - 核心语义连接必须优先表达为 `relationships` 边：`ABOUT / RAISES_GOAL / GOAL_FOR / RESPONDS_TO / PURSUES / HAS_OBJECTIVE / OWNED_BY / SCOPED_AT`。不得只在 attributes 中保存主链路而不写边。
-- R1 中尚未物化的 `Evidence / Policy / Control / QualitySpec / ProcessPattern / Case` 可先以 pinned semantic ref 保存在 attributes；当目标节点类型存在且 ref 可解析时，semantic ref resolver 应补写对应语义边，如 `SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY`。
+- R1 中尚未物化的 `Fact / Evidence / Policy / Control / QualitySpec / ProcessPattern / Case` 可先以 pinned semantic ref 保存在 attributes；当目标节点类型存在且 ref 可解析时，semantic ref resolver 应补写对应语义边，如 `BASED_ON_FACT / SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY`。
 - `node_types.trait_class` 与 `relationship_types.trait_class` 必须为 `TASK`，实例写入依赖图层 trait 同步机制继承检索语义；按 TASK trait 检索时必须同时按 `type_code` 缩小范围，避免把 semantic shell 节点误当作可分派 task。
 
 | 对象 | 语义世界归属 | R1 持久化方式 | 目标形态 |
@@ -538,6 +563,7 @@ R2+ 再补齐语义世界节点类型：
 优先新增关系：
 
 - `ABOUT`
+- `BASED_ON_FACT`
 - `SUPPORTED_BY`
 - `TRIGGERED_BY_RULE`
 - `TRIGGERED_BY_EXPERIENCE`
@@ -555,7 +581,7 @@ R2+ 再补齐语义世界节点类型：
 - `INFORMED_BY`
 - `PRODUCED`
 
-其中 `GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY` 在 R1 由 semantic ref resolver 在目标节点已存在时补边；`REALIZED_BY` 是 `Goal -> Quest` 结构性反向边，R1 在创建 Quest 时直接写入；`PRODUCED` 在 R1 仅注册关系类型，证据、结果和学习产物的生成由 R2+ 启用。
+其中 `BASED_ON_FACT / SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY` 在 R1 由 semantic ref resolver 在目标节点已存在时补边；`REALIZED_BY` 是 `Goal -> Quest` 结构性反向边，R1 在创建 Quest 时直接写入；`PRODUCED` 在 R1 仅注册关系类型，证据、结果和学习产物的生成由 R2+ 启用。
 
 Semantic ref resolver 的 R1 解析顺序：
 
@@ -611,13 +637,13 @@ R1 新增 `situation` / `goal` / `quest` 轻量命令族，`task` 命令族保�
 
 | 命令 | 行为 |
 |---|---|
-| `situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule\|weak_experience\|manual\|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low\|medium\|high\|critical]` | 创建 declarative Situation assertion |
+| `situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule\|weak_experience\|manual\|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low\|medium\|high\|critical]` | 创建 declarative Situation assertion；`rule-ref / experience-ref` 使用 `namespace:key@version` |
 | `situation list [--limit N]` | 列出 Situation |
 | `situation show <id>` | 展示 assertion 与 trigger provenance |
-| `goal create --title <T> --situation <id> --desired-state <state> [--priority low\|normal\|high\|urgent]` | 从 Situation 创建 Goal |
+| `goal create --title <T> --situation <id> --desired-state <state> [--priority low\|normal\|high\|urgent]` | 从 Situation 创建 Goal；R1 命令层 `desired-state` 为 string |
 | `goal list [--limit N]` | 列出 Goal |
 | `goal show <id>` | 展示 Goal |
-| `quest create --situation <id> --goal <id> --title <T>` | 创建 Quest draft |
+| `quest create --situation <id> --goal <id> --title <T> [--policy-ref <R>] [--process-ref <R>] [--quality-ref <R>] [--case-ref <R>] [--plan-graph-summary <S>]` | 创建 Quest draft；治理/经验 ref 使用 `namespace:key@version`，R1 命令层计划摘要为 string |
 | `quest list [--limit N]` | 列出 Quest |
 | `quest show <id>` | R1 展示 Situation / Goal / Objectives / Evidence refs / Progress；完整 Evidence 节点视图留 R2+ |
 
@@ -727,10 +753,10 @@ UI 文案不得暗示 `task done` 等于业务目标完成。
 ```json
 {
   "title": "AHU-102 Bearing Degradation Response",
-  "policy_refs": ["maintenance_safety@3.2", "loto_control@2.1"],
-  "process_refs": ["bearing_degradation_response@4.2"],
-  "quality_refs": ["rotating_equipment_post_maintenance@2.4"],
-  "case_refs": ["case:AHU-103:2026Q2"],
+  "policy_refs": ["policy:maintenance_safety@3.2", "policy:loto_control@2.1"],
+  "process_refs": ["process:bearing_degradation_response@4.2"],
+  "quality_refs": ["quality:rotating_equipment_post_maintenance@2.4"],
+  "case_refs": ["case:AHU-103-2026Q2@1"],
   "objectives": [
     "diagnose probable failure",
     "determine safe operating window",
@@ -763,7 +789,7 @@ Quest 可接受的条件：
 
 - 修正 `task_state_machine.transition()` 的事务边界，确保幂等检查、FOR UPDATE、SSOT 更新、assignment、transition、outbox 在同一事务内。
 - 补齐 `task create --scoped-at` 写 `SCOPED_AT`，owner 写 `OWNED_BY` 或等价 assignment/edge。
-- World UI 不再生成未实现的 `task start` 动作，或补齐 `start` Phase C 事件。
+- World UI 对 `claimed` 任务生成已实现的 `task start` 动作，对 `in_progress / approved` 任务生成 `task complete`。
 - 保持 `task` Phase B/C 测试绿色。
 
 ### R1 — Semantic Shell
@@ -815,17 +841,17 @@ Quest 可接受的条件：
 
 ### 实现级 R0
 
-- [ ] `task_state_machine.transition()` 全写路径单事务覆盖。
-- [ ] `task create --scoped-at` 落 `SCOPED_AT`；owner 关系/assignment 可审计。
-- [ ] World UI 不再指向未实现的 `task start`，或 `start` 已实现。
-- [ ] Phase B/C 现有测试仍通过。
+- [x] `task_state_machine.transition()` 全写路径单事务覆盖。
+- [x] `task create --scoped-at` 落 `SCOPED_AT`；owner 关系/assignment 可审计。
+- [x] World UI 不再指向未实现的 `task start`，且 `start` 已实现。
+- [x] Phase B/C 现有测试仍通过。
 
 ### 实现级 R1
 
-- [ ] `situation / goal / quest` 节点类型注册。
-- [ ] 关系 `RESPONDS_TO / PURSUES / HAS_OBJECTIVE` 可创建和查询。
-- [ ] `task.attributes.quest_id` 与 Quest objective rollup 一致。
-- [ ] `quest show` 能展示 situation、goal、objectives、progress。
+- [x] `situation / goal / quest` 节点类型注册。
+- [x] 关系 `RESPONDS_TO / PURSUES / HAS_OBJECTIVE` 可创建和查询。
+- [x] `task.attributes.quest_id` 与 Quest objective rollup 一致。
+- [x] `quest show` 能展示 situation、goal、objectives、progress。
 
 ### 实现级 R2-R4
 

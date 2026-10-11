@@ -7,6 +7,7 @@ Subcommands:
   task claim    — state machine event=claim
   task assign   — state machine event=assign
   task publish  — state machine event=publish
+  task start    — state machine event=start
   task complete — state machine event=complete
 
 SSOT: ``docs/command/SPEC/features/CMD_task.md``.
@@ -33,7 +34,7 @@ from app.commands.command_tool_semantics import CommandToolSemantics, TASK_SUBCO
 from ._helpers import correlation_id_from_context, derive_idempotency_key, i18n, parse_argv, require_permission, resolve_principal_or_error, task_error_to_result, trace_id_from_context, usage_result
 from .task_pool_command import execute_task_pool_command
 logger = logging.getLogger(__name__)
-_SUB_PERM = {'create': TASK_CREATE, 'list': TASK_READ, 'show': TASK_READ, 'claim': TASK_CLAIM, 'assign': TASK_ASSIGN, 'publish': TASK_PUBLISH, 'complete': TASK_UPDATE}
+_SUB_PERM = {'create': TASK_CREATE, 'list': TASK_READ, 'show': TASK_READ, 'claim': TASK_CLAIM, 'assign': TASK_ASSIGN, 'publish': TASK_PUBLISH, 'start': TASK_UPDATE, 'complete': TASK_UPDATE}
 _CREATE_BOOL_FLAGS = {'draft'}
 _LIST_BOOL_FLAGS = {'mine', 'assigned'}
 _TRANSITION_BOOL_FLAGS: set[str] = set()
@@ -62,16 +63,16 @@ class TaskCommand(GameCommand):
     )
 
     def __init__(self) -> None:
-        super().__init__(name='task', description='Task command family (create / list / show / claim / assign / publish / complete)', aliases=['tasks'], game_name='campusworld')
+        super().__init__(name='task', description='Task command family (create / list / show / claim / assign / publish / start / complete)', aliases=['tasks'], game_name='campusworld')
 
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         if not args:
-            return usage_result(context, 'usage.root', 'task <create|list|show|claim|assign|publish|complete> [...]')
+            return usage_result(context, 'usage.root', 'task <create|list|show|claim|assign|publish|start|complete> [...]')
         sub = str(args[0]).lower()
         rest = args[1:]
         if sub == 'pool':
             return self._do_pool(context, rest)
-        handler = {'create': self._do_create, 'list': self._do_list, 'show': self._do_show, 'claim': self._do_claim, 'assign': self._do_assign, 'publish': self._do_publish, 'complete': self._do_complete}.get(sub)
+        handler = {'create': self._do_create, 'list': self._do_list, 'show': self._do_show, 'claim': self._do_claim, 'assign': self._do_assign, 'publish': self._do_publish, 'start': self._do_start, 'complete': self._do_complete}.get(sub)
         if handler is None:
             return CommandResult.error_result(i18n(context, 'error.invalid_event', default=f'unknown subcommand: {sub}', detail=sub), error='commands.task.error.invalid_event')
         gate = require_permission(context, _SUB_PERM[sub])
@@ -156,6 +157,9 @@ class TaskCommand(GameCommand):
 
     def _do_claim(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         return self._dispatch_event(ctx, args, event='claim', usage_key='usage.claim', usage_default='task claim <id>')
+
+    def _do_start(self, ctx: CommandContext, args: List[str]) -> CommandResult:
+        return self._dispatch_event(ctx, args, event='start', usage_key='usage.start', usage_default='task start <id>')
 
     def _do_complete(self, ctx: CommandContext, args: List[str]) -> CommandResult:
         return self._dispatch_event(ctx, args, event='complete', usage_key='usage.complete', usage_default='task complete <id>')

@@ -5,7 +5,7 @@ from app.services.task.user_task_queue import QueueTaskRow
 from app.services.world_interaction import world_interaction_service
 
 
-def test_options_for_claimed_task_offers_complete():
+def test_options_for_claimed_task_offers_start():
     row = QueueTaskRow(
         id=42,
         state="claimed",
@@ -16,7 +16,9 @@ def test_options_for_claimed_task_offers_complete():
         assignee_kind="user",
     )
     options = world_interaction_service._options_for_queue_task(row)
-    assert options[0]["command"] == "task complete 42"
+    assert options[0]["id"] == "task_start_42"
+    assert options[0]["label"] == "Start task"
+    assert options[0]["command"] == "task start 42"
 
 
 def test_task_queue_event_uses_task_id():

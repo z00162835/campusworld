@@ -4,11 +4,11 @@ I2 (`SPEC.md` §1 — invariants): for any task in state ``S``, the set of
 ``role`` values in active rows of ``task_assignments`` is a subset of
 ``workflow_definition.states[S].expected_roles``.
 
-Phase B can drive a task through ``draft → open → claimed → done`` (5 events).
+Phase B can drive a task through ``draft -> open -> claimed -> in_progress -> done``.
 This test exercises that path against a real PostgreSQL and asserts I2 at
-each reachable state. ``in_progress`` / ``pending_review`` / ``approved`` /
-``rejected`` are deferred to Phase C; the assertion infrastructure here is
-written so they trivially extend in PR-C1.
+each reachable state. ``pending_review`` / ``approved`` / ``rejected`` remain
+deferred to Phase C; the assertion infrastructure here is written so they
+trivially extend in PR-C1.
 
 Skipped unless ``CAMPUSWORLD_TEST_DATABASE_URL`` is set.
 """
@@ -108,7 +108,7 @@ def _assert_i2(session, task_id: int, state: str) -> None:
 
 
 def test_i2_holds_through_phase_b_path(session):
-    """draft → open → claimed → done — each state's active roles ⊆ expected."""
+    """draft -> open -> claimed -> in_progress -> done; active roles stay valid."""
     from app.services.task.permissions import Principal
     from app.services.task.task_state_machine import create_task, transition
 
@@ -148,11 +148,21 @@ def test_i2_holds_through_phase_b_path(session):
     _assert_i2(session, created.task_id, "claimed")
     assert "executor" in _active_roles(session, created.task_id)
 
+    started = transition(
+        task_id=created.task_id,
+        event="start",
+        actor_principal=executor,
+        expected_version=claimed.state_version,
+        db_session=session,
+    )
+    assert started.to_state == "in_progress"
+    _assert_i2(session, created.task_id, "in_progress")
+
     completed = transition(
         task_id=created.task_id,
         event="complete",
         actor_principal=executor,
-        expected_version=claimed.state_version,
+        expected_version=started.state_version,
         db_session=session,
     )
     assert completed.to_state == "done"

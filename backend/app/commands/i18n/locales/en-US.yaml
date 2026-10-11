@@ -221,13 +221,14 @@ commands:
   out:
     description: "Move out"
   task:
-    description: "Task command family (create / publish / claim / assign / complete / list / show / pool ...)"
+    description: "Task command family (create / publish / claim / assign / start / complete / list / show / pool ...)"
     usage:
-      root: "task <subcommand> [args]; available: create / list / show / claim / assign / publish / complete / pool"
+      root: "task <subcommand> [args]; available: create / list / show / claim / assign / publish / start / complete / pool"
       create: "task create --title <T> [--workflow <key>] [--to-pool <pool_key>] [--quest <quest_id>] [--scoped-at <node_id>] [--objective-kind <kind>] [--requires-capability <a,b>] [--priority <p>] [--visibility <v>] [--idempotency-key <k>]"
       claim: "task claim <id> [--idempotency-key <k>]"
       assign: "task assign <id> --to <principal_id> [--kind user|agent|group] [--idempotency-key <k>]"
       publish: "task publish <id> --to-pool <pool_key> [--idempotency-key <k>]"
+      start: "task start <id> [--idempotency-key <k>]"
       complete: "task complete <id> [--idempotency-key <k>]"
       list: "task list [--mine|--pool <key>|--assigned] [--limit N] [--offset O]"
       show: "task show <id>"
@@ -246,6 +247,8 @@ commands:
       success: "Task claimed: #{task_id} state={to_state} version={state_version}"
     assign:
       success: "Task assigned: #{task_id} state={to_state} version={state_version}"
+    start:
+      success: "Task started: #{task_id} state={to_state} version={state_version}"
     complete:
       success: "Task completed: #{task_id} state={to_state} version={state_version}"
     list:

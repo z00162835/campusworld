@@ -629,6 +629,7 @@ def test_ensure_graph_seed_ontology_registers_quest_semantic_shell_types():
             {
                 "type_codes": [
                     "ABOUT",
+                    "BASED_ON_FACT",
                     "SUPPORTED_BY",
                     "TRIGGERED_BY_RULE",
                     "TRIGGERED_BY_EXPERIENCE",
@@ -654,6 +655,7 @@ def test_ensure_graph_seed_ontology_registers_quest_semantic_shell_types():
     assert "assertion" in nodes["situation"].schema_definition["properties"]
     assert {row.type_code for row in rel_rows} == {
         "ABOUT",
+        "BASED_ON_FACT",
         "SUPPORTED_BY",
         "TRIGGERED_BY_RULE",
         "TRIGGERED_BY_EXPERIENCE",

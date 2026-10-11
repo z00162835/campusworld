@@ -25,7 +25,7 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 ## Agent tool semantics
 
 - 类级 **`mutate`**；只读子命令（`list`、`show`、`pool list|show|stats`、`workflow list|show` 等）经 `subcommand_profiles` 解析为 **`read`**。
-- 写子命令（`create`、`claim`、`assign`、`publish`、`complete` 等）保持 **`mutate`**。
+- 写子命令（`create`、`claim`、`assign`、`publish`、`start`、`complete` 等）保持 **`mutate`**。
 - **无参回落 read**：`task` 以无参形式调用时仅打印用法（不改变状态），故 `CommandToolSemantics.default_profile_when_no_subcommand='read'`，`resolve_command_tool_semantics('task', args=[])` 解析为 `read`；避免 `execution_gate` 因类级 `mutate` 误阻 informational 意图下的 bare 调用。
 - 见快照 `tool_semantics` 与 `backend/app/commands/command_tool_semantics.py`。
 
@@ -55,7 +55,7 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 
 只读命令**不经状态机服务**，直接走仓储查询（Phase B 落 `app/repositories/task_repo.py`）。
 
-> Phase B 子集说明：当前只实现 `create/list/show/claim/assign/publish/complete/pool list|show|create|update|disable|enable`。
+> Phase B 子集说明：当前只实现 `create/list/show/claim/assign/publish/start/complete/pool list|show|create|update|disable|enable`。
 > 文档中其余命令与参数保留为扩展位，不代表当前可用。
 
 #### 创建与发布
@@ -96,11 +96,11 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 
 | 命令 | 行为 |
 |---|---|
-| `situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule\|weak_experience\|manual\|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low\|medium\|high\|critical]` | 创建陈述性 Situation assertion；校验事实依据与 hard/weak/manual/mixed trigger provenance。 |
+| `situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule\|weak_experience\|manual\|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low\|medium\|high\|critical]` | 创建陈述性 Situation assertion；校验事实依据与 hard/weak/manual/mixed trigger provenance；`rule-ref / experience-ref` 使用 `namespace:key@version`。 |
 | `situation list [--limit N]` / `situation show <id>` | 列表与详情。 |
-| `goal create --title <T> --situation <id> --desired-state <state> [--priority low\|normal\|high\|urgent]` | 创建 Goal，并写 `GOAL_FOR` 与 `RAISES_GOAL`。 |
+| `goal create --title <T> --situation <id> --desired-state <state> [--priority low\|normal\|high\|urgent]` | 创建 Goal，并写 `GOAL_FOR` 与 `RAISES_GOAL`；R1 命令层只接收自然语言 string，结构化 GoalSpec 留 API/R2+。 |
 | `goal list [--limit N]` / `goal show <id>` | 列表与详情。 |
-| `quest create --situation <id> --goal <id> --title <T>` | 创建 Quest draft，并写 `RESPONDS_TO` 与 `PURSUES`。 |
+| `quest create --situation <id> --goal <id> --title <T>` | 创建 Quest draft，并写 `RESPONDS_TO`、`PURSUES` 与 `REALIZED_BY`；`policy/process/quality/case` refs 使用 `namespace:key@version`；R1 命令层的计划/验收摘要只接收自然语言 string。 |
 | `quest list [--limit N]` / `quest show <id>` | 展示 Quest、Situation assertion/trigger、Goal、Objectives 与 Progress。 |
 
 #### Bulk（决策 14：逐个 transition）
@@ -194,7 +194,7 @@ task <subcommand> [args] [--idempotency-key <K>] [--correlation-id <C>]
 
 ## Tests
 
-- `backend/tests/commands/test_task_commands.py`（Phase B 新建）：覆盖六个基础命令 + i18n + `--idempotency-key`。
+- `backend/tests/commands/test_task_commands.py`（Phase B 新建）：覆盖七个基础命令 + i18n + `--idempotency-key`。
 - `backend/tests/services/test_task_state_machine.py`（Phase B 新建）：状态/事件矩阵单元测试。
 - `backend/tests/integration/test_task_invariants.py`（Phase B 新建）：I1–I6 集成测试。
 - `backend/tests/integration/test_task_handoff.py`（Phase C 新建）：agent1 → admin → agent2 端到端。

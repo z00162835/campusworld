@@ -76,6 +76,7 @@ def test_resolve_task_mutate_subcommand_still_mutate():
     """State-changing subcommands keep their mutate profile."""
     sem = resolve_command_tool_semantics('task', args=['complete', '1'])
     assert sem.interaction_profile == 'mutate'
+    assert resolve_command_tool_semantics('task', args=['start', '1']).interaction_profile == 'mutate'
 
 
 @pytest.mark.unit
@@ -194,6 +195,18 @@ def test_create_has_write_high_contract():
 def test_task_has_subcommand_aware_side_effect():
     assert resolve_command_tool_semantics('task', args=['list']).side_effect_level == 'read'
     assert resolve_command_tool_semantics('task', args=['create']).side_effect_level == 'write_high'
+
+
+@pytest.mark.unit
+def test_semantic_shell_commands_have_subcommand_aware_side_effects():
+    for command_name in ("situation", "goal", "quest"):
+        assert resolve_command_tool_semantics(command_name, args=[]).side_effect_level == 'read'
+        assert resolve_command_tool_semantics(command_name, args=['list']).side_effect_level == 'read'
+        assert resolve_command_tool_semantics(command_name, args=['show', '1']).side_effect_level == 'read'
+        assert resolve_command_tool_semantics(command_name, args=['create']).side_effect_level == 'write_high'
+        sem = resolve_command_tool_semantics(command_name)
+        assert sem.data_classification == 'internal'
+        assert sem.error_schema is not None
 
 
 # ---------------------------------------------------------------------------
@@ -588,4 +601,3 @@ def test_prompt_fallback_disabled_skips_preamble(monkeypatch):
     monkeypatch.setattr(pdca_mod, 'get_config', lambda: fake_cm)
 
     assert pdca_mod._prompt_fallback_enabled() is False
-

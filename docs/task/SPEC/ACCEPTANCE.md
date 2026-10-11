@@ -21,7 +21,7 @@
 
 ## B. Phase B — 实现级 ACCEPTANCE
 
-> Phase B 实施归档：[`_generated/PHASE_B_ROLLOUT_2026Q2.md`](_generated/PHASE_B_ROLLOUT_2026Q2.md)。**Phase B 的状态机事件白名单 = `create / publish / claim / assign / complete`**；其余事件由 `task_state_machine.transition` 显式拒绝（`WorkflowEventNotAllowed`），并标注下方为 "→ Phase C"。
+> Phase B 实施归档：[`_generated/PHASE_B_ROLLOUT_2026Q2.md`](_generated/PHASE_B_ROLLOUT_2026Q2.md)。**Phase B 的状态机事件白名单 = `create / publish / claim / assign / start / complete`**；其余事件由 `task_state_machine.transition` 显式拒绝（`WorkflowEventNotAllowed`），并标注下方为 "→ Phase C"。
 
 ### B.1 Ontology 与迁移
 
@@ -35,7 +35,7 @@
 
 ### B.2 服务与权限
 
-- [x] `app/services/task/task_state_machine.py::transition` 实现，参数含 `idempotency_key / correlation_id / payload`，**Phase B 仅放行事件 `create / publish / claim / assign / complete`**；其余事件 (`start / submit-review / approve / reject / handoff / fail / cancel / expand`) → Phase C。 **(PR4)**
+- [x] `app/services/task/task_state_machine.py::transition` 实现，参数含 `idempotency_key / correlation_id / payload`，**Phase B 仅放行事件 `create / publish / claim / assign / start / complete`**；其余事件 (`submit-review / approve / reject / handoff / fail / cancel / expand`) → Phase C。 **(PR4)**
 - [x] `transition` 单事务覆盖：幂等命中 → FOR UPDATE → 池 ACL 校验 → 校验 → `event_seq` → SSOT 更新（`current_state / state_version / pool_id`）→ assignments 维护 → transitions 追加（含 `idempotency_expires_at = now()+7d`）→ outbox（带 `pool_key`）。父 rollup（`children_summary` / step 6'）→ Phase C。 **(PR4)**
 - [x] 加锁顺序固定 `nodes → task_assignments → task_state_transitions → task_outbox`（Phase B 无父子，故无 `nodes(parent)`）；并发 claim 用 32-agent bench 验证。 **(PR4 / PR6)**
 - [x] RBAC 权限码 §1.4 注册到 `permissions.py`（含 `task.publish` / `task.pool.admin`）—— Phase B 通过 `app/services/task/permissions.py::register_task_permissions_into_admin()` 启动时注入 `ADMIN` 角色；命令层装饰器引用；`system` 虚拟主体（id=0, kind='system'）默认权限就位。 **(PR3)**
@@ -49,16 +49,16 @@
 
 ### B.3 命令
 
-- [x] `task create / list / show / claim / assign / complete / publish` + `task pool list / show / create / update / disable / enable` 命令实现（`app/commands/game/task/`），SSH `cmdset` 与 `POST /api/v1/command/execute` 同源（[`tests/contracts/test_task_dual_protocol.py`](../../../backend/tests/contracts/test_task_dual_protocol.py)）；`task pool stats` → Phase C。 **(PR5)**
+- [x] `task create / list / show / claim / assign / start / complete / publish` + `task pool list / show / create / update / disable / enable` 命令实现（`app/commands/game/task/`），SSH `cmdset` 与 `POST /api/v1/command/execute` 同源（[`tests/contracts/test_task_dual_protocol.py`](../../../backend/tests/contracts/test_task_dual_protocol.py)）；`task pool stats` → Phase C。 **(PR5)**
 - [x] `task create --to-pool <key>` 自动应用池默认值并经 `task_state_machine.transition('publish', ...)` evaluate `publish_acl`；缺权限返回 `PublishAclDenied`。 **(PR5)**
 - [x] 所有写命令支持 `--idempotency-key`（缺省由 `(actor, command, args_hash, correlation_id)` 派生）；幂等命中返回原 `TransitionResult` 且 `idempotent_replay=true`。 **(PR5)**
 - [x] i18n 键 `commands.task.*`（含 `pool_not_found / pool_inactive / publish_denied / consume_denied / cycle_detected / selector_bounds_exceeded` 等）在 `backend/app/commands/i18n/locales/{zh-CN,en-US}.yaml` 落值；CI 以 [`tests/commands/test_task_i18n_keys_complete.py`](../../../backend/tests/commands/test_task_i18n_keys_complete.py) 防漂移。 **(PR5)**
 
 ### B.4 测试
 
-- [x] 单元：`task_state_machine` Phase B 5 事件矩阵 + Phase C 拒绝路径（`tests/services/test_task_state_machine_unit.py`）；selector 解析（含 bounds / trait_*）；workflow_definition 校验；池 ACL 评估器；`BLOCKED_BY` 环检测。 **(PR3 / PR4)**
+- [x] 单元：`task_state_machine` Phase B 6 事件矩阵 + Phase C 拒绝路径（`tests/services/test_task_state_machine_unit.py`）；selector 解析（含 bounds / trait_*）；workflow_definition 校验；池 ACL 评估器；`BLOCKED_BY` 环检测。 **(PR3 / PR4)**
 - [x] 集成：I1 / I3（CI 静态）/ I4 / I5 / I6 + I2 局部覆盖（`tests/integration/test_task_invariants.py`、`test_task_invariants_i2.py`）；池 `publish_acl` 拒绝路径；`workflow_ref` pin；`pool_id` 不存在拒绝。父子 rollup 并发 / async expand / I7 / I8 / I2 完整非 Phase B 状态 → **Phase C**。 **(PR4 / PR6)**
-- [x] 契约：SSH 与 `POST /api/v1/command/execute` 同源（[`tests/contracts/test_task_dual_protocol.py`](../../../backend/tests/contracts/test_task_dual_protocol.py)）；`pool create → task create → publish → claim → complete` 端到端绿。 **(PR5)**
+- [x] 契约：SSH 与 `POST /api/v1/command/execute` 同源（[`tests/contracts/test_task_dual_protocol.py`](../../../backend/tests/contracts/test_task_dual_protocol.py)）；`pool create → task create → publish → claim → start → complete` 端到端绿。 **(PR5)**
 - [x] 性能：[`tests/bench/task_bench.py`](../../../backend/tests/bench/task_bench.py) 覆盖 Phase B 4 项基线（B1 transition 热路径 / B2 32-agent claim / B3 池视图 / B4 selector 校验）；smoke 模式在 CI 跑通；release 模式手动；首版基线允许 ≥ 70% 余量。 **(PR6)**
 - [ ] Chaos：连接抖动 / 主备切换 / 时钟漂移 → **Phase C**。
 
@@ -72,7 +72,7 @@
 - [ ] `task.consistency_audit` 巡检 worker 实现；不一致写 `task_events.kind=consistency_drift` + structlog 告警；**v1 不自愈**。
 - [ ] 属性测试（`hypothesis`）随机事件序列保持 I1–I6。
 - [ ] Bulk 命令 `task bulk-approve / bulk-claim` 命令层循环 + 错误聚合返回；幂等键 `<bulk_id>:<task_id>` 衍生。
-- [ ] structlog 事件名清单与 F04 §"事件名" 一致：`task.created / published / claimed / assigned / state_changed / approved / rejected / completed / cancelled / handoff / consistency_drift / outbox_pending`。
+- [ ] structlog 事件名清单与 F04 §"事件名"一致：`task.created / published / claimed / assigned / started / state_changed / approved / rejected / completed / cancelled / handoff / consistency_drift / outbox_pending`。
 
 ## R. Phase R — Quest Runtime 重构
 
