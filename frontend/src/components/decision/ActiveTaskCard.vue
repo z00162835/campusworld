@@ -1,45 +1,145 @@
 <template>
-  <article class="task-card">
+  <article
+    class="task-card"
+    :class="[`risk-${task.questContext?.riskLevel || 'normal'}`, { 'is-map-related': mapRelated }]"
+  >
+    <div class="mission-kicker">
+      <span>{{ t('worldInteraction.decision.trackedQuest') }}</span>
+      <span v-if="task.questContext" class="risk-label">
+        {{ t('worldInteraction.decision.risk', { level: t(`worldInteraction.decision.riskLevel.${task.questContext.riskLevel}`) }) }}
+      </span>
+    </div>
     <div class="task-header">
       <div class="task-title-row">
-        <h3>{{ task.title }}</h3>
-        <span class="task-status-pill">{{ task.status }}</span>
+        <h3>{{ task.questTitle || task.title }}</h3>
+        <span class="task-status-pill">{{ task.questContext?.state || task.status }}</span>
       </div>
-      <span class="task-progress-label">{{ task.progress }}%</span>
+      <span v-if="task.questContext && task.progress !== null" class="task-progress-label">
+        {{ t('worldInteraction.decision.questProgress', { value: task.progress }) }}
+      </span>
     </div>
-    <p>{{ task.summary }}</p>
-    <el-progress :percentage="task.progress" :show-text="false" />
-    <div class="step">
-      <span>{{ t('worldInteraction.decision.currentStep') }}</span>
+    <p v-if="task.questContext?.situation" class="situation-line">
+      <span>{{ t('worldInteraction.decision.situation') }}</span>
+      {{ task.questContext.situation.assertion || task.questContext.situation.title }}
+    </p>
+    <div v-if="mapRefs.length" class="mission-map-refs">
+      <el-button
+        v-for="ref in mapRefs"
+        :key="ref.id"
+        class="locate-button"
+        size="small"
+        text
+        @click="$emit('locate', ref.id)"
+      >
+        {{ t('worldInteraction.quest.locateRef', { kind: t(`worldInteraction.quest.mapRefKind.${ref.kind}`), id: ref.id }) }}
+      </el-button>
+    </div>
+    <p v-if="task.questContext?.goal" class="goal-line">
+      <span>{{ t('worldInteraction.decision.goal') }}</span>
+      {{ task.questContext.goal.desiredState || task.questContext.goal.title }}
+    </p>
+    <p v-if="!task.questContext">{{ task.summary }}</p>
+    <el-progress v-if="task.questContext && task.progress !== null" :percentage="task.progress" :show-text="false" />
+    <div v-if="task.questContext" class="provenance-row">
+      <span class="provenance-chip">{{ triggerLabel }}</span>
+      <span v-if="task.questContext.situation?.confidence != null" class="provenance-chip">
+        {{ t('worldInteraction.decision.confidence', { value: confidencePercent }) }}
+      </span>
+      <span v-if="governanceCount" class="provenance-chip">
+        {{ t('worldInteraction.decision.governanceCount', { count: governanceCount }) }}
+      </span>
+    </div>
+    <div class="step objective-step">
+      <span>{{ t('worldInteraction.decision.currentObjective') }}</span>
+      <small v-if="task.questTitle">{{ task.title }}</small>
       <strong>{{ task.currentStep.title }}</strong>
       <p>{{ task.currentStep.shortInstruction }}</p>
     </div>
-    <el-button
-      type="primary"
-      size="small"
-      :disabled="worldSession.sessionActionBusy"
-      @click="$emit('execute', task.nextBestAction.id)"
-    >
-      {{ task.nextBestAction.label }}
-    </el-button>
+    <div v-if="task.questId" class="companion-encounter">
+      <div class="companion-avatar" aria-hidden="true">AI</div>
+      <div class="companion-dialogue">
+        <span>{{ task.questContext?.companion?.name || t('worldInteraction.quest.aicoFallback') }}</span>
+        <p>{{ t('worldInteraction.decision.companionPrompt') }}</p>
+        <div class="dialogue-choices">
+          <button
+            type="button"
+            :disabled="worldSession.sessionActionBusy"
+            @click="$emit('ask', 'next_step')"
+          >
+            {{ t('worldInteraction.decision.questHelp.nextStep') }}
+          </button>
+          <button
+            type="button"
+            :disabled="worldSession.sessionActionBusy"
+            @click="$emit('ask', 'explain_basis')"
+          >
+            {{ t('worldInteraction.decision.questHelp.explainBasis') }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="mission-actions">
+      <el-button
+        type="primary"
+        size="small"
+        :disabled="worldSession.sessionActionBusy"
+        :aria-describedby="task.nextBestAction.consequenceSummaryKey || task.nextBestAction.consequenceSummary ? 'mission-next-action-consequence' : undefined"
+        @click="$emit('execute', task.nextBestAction.id)"
+      >
+        {{ optionLabel(task.nextBestAction) }}
+      </el-button>
+      <p
+        v-if="task.nextBestAction.consequenceSummaryKey || task.nextBestAction.consequenceSummary"
+        id="mission-next-action-consequence"
+        class="mission-action-consequence"
+      >
+        <span v-if="task.nextBestAction.consequenceKind">{{ t(`worldInteraction.decision.consequenceKind.${task.nextBestAction.consequenceKind}`) }} · </span>
+        {{ task.nextBestAction.consequenceSummaryKey ? t(task.nextBestAction.consequenceSummaryKey) : task.nextBestAction.consequenceSummary }}
+      </p>
+    </div>
   </article>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useWorldSessionStore } from '@/stores/worldSession'
-import type { TaskCard } from '@/types/world'
+import type { DecisionOption, TaskCard } from '@/types/world'
 
-defineProps<{
+const props = defineProps<{
   task: TaskCard
+  mapRelated?: boolean
 }>()
 
 defineEmits<{
   execute: [optionId: string]
+  locate: [entityId: string]
+  ask: [intent: 'next_step' | 'explain_basis']
 }>()
 
 const { t } = useI18n()
 const worldSession = useWorldSessionStore()
+const optionLabel = (option: DecisionOption) =>
+  option.labelKey ? t(option.labelKey, option.labelParams || {}) : option.label
+const confidencePercent = computed(() => Math.round((props.task.questContext?.situation?.confidence || 0) * 100))
+const mapRefs = computed(() => {
+  const situation = props.task.questContext?.situation
+  if (!situation) return []
+  const refs = [
+    ...(situation.subjectRef ? [{ id: situation.subjectRef, kind: 'primary' }] : []),
+    ...(situation.relatedEntityRefs || []).map(id => ({ id, kind: 'related' })),
+    ...(situation.scopedAtRef ? [{ id: situation.scopedAtRef, kind: 'scope' }] : []),
+  ]
+  return refs.filter((ref, index) => refs.findIndex(item => item.id === ref.id) === index)
+})
+const governanceCount = computed(() => {
+  const context = props.task.questContext
+  return context ? context.governanceRefs.length + context.processRefs.length + context.qualityRefs.length : 0
+})
+const triggerLabel = computed(() => {
+  const kind = props.task.questContext?.situation?.triggerKind || 'manual'
+  return t(`worldInteraction.decision.trigger.${kind}`)
+})
 </script>
 
 <style scoped>
@@ -48,7 +148,31 @@ const worldSession = useWorldSessionStore()
   border-radius: var(--radius-lg);
   background: var(--decision-card-bg);
   padding: var(--spacing-lg);
-  border-top: 2px solid var(--color-primary);
+  border-left: 3px solid var(--color-primary);
+}
+
+.task-card.risk-high,
+.task-card.risk-critical {
+  border-left-color: var(--color-danger);
+}
+
+.task-card.is-map-related {
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.45);
+}
+
+.mission-kicker {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-sm);
+}
+
+.risk-label {
+  color: var(--text-tertiary);
 }
 
 .task-header {
@@ -92,6 +216,48 @@ p {
   line-height: 1.5;
 }
 
+.situation-line,
+.goal-line {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.situation-line span,
+.goal-line span {
+  display: block;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
+.locate-button {
+  display: block;
+  margin-top: var(--spacing-xs);
+  padding-left: 0;
+}
+
+.mission-map-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.provenance-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.provenance-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
 .step {
   margin: var(--spacing-md) 0;
 }
@@ -102,5 +268,76 @@ p {
   font-size: var(--font-size-xs);
   text-transform: uppercase;
   margin-bottom: var(--spacing-xs);
+}
+
+.objective-step small {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+}
+
+.mission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.mission-action-consequence {
+  margin: 5px 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.companion-encounter {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-sm);
+  border: 1px solid rgba(64, 158, 255, 0.25);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), transparent);
+}
+
+.companion-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(64, 158, 255, 0.5);
+  border-radius: 50%;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.companion-dialogue > span {
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+}
+
+.companion-dialogue p {
+  margin: 2px 0 var(--spacing-sm);
+}
+
+.dialogue-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.dialogue-choices button {
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.dialogue-choices button:hover:not(:disabled),
+.dialogue-choices button:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--text-primary);
 }
 </style>

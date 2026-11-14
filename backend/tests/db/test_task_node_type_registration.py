@@ -44,6 +44,17 @@ _BANNED_PROPERTIES = (
 )
 
 _SEMANTIC_NODE_REQUIRED_PROPERTIES = {
+    "observation": {
+        "title",
+        "assertion",
+        "source_ref",
+        "provenance",
+        "observed_at",
+        "actor_provenance",
+        "subject_ref",
+        "verification_status",
+        "created_at",
+    },
     "situation": {
         "current_state",
         "state_version",
@@ -244,3 +255,14 @@ def test_situation_business_impact_schema_matches_spec():
     ov = load_graph_seed_node_type_overrides()
     business_impact_type = ov["situation"]["schema_definition"]["properties"]["business_impact"]["type"]
     assert set(business_impact_type) == {"object", "string", "null"}
+
+
+@pytest.mark.unit
+def test_quest_interaction_schema_scopes_active_clue_pins_by_quest():
+    from pathlib import Path
+
+    schema = (Path(__file__).parents[2] / "db" / "schemas" / "database_schema.sql").read_text(encoding="utf-8")
+    section = schema.split("-- BEGIN quest_interaction_runtime", 1)[1].split("-- END quest_interaction_runtime", 1)[0]
+    assert "uq_relationships_account_quest_clue_pin_active" in section
+    assert "ON relationships (source_id, target_id, (attributes->>'quest_id'))" in section
+    assert "WHERE is_active = TRUE AND type_code = 'PINS_CLUE'" in section

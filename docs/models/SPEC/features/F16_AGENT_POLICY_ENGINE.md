@@ -396,6 +396,8 @@ v1 各域实例规则通过 Python dataclass + 代码注册（D7），与平台�
 
 **不合并**：授权是「**能否调**」，行为是「**这次该不该放行/变形**」。PolicyEngine **不**写 `command_policies`，`command_policies` **不**做行为判定。
 
+Quest Runtime 的对象级 decision facade 不是第三个统一规则仓库：它先取得 Quest/Process/Control governance decision，在 Agent 参与时取得本 SPEC 的 `PolicyDecision`，执行具体命令时再调用授权平面。facade 只做显式、保守的结果组合与 correlation 审计；任一层拒绝都不得被其他层的 allow 覆盖，也不得缓存授权结果跨越 mutation boundary。
+
 ---
 
 ## 7. check_point 在 `llm_pdca.py` 的插入点

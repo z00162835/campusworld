@@ -1,5 +1,11 @@
 import apiClient from './index'
-import type { StatePatch, WorldInteractionState, WorldSummary, DisplayPolicy } from '@/types/world'
+import type {
+  DisplayPolicy,
+  QuestInteractionActionPayload,
+  StatePatch,
+  WorldInteractionState,
+  WorldSummary,
+} from '@/types/world'
 
 export interface WorldSessionCurrentResponse {
   session: WorldInteractionState['session']
@@ -25,9 +31,18 @@ export interface ActionResponse {
   }
 }
 
+export interface QuestInteractionActionRequest {
+  expectedProjectionRevision: string
+  lastEventId?: string | null
+  idempotencyKey: string
+  payload: QuestInteractionActionPayload
+}
+
 export const worldSessionsApi = {
   getCurrent: () => apiClient.get<WorldSessionCurrentResponse>('/world-sessions/current'),
   getInteractionState: (sessionId: string) => apiClient.get<WorldInteractionState>(`/world-sessions/${sessionId}/interaction-state`),
   enterWorld: (worldId: string) => apiClient.post<ActionResponse>('/world-sessions/enter-world', { world_id: worldId }),
   leaveWorld: () => apiClient.post<ActionResponse>('/world-sessions/leave-world'),
+  questAction: (request: QuestInteractionActionRequest) =>
+    apiClient.post<ActionResponse>('/world-sessions/quest-actions', request),
 }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { decisionCenterApi, queryAicoStream } from '@/api/decisionCenter'
-import { useWorldSessionStore } from './worldSession'
+import { normalizeQuestInteraction, useWorldSessionStore } from './worldSession'
 import { worldSessionsApi } from '@/api/worldSessions'
 
 vi.mock('@/api/worldSessions', () => ({
@@ -10,6 +10,7 @@ vi.mock('@/api/worldSessions', () => ({
     getInteractionState: vi.fn(),
     enterWorld: vi.fn(),
     leaveWorld: vi.fn(),
+    questAction: vi.fn(),
   },
 }))
 
@@ -287,6 +288,84 @@ describe('session action gate', () => {
 
     expect(worldSessionsApi.enterWorld).toHaveBeenCalledWith('hicampus')
     expect(store.aicoThreads).toHaveLength(0)
+  })
+
+  it('binds Quest help to a UUID thread and sends the latest projection revision', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+    store.queryMode = 'aico'
+    store.interactionState!.quest_interaction = {
+      contractVersion: 'quest-interaction.v1',
+      capabilities: ['structured_conversation'],
+      projectionRevision: '12',
+      trackedQuests: [],
+      foregroundQuestId: '44',
+    }
+    vi.mocked(queryAicoStream).mockResolvedValueOnce(undefined)
+
+    const submission = await store.submitQuery('Help me understand this Quest', {
+      questContext: { quest_id: '44', objective_id: '55', projection_revision: '11' },
+    })
+    expect(submission.accepted).toBe(true)
+    if (submission.accepted) await submission.completion
+
+    const [sessionId, _query, options] = vi.mocked(queryAicoStream).mock.calls[0]
+    expect(sessionId).toBe('sess1')
+    expect(options.threadId).toMatch(/^[0-9a-f-]{36}$/i)
+    expect(options.questContext).toEqual({ quest_id: '44', objective_id: '55', projection_revision: '12' })
+    expect(store.aicoThreads[0].questContext?.quest_id).toBe('44')
+  })
+
+  it('refreshes stale Quest state without replaying the mutation', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+    store.interactionState!.quest_interaction = {
+      contractVersion: 'quest-interaction.v1',
+      capabilities: ['multi_quest_tracking'],
+      projectionRevision: '1',
+      trackedQuests: [],
+    }
+    vi.mocked(worldSessionsApi.questAction).mockRejectedValue({
+      response: { status: 409, data: { detail: { code: 'stale_projection' } } },
+    })
+    vi.mocked(worldSessionsApi.getInteractionState).mockResolvedValue({
+      data: {
+        ...store.interactionState,
+        quest_interaction: {
+          contractVersion: 'quest-interaction.v1',
+          capabilities: ['multi_quest_tracking'],
+          projectionRevision: '2',
+          trackedQuests: [],
+        },
+      },
+    } as any)
+
+    await expect(store.executeQuestInteractionAction({ action: 'track', questId: '9' })).resolves.toBeUndefined()
+
+    expect(worldSessionsApi.questAction).toHaveBeenCalledTimes(1)
+    expect(worldSessionsApi.getInteractionState).toHaveBeenCalledTimes(1)
+    expect(store.questInteraction?.projectionRevision).toBe('2')
+  })
+})
+
+describe('Quest interaction contract negotiation', () => {
+  it('falls back when the server returns an unknown major contract', () => {
+    expect(normalizeQuestInteraction({
+      contractVersion: 'quest-interaction.v2',
+      capabilities: ['multi_quest_tracking'],
+      projectionRevision: '1',
+      trackedQuests: [],
+    })).toBeUndefined()
+  })
+
+  it('ignores unknown capabilities while preserving known ones', () => {
+    const value = normalizeQuestInteraction({
+      contractVersion: 'quest-interaction.v1',
+      capabilities: ['multi_quest_tracking', 'future_magic'],
+      projectionRevision: '1',
+      trackedQuests: [],
+    })
+    expect(value?.capabilities).toEqual(['multi_quest_tracking'])
   })
 })
 

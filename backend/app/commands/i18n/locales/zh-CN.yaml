@@ -265,6 +265,20 @@ commands:
         success: "任务池已停用：{key}"
       enable:
         success: "任务池已启用：{key}"
+    observation:
+      usage:
+        root: "observation <record|list|show> [参数]"
+        create: "observation record --assertion <陈述> --source-ref <来源> --observed-at <观察时间> [--title <标题>]"
+        list: "observation list [--limit N]"
+        show: "observation show <id>"
+      create:
+        success: "Observation 已创建：#{id}"
+      list:
+        header: "Observation 清单（共 {total} 条）"
+        empty: "未匹配任何 Observation。"
+        row: "#{id}  title={title}"
+      show:
+        detail: "Observation #{id}\n  观察陈述：{assertion}\n  验证状态：{verification_status}"
     situation:
       usage:
         root: "situation <create|list|show> [参数]"
@@ -307,12 +321,15 @@ commands:
         row: "#{id}  title={title}"
       show:
         title: "Quest #{id}"
+      interaction:
+        success: "Quest 交互已更新。"
     error:
       generic: "任务系统错误：{detail}"
       forbidden: "无权限执行任务操作：{detail}"
       not_found: "未找到任务 #{task_id}"
       invalid_event: "工作流不允许该事件：{detail}"
       version_stale: "状态版本已变更，请刷新后重试：{detail}"
+      idempotency_conflict: "幂等键已被其他请求使用：{detail}"
       already_claimed: "任务已被认领：{detail}"
       role_required: "缺少所需角色：{detail}"
       precondition_failed: "前置条件未满足：{detail}"

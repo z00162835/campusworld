@@ -108,6 +108,14 @@ GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, st
         "app.models.base",
     ),
     (
+        "observation",
+        "default_object",
+        "观察",
+        "app.models.base.DefaultObject",
+        "DefaultObject",
+        "app.models.base",
+    ),
+    (
         "situation",
         "default_object",
         "情境",
@@ -818,6 +826,12 @@ def ensure_multi_turn_conversation_memory_schema(engine) -> None:
         daemon_ok = bool(conn.execute(text("select to_regclass('public.agent_daemon_stm_lock');")).scalar())
         thread_ok = bool(conn.execute(text("select to_regclass('public.agent_conversation_thread');")).scalar())
         if stm_ok and daemon_ok and thread_ok:
+            _try_exec(conn, "ALTER TABLE agent_conversation_thread ADD COLUMN IF NOT EXISTS quest_node_id INTEGER REFERENCES nodes (id) ON DELETE RESTRICT;")
+            _try_exec(conn, "ALTER TABLE agent_conversation_thread ADD COLUMN IF NOT EXISTS collaboration_relationship_id INTEGER;")
+            _try_exec(conn, "ALTER TABLE agent_conversation_thread ADD COLUMN IF NOT EXISTS created_projection_revision TEXT;")
+            _try_exec(conn, "ALTER TABLE agent_conversation_thread ADD COLUMN IF NOT EXISTS graph_ref_metadata JSONB NOT NULL DEFAULT '{}'::jsonb;")
+            _try_exec(conn, "ALTER TABLE agent_conversation_thread ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;")
+            _try_exec(conn, "ALTER TABLE agent_conversation_thread ADD COLUMN IF NOT EXISTS archive_reason TEXT;")
             _try_exec(
                 conn,
                 "ALTER TABLE agent_long_term_memory ADD COLUMN IF NOT EXISTS caller_account_node_id "
@@ -978,6 +992,10 @@ def ensure_graph_seed_ontology(engine) -> None:
             ("PRODUCED", "产出结果", "app.models.graph.Relationship", "TASK", TASK),
             ("OWNED_BY", "由账号拥有", "app.models.graph.Relationship", "TASK", TASK),
             ("SCOPED_AT", "作用于节点", "app.models.graph.Relationship", "TASK", TASK),
+            ("TRACKS_QUEST", "追踪任务线", "app.models.graph.Relationship", "TASK", TASK),
+            ("FOCUSES_ON", "聚焦任务目标", "app.models.graph.Relationship", "TASK", TASK),
+            ("PINS_CLUE", "固定线索", "app.models.graph.Relationship", "TASK", TASK),
+            ("ASSISTED_BY", "由协作代理辅助", "app.models.graph.Relationship", "TASK", TASK),
         ]
         for type_code, type_name, typeclass, trait_class, trait_mask in rel_rows:
             _try_exec_mapped(
@@ -1141,6 +1159,24 @@ def ensure_task_system_schema(engine) -> None:
             raise SchemaMigrationError("task_system section is empty")
         _must_exec(conn, section, "apply task_system schema from database_schema.sql failed")
         _ = present  # documented usage; kept for future verbose logging.
+    finally:
+        conn.close()
+
+
+def ensure_quest_interaction_runtime_schema(engine) -> None:
+    """Ensure account-scoped Quest interaction revision and event storage."""
+    conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        sql_path = Path(__file__).parent / "schemas" / "database_schema.sql"
+        schema_sql = sql_path.read_text(encoding="utf-8")
+        start = "-- BEGIN quest_interaction_runtime"
+        end = "-- END quest_interaction_runtime"
+        if start not in schema_sql or end not in schema_sql:
+            raise SchemaMigrationError("quest_interaction_runtime section not found in database_schema.sql")
+        section = schema_sql.split(start, 1)[1].split(end, 1)[0].strip()
+        if not section:
+            raise SchemaMigrationError("quest_interaction_runtime section is empty")
+        _must_exec(conn, section, "apply quest interaction runtime schema failed")
     finally:
         conn.close()
 

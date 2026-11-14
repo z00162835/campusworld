@@ -360,18 +360,102 @@ def _can_read_semantic_node(session: Session, *, node_id: int, actor: Principal)
         text(
             """
             SELECT 1
-              FROM relationships r
-             WHERE r.source_id = :node_id
-               AND r.target_id = :actor_id
-               AND r.type_code = 'OWNED_BY'
-               AND r.is_active = TRUE
-               AND COALESCE(r.attributes->>'principal_kind', :actor_kind) = :actor_kind
+              FROM nodes n
+             WHERE n.id = :node_id
+               AND n.is_active = TRUE
+               AND (
+                    n.is_public = TRUE
+                    OR EXISTS (
+                        SELECT 1
+                          FROM relationships r
+                         WHERE r.source_id = n.id
+                           AND r.target_id = :actor_id
+                           AND r.type_code = 'OWNED_BY'
+                           AND r.is_active = TRUE
+                           AND COALESCE(r.attributes->>'principal_kind', :actor_kind) = :actor_kind
+                    )
+               )
              LIMIT 1
             """
         ),
         {'node_id': int(node_id), 'actor_id': int(actor.id), 'actor_kind': actor.kind},
     ).first()
     return row is not None
+
+
+def can_read_semantic_node(session: Session, *, node_id: int, actor: Principal) -> bool:
+    """Return whether ``actor`` may read an owned semantic graph node."""
+    return _can_read_semantic_node(session, node_id=node_id, actor=actor)
+
+
+def create_observation(
+    *,
+    title: str,
+    assertion: str,
+    actor: Principal,
+    source_ref: Optional[str] = None,
+    provenance: Optional[Dict[str, Any]] = None,
+    observed_at: Optional[str] = None,
+    subject_id: Optional[int] = None,
+    db_session: Optional[Session] = None,
+) -> SemanticNodeResult:
+    """Create an immutable, source-bearing observation graph node."""
+    clean_assertion = str(assertion or '').strip()
+    if not clean_assertion:
+        raise PreconditionFailed('observation.assertion is required')
+    clean_source_ref = str(source_ref or '').strip()
+    if not clean_source_ref:
+        raise PreconditionFailed('observation.source_ref is required')
+    if not isinstance(provenance, dict) or not provenance:
+        raise PreconditionFailed('observation.provenance is required')
+    source_kind = str(provenance.get('source_kind') or '').strip()
+    capture_method = str(provenance.get('capture_method') or '').strip()
+    if not source_kind or not capture_method:
+        raise PreconditionFailed('observation.provenance requires source_kind and capture_method')
+    clean_observed_at = str(observed_at or '').strip()
+    if not clean_observed_at:
+        raise PreconditionFailed('observation.observed_at is required')
+    try:
+        parsed_observed_at = datetime.fromisoformat(clean_observed_at.replace('Z', '+00:00'))
+    except ValueError as exc:
+        raise PreconditionFailed('observation.observed_at must be an ISO-8601 datetime') from exc
+    if parsed_observed_at.tzinfo is None:
+        raise PreconditionFailed('observation.observed_at must include a timezone')
+    with task_transaction(db_session) as session:
+        if subject_id is not None:
+            load_node_ref(session, node_id=int(subject_id))
+        now = _now_iso()
+        attrs: Dict[str, Any] = {
+            'title': str(title or '').strip() or clean_assertion[:120],
+            'assertion': clean_assertion,
+            'source_ref': clean_source_ref,
+            'provenance': dict(provenance),
+            'observed_at': parsed_observed_at.isoformat(),
+            'actor_provenance': _actor_provenance(actor),
+            'subject_ref': int(subject_id) if subject_id is not None else None,
+            'verification_status': 'unverified',
+            'created_at': now,
+        }
+        observation_id = _insert_node(
+            session,
+            type_code='observation',
+            title=attrs['title'],
+            attributes=attrs,
+        )
+        _insert_owner_edge(session, node_id=observation_id, actor=actor)
+        if subject_id is not None:
+            insert_relationship(
+                session,
+                source_id=observation_id,
+                target_id=int(subject_id),
+                type_code='ABOUT',
+            )
+        return SemanticNodeResult(
+            node_id=observation_id,
+            type_code='observation',
+            title=attrs['title'],
+            attributes=attrs,
+        )
 
 
 def create_situation(
@@ -548,14 +632,17 @@ def list_nodes(*, type_code: str, actor: Principal, limit: int = 20, db_session:
         params: Dict[str, Any] = {'type_code': type_code, 'limit': limit}
         if not _can_read_all_semantic_nodes(actor):
             owner_clause = """
-                   AND EXISTS (
-                        SELECT 1
-                          FROM relationships own
-                         WHERE own.source_id = n.id
-                           AND own.target_id = :actor_id
-                           AND own.type_code = 'OWNED_BY'
-                           AND own.is_active = TRUE
-                           AND COALESCE(own.attributes->>'principal_kind', :actor_kind) = :actor_kind
+                   AND (
+                        n.is_public = TRUE
+                        OR EXISTS (
+                            SELECT 1
+                              FROM relationships own
+                             WHERE own.source_id = n.id
+                               AND own.target_id = :actor_id
+                               AND own.type_code = 'OWNED_BY'
+                               AND own.is_active = TRUE
+                               AND COALESCE(own.attributes->>'principal_kind', :actor_kind) = :actor_kind
+                        )
                    )
             """
             params.update({'actor_id': int(actor.id), 'actor_kind': actor.kind})
@@ -600,6 +687,10 @@ def show_quest(*, quest_id: int, actor: Principal, db_session: Optional[Session]
         attrs = quest['attributes']
         situation = load_node_ref(session, node_id=int(attrs.get('situation_id')), expected_type_code='situation')
         goal = load_node_ref(session, node_id=int(attrs.get('goal_id')), expected_type_code='goal')
+        if not _can_read_semantic_node(session, node_id=int(situation['id']), actor=actor):
+            raise ReferenceNotFound(f'situation {situation["id"]} not found')
+        if not _can_read_semantic_node(session, node_id=int(goal['id']), actor=actor):
+            raise ReferenceNotFound(f'goal {goal["id"]} not found')
         objectives = session.execute(
             text(
                 """
@@ -616,9 +707,47 @@ def show_quest(*, quest_id: int, actor: Principal, db_session: Optional[Session]
             ),
             {'quest_id': int(quest_id)},
         ).all()
+        from app.services.task.task_visibility_sql import visible_task_ids
+
+        visible_objective_ids = visible_task_ids(session, actor, [int(row.id) for row in objectives])
+        objective_ids = [int(row.id) for row in objectives]
+        blocked_rows = session.execute(
+            text(
+                """
+                SELECT dependency.source_id
+                  FROM relationships dependency
+                  JOIN nodes prerequisite ON prerequisite.id = dependency.target_id
+                 WHERE dependency.source_id = ANY(:objective_ids)
+                   AND dependency.type_code = 'BLOCKED_BY'
+                   AND dependency.is_active = TRUE
+                   AND prerequisite.is_active = TRUE
+                   AND COALESCE(prerequisite.attributes->>'current_state', '') <> 'done'
+                """
+            ),
+            {'objective_ids': objective_ids or [0]},
+        ).all()
+        blocked_objective_ids = {int(row.source_id) for row in blocked_rows}
+        scope_rows = session.execute(
+            text(
+                """
+                SELECT source_id, target_id
+                  FROM relationships
+                 WHERE source_id = ANY(:objective_ids)
+                   AND type_code = 'SCOPED_AT'
+                   AND is_active = TRUE
+                 ORDER BY id
+                """
+            ),
+            {'objective_ids': objective_ids or [0]},
+        ).all()
+        scope_by_objective: Dict[int, int] = {}
+        for scope_row in scope_rows:
+            scope_by_objective.setdefault(int(scope_row.source_id), int(scope_row.target_id))
         objective_items: List[Dict[str, Any]] = []
         objective_states: List[str] = []
         for row in objectives:
+            if int(row.id) not in visible_objective_ids:
+                continue
             task_attrs = row.attributes if isinstance(row.attributes, dict) else json.loads(row.attributes or '{}')
             state = str(task_attrs.get('current_state') or '')
             objective_states.append(state)
@@ -629,6 +758,10 @@ def show_quest(*, quest_id: int, actor: Principal, db_session: Optional[Session]
                     'current_state': state,
                     'objective_kind': task_attrs.get('objective_kind'),
                     'required_capabilities': task_attrs.get('required_capabilities') or [],
+                    'priority': str(task_attrs.get('priority') or 'normal'),
+                    'due_at': task_attrs.get('due_at'),
+                    'blocked': int(row.id) in blocked_objective_ids,
+                    'scoped_at_id': scope_by_objective.get(int(row.id)),
                 }
             )
         progress = summarize_objective_progress(objective_states)
@@ -638,6 +771,8 @@ def show_quest(*, quest_id: int, actor: Principal, db_session: Optional[Session]
                 'id': situation['id'],
                 'title': situation['name'],
                 'assertion': situation['attributes'].get('assertion'),
+                'subject_ref': situation['attributes'].get('subject_ref'),
+                'attributes': situation['attributes'],
                 'trigger_kind': situation['attributes'].get('trigger_kind'),
                 'trigger_summary': situation['attributes'].get('trigger_summary'),
                 'fact_refs': situation['attributes'].get('fact_refs') or [],
@@ -658,6 +793,8 @@ __all__ = [
     'explicit_node_id_ref',
     'resolve_semantic_node_ref',
     'split_semantic_ref',
+    'can_read_semantic_node',
+    'create_observation',
     'create_situation',
     'create_goal',
     'create_quest',

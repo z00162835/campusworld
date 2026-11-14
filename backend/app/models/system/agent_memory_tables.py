@@ -68,6 +68,12 @@ class AgentConversationThread(Base):
     agent_node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'), nullable=False)
     transport_session_id = Column(Text, nullable=False)
     title_snippet = Column(Text, nullable=True)
+    quest_node_id = Column(Integer, ForeignKey('nodes.id', ondelete='RESTRICT'), nullable=True)
+    collaboration_relationship_id = Column(Integer, nullable=True)
+    created_projection_revision = Column(Text, nullable=True)
+    graph_ref_metadata = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    archived_at = Column(DateTime(timezone=True), nullable=True)
+    archive_reason = Column(Text, nullable=True)
     last_message_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

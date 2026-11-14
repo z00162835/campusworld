@@ -1,5 +1,5 @@
 import apiClient, { authorizedFetch, getAccessTokenForRequest } from './index'
-import type { DecisionOption, StatePatch } from '@/types/world'
+import type { DecisionOption, QuestConversationContext, StatePatch } from '@/types/world'
 import type { ActionResponse } from './worldSessions'
 
 export interface DecisionQueryResponse {
@@ -84,13 +84,14 @@ export const decisionCenterApi = {
 export async function queryAicoStream(
   sessionId: string,
   query: string,
-  options: { signal?: AbortSignal; threadId?: string; onEvent: (event: StreamEvent) => void },
+  options: { signal?: AbortSignal; threadId?: string; questContext?: QuestConversationContext; onEvent: (event: StreamEvent) => void },
 ): Promise<void> {
   const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
   await getAccessTokenForRequest()
 
-  const body: Record<string, string> = { session_id: sessionId, query, mode: 'aico' }
+  const body: Record<string, unknown> = { session_id: sessionId, query, mode: 'aico' }
   if (options.threadId) body.thread_id = options.threadId
+  if (options.questContext) body.quest_context = options.questContext
 
   const response = await authorizedFetch(`${baseURL}/decision-center/query/stream`, {
     method: 'POST',

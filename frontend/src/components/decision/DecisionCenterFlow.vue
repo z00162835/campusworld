@@ -7,13 +7,10 @@
       </h2>
       <div class="region-actions">
         <el-button size="small" text :type="viewFilter === 'pending' ? 'primary' : undefined" @click="viewFilter = 'pending'">
-          {{ t('worldInteraction.decision.pending') }}
+          {{ t('worldInteraction.decision.situations') }}
         </el-button>
         <el-button size="small" text :type="viewFilter === 'current' ? 'primary' : undefined" @click="viewFilter = 'current'">
-          {{ t('worldInteraction.decision.currentTask') }}
-        </el-button>
-        <el-button size="small" text @click="clearResolved">
-          {{ t('worldInteraction.decision.clearResolved') }}
+          {{ t('worldInteraction.decision.currentMission') }}
         </el-button>
       </div>
     </div>
@@ -48,13 +45,14 @@
         <header :id="taskZoneTitleId" class="task-zone-header">
           <div class="zone-header-main">
             <app-icon class="zone-header-icon" name="decisionTasks" :size="16" />
-            <span class="zone-title">{{ t('worldInteraction.decision.taskZoneTitle') }}</span>
+            <span class="zone-title">{{ t('worldInteraction.decision.missionZoneTitle') }}</span>
             <span v-if="pendingBadgeCount > 0" class="zone-badge">{{ pendingBadgeCount }}</span>
           </div>
-          <span class="zone-subtitle">{{ t('worldInteraction.decision.taskZoneSubtitle') }}</span>
+          <span class="zone-subtitle">{{ t('worldInteraction.decision.missionZoneSubtitle') }}</span>
         </header>
 
         <div v-show="showTaskBody" class="task-zone-body">
+          <quest-tracker @locate="locateMissionSubject" />
 <section
             v-if="decisionStore.focus"
             class="focus-summary"
@@ -75,7 +73,10 @@
           <active-task-card
             v-if="decisionStore.activeTask"
             :task="decisionStore.activeTask"
+            :map-related="activeMissionMapRelated"
             @execute="executeTaskAction"
+            @locate="locateMissionSubject"
+            @ask="askQuestGuide"
           />
 
           <section
@@ -89,7 +90,7 @@
             @keyup.enter="runNextBestAction"
           >
             <span>{{ t('worldInteraction.decision.nextBestAction') }}</span>
-            <strong>{{ decisionStore.nextBestAction.label }}</strong>
+            <strong>{{ optionLabel(decisionStore.nextBestAction) }}</strong>
           </section>
         </div>
       </section>
@@ -133,7 +134,7 @@
         <header :id="conversationZoneTitleId" class="conversation-zone-header">
           <div class="zone-header-main">
             <app-icon class="zone-header-icon" name="conversation" :size="16" />
-            <span class="zone-title">{{ t('worldInteraction.decision.conversationZoneTitle') }}</span>
+            <span class="zone-title">{{ conversationZoneTitle }}</span>
           </div>
           <span class="zone-subtitle">{{ conversationZoneSubtitle }}</span>
         </header>
@@ -152,22 +153,27 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessageBox } from 'element-plus'
 import AppIcon from '@/components/common/AppIcon.vue'
 import DecisionEventCard from './DecisionEventCard.vue'
 import ActiveTaskCard from './ActiveTaskCard.vue'
 import DecisionQueryBox from './DecisionQueryBox.vue'
 import DecisionConversationThread from './DecisionConversationThread.vue'
 import AicoThreadToolbar from './AicoThreadToolbar.vue'
+import QuestTracker from './QuestTracker.vue'
 import { useDecisionFoldLayout } from '@/composables/useDecisionFoldLayout'
 import { useDecisionCenterStore } from '@/stores/decisionCenter'
 import { useWorldSessionStore } from '@/stores/worldSession'
+import { useWorldMapStore } from '@/stores/worldMap'
 
 const { t } = useI18n()
 const decisionStore = useDecisionCenterStore()
 const worldSession = useWorldSessionStore()
+const worldMap = useWorldMapStore()
+const optionLabel = (option: NonNullable<typeof decisionStore.nextBestAction>) =>
+  option.labelKey ? t(option.labelKey, option.labelParams || {}) : option.label
 const loadError = computed(() => worldSession.error || (worldSession.errorKey ? t(worldSession.errorKey) : ''))
 const viewFilter = ref<'pending' | 'current'>('pending')
-const hiddenEventIds = ref<Set<string>>(new Set())
 const decisionFoldRef = ref<HTMLElement | null>(null)
 const threadRef = ref<InstanceType<typeof DecisionConversationThread>>()
 
@@ -193,17 +199,28 @@ const showPanelLoading = computed(
 
 const visibleEvents = computed(() => {
   if (viewFilter.value === 'current') return []
-  return decisionStore.decisionEvents.filter(event => !hiddenEventIds.value.has(event.id))
+  return decisionStore.decisionEvents
 })
 
 const pendingBadgeCount = computed(() =>
-  decisionStore.decisionEvents.filter(event => !hiddenEventIds.value.has(event.id)).length,
+  decisionStore.decisionEvents.length,
 )
+
+const activeMissionMapRelated = computed(() => {
+  const situation = decisionStore.activeTask?.questContext?.situation
+  const refs = [situation?.subjectRef, ...(situation?.relatedEntityRefs || []), situation?.scopedAtRef]
+  return Boolean(worldMap.selectedInspect?.entityId && refs.includes(worldMap.selectedInspect.entityId))
+})
 
 const conversationZoneSubtitle = computed(() =>
   worldSession.queryMode === 'aico'
     ? t('worldInteraction.decision.conversationZoneSubtitleAico')
     : t('worldInteraction.decision.conversationZoneSubtitleCommand'),
+)
+const conversationZoneTitle = computed(() =>
+  decisionStore.activeTask?.questId
+    ? t('worldInteraction.decision.questConversationTitle')
+    : t('worldInteraction.decision.conversationZoneTitle'),
 )
 
 const hingeAriaLabel = computed(() => {
@@ -224,17 +241,55 @@ const executeTaskAction = async (optionId: string) => {
   await decisionStore.executeDecisionOption(task.id, optionId)
 }
 
+const locateMissionSubject = async (entityId: string) => {
+  worldSession.viewMode = 'Map'
+  await worldMap.selectEntity(entityId)
+}
+
+const askQuestGuide = async (intent: 'next_step' | 'explain_basis') => {
+  const task = decisionStore.activeTask
+  if (!task?.questId) return
+  const quest = worldSession.questInteraction?.trackedQuests.find(item => item.id === task.questId)
+  if (!quest) return
+  worldSession.setQueryMode('aico')
+  const query = t(`worldInteraction.decision.questHelp.query.${intent}`, {
+    questId: task.questId,
+    questTitle: task.questTitle || task.title,
+    objective: task.title,
+  })
+  const focusedObjectiveId = quest.focusedObjectiveId || quest.recommendedObjectiveId
+  const submission = await worldSession.submitQuery(query, {
+    questContext: {
+      quest_id: quest.id,
+      objective_id: focusedObjectiveId || undefined,
+      agent_node_id: quest.companion?.id,
+      projection_revision: worldSession.questInteraction?.projectionRevision || '0',
+    },
+  })
+  if (!submission.accepted) return
+  collapseToHeader()
+  await scrollConversationToBottom()
+  void submission.completion
+}
+
 const runNextBestAction = async () => {
   if (worldSession.sessionActionBusy) return
   const action = decisionStore.nextBestAction
   if (!action) return
+  if (action.requiresConfirmation) {
+    try {
+      await ElMessageBox.confirm(
+        action.consequenceSummaryKey ? t(action.consequenceSummaryKey) : action.consequenceSummary || t('worldInteraction.decision.confirmAction'),
+        t('worldInteraction.decision.confirmTitle'),
+        { confirmButtonText: t('worldInteraction.decision.confirm'), cancelButtonText: t('worldInteraction.decision.cancel'), type: 'warning' },
+      )
+    } catch {
+      return
+    }
+  }
   const eventId = decisionStore.activeTask?.id || visibleEvents.value[0]?.id
   if (!eventId) return
   await decisionStore.executeDecisionOption(eventId, action.id)
-}
-
-function clearResolved() {
-  hiddenEventIds.value = new Set(decisionStore.decisionEvents.map(event => event.id))
 }
 
 async function onQuerySubmitted() {

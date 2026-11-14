@@ -273,6 +273,20 @@ commands:
         success: "Task pool disabled: {key}"
       enable:
         success: "Task pool enabled: {key}"
+    observation:
+      usage:
+        root: "observation <record|list|show> [args]"
+        create: "observation record --assertion <A> --source-ref <R> --observed-at <T> [--title <T>]"
+        list: "observation list [--limit N]"
+        show: "observation show <id>"
+      create:
+        success: "Observation created: #{id}"
+      list:
+        header: "Observations (total={total})"
+        empty: "No observations match."
+        row: "#{id}  title={title}"
+      show:
+        detail: "Observation #{id}\n  assertion: {assertion}\n  verification_status: {verification_status}"
     situation:
       usage:
         root: "situation <create|list|show> [args]"
@@ -315,12 +329,15 @@ commands:
         row: "#{id}  title={title}"
       show:
         title: "Quest #{id}"
+      interaction:
+        success: "Quest interaction updated."
     error:
       generic: "Task system error: {detail}"
       forbidden: "Permission denied for task operation: {detail}"
       not_found: "Task not found: #{task_id}"
       invalid_event: "Workflow does not allow this event: {detail}"
       version_stale: "State version is stale; refresh and retry: {detail}"
+      idempotency_conflict: "Idempotency key conflicts with another request: {detail}"
       already_claimed: "Task already claimed: {detail}"
       role_required: "Required role missing: {detail}"
       precondition_failed: "Precondition failed: {detail}"

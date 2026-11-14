@@ -386,6 +386,12 @@ CREATE TABLE IF NOT EXISTS agent_conversation_thread (
     agent_node_id INTEGER NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
     transport_session_id TEXT NOT NULL,
     title_snippet TEXT,
+    quest_node_id INTEGER REFERENCES nodes (id) ON DELETE RESTRICT,
+    collaboration_relationship_id INTEGER,
+    created_projection_revision TEXT,
+    graph_ref_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    archived_at TIMESTAMPTZ,
+    archive_reason TEXT,
     last_message_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -628,6 +634,54 @@ CREATE INDEX IF NOT EXISTS idx_nodes_task_due_at
     ON nodes (((attributes->>'due_at_epoch_ms')::bigint))
     WHERE type_code = 'task' AND attributes ? 'due_at_epoch_ms';
 -- END task_system
+
+-- BEGIN quest_interaction_runtime
+-- Account-scoped optimistic concurrency and audit cursor for World Interaction.
+CREATE TABLE IF NOT EXISTS world_interaction_revisions (
+    account_node_id BIGINT PRIMARY KEY REFERENCES nodes (id) ON DELETE CASCADE,
+    revision        BIGINT NOT NULL DEFAULT 0 CHECK (revision >= 0),
+    last_event_id   BIGINT NULL,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS world_interaction_events (
+    id                    BIGSERIAL PRIMARY KEY,
+    account_node_id       BIGINT NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    revision              BIGINT NOT NULL CHECK (revision > 0),
+    kind                  VARCHAR(64) NOT NULL,
+    target_node_id        BIGINT NULL REFERENCES nodes (id) ON DELETE SET NULL,
+    actor_principal_id    BIGINT NULL,
+    actor_principal_kind  VARCHAR(16) NOT NULL,
+    correlation_id        TEXT NULL,
+    idempotency_key       TEXT NULL,
+    payload               JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uq_world_interaction_event_revision UNIQUE (account_node_id, revision)
+);
+CREATE TABLE IF NOT EXISTS situation_attention (
+    account_node_id       BIGINT NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    situation_node_id     BIGINT NOT NULL REFERENCES nodes (id) ON DELETE CASCADE,
+    seen_at               TIMESTAMPTZ NULL,
+    snoozed_until         TIMESTAMPTZ NULL,
+    ui_dismissed_at       TIMESTAMPTZ NULL,
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (account_node_id, situation_node_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_world_interaction_event_idempotency
+    ON world_interaction_events (account_node_id, idempotency_key)
+    WHERE idempotency_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_world_interaction_events_account_cursor
+    ON world_interaction_events (account_node_id, id DESC);
+
+-- One foreground Objective per account. Multiple TRACKS_QUEST edges remain valid.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_relationships_account_focus_active
+    ON relationships (source_id)
+    WHERE is_active = TRUE AND type_code = 'FOCUSES_ON';
+-- A clue may be pinned independently to multiple tracked Quests by one account.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_relationships_account_quest_clue_pin_active
+    ON relationships (source_id, target_id, (attributes->>'quest_id'))
+    WHERE is_active = TRUE AND type_code = 'PINS_CLUE';
+-- END quest_interaction_runtime
 
 -- ==================================================
 -- 第三阶段：索引（几何 / 向量 / 查询）

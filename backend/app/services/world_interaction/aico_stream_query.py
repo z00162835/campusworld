@@ -122,6 +122,7 @@ class AicoStreamQueryService:
         query: str,
         *,
         thread_id: Optional[str] = None,
+        quest_context: Optional[Dict[str, Any]] = None,
     ) -> Generator[str, None, None]:
         clean = str(query or "").strip()
         if not clean:
@@ -157,15 +158,19 @@ class AicoStreamQueryService:
                     user_id,
                 )
                 with db_session_context() as worker_session:
+                    routed_command = f"aico {clean}"
+                    if isinstance(quest_context, dict) and quest_context.get('agent_handle'):
+                        routed_command = f"@{quest_context['agent_handle']} quest-context {clean}"
                     result = self._command_runner.run(
                         worker_session,
                         actor,
-                        f"aico {clean}",
+                        routed_command,
                         options=CommandRunOptions(
                             stream_emit=emit_fn,
                             supports_aico_stream=True,
                             stream_cancel_event=cancel_event,
                             aico_client_thread_id=thread_key if thread_key != _DEFAULT_THREAD_KEY else None,
+                            quest_conversation_context=quest_context,
                         ),
                     )
                     data = result.data if isinstance(result.data, dict) else {}

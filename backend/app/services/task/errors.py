@@ -25,6 +25,9 @@ class WorkflowDefinitionInactive(TaskSystemError):
 class OptimisticLockError(TaskSystemError):
     i18n_key = 'commands.task.error.version_stale'
 
+class IdempotencyConflictError(TaskSystemError):
+    i18n_key = 'commands.task.error.idempotency_conflict'
+
 class RoleRequiredError(TaskSystemError):
     i18n_key = 'commands.task.error.role_required'
 
@@ -85,4 +88,4 @@ class UnauthenticatedActor(TaskSystemError):
     fall back to ``system`` (which would bypass all role checks).
     """
     i18n_key = 'commands.task.error.unauthenticated'
-__all__ = ['TaskSystemError', 'WorkflowEventNotAllowed', 'WorkflowDefinitionNotFound', 'WorkflowDefinitionInactive', 'OptimisticLockError', 'RoleRequiredError', 'PreconditionFailed', 'AlreadyClaimedError', 'ChildrenNotTerminalError', 'PoolNotFound', 'ReferenceNotFound', 'PoolInactive', 'PublishAclDenied', 'ConsumeAclDenied', 'SelectorBoundsExceeded', 'UnknownTraitMaskName', 'UnknownTraitClass', 'EmptySelector', 'CycleDetected', 'PermissionDenied', 'UnauthenticatedActor']
+__all__ = ['TaskSystemError', 'WorkflowEventNotAllowed', 'WorkflowDefinitionNotFound', 'WorkflowDefinitionInactive', 'OptimisticLockError', 'IdempotencyConflictError', 'RoleRequiredError', 'PreconditionFailed', 'AlreadyClaimedError', 'ChildrenNotTerminalError', 'PoolNotFound', 'ReferenceNotFound', 'PoolInactive', 'PublishAclDenied', 'ConsumeAclDenied', 'SelectorBoundsExceeded', 'UnknownTraitMaskName', 'UnknownTraitClass', 'EmptySelector', 'CycleDetected', 'PermissionDenied', 'UnauthenticatedActor']

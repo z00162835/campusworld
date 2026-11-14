@@ -1,9 +1,15 @@
 from unittest.mock import MagicMock
+from types import SimpleNamespace
 
 from app.commands.base import CommandResult
 from app.services.world_interaction.command_query import CommandQueryService
-from app.services.world_interaction.command_runner import CommandRunner
+from app.services.world_interaction.command_runner import CommandRunOptions, CommandRunner
+from app.services.world_interaction.service import WorldInteractionService
 from app.services.world_interaction.types import WorldActor
+from app.services.task.user_task_queue import QueueTaskRow
+from app.services.world_interaction import world_interaction_service
+from app.services.world_interaction import service as world_interaction_module
+from app.services.task.errors import OptimisticLockError
 
 
 def _actor() -> WorldActor:
@@ -60,3 +66,160 @@ def test_command_runner_rejects_empty_command_line():
     result = runner.run(MagicMock(), _actor(), "   ")
     assert result.success is False
     assert result.error == "command.empty"
+
+
+def test_command_runner_passes_quest_context_through_agent_dispatch(monkeypatch):
+    from app.commands import at_agent_dispatch
+
+    result = CommandResult.success_result("Companion response")
+    def dispatch(command_line, context):
+        assert command_line == "@companion quest-context Help with the Quest"
+        assert context.metadata['quest_conversation_context']['quest_node_id'] == 11
+        assert context.metadata['aico_client_thread_id'] == 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+        return result
+
+    monkeypatch.setattr(at_agent_dispatch, 'try_dispatch_at_line', dispatch)
+    runner = CommandRunner()
+    actual = runner.run(
+        MagicMock(),
+        _actor(),
+        "@companion quest-context Help with the Quest",
+        options=CommandRunOptions(
+            aico_client_thread_id='aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+            quest_conversation_context={'quest_node_id': 11},
+        ),
+    )
+
+    assert actual is result
+
+
+def test_quest_conversation_context_requires_current_projection_revision(monkeypatch):
+    service = WorldInteractionService()
+    monkeypatch.setattr(service, '_get_user_node', lambda *_args, **_kwargs: SimpleNamespace(id=1))
+    monkeypatch.setattr(world_interaction_module, 'read_projection_cursor', lambda *_args, **_kwargs: ('9', '3'))
+
+    try:
+        service.validate_quest_conversation_context(
+            MagicMock(),
+            _actor(),
+            {'quest_id': 11, 'projection_revision': '8'},
+        )
+    except OptimisticLockError:
+        pass
+    else:
+        raise AssertionError('stale Quest conversation context must be rejected')
+
+
+def test_foreground_quest_hud_uses_aggregate_objective_progress():
+    service = WorldInteractionService()
+    objective = QueueTaskRow(
+        id=21,
+        state="in_progress",
+        title="Inspect bearing",
+        priority="normal",
+        pool_key=None,
+        visibility="assigned",
+        assignee_kind="user",
+        quest_id=11,
+        quest_title="Restore AHU",
+    )
+    action = service._options_for_queue_task(objective)[0]
+
+    card = service._active_task_from_queue(
+        [objective],
+        action,
+        quest_projection={"id": "11", "progress": {"percent": 67}},
+    )
+
+    assert card is not None
+    assert card["id"] == "task_21"
+    assert card["progress"] == 67
+
+
+def test_context_summary_reuses_the_foreground_hud_projection(monkeypatch):
+    service = WorldInteractionService()
+    monkeypatch.setattr(
+        "app.services.world_interaction.service.list_for_principal",
+        lambda *_args, **_kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app.services.world_interaction.service.last_handled_task",
+        lambda *_args, **_kwargs: None,
+    )
+    active_task = {
+        "id": "task_21",
+        "title": "Restore AHU",
+        "summary": "State: in_progress",
+        "progress": 67,
+        "currentStep": {"title": "Inspect bearing"},
+    }
+
+    summary = service._context_summary(
+        MagicMock(),
+        MagicMock(),
+        MagicMock(id=7),
+        {"agentPresences": []},
+        "hicampus",
+        active_task=active_task,
+    )
+
+    assert summary["activeTask"] == {
+        "id": "task_21",
+        "title": "Restore AHU",
+        "currentStep": "Inspect bearing",
+        "progress": 67,
+    }
+
+
+def test_mutating_world_command_advances_projection_revision(monkeypatch):
+    session = MagicMock()
+    actor = _actor()
+    monkeypatch.setattr(
+        world_interaction_service._command_runner,
+        "run",
+        lambda *_args, **_kwargs: CommandResult.success_result("entered"),
+    )
+    monkeypatch.setattr(
+        "app.services.world_interaction.service.resolve_command_tool_semantics",
+        lambda *_args, **_kwargs: MagicMock(interaction_profile="mutate"),
+    )
+    monkeypatch.setattr(
+        world_interaction_service,
+        "_get_user_node",
+        lambda *_args, **_kwargs: MagicMock(id=1),
+    )
+    record = MagicMock()
+    monkeypatch.setattr("app.services.world_interaction.service.record_projection_change", record)
+
+    result = world_interaction_service.execute_command(session, actor, "enter hicampus")
+
+    assert result.success is True
+    record.assert_called_once()
+    session.commit.assert_called_once()
+
+
+def test_mutating_command_with_revision_commits_without_duplicate_event(monkeypatch):
+    session = MagicMock()
+    result = CommandResult.success_result('tracked', data={'projection_revision': '8'})
+    monkeypatch.setattr(world_interaction_service._command_runner, 'run', lambda *_args: result)
+    monkeypatch.setattr(world_interaction_module, 'resolve_command_tool_semantics',
+                        lambda *_args, **_kwargs: SimpleNamespace(interaction_profile='mutate'))
+    record = MagicMock()
+    monkeypatch.setattr(world_interaction_module, 'record_projection_change', record)
+
+    assert world_interaction_service.execute_command(session, _actor(), 'quest track 11') is result
+    session.commit.assert_called_once()
+    record.assert_not_called()
+
+
+def test_read_only_and_failed_commands_do_not_commit(monkeypatch):
+    record = MagicMock()
+    monkeypatch.setattr(world_interaction_module, 'record_projection_change', record)
+    monkeypatch.setattr(world_interaction_module, 'resolve_command_tool_semantics',
+                        lambda *_args, **_kwargs: SimpleNamespace(interaction_profile='inspect'))
+    for result in (CommandResult.success_result('shown'), CommandResult.error_result('denied')):
+        session = MagicMock()
+        monkeypatch.setattr(world_interaction_service._command_runner, 'run', lambda *_args: result)
+        assert world_interaction_service.execute_command(session, _actor(), 'quest show 11') is result
+        session.commit.assert_not_called()
+    record.assert_not_called()

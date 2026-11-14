@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from types import SimpleNamespace
 
 import pytest
 
@@ -129,7 +130,13 @@ def test_try_restore_conversation_thread_validates_db_row():
         metadata={},
     )
     db = MagicMock()
-    db.query.return_value.filter.return_value.first.return_value = object()
+    db.query.return_value.filter.return_value.first.return_value = SimpleNamespace(
+        owner_account_node_id=10,
+        agent_node_id=99,
+        archived_at=None,
+        quest_node_id=None,
+        collaboration_relationship_id=None,
+    )
     assert (
         try_restore_conversation_thread_from_transport(
             db,
@@ -193,7 +200,13 @@ def test_ensure_conversation_thread_id_restores_without_db_insert():
         metadata=None,
     )
     db = MagicMock()
-    db.query.return_value.filter.return_value.first.return_value = object()
+    db.query.return_value.filter.return_value.first.return_value = SimpleNamespace(
+        owner_account_node_id=10,
+        agent_node_id=99,
+        archived_at=None,
+        quest_node_id=None,
+        collaboration_relationship_id=None,
+    )
     out = ensure_conversation_thread_id(
         db,
         context=ctx,
@@ -235,6 +248,61 @@ def test_ensure_conversation_thread_id_creates_and_sets_ephemeral(monkeypatch):
     assert ssh.command_ephemeral[_conversation_thread_ephemeral_storage_key(42)] == str(fixed)
     db.add.assert_called_once()
     db.flush.assert_called_once()
+
+
+@pytest.mark.unit
+def test_ensure_conversation_thread_id_creates_immutable_quest_binding():
+    tid = uuid.uuid4()
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="http_1",
+        permissions=[],
+        metadata={
+            'aico_client_thread_id': str(tid),
+            'quest_conversation_context': {
+                'quest_node_id': 44,
+                'objective_node_id': 55,
+                'collaboration_relationship_id': 66,
+                'projection_revision': '12',
+            },
+        },
+    )
+    db = MagicMock()
+    db.query.return_value.filter.return_value.first.return_value = None
+
+    assert ensure_conversation_thread_id(db, context=ctx, caller_account_node_id=1, agent_node_id=99) == tid
+    created = db.add.call_args.args[0]
+    assert created.quest_node_id == 44
+    assert created.collaboration_relationship_id == 66
+    assert created.created_projection_revision == '12'
+    assert created.graph_ref_metadata == {'objective_node_id': 55}
+
+
+@pytest.mark.unit
+def test_ensure_conversation_thread_id_rejects_rebinding_existing_thread():
+    tid = uuid.uuid4()
+    ctx = CommandContext(
+        user_id="1",
+        username="u",
+        session_id="http_1",
+        permissions=[],
+        metadata={
+            'aico_client_thread_id': str(tid),
+            'quest_conversation_context': {'quest_node_id': 45, 'projection_revision': '12'},
+        },
+    )
+    db = MagicMock()
+    db.query.return_value.filter.return_value.first.return_value = SimpleNamespace(
+        owner_account_node_id=1,
+        agent_node_id=99,
+        archived_at=None,
+        quest_node_id=44,
+        collaboration_relationship_id=None,
+    )
+
+    with pytest.raises(ValueError, match='binding is immutable'):
+        ensure_conversation_thread_id(db, context=ctx, caller_account_node_id=1, agent_node_id=99)
 
 
 @pytest.mark.unit

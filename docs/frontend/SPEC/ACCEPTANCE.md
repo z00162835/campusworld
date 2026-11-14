@@ -1,5 +1,25 @@
 # Frontend Acceptance Checklist
 
+## F03 Implementation Activation Gates
+
+Active implementation plan: [`_generated/F03_QUEST_WORLD_INTERACTION_IMPLEMENTATION_PLAN.md`](_generated/F03_QUEST_WORLD_INTERACTION_IMPLEMENTATION_PLAN.md)
+
+- [x] G0: F03/F06/F09/F12/F16 contracts, P01–P16 and C01–C13 decisions, terminology, release mapping, capability negotiation, API/mutation types, Memory source, and three-plane policy composition are approved.
+- [ ] G1: Multiple graph-persisted Quest tracking edges, account-wide Objective focus, canonical Observation Clue pins, multi-Agent collaboration, authoritative monotonic projection revision, and permission-filtered Journal graph pass tests.
+- [ ] G2: Structured authorized Quest conversation, immutable Quest/Agent/collaboration thread binding, Quest governance + F16 behavior + final command authorization composition, truthful consequences/gates, and localized action keys pass tests.
+- [ ] G3: Situation-based World Pulse with account-scoped attention persistence, R2 explicit command-based Agent automation, auditable World Feedback, and scoped conversation-to-Memory handoff pass tests.
+- [ ] G4: Map-canvas/HUD desktop-mobile UI, accessibility, build, authenticated E2E, and measurable human experience review pass.
+
+F03 is **approved for implementation** after G0 and remains non-Active until G1–G4 pass. Existing checked items below describe implemented UI slices and do not by themselves promote F03 to Active.
+
+### Foundation submission verification — 2026-11-14
+
+- Command mutations that already return a projection revision commit without recording a duplicate projection event; read-only and failed commands do not commit. Regression coverage is included.
+- Focused backend API/projection/command-query tests: 43 passed.
+- Backend non-integration sweep: 1778 passed, 4 failed, 66 deselected. Remaining failures are the three NDJSON event-position assertions and the Streamlit evaluation temporary-path validation, matching the previously reported baseline issues; the sweep is not green.
+- Frontend: type-check and production build passed; all 151 tests passed with `NODE_OPTIONS=--no-experimental-webstorage` to disable Node's conflicting experimental storage implementation. The default invocation still fails in the auth suite under this local Node environment.
+- PostgreSQL integration and authenticated browser/accessibility/user-experience acceptance were not executed for this submission. G1–G4 remain open; this submission is a foundation slice, not feature activation.
+
 ## App Shell (transition)
 
 - [x] No fixed left `Sidebar`; primary app nav is CampusWorld dropdown on `NavBar` (Works → History).
@@ -32,6 +52,16 @@
 - [x] Decision center: zone headers, `zone-divider`, and surface contrast distinguish tasks vs conversation (CampusWorld workbench, not HMI).
 - [x] Works default view mode is Focus; map pane collapsed strip on Focus; Map mode expands map pane.
 - [x] Active task card and next-best action always visible; `viewFilter` only filters pending events.
+- [x] Quest-backed work renders as a Mission Card with Situation assertion, Goal desired state, risk, trigger provenance, confidence, and governance-reference count.
+- [x] Legacy tasks without a Quest remain operable as a clearly degraded Objective view; the UI does not invent semantic context.
+- [x] Objective completion copy does not imply Quest acceptance or Goal satisfaction.
+- [x] Mission `subjectRef` can select the corresponding semantic-map entity without moving the account location.
+- [x] Map `selectedInspect` drives the Context Summary focus and related-Mission highlight; clearing selection changes UI focus only.
+- [x] Active Quest exposes contextual “next step / explain basis” interaction and renders AICO as a Quest companion Agent rather than a separate generic assistant.
+- [x] Quest contextual questions reuse the AICO stream while execution remains behind command/service and policy gates.
+- [x] `/works` primary language and hierarchy use World Pulse, Quest Journal, Tracked Quest, Companion Agent, map markers, and world feedback instead of Inbox/Dashboard/work-order navigation.
+- [x] Quest assistance begins with contextual dialogue choices; free-form conversation remains secondary and attached to the Quest Journal.
+- [x] Enterprise governance appears as contextual risk, gate, evidence, or consequence—not as the primary workspace metaphor.
 - [x] Quick-query chips removed; backend `quickQueries` returns `[]`.
 - [x] Command query applies `state_patch` and shows expandable results (`results[]` / `command_result.message`).
 - [x] AICO: new conversation + thread switcher; Command single thread (50-message FIFO cap).

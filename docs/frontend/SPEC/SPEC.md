@@ -202,6 +202,7 @@ const { status, send, connect, disconnect } = useWebSocket()
 ## Feature Index
 
 - Feature index and module keys: [`features/INDEX.md`](features/INDEX.md)
+- AI-native Quest 世界交互：[`features/F03_AI_NATIVE_QUEST_INTERACTION.md`](features/F03_AI_NATIVE_QUEST_INTERACTION.md)
 
 ## 依赖
 

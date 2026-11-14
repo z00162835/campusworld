@@ -11,6 +11,7 @@ sys.path.insert(0, str(project_root))
 from app.api.v1.dependencies import AuthenticatedUser, get_current_http_user
 from app.api.v1.endpoints import world_interaction
 from app.core.database import get_db
+from app.services.task.errors import IdempotencyConflictError
 
 
 def _test_user():
@@ -42,8 +43,71 @@ def test_world_interaction_routes_do_not_use_stage_names():
     paths = {route.path for route in app.routes}
     assert "/api/v1/world-sessions/current" in paths
     assert "/api/v1/world-sessions/enter-world" in paths
+    assert "/api/v1/world-sessions/quest-actions" in paths
     assert "/api/v1/decision-center/actions" in paths
     assert not any("mvp" in path or "phase" in path or "nextui" in path.lower() for path in paths)
+
+
+def test_quest_action_adapter_passes_versioned_envelope(monkeypatch):
+    seen = {}
+
+    def fake_execute(db, actor, **kwargs):
+        seen.update(kwargs)
+        return {
+            "success": True,
+            "result": {"summary": "updated", "status": "completed"},
+            "state_patch": {"questInteraction": {"projectionRevision": "8"}},
+        }
+
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "execute_quest_interaction_action",
+        fake_execute,
+    )
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/world-sessions/quest-actions",
+        json={
+            "expectedProjectionRevision": "7",
+            "lastEventId": "41",
+            "idempotencyKey": "track-quest-9",
+            "payload": {"action": "track", "questId": "9"},
+        },
+    )
+    assert response.status_code == 200
+    assert seen["expected_projection_revision"] == "7"
+    assert seen["idempotency_key"] == "track-quest-9"
+    assert seen["payload"] == {"action": "track", "questId": "9"}
+
+
+def test_quest_action_requires_idempotency_key():
+    client = TestClient(_app())
+    response = client.post(
+        "/api/v1/world-sessions/quest-actions",
+        json={
+            "expectedProjectionRevision": "0",
+            "payload": {"action": "track", "questId": "9"},
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_quest_action_reports_idempotency_conflict(monkeypatch):
+    monkeypatch.setattr(
+        world_interaction.world_interaction_service,
+        "execute_quest_interaction_action",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(IdempotencyConflictError("key reused")),
+    )
+    response = TestClient(_app()).post(
+        "/api/v1/world-sessions/quest-actions",
+        json={
+            "expectedProjectionRevision": "1",
+            "idempotencyKey": "reused-key",
+            "payload": {"action": "track", "questId": "9"},
+        },
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "idempotency_conflict"
 
 
 def test_decision_action_adapter_passes_generated_ids(monkeypatch):
@@ -327,7 +391,7 @@ def test_archive_conversations_rejects_archive_batch_limit(monkeypatch):
 
 
 def test_aico_stream_response_has_anti_buffer_headers(monkeypatch):
-    def fake_stream(actor, query, *, thread_id=None):
+    def fake_stream(actor, query, *, thread_id=None, quest_context=None):
         yield 'data: {"kind":"meta","scope":"stream","stream_id":"x"}\n\n'
 
     monkeypatch.setattr(world_interaction.world_interaction_service, 'stream_aico_query', fake_stream)

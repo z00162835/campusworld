@@ -12,6 +12,10 @@ import type {
   DisplayPolicy,
   QueryMode,
   QuerySubmission,
+  QuestInteractionActionPayload,
+  QuestConversationContext,
+  QuestInteractionCapability,
+  QuestInteractionStatePayload,
   StatePatch,
   ViewMode,
   WorldInteractionState,
@@ -22,9 +26,43 @@ const CONVERSATION_CAP = 50
 const NEW_CONVERSATION_TITLE_KEY = 'worldInteraction.decision.newConversation'
 const LOAD_FAILED_KEY = 'worldInteraction.decision.loadFailed'
 const STREAM_FAILED_KEY = 'worldInteraction.decision.streamFailed'
+const QUEST_INTERACTION_CONTRACT = 'quest-interaction.v1'
+const QUEST_CAPABILITIES = new Set<QuestInteractionCapability>([
+  'multi_quest_tracking',
+  'durable_focus',
+  'observation_clues',
+  'quest_graph',
+  'situation_attention',
+  'structured_conversation',
+  'world_feedback',
+])
+
+export function normalizeQuestInteraction(value: unknown): QuestInteractionStatePayload | undefined {
+  if (!value || typeof value !== 'object') return undefined
+  const payload = value as Record<string, unknown>
+  if (payload.contractVersion !== QUEST_INTERACTION_CONTRACT) return undefined
+  if (!Array.isArray(payload.trackedQuests) || typeof payload.projectionRevision !== 'string') return undefined
+  const capabilities = Array.isArray(payload.capabilities)
+    ? payload.capabilities.filter((item): item is QuestInteractionCapability =>
+        typeof item === 'string' && QUEST_CAPABILITIES.has(item as QuestInteractionCapability),
+      )
+    : []
+  return { ...(payload as unknown as QuestInteractionStatePayload), capabilities }
+}
+
+function normalizeInteractionState(state: WorldInteractionState): WorldInteractionState {
+  return {
+    ...state,
+    quest_interaction: normalizeQuestInteraction(state.quest_interaction),
+  }
+}
 
 function newId(): string {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {
+    const random = Math.floor(Math.random() * 16)
+    return (character === 'x' ? random : (random & 0x3) | 0x8).toString(16)
+  })
 }
 
 function trimMessages(messages: ConversationMessage[]): ConversationMessage[] {
@@ -73,6 +111,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   const decisionCenter = computed(() => interactionState.value?.decision_center || null)
   const focusMap = computed(() => interactionState.value?.focus_map || null)
   const contextSummary = computed(() => interactionState.value?.context_summary || null)
+  const questInteraction = computed(() => interactionState.value?.quest_interaction || null)
   const currentWorld = computed(() => availableWorlds.value.find(world => world.is_current) || null)
 
   const activeAicoThread = computed(() =>
@@ -163,7 +202,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     try {
       const { data } = await worldSessionsApi.getCurrent()
       if (generation !== sessionGeneration) return
-      interactionState.value = data.interaction_state
+      interactionState.value = normalizeInteractionState(data.interaction_state)
       displayPolicy.value = data.display_policy
       availableWorlds.value = data.available_worlds
       useWorldMapStore().clearMapSelection()
@@ -201,7 +240,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     const generation = sessionGeneration
     const { data } = await worldSessionsApi.getInteractionState(session.value.id)
     if (generation !== sessionGeneration) return
-    interactionState.value = data
+    interactionState.value = normalizeInteractionState(data)
   }
 
   async function enterWorld(worldId: string) {
@@ -301,7 +340,10 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
   }
 
-  async function submitQuery(query: string): Promise<QuerySubmission> {
+  async function submitQuery(
+    query: string,
+    options: { questContext?: QuestConversationContext } = {},
+  ): Promise<QuerySubmission> {
     if (!session.value?.id) return { accepted: false }
     const clean = query.trim()
     if (!clean) return { accepted: false }
@@ -312,6 +354,13 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }
 
     if (queryMode.value === 'aico') {
+      let activeThread = ensureActiveAicoThread()
+      if (options.questContext) {
+        if (activeThread.messages.length && activeThread.questContext?.quest_id !== options.questContext.quest_id) {
+          activeThread = createAicoThread()
+        }
+        activeThread.questContext = { ...options.questContext }
+      }
       appendAicoMessage({
         id: newId(),
         role: 'user',
@@ -319,7 +368,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         query: clean,
         answer: clean,
       })
-      const completion = submitAicoStream(clean).then(() => undefined)
+      const completion = submitAicoStream(clean, activeThread.questContext).then(() => undefined)
       return { accepted: true, completion }
     }
 
@@ -388,7 +437,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     }, STREAM_FLUSH_MS)
   }
 
-  async function submitAicoStream(query: string) {
+  async function submitAicoStream(query: string, questContext?: QuestConversationContext) {
     if (!session.value?.id) return
     const generation = ++streamGeneration
     const thread = ensureActiveAicoThread()
@@ -414,6 +463,10 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     try {
       await queryAicoStream(session.value.id, query, {
         threadId,
+        questContext: questContext ? {
+          ...questContext,
+          projection_revision: questInteraction.value?.projectionRevision || questContext.projection_revision,
+        } : undefined,
         signal: streamAbort.signal,
         onEvent: event => {
           if (generation !== streamGeneration) return
@@ -626,6 +679,28 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     await applyStatePatch(response.state_patch)
   }
 
+  async function executeQuestInteractionAction(payload: QuestInteractionActionPayload) {
+    if (!questInteraction.value) return
+    try {
+      const response = await runSessionAction(() =>
+        worldSessionsApi.questAction({
+          expectedProjectionRevision: questInteraction.value!.projectionRevision,
+          lastEventId: questInteraction.value!.lastEventId,
+          idempotencyKey: newId(),
+          payload,
+        }),
+      )
+      if (response) await applyActionResponse(response.data)
+    } catch (err: any) {
+      if (err?.response?.status === 409 && err?.response?.data?.detail?.code === 'stale_projection') {
+        await refreshInteractionState()
+        ElMessage.warning(i18n.global.t('worldInteraction.quest.staleProjection'))
+        return
+      }
+      throw err
+    }
+  }
+
   async function applyStatePatch(patch?: StatePatch) {
     if (!patch || !interactionState.value) return
     if (patch.focusSummary) interactionState.value.decision_center.focus = patch.focusSummary
@@ -637,6 +712,9 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
         interactionState.value.decision_center.decisionEvents.filter(event => !resolved.has(event.id))
     }
     if (patch.contextSummary) interactionState.value.context_summary = patch.contextSummary
+    if (patch.questInteraction) {
+      interactionState.value.quest_interaction = normalizeQuestInteraction(patch.questInteraction)
+    }
     if (patch.mapPatch) {
       try {
         await useWorldMapStore().applyMapPatch(patch.mapPatch, { openInspect: false })
@@ -714,6 +792,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     decisionCenter,
     focusMap,
     contextSummary,
+    questInteraction,
     currentWorld,
     loadCurrent,
     refreshInteractionState,
@@ -732,6 +811,7 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     setViewMode,
     setQueryMode,
     applyStatePatch,
+    executeQuestInteractionAction,
     reset,
   }
 })

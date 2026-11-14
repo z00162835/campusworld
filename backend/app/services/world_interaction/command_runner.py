@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from threading import Event
-from typing import Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 from sqlalchemy.orm import Session
 
@@ -21,6 +21,7 @@ class CommandRunOptions:
     supports_aico_stream: bool = False
     stream_cancel_event: Optional[Event] = None
     aico_client_thread_id: Optional[str] = None
+    quest_conversation_context: Optional[Dict[str, Any]] = None
 
 
 class CommandRunner:
@@ -42,7 +43,7 @@ class CommandRunner:
         command_name = parts[0].lower()
         args = parts[1:]
         command = command_registry.get_command(command_name)
-        if not command:
+        if not command and not command_name.startswith('@'):
             return CommandResult.error_result(f"Command '{command_name}' not found", error="command.not_found")
         context = CommandContext(
             user_id=actor.user_id,
@@ -64,6 +65,18 @@ class CommandRunner:
             if context.metadata is None:
                 context.metadata = {}
             context.metadata['aico_client_thread_id'] = opts.aico_client_thread_id
+        if opts.quest_conversation_context:
+            if context.metadata is None:
+                context.metadata = {}
+            context.metadata['quest_conversation_context'] = dict(opts.quest_conversation_context)
+        if command_name.startswith('@'):
+            from app.commands.at_agent_dispatch import try_dispatch_at_line
+
+            routed = try_dispatch_at_line(command_line, context)
+            if routed is not None:
+                return routed
+        if not command:
+            return CommandResult.error_result(f"Command '{command_name}' not found", error="command.not_found")
         decision = command_registry.authorize_command(command, context)
         if not decision.allowed:
             return CommandResult.error_result(

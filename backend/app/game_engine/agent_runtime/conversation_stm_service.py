@@ -80,23 +80,87 @@ def set_thread_id_on_context(context: CommandContext, tid: uuid.UUID) -> None:
     context.metadata['conversation_thread_id'] = str(tid)
 
 def ensure_conversation_thread_id(session: Session, *, context: CommandContext, caller_account_node_id: int, agent_node_id: int) -> uuid.UUID:
-    """Return the active conversation thread UUID for this caller, transport, and agent (metadata, transport ephemeral, or new row)."""
+    """Resolve a caller/Agent thread and enforce its immutable Quest binding."""
+    metadata = context.metadata or {}
+    quest_context = metadata.get('quest_conversation_context')
+    quest_id = int(quest_context['quest_node_id']) if isinstance(quest_context, dict) else None
+    collaboration_id = (
+        int(quest_context['collaboration_relationship_id'])
+        if isinstance(quest_context, dict) and quest_context.get('collaboration_relationship_id') is not None
+        else None
+    )
+    created_revision = str(quest_context.get('projection_revision')) if isinstance(quest_context, dict) else None
+
     existing = get_thread_id_from_context(context)
-    if existing:
-        persist_conversation_thread_for_transport(context, agent_node_id, existing)
-        return existing
-    restored = try_restore_conversation_thread_from_transport(session, context, caller_account_node_id=caller_account_node_id, agent_node_id=agent_node_id)
-    if restored is not None:
-        set_thread_id_on_context(context, restored)
-        persist_conversation_thread_for_transport(context, agent_node_id, restored)
-        return restored
-    tid = uuid.uuid4()
-    transport = str(context.session_id or '')
-    session.add(AgentConversationThread(id=tid, owner_account_node_id=caller_account_node_id, agent_node_id=agent_node_id, transport_session_id=transport, title_snippet=None))
-    session.flush()
-    set_thread_id_on_context(context, tid)
-    persist_conversation_thread_for_transport(context, agent_node_id, tid)
-    return tid
+    client_thread_id = metadata.get('aico_client_thread_id')
+    requested = existing
+    if requested is None and client_thread_id:
+        try:
+            requested = uuid.UUID(str(client_thread_id))
+        except (TypeError, ValueError, AttributeError) as exc:
+            raise ValueError('Conversation thread id must be a UUID') from exc
+    if requested is None:
+        requested = try_restore_conversation_thread_from_transport(
+            session,
+            context,
+            caller_account_node_id=caller_account_node_id,
+            agent_node_id=agent_node_id,
+        )
+
+    row = None
+    if requested is not None:
+        row = session.query(AgentConversationThread).filter(AgentConversationThread.id == requested).first()
+        if row is not None:
+            if row.owner_account_node_id != caller_account_node_id or row.agent_node_id != agent_node_id:
+                raise ValueError('Conversation thread is unavailable for this caller and Agent')
+            if row.archived_at is not None:
+                raise ValueError('Archived conversation threads cannot be resumed')
+            if row.quest_node_id != quest_id:
+                raise ValueError('Conversation thread Quest binding is immutable; start a new thread')
+            if row.collaboration_relationship_id != collaboration_id:
+                raise ValueError('Conversation thread collaboration binding is immutable; start a new thread')
+        else:
+            row = AgentConversationThread(
+                id=requested,
+                owner_account_node_id=caller_account_node_id,
+                agent_node_id=agent_node_id,
+                transport_session_id=str(context.session_id or ''),
+                title_snippet=None,
+                quest_node_id=quest_id,
+                collaboration_relationship_id=collaboration_id,
+                created_projection_revision=created_revision,
+                graph_ref_metadata=(
+                    {'objective_node_id': int(quest_context['objective_node_id'])}
+                    if isinstance(quest_context, dict) and quest_context.get('objective_node_id') is not None
+                    else {}
+                ),
+            )
+            session.add(row)
+            session.flush()
+    if row is None:
+        tid = uuid.uuid4()
+        row = AgentConversationThread(
+            id=tid,
+            owner_account_node_id=caller_account_node_id,
+            agent_node_id=agent_node_id,
+            transport_session_id=str(context.session_id or ''),
+            title_snippet=None,
+            quest_node_id=quest_id,
+            collaboration_relationship_id=collaboration_id,
+            created_projection_revision=created_revision,
+            graph_ref_metadata=(
+                {'objective_node_id': int(quest_context['objective_node_id'])}
+                if isinstance(quest_context, dict) and quest_context.get('objective_node_id') is not None
+                else {}
+            ),
+        )
+        session.add(row)
+        session.flush()
+        requested = tid
+
+    set_thread_id_on_context(context, requested)
+    persist_conversation_thread_for_transport(context, agent_node_id, requested)
+    return requested
 
 def load_or_create_conversation_stm(session: Session, *, caller_account_node_id: int, transport_session_id: str, agent_node_id: int, conversation_thread_id: uuid.UUID) -> AgentConversationStm:
     """Load or insert the ``agent_conversation_stm`` row for the given conversation scope."""

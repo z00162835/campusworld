@@ -23,6 +23,7 @@
 | D14 | **Not done** | Prometheus 级指标未齐。 |
 | D18 | **Done** | `aico -nd/-l/-cd` + thread 元数据表；隐式 thread 懒创建。 |
 | D19 | **Partial** | NLP 链 `prompt_fingerprint` + provider 剥离；全局统一出口见 ADR 二阶段。 |
+| D26 | **Not done** | Quest/actual-Agent thread immutable metadata、协作关系引用、归档与 scoped episodic/LTM handoff 尚未落地。 |
 | Passthrough | **Locked** | HTTP 不可用时的 passthrough **不**触碰 Mode B 锁、**不**刷新 `last_successful_tick_at`（等同不设 `passthrough_counts_as_success_tick`）。 |
 | Transport release（全局） | **Done** | **`npc_agent.daemon_possession.possession_release_on_transport_close`**：与 **`agents.llm.by_service_id`**（如 AICO）分离，表示 **全体** Mode B daemon 在传输断开时的运行时策略。 |
 
@@ -105,6 +106,17 @@
 | **Compaction** | 当 STM 超过预算时，将 **淘汰段** 折叠为摘要并可 **写入 LTM**；保留 **最近明文窗口**（对标业界 keep-recent）。 |
 | **LTM flush** | 在会话结束或 compaction 时，将摘要/episodic **持久化**；Mode B 须在 flush 载荷中带 **`bound_user`**。 |
 | **transport_session_id** | `CommandContext.session_id`；**Mode A** 为 scope 键的一部分；**Mode B** 可记录在锁上用于「传输断开即释放」，但不分割 STM；**空闲释放以 NLP tick 时间戳为准**（§4.2）。 |
+
+### 4.5 Quest-bound conversation（Quest 绑定对话）
+
+Quest 对话复用本 SPEC 的 ConversationScope、STM、LTM 与 thread directory，不建立第二套 transcript 真源。Mode A 的存储键仍是 `(caller, transport, agent, conversation_thread_id)`；Quest 绑定是 thread 的不可变业务元数据，不替代该键。
+
+- Quest 交互创建 thread 时沿用现有 `agent_node_id` 表示实际会话 Agent，并记录 `quest_node_id`、可选 `collaboration_relationship_id`、创建时 projection revision，以及可选 focused Objective/实体引用；不增加与 `agent_node_id` 重复的 companion 字段。
+- 同一 thread 不得静默切换 Quest 或实际会话 Agent；切换时新建 thread，旧 thread 保留在原 Quest Journal。
+- Quest 完成、关闭或用户明确结束协作时由后端归档 thread；Memory Thread + STM/LTM 链路是 transcript 真源，现有 `world_conversation_archive` 仅是兼容读取投影，前端 logout 不得成为 Quest 归档的唯一触发器。归档 transcript 可进入 raw/episodic 与异步 LTM 晋升路径。
+- 晋升载荷必须保留 `caller_account_node_id`、`agent_node_id`、`conversation_thread_id`、Quest 图引用和来源 revision；LTM 可用 `graph_node_id / relationship_id` 指回世界图。
+- 对话摘要、LTM 命中和模型建议不是世界事实，也不能直接更新 Agent 的正式 `skill_refs`、Policy、Process 或配置；需要形成 LearningProposal 并通过治理。
+- 默认 `user + agent` 跨 thread LTM 检索仍可召回历史 Quest episode，但必须标识为历史记忆，并在用于当前行动前重新解析图引用、权限和当前版本。
 
 ---
 
@@ -272,6 +284,7 @@
 - STM 超限时 compaction 后轮数或字符下降，且保留最近窗口明文。
 - 多进程部署：**内存 STM** 不得作为 Mode B 默认。
 - **Early-fail（D25）：** gate / 早期错误路径 **未**形成成功 tick 时 **不**增长 STM、Mode B **不**刷新 idle 计时。
+- **Quest-bound thread（D26）：** 同一 thread 不可切换 Quest 或实际会话 Agent；协作关系仅作为引用。归档后可形成带 account、Agent、thread、Quest 和图引用的 episodic/LTM 输入，但不会直接修改世界事实或 Agent 正式配置。
 
 ---
 
@@ -281,6 +294,7 @@
 - **STM 权威存储（D22）：** **新建专用表**（ADR 定名），**不**复用 `agent_memory_entries` 作为会话 transcript 主存。**Mode A：** 键 **`(caller_user_id, transport_session_id, agent_node_id, conversation_thread_id)`**，列为有序 **消息列表（§18 D24）**、滚动摘要、`stm_generation` 等。**Mode B：** **同一 PostgreSQL 行** 承载 **附身锁列 + STM JSONB**（**§18 D8**）。
 - **附身锁：** **v1** 以 **`SELECT … FOR UPDATE`** 在同一事务内更新锁列与 STM，防止双占有（**D8**）；**不用 Redis 作为锁真源**（**D22**）。列 **`last_successful_tick_at`** 供空闲释放判定。
 - **`agent_long_term_memory`：** **`caller_account_node_id`（NOT NULL，迁移删除旧 NULL 行）** 与 **`conversation_thread_id`（可空）** 等元数据，以支持 **D23** 检索范围；Mode B 写入 **须与 `locked_by_account_node_id` 一致**。具体 DDL 见迁移与 ADR。
+- **`agent_conversation_thread` Quest 扩展（D26）：** 保留现有 `agent_node_id` 作为实际会话 Agent，增加可空 `quest_node_id`、`collaboration_relationship_id`、`created_projection_revision`、`archived_at`、`archive_reason` 与受限 graph-ref metadata。普通通用对话保持新增字段为空；一旦 Quest-bound thread 创建，Quest/Agent 字段不可原地改绑。
 - **F02 `agent_memory_entries`：** 仍为 **原始条目 / 晋升原料** 等用途，**不是** F12 STM 主真源。
 
 ---
@@ -367,13 +381,13 @@ flowchart TD
 - **D19（已定）**：Provider 缓存 **抽象层 + 按 provider 实现**（§18）。
 - **D20（已定）**：LLM compaction **同步**（本 tick 内摘要完成后再 Plan）（§18）。
 - **D21（已定）**：Subagent 等价物 **默认路线 A**（§18）。
-- **D22–D25（已定）**：**PostgreSQL** 为 STM/锁唯一权威；**Redis** 非 v1 真源（§18）；**Mode A LTM** 默认 **跨 thread** 检索（**D23**）；STM **message 列表载荷（D24）**；**early-fail 不写 STM、不刷 idle（D25）**。
+- **D22–D26（已定）**：**PostgreSQL** 为 STM/锁唯一权威；**Redis** 非 v1 真源（§18）；**Mode A LTM** 默认 **跨 thread** 检索（**D23**）；STM **message 列表载荷（D24）**；**early-fail 不写 STM、不刷 idle（D25）**；Quest 绑定 thread 复用现有记忆真源并作为受治理学习输入（D26）。
 
-**条文索引：** **§18**（规范性决策总表 **D1–D25**）、**§19**（术语）、**§20**（业界对齐）、**§21**（待办清单）、**§22**（D16–D21 详述）、**§23**（rationale、业界对照；**与 §18 冲突时以 §18 为准**）。
+**条文索引：** **§18**（规范性决策总表 **D1–D26**）、**§19**（术语）、**§20**（业界对齐）、**§21**（待办清单）、**§22**（D16–D21 详述）、**§23**（rationale、业界对照；**与 §18 冲突时以 §18 为准**）。
 
 ---
 
-## 18. Normative decisions（D1–D25）
+## 18. Normative decisions（D1–D26）
 
 | ID | 决策（规范性） |
 |----|----------------|
@@ -402,6 +416,7 @@ flowchart TD
 | **D23** | **Mode A LTM 检索：** **默认** **`user + agent`** 命名空间，**可召回**各 `conversation_thread_id` 下写入的条目（与助理产品一致）；**写入**仍须带 **`conversation_thread_id` 元数据**。**`caller_account_node_id` 列迁移后为 NOT NULL**；Mode B 写入须与 **`locked_by_account_node_id`** 一致。高隔离通过 **`ltm_retrieval_scope=thread`**。**Mode B 不受本条替代**，仍以 **D7** 为准。 |
 | **D24** | **STM 载荷形状：** **有序 message 列表**（如 `role` / `content` / `ts`），外加滚动摘要等；支撑 compaction 与 **D16** STM 截断。**不用**与 `AgentRunRecord` 或 `agent_memory_entries` 混为单一 transcript 真源。 |
 | **D25** | **Early-fail：** 在 **成功 NLP tick（D1）形成前**因 execution gate、校验失败等 **终止** → **不**向 STM **append** 本轮；Mode B **不**刷新 **`last_successful_tick_at`**。须 **测试**覆盖（**§12** 可扩一条）。 |
+| **D26** | **Quest 绑定 thread：** 复用现有 ConversationScope/STM/LTM 真源；`quest_node_id` 与现有 `agent_node_id` 是 thread 不可变绑定，可选 `collaboration_relationship_id` 只引用协作关系；切换 Quest 或实际 Agent 须新建 thread。归档内容可进入按 account + Agent 隔离的 episodic/LTM 晋升，但不是世界事实或正式 Agent 配置；任何组织知识或配置更新须经 LearningProposal 与治理。详见 **§4.5**。 |
 
 ---
 
@@ -550,7 +565,7 @@ flowchart TD
 
 ## 23. 决策 rationale、业界实践与剩余选项
 
-**D16–D25 的规范性结论见 §18。** 本章保留 **背景、业界对照**；**§23.3.2–23.3.4** 已与 **D18、D23、§10.3** 对齐，其余仍可能含 **非升格** 的实施提示，与 §18 冲突时 **以 §18 为准**。
+**D16–D26 的规范性结论见 §18。** 本章保留 **背景、业界对照**；**§23.3.2–23.3.4** 已与 **D18、D23、§10.3** 对齐，其余仍可能含 **非升格** 的实施提示，与 §18 冲突时 **以 §18 为准**。
 
 ### 23.1 D16 — Rewind / 检查点
 
@@ -723,6 +738,7 @@ Prompt **须含** 当前 user 尾句 + 拟淘汰段；**单独 output cap + 超�
 | **D23** | Mode A LTM **默认跨 thread**；配置 **`thread`** |
 | **D24** | STM **message 列表**载荷 |
 | **D25** | **Early-fail** 不写 STM、不刷 idle |
+| **D26** | Quest-bound thread 复用现有记忆真源；归档可学习但不得直接改正式配置 |
 | **D19** | **抽象层 + 按 provider**；`prompt_fingerprint`；无缓存须正确 |
 | **D20** | **同步** LLM compaction（再 Plan） |
 | **D21** | **默认 A**；B/C 单独立项 |

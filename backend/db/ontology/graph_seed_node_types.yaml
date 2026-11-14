@@ -695,6 +695,60 @@ node_types:
           title: 池归属（FK → task_pools.id；assignee_kind=pool 时必填）
           value_kind: static
           mutability: instance_managed
+  observation:
+    trait_class: TASK
+    trait_mask: 1089
+    tags:
+    - graph_seed
+    - task
+    - semantic_shell
+    schema_definition:
+      type: object
+      title: observation attributes
+      description: 带来源的不可变世界陈述；验证结果不得覆写原始观察。
+      properties:
+        title:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        assertion:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        source_ref:
+          type:
+          - string
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        provenance:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+        observed_at:
+          type: string
+          value_kind: static
+          mutability: instance_managed
+        actor_provenance:
+          type: object
+          value_kind: static
+          mutability: instance_managed
+        subject_ref:
+          type:
+          - integer
+          - 'null'
+          value_kind: static
+          mutability: instance_managed
+        verification_status:
+          type: string
+          enum:
+          - unverified
+          value_kind: static
+          mutability: instance_managed
+        created_at:
+          type: string
+          value_kind: static
+          mutability: instance_managed
   situation:
     trait_class: TASK
     trait_mask: 1089

@@ -1,9 +1,13 @@
 <template>
   <div v-if="worldSession.queryMode === 'aico'" class="aico-toolbar">
-    <el-button size="small" :disabled="worldSession.streamInFlight" @click="worldSession.createAicoThread()">
+    <span v-if="activeQuest" class="quest-guide-label">
+      {{ t('worldInteraction.decision.questGuide', { title: activeQuest.questTitle || activeQuest.title }) }}
+    </span>
+    <el-button v-else size="small" :disabled="worldSession.streamInFlight" @click="worldSession.createAicoThread()">
       {{ t('worldInteraction.decision.newConversation') }}
     </el-button>
     <el-dropdown
+      v-if="!activeQuest"
       trigger="click"
       popper-class="cw-dropdown-popper"
       :disabled="worldSession.streamInFlight"
@@ -33,10 +37,13 @@ import { computed } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { useWorldSessionStore } from '@/stores/worldSession'
+import { useDecisionCenterStore } from '@/stores/decisionCenter'
 import type { AicoThread } from '@/types/world'
 
 const { t } = useI18n()
 const worldSession = useWorldSessionStore()
+const decisionStore = useDecisionCenterStore()
+const activeQuest = computed(() => decisionStore.activeTask?.questId ? decisionStore.activeTask : null)
 
 const getThreadTitle = (thread: AicoThread) => thread.title || (thread.titleKey ? t(thread.titleKey) : '')
 
@@ -57,5 +64,10 @@ const activeTitle = computed(
 
 .toolbar-chevron {
   margin-left: var(--spacing-xs);
+}
+
+.quest-guide-label {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
 }
 </style>

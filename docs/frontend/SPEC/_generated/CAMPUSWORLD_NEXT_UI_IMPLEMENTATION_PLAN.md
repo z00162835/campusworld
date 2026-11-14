@@ -1,8 +1,10 @@
 # CampusWorld Next UI Implementation Plan
 
-Status: active
+Status: archived — superseded by `F03_QUEST_WORLD_INTERACTION_IMPLEMENTATION_PLAN.md`
 
 Generated: 2026-05-31
+
+Archived: 2026-10-11
 
 ## Summary
 

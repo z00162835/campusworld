@@ -19,17 +19,26 @@
       </dl>
     </details>
     <div class="actions">
-      <el-button
-        v-for="option in event.options"
-        :key="option.id"
-        :type="buttonType(option.style)"
-        size="small"
-        :plain="option.style !== 'primary'"
-        :disabled="worldSession.sessionActionBusy"
-        @click="$emit('execute', event.id, option.id)"
-      >
-        {{ option.label }}
-      </el-button>
+      <div v-for="option in event.options" :key="option.id" class="action-option">
+        <el-button
+          :type="buttonType(option.style)"
+          size="small"
+          :plain="option.style !== 'primary'"
+          :disabled="worldSession.sessionActionBusy"
+          :aria-describedby="option.consequenceSummaryKey || option.consequenceSummary ? `consequence-${event.id}-${option.id}` : undefined"
+          @click="executeOption(option)"
+        >
+          {{ option.labelKey ? t(option.labelKey, option.labelParams || {}) : option.label }}
+        </el-button>
+        <p
+          v-if="option.consequenceSummaryKey || option.consequenceSummary"
+          :id="`consequence-${event.id}-${option.id}`"
+          class="action-consequence"
+        >
+          <span v-if="option.consequenceKind" class="consequence-kind">{{ t(`worldInteraction.decision.consequenceKind.${option.consequenceKind}`) }}</span>
+          {{ option.consequenceSummaryKey ? t(option.consequenceSummaryKey) : option.consequenceSummary }}
+        </p>
+      </div>
     </div>
   </article>
 </template>
@@ -37,6 +46,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessageBox } from 'element-plus'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import type { DecisionEvent, DecisionOption } from '@/types/world'
 
@@ -44,7 +54,7 @@ const props = defineProps<{
   event: DecisionEvent
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   execute: [eventId: string, optionId: string]
 }>()
 
@@ -67,6 +77,22 @@ const buttonType = (style: DecisionOption['style']) => {
   if (style === 'primary') return 'primary'
   return 'default'
 }
+
+const executeOption = async (option: DecisionOption) => {
+  if (option.requiresConfirmation) {
+    try {
+      await ElMessageBox.confirm(
+        option.consequenceSummaryKey ? t(option.consequenceSummaryKey) : option.consequenceSummary || t('worldInteraction.decision.confirmAction'),
+        t('worldInteraction.decision.confirmTitle'),
+        { confirmButtonText: t('worldInteraction.decision.confirm'), cancelButtonText: t('worldInteraction.decision.cancel'), type: 'warning' },
+      )
+    } catch {
+      return
+    }
+  }
+  emit('execute', props.event.id, option.id)
+}
+
 </script>
 
 <style scoped>
@@ -164,5 +190,21 @@ dd {
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+}
+
+.action-option {
+  max-width: 100%;
+}
+
+.action-consequence {
+  max-width: 32rem;
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+.consequence-kind {
+  font-weight: var(--font-weight-semibold);
 }
 </style>

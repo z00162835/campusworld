@@ -2,6 +2,8 @@
 from unittest.mock import MagicMock
 
 from app.services.task.user_task_queue import QueueTaskRow
+from app.services.task.permissions import Principal, TASK_READ
+from app.services.task.errors import ReferenceNotFound
 from app.services.world_interaction import world_interaction_service
 
 
@@ -96,3 +98,73 @@ def test_active_task_includes_quest_context():
     payload = world_interaction_service._active_task_from_queue([row], None)
     assert payload["questId"] == "77"
     assert payload["questTitle"] == "Restore AC comfort"
+
+
+def test_quest_context_projects_situation_goal_and_governance(monkeypatch):
+    row = QueueTaskRow(
+        id=2,
+        state="claimed",
+        title="Inspect bearing",
+        priority="high",
+        pool_key=None,
+        visibility="private",
+        assignee_kind="user",
+        quest_id=77,
+        quest_title="Restore safe operation",
+    )
+    monkeypatch.setattr(
+        "app.services.world_interaction.service.show_quest",
+        lambda **_kwargs: {
+          "quest": {"id": 77, "title": "Restore safe operation", "attributes": {
+            "current_state": "executing",
+            "risk_level": "high",
+            "policy_refs": ["policy:maintenance@3"],
+            "process_refs": ["process:ahu-bearing@2"],
+            "quality_refs": ["quality:vibration@1"],
+          }},
+          "situation": {"id": 75, "title": "Bearing anomaly", "attributes": {
+            "assertion": "Vibration exceeds safe band", "subject_ref": 501,
+            "trigger_kind": "mixed", "confidence": 0.92, "severity": "high",
+          }},
+          "goal": {"id": 76, "title": "Safe operation", "attributes": {
+            "desired_state": "AHU returns to safe operation",
+          }},
+          "objectives": [],
+        },
+    )
+    session = MagicMock()
+    principal = Principal(id=1, kind="user", permissions=frozenset({TASK_READ}))
+
+    payload = world_interaction_service._active_task_from_queue(
+        [row], None, session=session, principal=principal,
+    )
+
+    assert payload["questContext"]["situation"]["triggerKind"] == "mixed"
+    assert payload["questContext"]["situation"]["subjectRef"] == "501"
+    assert payload["questContext"]["goal"]["desiredState"] == "AHU returns to safe operation"
+    assert payload["questContext"]["governanceRefs"] == ["policy:maintenance@3"]
+
+
+def test_quest_context_is_omitted_when_linked_quest_is_not_readable(monkeypatch):
+    row = QueueTaskRow(
+        id=2,
+        state="open",
+        title="Pool-visible objective",
+        priority="normal",
+        pool_key="shared",
+        visibility="pool_open",
+        assignee_kind="pool",
+        quest_id=77,
+        quest_title="Private Quest",
+    )
+    monkeypatch.setattr(
+        "app.services.world_interaction.service.show_quest",
+        lambda **_kwargs: (_ for _ in ()).throw(ReferenceNotFound("quest 77 not found")),
+    )
+    payload = world_interaction_service._active_task_from_queue(
+        [row],
+        None,
+        session=MagicMock(),
+        principal=Principal(id=2, kind="user", permissions=frozenset({TASK_READ})),
+    )
+    assert payload["questContext"] is None

@@ -10,18 +10,35 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence
 
-from sqlalchemy import String, cast, or_
+from sqlalchemy import String, cast, or_, text
 from sqlalchemy.orm import Session
 
 from app.commands.base import CommandResult
+from app.commands.command_tool_semantics import resolve_command_tool_semantics
 from app.commands.room_connects_to_query import connects_to_exits_from_room
 from app.commands.init_commands import ensure_commands_initialized
 from app.commands.registry import command_registry
+from app.commands.shell_words import split_command_line
 from app.core.log import get_logger, LoggerNames
 from app.game_engine.manager import game_engine_manager
 from app.models.graph import Node, Relationship
 from app.models.root_manager import root_manager
 from app.services.task.permissions import Principal
+from app.services.task.quest_interaction_projection import build_quest_interaction_projection
+from app.services.task.quest_semantic_service import show_quest
+from app.services.task.errors import OptimisticLockError, PermissionDenied, PreconditionFailed, ReferenceNotFound
+from app.services.task.quest_semantic_service import can_read_semantic_node
+from app.services.task.quest_interaction_service import (
+    focus_objective,
+    new_correlation_id,
+    record_projection_change,
+    read_projection_cursor,
+    set_clue_pin,
+    set_collaborator,
+    set_situation_attention,
+    track_quest,
+    untrack_quest,
+)
 from app.services.task.user_task_queue import (
     QueueTaskRow,
     last_handled_task,
@@ -54,7 +71,7 @@ class WorldInteractionService:
         self._archive_repo = WorldConversationArchiveRepository(max_archives_per_user=max_archives)
         self._command_runner = CommandRunner()
         self._command_query = CommandQueryService(
-            run_command=self._command_runner.run,
+            run_command=self.execute_command,
             search=self.search,
             build_patch=self._state_patch_after_result,
         )
@@ -166,6 +183,97 @@ class WorldInteractionService:
                     return self._state_patch_after_result(session, actor, result, resolved_event_id=decision_event_id)
         return {"success": False, "result": {"summary": "Action is no longer available.", "status": "failed"}, "state_patch": {}}
 
+    def execute_quest_interaction_action(
+        self,
+        session: Session,
+        actor: WorldActor,
+        *,
+        expected_projection_revision: str,
+        idempotency_key: str,
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Execute an optimistic, idempotent Quest interaction mutation."""
+        user = self._get_user_node(session, actor.user_id, username=actor.username)
+        principal = principal_from_actor(
+            user_id=actor.user_id,
+            roles=actor.roles,
+            permissions=actor.permissions,
+        )
+        action = str(payload.get("action") or "").strip().lower()
+        correlation_id = str(payload.get("correlationId") or "").strip() or new_correlation_id()
+
+        def required_int(name: str) -> int:
+            value = payload.get(name)
+            if value is None or not str(value).isdigit():
+                raise ValueError(f"payload.{name} must be a numeric node id")
+            return int(value)
+
+        common = {
+            "account_node_id": int(user.id),
+            "actor": principal,
+            "expected_revision": expected_projection_revision,
+            "idempotency_key": idempotency_key,
+            "correlation_id": correlation_id,
+            "db_session": session,
+        }
+        if action == "track":
+            mutation = track_quest(quest_id=required_int("questId"), **common)
+        elif action == "untrack":
+            mutation = untrack_quest(quest_id=required_int("questId"), **common)
+        elif action == "focus_objective":
+            mutation = focus_objective(
+                quest_id=required_int("questId"),
+                objective_id=required_int("objectiveId"),
+                **common,
+            )
+        elif action in {"pin_clue", "unpin_clue"}:
+            mutation = set_clue_pin(
+                quest_id=required_int("questId"),
+                clue_node_id=required_int("clueNodeId"),
+                pinned=action == "pin_clue",
+                **common,
+            )
+        elif action in {"set_collaborator", "remove_collaborator"}:
+            mutation = set_collaborator(
+                quest_id=required_int("questId"),
+                agent_node_id=required_int("agentNodeId"),
+                active=action == "set_collaborator",
+                role=str(payload.get("role") or "advisor"),
+                status=str(payload.get("status") or "active"),
+                is_primary_companion=bool(payload.get("isPrimaryCompanion", False)),
+                capability_scope=[str(item) for item in payload.get("capabilityScope") or []],
+                **common,
+            )
+        elif action == "situation_attention":
+            mutation = set_situation_attention(
+                situation_id=required_int("situationId"),
+                attention=str(payload.get("attention") or ""),
+                snoozed_until=str(payload.get("snoozedUntil") or "") or None,
+                **common,
+            )
+        else:
+            raise ValueError(f"unsupported Quest interaction action: {action}")
+        session.commit()
+        interaction = self.refresh_interaction_state(session, actor)
+        return {
+            "success": True,
+            "result": {
+                "summary": "Quest interaction updated.",
+                "status": "completed",
+                "projectionRevision": mutation.projection_revision,
+                "lastEventId": mutation.last_event_id,
+                "idempotentReplay": mutation.idempotent_replay,
+                "changed": mutation.changed,
+            },
+            "state_patch": {
+                "questInteraction": interaction.get("quest_interaction"),
+                "focusSummary": interaction["decision_center"]["focus"],
+                "activeTask": interaction["decision_center"].get("activeTask"),
+                "newDecisionEvents": interaction["decision_center"].get("decisionEvents", []),
+                "contextSummary": interaction.get("context_summary"),
+            },
+        }
+
     def run_command_query(self, session: Session, actor: WorldActor, query: str) -> Dict[str, Any]:
         return self._command_query.run(session, actor, query)
 
@@ -197,8 +305,108 @@ class WorldInteractionService:
             session.commit()
         return {"ok": True, "archived": has_content, "archive_id": entry["id"] if has_content else None}
 
-    def stream_aico_query(self, actor: WorldActor, query: str, *, thread_id: Optional[str] = None):
-        return self._aico_stream_query.stream(actor, query, thread_id=thread_id)
+    def validate_quest_conversation_context(
+        self,
+        session: Session,
+        actor: WorldActor,
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        user = self._get_user_node(session, actor.user_id, username=actor.username)
+        principal = principal_from_actor(user_id=actor.user_id, roles=actor.roles, permissions=actor.permissions)
+        try:
+            quest_id = int(context.get("quest_id"))
+            expected_revision = str(context.get("projection_revision") or "")
+            objective_id = int(context["objective_id"]) if context.get("objective_id") is not None else None
+            agent_id = int(context["agent_node_id"]) if context.get("agent_node_id") is not None else None
+        except (TypeError, ValueError) as exc:
+            raise PreconditionFailed("Quest conversation context contains an invalid node id") from exc
+        revision, _ = read_projection_cursor(session, account_node_id=int(user.id))
+        if not expected_revision:
+            raise PreconditionFailed("Quest conversation context requires projection_revision")
+        if expected_revision != revision:
+            raise OptimisticLockError("stale_projection: Quest conversation context is out of date")
+        if not can_read_semantic_node(session, node_id=quest_id, actor=principal):
+            raise ReferenceNotFound(f"Quest {quest_id} not found")
+        tracked = session.execute(
+            text("""
+                SELECT 1 FROM relationships
+                 WHERE source_id = :account_id AND target_id = :quest_id
+                   AND type_code = 'TRACKS_QUEST' AND is_active = TRUE
+                 LIMIT 1
+            """),
+            {"account_id": int(user.id), "quest_id": quest_id},
+        ).first()
+        if tracked is None:
+            raise PermissionDenied("Quest conversation requires an explicitly tracked Quest")
+        if objective_id is not None:
+            if not can_read_semantic_node(session, node_id=objective_id, actor=principal):
+                raise ReferenceNotFound(f"Objective {objective_id} not found")
+            objective = session.execute(
+                text("""
+                    SELECT 1 FROM relationships
+                     WHERE source_id = :quest_id AND target_id = :objective_id
+                       AND type_code = 'HAS_OBJECTIVE' AND is_active = TRUE
+                     LIMIT 1
+                """),
+                {"quest_id": quest_id, "objective_id": objective_id},
+            ).first()
+            if objective is None:
+                raise PreconditionFailed("Objective does not belong to the Quest")
+        collaborator_id = None
+        agent_handle = None
+        if agent_id is not None:
+            if not can_read_semantic_node(session, node_id=agent_id, actor=principal):
+                raise ReferenceNotFound(f"Companion Agent {agent_id} not found")
+            collaborator = session.execute(
+                text("""
+                    SELECT id FROM relationships
+                     WHERE source_id = :quest_id AND target_id = :agent_id
+                       AND type_code = 'ASSISTED_BY' AND is_active = TRUE
+                     ORDER BY id DESC LIMIT 1
+                """),
+                {"quest_id": quest_id, "agent_id": agent_id},
+            ).first()
+            if collaborator is None:
+                raise PermissionDenied("Conversation Agent is not an active Quest collaborator")
+            collaborator_id = int(collaborator.id)
+            agent_row = session.execute(
+                text("SELECT attributes FROM nodes WHERE id = :agent_id AND type_code = 'npc_agent'"),
+                {"agent_id": agent_id},
+            ).first()
+            agent_attributes = dict((agent_row.attributes or {}) if agent_row is not None else {})
+            agent_handle = str(agent_attributes.get("handle") or agent_attributes.get("name") or "").strip()
+            if not agent_handle or not all(character.isalnum() or character in "_-" for character in agent_handle):
+                raise PreconditionFailed("Companion Agent does not have a routable command handle")
+        quest_data = show_quest(quest_id=quest_id, actor=principal, db_session=session)
+        quest_node = quest_data.get("quest") or {}
+        situation = quest_data.get("situation") or {}
+        goal = quest_data.get("goal") or {}
+        objective = next(
+            (item for item in quest_data.get("objectives") or [] if objective_id is not None and int(item.get("task_id") or 0) == objective_id),
+            None,
+        )
+        return {
+            "quest_node_id": quest_id,
+            "objective_node_id": objective_id,
+            "agent_node_id": agent_id,
+            "collaboration_relationship_id": collaborator_id,
+            "agent_handle": agent_handle,
+            "projection_revision": revision,
+            "quest_title": str(quest_node.get("title") or ""),
+            "situation_assertion": str((situation.get("attributes") or {}).get("assertion") or ""),
+            "goal_desired_state": str((goal.get("attributes") or {}).get("desired_state") or ""),
+            "objective_title": str((objective or {}).get("title") or ""),
+        }
+
+    def stream_aico_query(
+        self,
+        actor: WorldActor,
+        query: str,
+        *,
+        thread_id: Optional[str] = None,
+        quest_context: Optional[Dict[str, Any]] = None,
+    ):
+        return self._aico_stream_query.stream(actor, query, thread_id=thread_id, quest_context=quest_context)
 
     def query_semantic_map(self, session: Session, actor: WorldActor, query: str, mode: str = "auto") -> Dict[str, Any]:
         search = self.search(session, actor, query)
@@ -493,13 +701,56 @@ class WorldInteractionService:
         return list(reversed(items))
 
     def execute_command(self, session: Session, actor: WorldActor, command_line: str) -> CommandResult:
-        return self._command_runner.run(session, actor, command_line)
+        result = self._command_runner.run(session, actor, command_line)
+        parts = split_command_line(str(command_line or '').strip())
+        if not result.success or not parts:
+            return result
+        semantics = resolve_command_tool_semantics(parts[0].lower(), args=parts[1:])
+        data = result.data if isinstance(result.data, dict) else {}
+        if semantics.interaction_profile != 'mutate':
+            return result
+        if data.get('projection_revision') is None:
+            user = self._get_user_node(session, actor.user_id, username=actor.username)
+            principal = principal_from_actor(
+                user_id=actor.user_id,
+                roles=actor.roles,
+                permissions=actor.permissions,
+            )
+            record_projection_change(
+                db_session=session,
+                account_node_id=int(user.id),
+                actor=principal,
+                kind=f'command.{parts[0].lower()}',
+            )
+        session.commit()
+        return result
 
     def _build_interaction_state(self, session: Session, actor: WorldActor, user: Node, location: Node, current_world_id: Optional[str], available_worlds: List[Dict[str, Any]]) -> Dict[str, Any]:
         principal = principal_from_actor(user_id=actor.user_id, roles=actor.roles, permissions=actor.permissions)
         focus_map = self._focus_map(session, location)
-        context_summary = self._context_summary(session, principal, location, focus_map, current_world_id)
-        decision_center = self._decision_center(session, principal, location, current_world_id, available_worlds, focus_map)
+        quest_interaction = build_quest_interaction_projection(
+            session,
+            account_node_id=int(user.id),
+            current_location_id=int(location.id),
+            actor=principal,
+        )
+        decision_center = self._decision_center(
+            session,
+            principal,
+            location,
+            current_world_id,
+            available_worlds,
+            focus_map,
+            quest_interaction,
+        )
+        context_summary = self._context_summary(
+            session,
+            principal,
+            location,
+            focus_map,
+            current_world_id,
+            active_task=decision_center.get("activeTask"),
+        )
         return {
             "session": {
                 "id": f"world_{actor.user_id}",
@@ -511,6 +762,7 @@ class WorldInteractionService:
             "decision_center": decision_center,
             "focus_map": focus_map,
             "context_summary": context_summary,
+            "quest_interaction": quest_interaction,
             "quick_queries": decision_center["quickQueries"],
         }
 
@@ -522,8 +774,23 @@ class WorldInteractionService:
         current_world_id: Optional[str],
         available_worlds: List[Dict[str, Any]],
         focus_map: Dict[str, Any],
+        quest_interaction: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         queue = list_for_principal(session, principal, limit=DISPLAY_POLICY["maxDecisionEventsVisible"] + 3)
+        foreground_quest_id = str((quest_interaction or {}).get("foregroundQuestId") or "")
+        foreground = next(
+            (
+                item
+                for item in (quest_interaction or {}).get("trackedQuests") or []
+                if str(item.get("id")) == foreground_quest_id
+            ),
+            None,
+        )
+        foreground_objective_id = None
+        if foreground:
+            foreground_objective_id = foreground.get("focusedObjectiveId") or foreground.get("recommendedObjectiveId")
+        if foreground_objective_id is not None:
+            queue = sorted(queue, key=lambda row: 0 if str(row.id) == str(foreground_objective_id) else 1)
         events: List[Dict[str, Any]] = [self._task_queue_event(row) for row in queue]
         primary_action = events[0]["options"][0] if events and events[0].get("options") else None
 
@@ -569,7 +836,22 @@ class WorldInteractionService:
                         )
                     )
 
-        active_task = self._active_task_from_queue(queue, primary_action)
+        active_queue = queue
+        if foreground is not None:
+            # The HUD is the foreground Quest projection, not an alias for the
+            # first visible queue item. If its Objective is not actionable in
+            # this principal's queue, do not silently show an unrelated task.
+            active_queue = [
+                row for row in queue
+                if foreground_objective_id is not None and str(row.id) == str(foreground_objective_id)
+            ]
+        active_task = self._active_task_from_queue(
+            active_queue,
+            primary_action if active_queue and str(active_queue[0].id) == str(queue[0].id) else None,
+            session=session,
+            principal=principal,
+            quest_projection=foreground,
+        )
         focus = {
             "title": self._display_name(location),
             "summary": self._focus_summary_text(location, current_world_id, events, queue),
@@ -607,21 +889,38 @@ class WorldInteractionService:
         state = row.state
         task_id = row.id
         if state in {"open", "rejected"} and row.visibility == "pool_open" and row.assignee_kind == "pool":
-            return [self._option(f"task_claim_{task_id}", "Claim task", "primary", "execute_command", command=f"task claim {task_id}", target=str(task_id))]
+            return [self._option(f"task_claim_{task_id}", "Claim task", "primary", "execute_command", command=f"task claim {task_id}", target=str(task_id), label_key="worldInteraction.decision.action.claim", consequence_kind="proposed", consequence_summary="If accepted, you become responsible for this Objective.", consequence_summary_key="worldInteraction.decision.actionConsequence.claim", gate_status="clear", reversible=True, affected_entity_refs=[str(task_id)])]
         if state == "claimed":
-            return [self._option(f"task_start_{task_id}", "Start task", "primary", "execute_command", command=f"task start {task_id}", target=str(task_id))]
+            return [self._option(f"task_start_{task_id}", "Start task", "primary", "execute_command", command=f"task start {task_id}", target=str(task_id), label_key="worldInteraction.decision.action.start", consequence_kind="proposed", consequence_summary="If accepted, this Objective enters active work.", consequence_summary_key="worldInteraction.decision.actionConsequence.start", gate_status="clear", reversible=True, affected_entity_refs=[str(task_id)])]
         if state in {"in_progress", "approved"}:
-            return [self._option(f"task_complete_{task_id}", "Complete task", "primary", "execute_command", command=f"task complete {task_id}", target=str(task_id))]
+            return [self._option(f"task_complete_{task_id}", "Complete task", "primary", "execute_command", command=f"task complete {task_id}", target=str(task_id), requires_confirmation=True, label_key="worldInteraction.decision.action.complete", consequence_kind="proposed", consequence_summary="If accepted, only this Objective is recorded complete; Quest acceptance still requires verification.", consequence_summary_key="worldInteraction.decision.actionConsequence.complete", gate_status="clear", reversible=False, affected_entity_refs=[str(task_id)])]
         return [self._option(f"task_show_{task_id}", "View task", "secondary", "execute_command", command=f"task show {task_id}", target=str(task_id))]
 
-    def _active_task_from_queue(self, queue: Sequence[QueueTaskRow], primary_action: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _active_task_from_queue(
+        self,
+        queue: Sequence[QueueTaskRow],
+        primary_action: Optional[Dict[str, Any]],
+        *,
+        session: Optional[Session] = None,
+        principal: Optional[Principal] = None,
+        quest_projection: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
         if not queue:
             return None
         row = queue[0]
         primary = primary_action or (self._options_for_queue_task(row)[0] if self._options_for_queue_task(row) else None)
         if not primary:
             return None
-        progress_map = {"draft": 10, "open": 25, "claimed": 45, "in_progress": 70, "pending_review": 85, "approved": 90}
+        quest_context = self._quest_context(
+            session,
+            row,
+            principal,
+            quest_projection=quest_projection,
+        ) if session is not None and principal is not None else None
+        aggregate_progress = (quest_projection or {}).get("progress") or {}
+        progress = aggregate_progress.get("percent") if quest_projection is not None else None
+        if progress is None and quest_context is not None:
+            progress = quest_context.get("progress")
         return {
             "id": f"task_{row.id}",
             "title": row.title,
@@ -629,7 +928,8 @@ class WorldInteractionService:
             "status": "active",
             "questId": str(row.quest_id) if row.quest_id is not None else None,
             "questTitle": row.quest_title,
-            "progress": progress_map.get(row.state, 30),
+            "questContext": quest_context,
+            "progress": int(progress) if progress is not None else None,
             "currentStep": {
                 "id": f"task_step_{row.id}",
                 "title": primary["label"],
@@ -640,6 +940,58 @@ class WorldInteractionService:
             "nextBestAction": primary,
             "alternativeActions": self._options_for_queue_task(row)[1:],
             "blockers": [],
+        }
+
+    def _quest_context(
+        self,
+        session: Session,
+        row: QueueTaskRow,
+        principal: Principal,
+        *,
+        quest_projection: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Build a compact Mission Card projection from semantic-world nodes."""
+        if row.quest_id is None:
+            return None
+        try:
+            data = show_quest(quest_id=int(row.quest_id), actor=principal, db_session=session)
+        except ReferenceNotFound:
+            return None
+        quest = data["quest"]
+        attrs = dict(quest.get("attributes") or {})
+        situation = data.get("situation")
+        goal = data.get("goal")
+        situation_attrs = dict((situation or {}).get("attributes") or {})
+        goal_attrs = dict((goal or {}).get("attributes") or {})
+        situation_projection = (quest_projection or {}).get("situation") or {}
+        return {
+            "state": str(attrs.get("current_state") or "draft"),
+            "riskLevel": str(attrs.get("risk_level") or "normal"),
+            "situation": {
+                "id": str(situation["id"]),
+                "title": str(situation.get("title") or ""),
+                "assertion": str(situation_attrs.get("assertion") or ""),
+                "subjectRef": situation_projection.get("primarySubjectRef") or (
+                    str(situation_attrs.get("subject_ref")) if situation_attrs.get("subject_ref") is not None else None
+                ),
+                "relatedEntityRefs": list(situation_projection.get("relatedEntityRefs") or []),
+                "scopedAtRef": situation_projection.get("scopedAtRef"),
+                "triggerKind": str(situation_attrs.get("trigger_kind") or "manual"),
+                "confidence": situation_attrs.get("confidence"),
+                "severity": str(situation_attrs.get("severity") or "medium"),
+            } if situation else None,
+            "goal": {
+                "id": str(goal["id"]),
+                "title": str(goal.get("title") or ""),
+                "desiredState": str(goal_attrs.get("desired_state") or ""),
+            } if goal else None,
+            "governanceRefs": list(attrs.get("policy_refs") or []),
+            "processRefs": list(attrs.get("process_refs") or []),
+            "qualityRefs": list(attrs.get("quality_refs") or []),
+            "caseRefs": list(attrs.get("case_refs") or []),
+            "progress": int((data.get("progress") or {}).get("percent", 0)),
+            "companion": (quest_projection or {}).get("companion"),
+            "companionFallback": (quest_projection or {}).get("companionFallback") or "aico",
         }
 
     def _decision_event_space_ids(self, session: Session, actor: WorldActor, location: Node) -> List[str]:
@@ -685,18 +1037,19 @@ class WorldInteractionService:
         location: Node,
         focus_map: Dict[str, Any],
         current_world_id: Optional[str],
+        *,
+        active_task: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         agents = focus_map.get("agentPresences") or []
         queue = list_for_principal(session, principal, limit=20)
-        primary = queue[0] if queue else None
         handled = last_handled_task(session, principal)
-        active_task = None
-        if primary:
-            active_task = {
-                "id": str(primary.id),
-                "title": primary.title,
-                "currentStep": f"State: {primary.state}",
-                "progress": {"claimed": 45, "in_progress": 70, "open": 25}.get(primary.state, 30),
+        summary_task = None
+        if active_task:
+            summary_task = {
+                "id": active_task.get("id"),
+                "title": active_task.get("questTitle") or active_task.get("title"),
+                "currentStep": (active_task.get("currentStep") or {}).get("title") or active_task.get("summary"),
+                "progress": active_task.get("progress"),
             }
         payload: Dict[str, Any] = {
             "currentSpace": {"id": str(location.id), "name": self._display_name(location), "oneLineSummary": self._one_line(location)},
@@ -704,8 +1057,8 @@ class WorldInteractionService:
             "pendingDecisionCount": len(queue),
             "suggestedQueries": self._quick_queries(current_world_id),
         }
-        if active_task:
-            payload["activeTask"] = active_task
+        if summary_task:
+            payload["activeTask"] = summary_task
         if handled:
             payload["lastHandledTask"] = handled
         return payload
@@ -730,6 +1083,7 @@ class WorldInteractionService:
                 "agentPresences": list(interaction["focus_map"].get("agentPresences") or []),
             },
             "contextSummary": interaction.get("context_summary"),
+            "questInteraction": interaction.get("quest_interaction"),
             "historyAppend": [{"id": f"cmd_{datetime.utcnow().timestamp()}", "summary": result.message, "createdAt": self._now()}],
         }
         if resolved_event_id:
@@ -893,8 +1247,39 @@ class WorldInteractionService:
         }
 
     @staticmethod
-    def _option(option_id: str, label: str, style: str, action_type: str, *, command: Optional[str] = None, target: Optional[str] = None, requires_confirmation: bool = False) -> Dict[str, Any]:
-        return {"id": option_id, "label": label, "style": style, "actionType": action_type, "command": command, "targetEntityId": target, "requiresConfirmation": requires_confirmation}
+    def _option(
+        option_id: str,
+        label: str,
+        style: str,
+        action_type: str,
+        *,
+        command: Optional[str] = None,
+        target: Optional[str] = None,
+        requires_confirmation: bool = False,
+        label_key: Optional[str] = None,
+        consequence_kind: Optional[str] = None,
+        consequence_summary: Optional[str] = None,
+        consequence_summary_key: Optional[str] = None,
+        gate_status: Optional[str] = None,
+        reversible: Optional[bool] = None,
+        affected_entity_refs: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        return {
+            "id": option_id,
+            "label": label,
+            "labelKey": label_key,
+            "style": style,
+            "actionType": action_type,
+            "command": command,
+            "targetEntityId": target,
+            "requiresConfirmation": requires_confirmation,
+            "consequenceKind": consequence_kind,
+            "consequenceSummary": consequence_summary,
+            "consequenceSummaryKey": consequence_summary_key,
+            "gateStatus": gate_status,
+            "reversible": reversible,
+            "affectedEntityRefs": affected_entity_refs or ([target] if target else []),
+        }
 
     def _focus_summary_text(
         self,

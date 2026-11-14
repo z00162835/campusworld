@@ -4,7 +4,7 @@
 >
 > **依赖：** [`SPEC.md`](../SPEC.md) 设计律 D1-D3、[`F01`](F01_TASK_ONTOLOGY_AND_NODE_TYPES.md) 图节点本体、[`F02`](F02_TASK_POOL_AND_CLAIM_PROTOCOL.md) 池认领、[`F03`](F03_TASK_COLLABORATION_WORKFLOW.md) 状态机、[`F04`](F04_TASK_RELATIONAL_SUBSTRATE_AND_OBSERVABILITY.md) 关系底座、[`F05`](F05_TASK_POOL_FIRST_CLASS_REGISTRY.md) 池治理、[`docs/models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md`](../../../models/SPEC/features/F09_CAMPUSWORLD_AGENT_ARCHITECTURE_FOUR_LAYERS.md) Agent L1-L4 架构。
 
-**文档状态：Draft（重构提案 v1）**
+**文档状态：Approved for Implementation（R0 与部分 R1 已实现；新增 R1 及 R2–R4 待实施验收）**
 
 ---
 
@@ -59,7 +59,7 @@ CampusWorld 已具备 Persistent Semantic World 的底座，因此任务系统�
 
 - 定义 `Situation / Goal / Quest / Objective / Action / Evidence / Outcome / Learning` 的语义边界。
 - 定义现有 `task` 与新 `Objective` 的兼容关系。
-- 定义 Quest Runtime 与 Policy Runtime / Agent Runtime / World Model 的边界。
+- 定义 Quest Runtime 与 Quest governance、F16 behavior policy、command authorization、Agent Runtime、World Model 的边界。
 - 定义新图节点、关系、关系表的推荐建模方式。
 - 定义运行时状态机、重规划、验证、审计与学习闭环。
 - 定义从现有 Task System 平滑迁移的分期计划。
@@ -125,9 +125,38 @@ Quest Runtime 必须保持五个平面相对独立，避免把企业知识、治
 
 Quest Runtime 位于四种记忆中间，负责将它们组合成当前行动。
 
+### 4.2 世界事实、用户选择与 Agent Memory 的边界
+
+CampusWorld 采用“世界即外化记忆 + Agent 内化记忆”的组合，不把所有内容塞入 LTM：
+
+- 可验证的世界事实、Situation/Quest 主链路、用户明确的 Quest/Objective/Clue 选择使用 graph nodes/relationships 持久化，并受图权限约束。
+- 对话连续性、个人偏好解释、情境摘要和历史 episode 使用按 account + Agent 隔离的 STM/LTM；LTM 通过 `graph_node_id / relationship_id` 引用图对象，不能覆盖图事实。
+- 用户推荐、模型预测和向量召回都不是事实；重新用于计划或执行前必须按当前权限解析图对象并校验版本。
+- Quest 对话归档可以成为 episodic/LTM 晋升输入，但不得直接发布为企业 Process/Policy/Skill，也不得直接修改 Agent 节点配置。
+
+用户场景选择复用现有语义对象，不新增通用 `scenario` 节点：多个 `TRACKS_QUEST account -> quest` 表示用户追踪的行动闭环集合，唯一 `FOCUSES_ON account -> task/objective` 表示当前前台业务焦点，`PINS_CLUE account -> fact/observation/evidence` 表示用户明确保留的已物化事实线索。推荐、地图 hover 与临时 inspect 不创建这些边。
+
+`PINS_CLUE` 的身份按 `account + quest + clue` 确定：同一账户可将同一线索分别 pin 到多个 Quest；对一个 Quest unpin 不得影响其他 Quest 的 pin。
+
 ---
 
 ## 5. 领域模型
+
+### 5.0 `observation` 节点
+
+`observation` 是带来源的世界陈述输入，不等价于已验证 Fact/Evidence。R1 物化它是为了让 Situation provenance 与用户 `PINS_CLUE` 指向真实图节点，而不是悬空字符串。
+
+| 字段 | 类型 | 约束 |
+|---|---|---|
+| `assertion` | string | 必填；原始观察陈述，创建后不可原地改写 |
+| `source_ref` | string | 必填；传感器、系统记录、人工输入或外部事件引用 |
+| `provenance` | object | 必填；source kind、采集方式及可用 correlation/trace id |
+| `observed_at` | datetime | 必填；业务观察发生时间，不使用写库时间替代 |
+| `actor_id` | node id | 必填；记录该 Observation 的 human/Agent/system principal |
+| `subject_ref` | node id/null | 可选；观察所指向的可读世界对象 |
+| `verification_status` | enum | R1 固定初始为 `unverified`；R3 的支持/反驳/失效通过 Evidence/verification 记录表达 |
+
+去重只能依据受治理的 source identity/idempotency key，不能对自然语言 assertion 做模糊合并。更正应创建新 Observation，并以 `provenance.corrects_observation_id` 指回被更正记录，保留原始审计链。
 
 ### 5.1 `situation` 节点
 
@@ -253,6 +282,17 @@ R1 只保存可审计引用和轻量摘要，不实现完整 Policy Gate、Evide
 | `MEASURED_BY` | `quest -> quality_spec` | 质量标准 |
 | `INFORMED_BY` | `quest -> case` | 历史经验 |
 | `PRODUCED` | `quest -> evidence/outcome/lesson` | 证据与结果 |
+| `ASSISTED_BY` | `quest -> npc_agent` | Quest 的长期协作 Agent；关系本身不授予执行权限 |
+
+用户选择关系：
+
+| 边 | 起 -> 止 | 含义 |
+|---|---|---|
+| `TRACKS_QUEST` | `account -> quest` | 用户明确追踪的 Quest；每个 account 可有多个 active Quest，但同一 account+Quest 至多一个 active 边 |
+| `FOCUSES_ON` | `account -> task/objective` | 多个已追踪 Quest 中账户唯一的前台 Objective 聚焦；不改变 Objective 状态 |
+| `PINS_CLUE` | `account -> fact/observation/evidence` | 用户 pin 的已物化事实线索；R1 至少支持 canonical `observation`，未物化 semantic ref 不得伪造边 |
+
+`ASSISTED_BY` 允许一个 Quest 对应多个 Agent，通过关系 attributes 表达 `role / status / is_primary_companion / capability_scope / valid_from / valid_to / actor / correlation_id`。协作关系与实际 Action executor 分离；执行者必须由命令、task run 或 Agent run 审计记录证明。
 
 R1 `Quest -> Objective` 出边建议保持在 1-50 条的人工可审计范围内；超过该规模时应拆分为多个 Quest 或在 R2+ 引入 plan shard / batch objective，避免形成 supernode 并拖慢 Mission Card、relationship traversal 与 review UI。
 
@@ -386,7 +426,7 @@ verifying -> executing   # evidence 不足或质量不通过，返工
 | `failed` | owner |
 | `cancelled` | none |
 
-R1 只写入 `Situation / Goal / Quest` 的初始状态（`asserted / proposed / draft`）与主链路关系，不实现 semantic shell 的状态转移 ledger；`linked_goal / active / executing` 等生命周期推进由 R2+ 状态机补齐。
+R1 写入不可变核心的 `Observation` 记录，以及 `Situation / Goal / Quest` 的初始状态（`asserted / proposed / draft`）与主链路关系；不实现 semantic shell 的状态转移 ledger，`linked_goal / active / executing` 等生命周期推进由 R2+ 状态机补齐。
 
 ### 6.4 Objective 状态
 
@@ -428,8 +468,9 @@ Quest Runtime
   Verifier
   Learning Proposer
         |
-        +------ Policy Runtime
-        |         policy / control / approval / authority / segregation
+        +------ Quest Decision Facade
+        |         Quest governance + F16 behavior decision
+        |         command authorization at execution
         |
         +------ Agent Runtime
         |         reason / tool-call / execute / observe
@@ -461,9 +502,32 @@ Observe -> Interpret -> Define Goal -> Plan -> Gate -> Act -> Verify -> Re-plan 
 | Re-plan | plan_graph revision / objective changes |
 | Learn | outcome / case / lesson / improvement_proposal |
 
-### 7.3 Policy Runtime
+### 7.2.1 Objective 物化与自动执行决策
 
-Policy Runtime 控制“AI 可以做什么”，不规定“AI 每一步怎么做”。
+Situation 成立不等于必须生成一条人工任务。Planner 必须基于 pinned Process / Policy / Control 判断行动是否需要物化为 Objective，以及由人还是 Agent 执行：
+
+```text
+Situation + Goal + Process/Policy evaluation
+  ├─ 无需行动                    → 不生成 Objective，记录 evaluation
+  ├─ 可自动处理且已授权          → 生成或绑定 Objective → Agent 执行 → 记录 Action/Run/Evidence
+  ├─ 需要人工判断/授权/现实操作   → 生成人工 Objective → Mission Feed
+  └─ 自动处理异常或越界          → 暂停/升级为人工 Objective
+```
+
+物化条件至少包括：需要责任归属、改变世界状态、产生审计要求、跨系统事务、人工判断、审批或不可自动恢复的异常。纯 Agent 内部推理不得生成 Objective。
+
+自动执行约束：
+
+- 自动化资格必须由确定性的 Policy/Control 与 Process capability 共同判定，不能仅凭 LLM 建议。
+- Agent 必须以明确 principal 执行现有 command/service，不得绕过 Objective 状态机和 Policy gate。
+- 自动处理同样必须记录 actor、触发依据、pinned 规则/流程版本、输入事实、命令或工具调用摘要、状态迁移、结果、Evidence、时间和 correlation/trace id。
+- 自动成功进入验证，不直接宣称 Goal satisfied；自动失败、低置信度、证据不足、越权或 kill switch 命中必须转人工接管。
+- UI 的默认人工 Feed 只展示需人工介入项；Agent 自动处理记录进入 Mission 时间线/活动流，并提供“Agent 已处理”的可审计标识。
+- 首期使用显式编排器调用既有 command/service；“模型动态生成任意执行拓扑”不进入当前实施范围，后续须单独通过安全与治理评审。
+
+### 7.3 Policy composition
+
+Quest 执行不新增一个覆盖全系统的 Policy 真相源。对象级 Quest decision facade 负责组合 Quest/Process/Control 治理判定；Agent 参与时调用 F16 行为 `PolicyEngine`；真正执行命令时仍由 command authorization 做最终强制授权。三层分别回答“业务上是否允许此目标/动作”“本次 Agent 行为是否应放行”“该 principal 是否有权调用命令”，并分别留痕。
 
 它负责：
 
@@ -476,7 +540,9 @@ Policy Runtime 控制“AI 可以做什么”，不规定“AI 每一步怎么�
 - segregation of duties
 - kill switch / hold / escalation
 
-任何 Quest Plan 进入执行前必须通过 deterministic policy gate。
+任何 Quest Plan 进入执行前必须通过适用的确定性 Quest 治理与 F16 行为 gate；任何实际命令还必须再次通过 command authorization。任一层拒绝即不得执行。
+
+R2 采用 Quest decision facade：输入 Quest/Objective、目标对象、actor/Agent、风险、pinned Policy/Process 版本、Evidence 要求和当前世界状态，显式组合 Quest governance decision 与适用的 F16 `PolicyDecision`，但不复制两个规则仓库。Planner 与 Agent 只消费结构化组合结果，不各自实现授权逻辑；command authorization 仍在执行点独立求值。每一层 decision 均记录输入对象引用、规则版本、结论、理由码、有效期/revision 与 correlation id。
 
 ### 7.4 Agent Runtime
 
@@ -497,6 +563,18 @@ Agent 不可以：
 - 自行修改 Policy / SOP / QualitySpec 正式版本。
 - 将内部思考步骤全部升级成企业级 Objective。
 
+### 7.4.1 Agent 在语义世界中的学习
+
+Agent 是 `npc_agent` 图节点，也是学习闭环中的 actor 和被配置对象：
+
+1. Agent 观察可见世界事实，并在其 account/Agent scope 内形成 raw、episodic 与 LTM 记忆。
+2. Agent 可基于 Quest Outcome、Evidence、人工反馈和历史 Case 提出 LearningProposal。
+3. 经治理批准后，LearningProposal 生成新版本的 Process/SOP/Skill、能力声明或 Agent 配置引用。
+4. 受控命令将批准版本关联到具体 Agent 节点（例如更新 `skill_refs` 或策略 profile revision），保留旧版本、actor、reason 与回滚信息。
+5. 下一次 tick 重新加载当前有效配置和图事实；Agent 不得将一次模型输出或 LTM 条目直接提升为正式配置。
+
+因此“每个 Agent 的设置基于学习”表示配置由可追溯学习产物演进，而不是 Agent 无审计地自我改写。学习后的能力仍须逐动作经过 Quest governance、适用的 F16 behavior policy 与最终 command authorization。
+
 ---
 
 ## 8. Invariants
@@ -513,6 +591,13 @@ Agent 不可以：
 | QI8 | LearningProposal 不能直接修改正式 Policy / SOP / QualitySpec；必须经治理审批生成新版本。 |
 | QI9 | `task.current_state='done'` 不等价于 Quest accepted；Quest acceptance 以 Goal + Evidence + QualityGate 为准。 |
 | QI10 | Situation confidence / severity 的自动变更必须保留 evidence 或 inference trace 摘要。 |
+| QI11 | 用户的 Quest/Objective/Clue 明确选择必须通过命令写图并可审计；推荐和临时 UI focus 不得静默持久化。 |
+| QI12 | LTM、对话摘要或模型推断不得覆盖图事实；使用其行动前必须重新解析并鉴权引用对象。 |
+| QI13 | `ASSISTED_BY` 只表达协作，不授予执行权；实际执行 actor 必须来自命令/run 记录。 |
+| QI14 | Agent 配置只能由获批学习产物通过受控命令更新；Agent 不得从对话或 LTM 直接自我修改正式配置。 |
+| QI15 | 一个账户可有多个 active `TRACKS_QUEST`，但同一 account+Quest 不得重复；全账户至多一个 active `FOCUSES_ON`，且其 Objective 必须属于某个已追踪 Quest。 |
+| QI16 | World Interaction revision 由服务端按账户单调推进；过期 mutation 不得自动重放或产生副作用。 |
+| QI17 | Quest 治理、F16 行为策略和 command authorization 保持独立规则真源；组合 facade 不得把任一层的 allow 当作绕过其他层的授权。 |
 
 ---
 
@@ -529,12 +614,14 @@ R1 图节点完整性契约：
 - R1 创建下游语义节点时必须校验调用者可读上游节点：`goal create` 要求 actor 可读对应 Situation，`quest create` 要求 actor 可读对应 Situation 与 Goal；`task.admin` 与 system 可跨 owner 读取。
 - `Objective` 必须是 `nodes.type_code='task'`，通过 `HAS_OBJECTIVE quest -> task` 与 `task.attributes.quest_id` 双向可审计关联。
 - 核心语义连接必须优先表达为 `relationships` 边：`ABOUT / RAISES_GOAL / GOAL_FOR / RESPONDS_TO / PURSUES / HAS_OBJECTIVE / OWNED_BY / SCOPED_AT`。不得只在 attributes 中保存主链路而不写边。
-- R1 中尚未物化的 `Fact / Evidence / Policy / Control / QualitySpec / ProcessPattern / Case` 可先以 pinned semantic ref 保存在 attributes；当目标节点类型存在且 ref 可解析时，semantic ref resolver 应补写对应语义边，如 `BASED_ON_FACT / SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY`。
+- 用户与协作语义使用 `TRACKS_QUEST / FOCUSES_ON / PINS_CLUE / ASSISTED_BY`；关系变更必须携带 actor、时间与 correlation metadata。一个账户可追踪多个 Quest，`FOCUSES_ON` 仍是账户唯一前台焦点。`PINS_CLUE` 仅在事实/观测/证据目标节点已物化且可读时创建。
+- R1 物化最小 canonical `observation`：原始 assertion、source/provenance、`observed_at`、actor 和初始 `verification_status='unverified'` 必须可审计，后续验证不得覆写原始观察。尚未物化的 `Fact / Evidence / Policy / Control / QualitySpec / ProcessPattern / Case` 可先以 pinned semantic ref 保存在 attributes；当目标节点类型存在且 ref 可解析时，semantic ref resolver 应补写对应语义边，如 `BASED_ON_FACT / SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY`。
 - `node_types.trait_class` 与 `relationship_types.trait_class` 必须为 `TASK`，实例写入依赖图层 trait 同步机制继承检索语义；按 TASK trait 检索时必须同时按 `type_code` 缩小范围，避免把 semantic shell 节点误当作可分派 task。
 
 | 对象 | 语义世界归属 | R1 持久化方式 | 目标形态 |
 |---|---|---|---|
 | `Situation` | 是 | `nodes.type_code='situation'` | graph node |
+| `Observation` | 是 | `nodes.type_code='observation'`，保留原始来源且初始未验证 | graph node；R3 由 Evidence/verification 评价 |
 | `Goal` | 是 | `nodes.type_code='goal'` | graph node |
 | `Quest` | 是 | `nodes.type_code='quest'` | graph node |
 | `Objective` | 是 | 复用 `nodes.type_code='task'` | 继续复用 task，或长期迁移为独立 objective node |
@@ -547,6 +634,7 @@ R1 图节点完整性契约：
 R1 本轮新增并注册的节点类型：
 
 - `situation`
+- `observation`
 - `goal`
 - `quest`
 
@@ -580,6 +668,10 @@ R2+ 再补齐语义世界节点类型：
 - `MEASURED_BY`
 - `INFORMED_BY`
 - `PRODUCED`
+- `TRACKS_QUEST`
+- `FOCUSES_ON`
+- `PINS_CLUE`
+- `ASSISTED_BY`
 
 其中 `BASED_ON_FACT / SUPPORTED_BY / TRIGGERED_BY_RULE / TRIGGERED_BY_EXPERIENCE / GOVERNED_BY / GUIDED_BY / MEASURED_BY / INFORMED_BY` 在 R1 由 semantic ref resolver 在目标节点已存在时补边；`REALIZED_BY` 是 `Goal -> Quest` 结构性反向边，R1 在创建 Quest 时直接写入；`PRODUCED` 在 R1 仅注册关系类型，证据、结果和学习产物的生成由 R2+ 启用。
 
@@ -597,7 +689,9 @@ Semantic ref resolver 的 R1 解析顺序：
 - `task_runs` 用于 Objective/Action 执行轨迹。
 - `task_outbox` 用于 Objective 事件。
 
-R1 不新增 Quest 专用表。R2+ 关系表建议：
+R1 不新增 Quest 生命周期专用表；允许新增共享投影并发基础设施：账户级 `world_interaction_revisions`（或等价单调版本存储）必须在影响可见投影的事务中推进。G3/R2 可新增 `situation_attention`，以 account+Situation 唯一键保存高频 seen/snooze/UI-dismiss 状态；它不是 Situation 业务状态或图事实真源。
+
+R2+ 关系表建议：
 
 | 表 | 角色 |
 |---|---|
@@ -633,10 +727,11 @@ Knowledge owns reusable process and governance.
 
 ### 10.1 命令族
 
-R1 新增 `situation` / `goal` / `quest` 轻量命令族，`task` 命令族保持兼容。
+R1 新增 `observation` / `situation` / `goal` / `quest` 轻量命令族，`task` 命令族保持兼容。改变用户 Quest 选择投影的交互 mutation（`track / untrack / focus-objective / pin-clue / unpin-clue / set-collaborator / remove-collaborator`）必须接受 expected revision 与 idempotency key，并返回新 revision/event id。创建 Observation、Situation、Goal、Quest 的语义命令不属于该交互 mutation envelope；若其结果影响账户可见投影，适配层仍须推进对应投影 revision。
 
 | 命令 | 行为 |
 |---|---|
+| `observation record --assertion <A> --source-ref <R> --observed-at <T> [--subject <node_id>]` | 创建 canonical Observation；保留 actor/provenance，初始 `verification_status=unverified`，后续验证不得覆写 assertion/source |
 | `situation create --title <T> --assertion <A> [--subject <node_id>] [--trigger-kind hard_rule\|weak_experience\|manual\|mixed] [--fact-ref <R>] [--evidence-ref <R>] [--rule-ref <R>] [--experience-ref <E>] [--confidence <0..1>] [--severity low\|medium\|high\|critical]` | 创建 declarative Situation assertion；`rule-ref / experience-ref` 使用 `namespace:key@version` |
 | `situation list [--limit N]` | 列出 Situation |
 | `situation show <id>` | 展示 assertion 与 trigger provenance |
@@ -646,6 +741,13 @@ R1 新增 `situation` / `goal` / `quest` 轻量命令族，`task` 命令族保�
 | `quest create --situation <id> --goal <id> --title <T> [--policy-ref <R>] [--process-ref <R>] [--quality-ref <R>] [--case-ref <R>] [--plan-graph-summary <S>]` | 创建 Quest draft；治理/经验 ref 使用 `namespace:key@version`，R1 命令层计划摘要为 string |
 | `quest list [--limit N]` | 列出 Quest |
 | `quest show <id>` | R1 展示 Situation / Goal / Objectives / Evidence refs / Progress；完整 Evidence 节点视图留 R2+ |
+| `quest track <id> --if-revision <R>` | 幂等增加该 account+Quest 的 active `TRACKS_QUEST`，不替换其他追踪 |
+| `quest untrack <id> --if-revision <R>` | 仅失活指定 Quest 的 tracking；若它包含当前 focus，同时清理失效 focus 并在同一事务推进 revision |
+| `quest focus-objective <quest_id> <task_id> --if-revision <R>` | 校验 Quest 已追踪及 `HAS_OBJECTIVE` 后替换账户唯一 `FOCUSES_ON`；不改变 Objective lifecycle |
+| `quest pin-clue <quest_id> <node_id> --if-revision <R>` | 对可读、已物化 observation/fact/evidence 幂等创建 `PINS_CLUE` |
+| `quest unpin-clue <quest_id> <node_id> --if-revision <R>` | 失活调用者对应 Clue pin，不修改目标事实 |
+
+交互 mutation 的幂等 key 必须绑定 action、目标与规范化 payload 指纹；同 key 不同请求返回冲突。未改变任何关系的 no-op 返回 `changed=false`，且不得推进账户投影 revision。
 
 R2+ 命令：
 
@@ -794,12 +896,16 @@ Quest 可接受的条件：
 
 ### R1 — Semantic Shell
 
-目标：新增 Situation / Goal / Quest 节点与只读展示，不改变 task 热路径。
+目标：新增 Observation / Situation / Goal / Quest 节点、受限 Quest 关系图与用户选择/协作边，不改变 task 状态热路径。
 
 - 注册节点类型与关系。
 - 新增 `quest show/list`、`situation show/list`、`goal show/list`。
 - `task` 增加可选 `quest_id`。
 - World UI 展示 Mission Card，但执行仍走现有 `task` 命令。
+- `quest track/untrack` 维护可并存的多个 `TRACKS_QUEST`，取消指定 Quest 不影响其他追踪；`quest focus-objective` 维护账户唯一 `FOCUSES_ON`。它们是可审计的业务上下文命令，但不得隐式 claim/start/complete Objective。
+- 最小 `observation` 节点保存不可被后续验证覆写的 assertion 与 provenance，供 R1 `PINS_CLUE` 使用；完整 Evidence/verification 留在 R3。
+- Quest Journal 返回权限过滤后的 Situation、Goal、Objective、可解析事实/证据与协作 Agent 子图；Action/Run/Outcome 审计记录作为时间线叠加，只有按领域契约物化后才进入图。未物化 ref 以只读 unresolved leaf 降级。
+- Quest 对话归档保留 Quest/Agent/thread 图引用，作为后续 episodic/LTM 晋升输入。
 
 ### R2 — Governed Planning
 
@@ -807,6 +913,7 @@ Quest 可接受的条件：
 
 - 新增 `quest_plan_revisions`。
 - 新增 deterministic policy gate。
+- 新增组合 Quest governance、F16 behavior policy 与最终 command authorization 的 decision facade，并用显式 orchestrator 执行已注册 command/process capability；全动态执行图延后。
 - 引入 `required_capabilities` 到 Objective。
 - 将 `task_pools` 查询扩展为 capability-aware candidate pool。
 
@@ -815,6 +922,7 @@ Quest 可接受的条件：
 目标：从“点击完成”升级为证据验收。
 
 - 新增 evidence / quality / verification 表。
+- Evidence/verification 对 Observation 做支持、反驳或失效评价，不修改原始 assertion/provenance。
 - `quest verify` 基于 evidence 判断 Goal。
 - `quest accept` 要求 verification passed 或 human override。
 
@@ -825,6 +933,7 @@ Quest 可接受的条件：
 - 新增 Case / Lesson / ImprovementProposal。
 - Quest close 后生成 outcome。
 - LearningProposal 必须人工/治理审核后才能生成新 Process / SOP / QualitySpec 版本。
+- 获批 LearningProposal 可通过受控命令更新 Agent 的 `skill_refs`、能力或 policy profile revision；禁止 Agent 直接自改节点配置。
 
 ---
 
@@ -832,12 +941,12 @@ Quest 可接受的条件：
 
 ### 文档级
 
-- [ ] `Situation / Goal / Quest / Objective / Action / Evidence / Outcome / Learning` 边界经评审通过。
-- [ ] 明确 `task` 保留为 Objective/Actionable Work Item，Quest 为新行动聚合根。
-- [ ] 明确 Process 是企业行动知识，不等价于 Runtime Workflow。
-- [ ] 明确 Policy / Control / QualityCriterion 为硬约束，ProcessPattern / SOP / Case 为可偏离的弱经验。
-- [ ] 明确 Evidence-based Completion：Quest acceptance 不等于 task done。
-- [ ] 明确 Agent 不能绕过 deterministic policy gate，也不能直接修改正式知识版本。
+- [x] `Situation / Goal / Quest / Objective / Action / Evidence / Outcome / Learning` 边界经评审通过。
+- [x] 明确 `task` 保留为 Objective/Actionable Work Item，Quest 为新行动聚合根。
+- [x] 明确 Process 是企业行动知识，不等价于 Runtime Workflow。
+- [x] 明确 Policy / Control / QualityCriterion 为硬约束，ProcessPattern / SOP / Case 为可偏离的弱经验。
+- [x] 明确 Evidence-based Completion：Quest acceptance 不等于 task done。
+- [x] 明确 Agent 不能绕过 Quest governance、F16 behavior gate 或 command authorization，也不能直接修改正式知识版本。
 
 ### 实现级 R0
 
@@ -848,10 +957,16 @@ Quest 可接受的条件：
 
 ### 实现级 R1
 
+以下实现项已落地；PostgreSQL 端到端验收单独跟踪，未通过前不得将 F03 G1 标记为验收完成。
+
 - [x] `situation / goal / quest` 节点类型注册。
 - [x] 关系 `RESPONDS_TO / PURSUES / HAS_OBJECTIVE` 可创建和查询。
 - [x] `task.attributes.quest_id` 与 Quest objective rollup 一致。
 - [x] `quest show` 能展示 situation、goal、objectives、progress。
+- [x] `observation` 节点及 provenance 契约可创建、读取并作为 `PINS_CLUE` 目标（服务/命令测试通过）。
+- [x] 多个 `TRACKS_QUEST` 可并存，通过账户 revision 行锁与服务检查防止 account+Quest 重复 active 边；`FOCUSES_ON` 全账户唯一并校验 Objective 属于已追踪 Quest（服务测试及数据库约束定义检查通过；数据库端到端验收另列）。
+- [x] `ASSISTED_BY` 多 Agent 关系、账户级 projection revision 与权限过滤 Journal 子图已实现并有针对性测试。
+- [ ] PostgreSQL 端到端验收：运行 `backend/tests/integration/test_quest_interaction_runtime.py`，验证 graph mutation、权限过滤、协作与投影。
 
 ### 实现级 R2-R4
 
@@ -865,10 +980,12 @@ Quest 可接受的条件：
 
 ## 14. Open Questions
 
+已定边界：Quest decision facade 组合 Quest governance 与适用的 F16 行为决策，实际命令继续由现有 command authorization 做最终强制检查；三者保留独立规则真源和审计记录。
+
+已定投影：Mission Feed 继续由现有 WorldInteraction state 聚合 Quest interaction projection，不新增并行的 Quest-specific 前端状态真源。
+
 1. `Objective` 是否长期复用 `task`，还是在 R2 后引入独立 `objective` 节点类型？
-2. Policy Runtime 先复用现有 command policy engine，还是引入独立 Quest policy evaluator？
-3. QualitySpec 应作为 graph node，还是版本化关系表？
-4. Case / Experience 是否归入 CampusLibrary / Knowledge World，还是 Task module 自管？
-5. Quest plan graph 是否需要独立 DSL，还是复用 workflow_definition spec 的子集？
-6. 外部系统 transaction envelope 的统一 ref schema 如何定义？
-7. Mission Feed 是否走现有 WorldInteraction state，还是引入 Quest-specific projection？
+2. QualitySpec 应作为 graph node，还是版本化关系表？
+3. Case / Experience 是否归入 CampusLibrary / Knowledge World，还是 Task module 自管？
+4. Quest plan graph 是否需要独立 DSL，还是复用 workflow_definition spec 的子集？
+5. 外部系统 transaction envelope 的统一 ref schema 如何定义？

@@ -103,7 +103,7 @@ const modeAriaLabel = computed(() =>
     : t('worldInteraction.decision.modeCommand'),
 )
 const placeholder = computed(() => worldSession.queryMode === 'aico'
-  ? 'Ask AICO about the current world'
+  ? t('worldInteraction.decision.questAwarePlaceholder')
   : 'Run commands (e.g. look) or prefix search … for graph search')
 
 const sendTitle = computed(() =>

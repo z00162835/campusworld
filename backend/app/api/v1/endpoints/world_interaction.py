@@ -10,6 +10,13 @@ from app.api.v1.dependencies import AuthenticatedUser, get_current_http_user
 from app.core.database import get_db
 from app.core.log import get_logger, LoggerNames
 from app.repositories.world_conversation_archive import WorldHistoryArchiveLimitError
+from app.services.task.errors import (
+    IdempotencyConflictError,
+    OptimisticLockError,
+    PermissionDenied,
+    PreconditionFailed,
+    ReferenceNotFound,
+)
 from app.schemas.world_history import (
     ConversationArchiveRequest,
     DEFAULT_HISTORY_SUMMARY_LIMIT,
@@ -32,6 +39,13 @@ class EnterWorldRequest(BaseModel):
     world_id: str = Field(..., min_length=1)
 
 
+class QuestInteractionActionRequest(BaseModel):
+    expectedProjectionRevision: str = Field(..., min_length=1)
+    lastEventId: Optional[str] = None
+    idempotencyKey: str = Field(..., min_length=1, max_length=255)
+    payload: Dict[str, Any]
+
+
 class DecisionActionRequest(BaseModel):
     session_id: str
     decision_event_id: str
@@ -43,6 +57,7 @@ class DecisionQueryRequest(BaseModel):
     query: str
     mode: str = "command"
     thread_id: Optional[str] = None
+    quest_context: Optional[Dict[str, Any]] = None
 
 
 class MapQueryRequest(BaseModel):
@@ -106,6 +121,45 @@ def leave_world(db: Session = Depends(get_db), current_user: AuthenticatedUser =
     return world_interaction_service.leave_world(db, _actor(current_user))
 
 
+@world_sessions_router.post("/quest-actions")
+def execute_quest_interaction_action(
+    payload: QuestInteractionActionRequest,
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+) -> Dict[str, Any]:
+    actor = _actor(current_user)
+    try:
+        return world_interaction_service.execute_quest_interaction_action(
+            db,
+            actor,
+            expected_projection_revision=payload.expectedProjectionRevision,
+            idempotency_key=payload.idempotencyKey,
+            payload=payload.payload,
+        )
+    except OptimisticLockError as exc:
+        latest = world_interaction_service.refresh_interaction_state(db, actor).get("quest_interaction") or {}
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "stale_projection",
+                "message": str(exc),
+                "latestProjectionRevision": latest.get("projectionRevision"),
+                "lastEventId": latest.get("lastEventId"),
+            },
+        ) from exc
+    except IdempotencyConflictError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "idempotency_conflict", "message": str(exc)},
+        ) from exc
+    except PermissionDenied as exc:
+        raise HTTPException(status_code=403, detail={"code": "forbidden", "message": str(exc)}) from exc
+    except ReferenceNotFound as exc:
+        raise HTTPException(status_code=404, detail={"code": "not_found", "message": str(exc)}) from exc
+    except (PreconditionFailed, ValueError) as exc:
+        raise HTTPException(status_code=422, detail={"code": "invalid_quest_action", "message": str(exc)}) from exc
+
+
 @worlds_router.get("/available")
 def list_available_worlds(db: Session = Depends(get_db), current_user: AuthenticatedUser = Depends(get_current_http_user)) -> Dict[str, Any]:
     state = world_interaction_service.get_current_state(db, _actor(current_user))
@@ -128,11 +182,38 @@ def query_decision_center(payload: DecisionQueryRequest, db: Session = Depends(g
 
 
 @decision_center_router.post("/query/stream")
-def stream_decision_query(payload: DecisionQueryRequest, current_user: AuthenticatedUser = Depends(get_current_http_user)):
+def stream_decision_query(
+    payload: DecisionQueryRequest,
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(get_current_http_user),
+):
     if payload.mode != "aico":
         raise HTTPException(status_code=400, detail="Only mode=aico is supported for streaming queries")
     actor = _actor(current_user)
-    generator = world_interaction_service.stream_aico_query(actor, payload.query, thread_id=payload.thread_id)
+    quest_context = payload.quest_context
+    if quest_context is not None:
+        try:
+            quest_context = world_interaction_service.validate_quest_conversation_context(db, actor, quest_context)
+        except OptimisticLockError as exc:
+            latest = world_interaction_service.refresh_interaction_state(db, actor).get("quest_interaction") or {}
+            raise HTTPException(status_code=409, detail={
+                "code": "stale_projection",
+                "message": str(exc),
+                "latestProjectionRevision": latest.get("projectionRevision"),
+                "lastEventId": latest.get("lastEventId"),
+            }) from exc
+        except PermissionDenied as exc:
+            raise HTTPException(status_code=403, detail={"code": "forbidden", "message": str(exc)}) from exc
+        except ReferenceNotFound as exc:
+            raise HTTPException(status_code=404, detail={"code": "not_found", "message": str(exc)}) from exc
+        except PreconditionFailed as exc:
+            raise HTTPException(status_code=422, detail={"code": "invalid_quest_context", "message": str(exc)}) from exc
+    generator = world_interaction_service.stream_aico_query(
+        actor,
+        payload.query,
+        thread_id=payload.thread_id,
+        quest_context=quest_context,
+    )
     return StreamingResponse(
         generator,
         media_type="text/event-stream",

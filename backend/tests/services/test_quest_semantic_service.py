@@ -7,6 +7,7 @@ import pytest
 
 from app.services.task.errors import PreconditionFailed
 from app.services.task.quest_semantic_service import (
+    create_observation,
     create_goal,
     create_quest,
     explicit_node_id_ref,
@@ -15,6 +16,21 @@ from app.services.task.quest_semantic_service import (
     summarize_objective_progress,
     validate_situation_semantics,
 )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"source_ref": None, "provenance": {"source_kind": "human", "capture_method": "command"}, "observed_at": "2026-10-11T10:00:00+08:00"}, "source_ref"),
+        ({"source_ref": "manual:test", "provenance": {}, "observed_at": "2026-10-11T10:00:00+08:00"}, "provenance"),
+        ({"source_ref": "manual:test", "provenance": {"source_kind": "human", "capture_method": "command"}, "observed_at": None}, "observed_at"),
+        ({"source_ref": "manual:test", "provenance": {"source_kind": "human", "capture_method": "command"}, "observed_at": "2026-10-11T10:00:00"}, "timezone"),
+    ],
+)
+def test_observation_requires_source_provenance_and_business_time(kwargs, message):
+    with pytest.raises(PreconditionFailed, match=message):
+        create_observation(title="Observed", assertion="A sourced assertion", actor=object(), **kwargs)  # type: ignore[arg-type]
 
 
 @pytest.mark.unit

@@ -131,6 +131,25 @@ flowchart TB
 - **世界包 Skill 概念**（HiCampus `data/concepts/skills.yaml`）为 **不同域**（世界内容资产，不入图节点、不被 agent tick 消费），与 L4 SkillRegistry **不合并**（见 F15 §11）。
 - **可并存**：F07 `memory_context` 与 L4 Skill 文本可并存于同一 tick（§5）。
 
+### 6.5 Agent 作为语义世界中的学习对象
+
+`npc_agent` 不只是运行时进程入口，也是 L1 世界图中的可治理对象。Agent 的能力、`skill_refs`、策略 profile 与协作角色可以随组织学习演进，但必须保持以下跨层边界：
+
+```text
+Quest/Evidence/Outcome + human feedback
+  -> account + Agent scoped raw/episodic/LTM memory
+  -> LearningProposal
+  -> governance approval
+  -> versioned Process/Skill/capability/config reference
+  -> controlled command updates npc_agent relationship/config revision
+```
+
+- LTM 召回影响 L3 当次判断，不直接改写 L1 Agent 节点或 L4 Skill 资产。
+- Agent 可以提出 LearningProposal，不能自行批准或发布正式 Process/Policy/Skill。
+- 获批学习产物通过受控 command/service 关联到具体 Agent，并保留旧版本、actor、reason、correlation id 与回滚信息。
+- Quest decision facade 按具体 Agent、目标对象、Quest/Objective、动作、风险和当前世界状态组合 Quest governance 与 F16 behavior decision；实际命令仍由 command authorization 最终检查。三者独立留痕，配置或 Skill 的存在不等于授权。
+- Agent 与 Quest 的 `ASSISTED_BY` 长期协作关系只表达角色和 capability scope，不替代命令授权，也不证明实际执行。
+
 ---
 
 ## 7. 与代码模块的映射（锚点，非实现承诺）

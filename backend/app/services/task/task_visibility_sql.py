@@ -15,7 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.services.task.acl import evaluate_acl
-from app.services.task.permissions import Principal
+from app.services.task.permissions import Principal, TASK_ADMIN
 
 # Fragment referencing outer alias ``n`` (task node row).
 VISIBILITY_PREDICATE_SQL = """
@@ -101,9 +101,43 @@ def pool_open_has_active_executor(session: Session, task_node_id: int) -> bool:
     return row is not None
 
 
+def visible_task_ids(session: Session, actor: Principal, task_node_ids: List[int]) -> set[int]:
+    """Return the requested task ids that are visible to ``actor``.
+
+    This keeps graph projections aligned with the task queue instead of
+    treating every HAS_OBJECTIVE target as structurally readable.
+    """
+    requested = sorted({int(value) for value in task_node_ids})
+    if not requested:
+        return set()
+    if actor.kind == "system" or actor.has_permission(TASK_ADMIN):
+        return set(requested)
+    visible_pool_ids = compute_visible_pool_ids(session, actor)
+    rows = session.execute(
+        text(
+            f"""
+            SELECT n.id
+              FROM nodes n
+             WHERE n.id = ANY(:task_ids)
+               AND n.type_code = 'task'
+               AND n.is_active = TRUE
+               AND {VISIBILITY_PREDICATE_SQL}
+            """
+        ),
+        {
+            "task_ids": requested,
+            "pid": actor.id,
+            "pkind": actor.kind,
+            "visible_pool_ids": visible_pool_ids or [0],
+        },
+    ).all()
+    return {int(row.id) for row in rows}
+
+
 __all__ = [
     "VISIBILITY_PREDICATE_SQL",
     "compute_visible_pool_ids",
     "decode_jsonb",
     "pool_open_has_active_executor",
+    "visible_task_ids",
 ]

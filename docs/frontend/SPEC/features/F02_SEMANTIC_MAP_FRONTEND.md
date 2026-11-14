@@ -247,7 +247,7 @@ Minimap：132×88 SVG；节点矩形 + 当前视口框（只读，无 click-to-p
 | `exit` @ `room` | `drillTo('room', id)` |
 | 默认 | `selectEntity(id)` |
 
-选中后：`selectedInspect` 驱动地图内 `MapEntityInspectSheet`（互斥单槽）。**不**触发 `go`。
+选中后：`selectedInspect` 驱动地图内 `MapEntityInspectSheet`（互斥单槽），并作为 [`F03_AI_NATIVE_QUEST_INTERACTION.md`](F03_AI_NATIVE_QUEST_INTERACTION.md) 定义的共享 UI focus，驱动 Context Summary 的“地图当前焦点”和关联 Mission 高亮。**不**触发 `go`，也不改变 Situation/Quest/Objective 状态。
 
 菜单文案键：`worldInteraction.map.*`（en/zh）。
 

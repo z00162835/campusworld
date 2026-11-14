@@ -23,6 +23,12 @@
     </div>
     <div v-else-if="!summary" class="empty">{{ t('worldInteraction.context.noData') }}</div>
     <div v-else class="summary-body">
+      <section v-if="selectedSemanticEntity" class="selected-context">
+        <span>{{ t('worldInteraction.context.selectedEntity') }}</span>
+        <h3>{{ selectedSemanticEntity.title }}</h3>
+        <p>{{ selectedSemanticEntity.summary }}</p>
+      </section>
+
       <section>
         <span>{{ t('worldInteraction.context.currentLocation') }}</span>
         <h3>{{ summary.currentSpace.name }}</h3>
@@ -33,7 +39,7 @@
         <span>{{ t('worldInteraction.context.currentTask') }}</span>
         <h3>{{ summary.activeTask.title }}</h3>
         <p>{{ summary.activeTask.currentStep }}</p>
-        <el-progress :percentage="summary.activeTask.progress" :show-text="false" />
+        <el-progress v-if="summary.activeTask.progress != null" :percentage="summary.activeTask.progress" :show-text="false" />
       </section>
 
       <section v-if="summary.lastHandledTask">
@@ -65,13 +71,31 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useWorldSessionStore } from '@/stores/worldSession'
+import { useWorldMapStore } from '@/stores/worldMap'
 
 defineEmits<{ collapse: [] }>()
 
 const { t } = useI18n()
 const worldSession = useWorldSessionStore()
+const worldMap = useWorldMapStore()
 const summary = computed(() => worldSession.contextSummary)
 const loadError = computed(() => worldSession.error || (worldSession.errorKey ? t(worldSession.errorKey) : ''))
+const selectedSemanticEntity = computed(() => {
+  const selection = worldMap.selectedInspect
+  if (!selection) return null
+  if (selection.entityKind === 'space') {
+    return {
+      title: selection.inspect.space_node.name,
+      summary: selection.inspect.section1_appearance.message_fragment
+        || selection.inspect.section1_appearance.lines[0]
+        || t('worldInteraction.context.selectedFromMap'),
+    }
+  }
+  return {
+    title: selection.inspect.entity.name,
+    summary: selection.inspect.appearance.lines[0] || t('worldInteraction.context.selectedFromMap'),
+  }
+})
 
 const lastHandledLabel = computed(() => {
   const task = summary.value?.lastHandledTask
@@ -147,6 +171,11 @@ section {
 
 section:last-child {
   border-bottom: 0;
+}
+
+.selected-context {
+  border-left: 2px solid var(--color-primary);
+  padding-left: var(--spacing-md);
 }
 
 span {

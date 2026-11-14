@@ -2,7 +2,7 @@
   "git_commit": "95db51a5041c7929f40b8722e1d344be9d8903ff",
   "generated_at_utc": "2026-10-11T02:18:34.569069+00:00",
   "initialize_commands_ok": true,
-  "command_count": 39,
+  "command_count": 40,
   "commands": [
     {
       "name": "agent",
@@ -1231,6 +1231,95 @@
         "data_classification": "internal",
         "data_scope": [
           "system_notice"
+        ],
+        "tool_groups": [
+          "mutate"
+        ]
+      }
+    },
+    {
+      "name": "observation",
+      "command_type": "GAME",
+      "class_declared_aliases": [
+        "observations"
+      ],
+      "registry_aliases": [
+        "observations"
+      ],
+      "class": "app.commands.game.task.semantic_commands.ObservationCommand",
+      "file": "backend/app/commands/game/task/semantic_commands.py",
+      "tool_semantics": {
+        "interaction_profile": "mutate",
+        "semantic_pending": false,
+        "subcommand_profiles": [
+          {
+            "arg_prefix": [
+              "create"
+            ],
+            "interaction_profile": "mutate",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "record"
+            ],
+            "interaction_profile": "mutate",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "list"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          },
+          {
+            "arg_prefix": [
+              "show"
+            ],
+            "interaction_profile": "read",
+            "tool_groups": null
+          }
+        ],
+        "default_profile_when_no_subcommand": "read",
+        "observation_message_mode": null,
+        "observation_data_keys": null,
+        "manifest_tier": "none",
+        "routing_hint": null,
+        "routing_hint_i18n": null,
+        "side_effect_level": "write_high",
+        "idempotent": false,
+        "deterministic": false,
+        "input_schema": null,
+        "output_schema": null,
+        "error_schema": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "INVALID_PARAM",
+                "NOT_FOUND",
+                "PERMISSION_DENIED",
+                "POLICY_DENIED",
+                "CONFLICT"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "data_classification": "internal",
+        "data_scope": [
+          "observation"
         ],
         "tool_groups": [
           "mutate"

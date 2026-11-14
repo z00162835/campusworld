@@ -41,6 +41,14 @@ export interface AicoThread {
   titleKey?: string
   messages: ConversationMessage[]
   updatedAt: string
+  questContext?: QuestConversationContext
+}
+
+export interface QuestConversationContext {
+  quest_id: string
+  objective_id?: string
+  agent_node_id?: string
+  projection_revision: string
 }
 
 export interface DecisionOption {
@@ -51,6 +59,18 @@ export interface DecisionOption {
   command?: string | null
   targetEntityId?: string | null
   requiresConfirmation: boolean
+  labelKey?: string
+  labelParams?: Record<string, string | number>
+  consequenceKind?: 'confirmed' | 'predicted' | 'proposed'
+  consequenceSummary?: string
+  consequenceSummaryKey?: string
+  consequenceProvenanceRefs?: string[]
+  consequenceConfidence?: number
+  riskLevel?: 'low' | 'normal' | 'high' | 'critical'
+  gateStatus?: 'clear' | 'approval_required' | 'blocked' | 'evidence_required'
+  requiredEvidenceRefs?: string[]
+  reversible?: boolean
+  affectedEntityRefs?: string[]
 }
 
 export interface EntityReference {
@@ -99,7 +119,34 @@ export interface TaskCard {
   status: 'not_started' | 'active' | 'blocked' | 'completed'
   questId?: string | null
   questTitle?: string | null
-  progress: number
+  questContext?: {
+    state: string
+    riskLevel: 'low' | 'normal' | 'high' | 'critical' | string
+    situation?: {
+      id: string
+      title: string
+      assertion: string
+      subjectRef?: string | null
+      relatedEntityRefs?: string[]
+      scopedAtRef?: string | null
+      triggerKind: 'hard_rule' | 'weak_experience' | 'manual' | 'mixed' | string
+      confidence?: number | null
+      severity: 'low' | 'medium' | 'high' | 'critical' | string
+    } | null
+    goal?: {
+      id: string
+      title: string
+      desiredState: string
+    } | null
+    governanceRefs: string[]
+    processRefs: string[]
+    qualityRefs: string[]
+    caseRefs: string[]
+    progress?: number
+    companion?: { id: string; name: string; role: string; isPrimary: boolean } | null
+    companionFallback?: 'aico' | null
+  } | null
+  progress: number | null
   currentStep: TaskStep
   nextBestAction: DecisionOption
   alternativeActions: DecisionOption[]
@@ -324,7 +371,7 @@ export interface ContextSummary {
     id: string
     title: string
     currentStep: string
-    progress: number
+    progress?: number | null
   }
   lastHandledTask?: LastHandledTask
   pendingDecisionCount: number
@@ -358,11 +405,139 @@ export interface WorldSummary {
   entry_hint: string
 }
 
+export type QuestInteractionCapability =
+  | 'multi_quest_tracking'
+  | 'durable_focus'
+  | 'observation_clues'
+  | 'quest_graph'
+  | 'situation_attention'
+  | 'structured_conversation'
+  | 'world_feedback'
+
+export interface TrackedQuestSummary {
+  id: string
+  title: string
+  state: string
+  riskLevel: string
+  tracking: 'explicit'
+  focusedObjectiveId?: string | null
+  recommendedObjectiveId?: string | null
+  situation?: {
+    id: string
+    assertion: string
+    triggerKind?: string
+    confidence?: number | null
+    severity?: string
+    primarySubjectRef?: string | null
+    relatedEntityRefs?: string[]
+    scopedAtRef?: string | null
+  } | null
+  goal?: { id: string; desiredState: string } | null
+  objectives: Array<{ id: string; title: string; state: string }>
+  clues?: Array<{
+    id: string
+    title: string
+    assertion: string
+    verificationStatus: string
+    sourceRef?: string | null
+    observedAt?: string | null
+    pinned: boolean
+  }>
+  companion?: { id: string; name: string; role: string; isPrimary: boolean } | null
+  companionFallback?: 'aico' | null
+  progress?: {
+    total_objectives: number
+    terminal_objectives: number
+    completed_objectives: number
+    percent: number
+    success_percent: number
+  }
+}
+
+export interface QuestJournalNode {
+  id: string
+  type: string
+  label: string
+  verificationStatus?: string
+}
+
+export interface QuestJournalEdge {
+  id: string
+  type: string
+  sourceId: string
+  targetId: string
+}
+
+export interface QuestInteractionStatePayload {
+  contractVersion: 'quest-interaction.v1'
+  capabilities: QuestInteractionCapability[]
+  projectionRevision: string
+  lastEventId?: string | null
+  trackedQuests: TrackedQuestSummary[]
+  foregroundQuestId?: string | null
+  questJournal?: {
+    nodes: QuestJournalNode[]
+    edges: QuestJournalEdge[]
+    unresolvedRefs: Array<{
+      ref: string
+      expectedType?: string
+      reason: 'not_materialized' | 'not_visible' | 'not_found'
+    }>
+  }
+  worldPulse?: WorldPulseItem[]
+  worldFeedback?: WorldFeedbackItem[]
+}
+
+export interface WorldPulseItem {
+  id: string
+  situationId: string
+  severity: string
+  assertion: string
+  attention: 'new' | 'seen' | 'snoozed' | 'ui_dismissed'
+  snoozedUntil?: string | null
+}
+
+export interface WorldFeedbackItem {
+  id: string
+  questId: string
+  objectiveId?: string
+  actorKind: 'human' | 'agent' | 'system'
+  actorId?: string | null
+  status: 'succeeded' | 'failed' | 'blocked' | 'escalated'
+  summary: string
+  objectiveState?: string
+  correlationId: string
+  occurredAt: string
+}
+
+export type QuestInteractionActionPayload =
+  | { action: 'track' | 'untrack'; questId: string; correlationId?: string }
+  | { action: 'focus_objective'; questId: string; objectiveId: string; correlationId?: string }
+  | { action: 'pin_clue' | 'unpin_clue'; questId: string; clueNodeId: string; correlationId?: string }
+  | {
+      action: 'set_collaborator' | 'remove_collaborator'
+      questId: string
+      agentNodeId: string
+      role?: string
+      status?: string
+      isPrimaryCompanion?: boolean
+      capabilityScope?: string[]
+      correlationId?: string
+    }
+  | {
+      action: 'situation_attention'
+      situationId: string
+      attention: 'seen' | 'snoozed' | 'ui_dismissed' | 'reset'
+      snoozedUntil?: string
+      correlationId?: string
+    }
+
 export interface WorldInteractionState {
   session: WorldSession
   decision_center: DecisionCenterStatePayload
   focus_map: FocusMap
   context_summary: ContextSummary
+  quest_interaction?: QuestInteractionStatePayload
   quick_queries: QueryHint[]
 }
 
@@ -384,5 +559,6 @@ export interface StatePatch {
   focusSummary?: FocusSummary
   mapPatch?: MapPatch
   contextSummary?: ContextSummary
+  questInteraction?: QuestInteractionStatePayload
   historyAppend?: Array<{ id: string; summary: string; createdAt: string }>
 }
