@@ -1,0 +1,21 @@
+{
+  "test_only": true,
+  "policy_ref": "test:readonly-inspection@1",
+  "process_ref": "test:inspect-context@1",
+  "projection_revision": "7",
+  "command": "look",
+  "required_permission": "test.quest.observe",
+  "policy_definition": {
+    "schema_version": 1,
+    "allowed_process_refs": ["test:inspect-context@1"],
+    "risk_ceiling": "normal",
+    "min_confidence": 0.7,
+    "requires_approval": false,
+    "allow_automatic": true,
+    "required_evidence_refs": []
+  },
+  "process_definition": {
+    "schema_version": 1,
+    "command_templates": ["look"]
+  }
+}

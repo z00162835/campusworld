@@ -333,6 +333,8 @@ AICO 是 Quest Runtime 中 Agent 能力的交互适配器，不应在用户处�
 - Agent 回答必须区分事实、推断、规则、流程经验和建议，不得把建议伪装成已批准决定。
 - 对话中生成的建议可以形成 DecisionOption、补证请求或重规划提案；真正执行仍走 command/service 与 Policy gate。
 - Quest 状态、地图焦点或 Objective 迁移后，对话上下文应随 interaction state 刷新；历史回答不得覆盖新状态。
+  - 对话身份和默认请求绑定取自 `foregroundQuestId`，不依赖 activeTask 是否存在。没有可执行 Objective 时仍提供 Quest 内嵌对话选项，并明确没有当前行动目标。普通自由追问也使用最新前台 Quest/Objective/revision；取消追踪后回到通用对话，不携带旧 Quest 的隐式绑定。
+  - Companion 投影可携带服务端 `collaborationRelationshipId`，本地线程按 Quest + 实际 Agent + 协作关系身份隔离；Agent 或协作关系变化时选择/创建独立线程，不能重新绑定历史线程。Objective 变化可更新本次 request context 而不篡改线程创建审计。相同身份可以恢复本地已有历史；服务端仍重新解析协作关系并拒绝不可读或已归档线程，本地 ID 不授予权限。
 
 推荐体验参考 MUD/MMO 的任务 NPC：角色存在于语义世界并围绕当前事件提供线索、说明和有限行动，而不是悬浮在所有业务之上的万能聊天机器人。游戏化只用于增强情境感，不引入积分或娱乐化外壳。
 
@@ -359,9 +361,13 @@ interface QuestConversationContext {
 
 后端必须按调用者权限重新解析这些引用，不能信任前端附带的摘要或使用 prompt 文本作为授权依据。并发控制不得只依赖前端自增值：请求携带后端签发的 opaque projection revision 与最后可见事件 ID；服务端检测过期后要求刷新，绝不自动重放变更命令。
 
+其中 Objective 是 task-backed 业务对象，其可读性必须复用 Task visibility/ACL（含池可见性及参与者权限）；不能套用仅公开/所有者可读的 semantic-node 判定。Quest、Situation、Goal 和 Agent 继续使用各自语义读权限。
+
 Quest 对话线程遵循现有 STM/LTM 作用域，不另造一套 transcript 真源：现有 `agent_node_id` 继续表示实际会话 Agent；conversation thread 新增不可变的 `quest_node_id`、可选 `collaboration_relationship_id` 和创建时 projection revision，不再增加语义重复的 `companion_agent_node_id`。切换 Quest 或实际 Agent 时创建新线程。Quest 完成后线程归档为 Quest Journal 记录，并作为 raw/episodic 学习输入。Memory Thread + STM/LTM 链路是 transcript 真源；现有 `world_conversation_archive` 仅作为兼容读取投影，Quest 生命周期触发的归档由后端执行，不依赖前端 logout。异步 LTM 晋升必须保留 account、Agent、thread、Quest 与图引用；任何组织级经验或 Agent 配置变更仍须形成 LearningProposal 并经过治理，不得从归档对话自动发布。
 
 ### 6.3 Choice 与后果真实性
+
+受治理选项的预览是只读、可过期的提示：`gateStatus/gateReasonCode`、风险和证据要求来源于权威版本化图规则。执行时必须重新求值，不能凭预览 clear 或 UI confirmation 直接写入。结果优先通过 `summaryKey/summaryParams` 本地化；未知理由码显示本地化通用提示及理由码，兼容 `summary/label` 仅作 fallback。客户端不把执行成功翻译为 Quest 已验收。
 
 DecisionOption 必须将后果分为三类并显式标注：
 
@@ -374,16 +380,21 @@ UI 不得把三类内容合并成一段无来源的“AI 后果”。高风险�
 ### 6.4 Journal、Pulse 与学习边界
 
 - `Quest Journal / 任务日志` 的关系图只展示已经持久化且授权可读的世界节点/关系，以及明确标识的 unresolved ref；不得为每次命令或模型建议伪造图节点。
+- Journal 节点检查是只读局部选择，与持久化 Objective focus、账户位置分离；可展示的边须同时具有可见源/目标节点。地图定位仅使用当前 Quest 明确投影的实体引用，Quest/Task/Policy 等业务语义节点及 unresolved ref 不直接作为地图位置。地图当前选择在对应 Journal 节点上提供文本标记，不能只用颜色表达。
 - Action、Run、transition、Policy decision 和结果记录通过可审计时间线叠加到 Journal；只有达到长期语义与审计门槛的产物才按领域契约物化为世界节点。
 - World Pulse 的 Situation/Quest 内容从权威图与事件派生，不复制第二份业务记录。高频个人注意力状态由账户级 `situation_attention` 记录保存 `seen_at / snoozed_until / ui_dismissed_at` 等字段；业务上的 dismiss/resolve 仍必须执行 Situation 命令并产生领域事件。
+  - 权限过滤后的执行失败/越权/缺证/低置信度记录可形成 Pulse escalation；晚于个人 seen/snooze/UI-dismiss 的新失败必须重新提示，不修改 Situation 业务状态。每 Objective 的最新执行成功可消除该执行失败提示，但不代表 Situation resolved。Feedback 使用真实 transition/event ID 区分同事务同时间的事件，并展示实际主体、理由、关联对象与 correlation；不能泄露不可读 Objective 的失败详情。
 - G1–G4 激活只要求 Quest 归档能安全进入 account + Agent 隔离的学习输入，且不能直接修改正式配置。LearningProposal 审批、版本发布和 Agent 配置更新属于后续学习闭环，不阻塞 F03 UI Active。
 
 ## 7. 空态、异常与降级
+
+- 协作变更归档与对话 tick 冲突时，mutation 返回 HTTP 409 / `conversation_busy`；事务不提交，前端提示等待本轮结束后人工重试，不自动重放变更，也不把此冲突当成 stale projection。
 
 - 无 Situation 时展示当前世界可探索动作，不制造示例任务。
 - Quest 引用节点暂不可解析时保留 pinned ref，并标注为未解析依据。
 - 聚合失败时保留错误与重试入口，不回退到静态 Dashboard 假数据。
 - 移动端保持 Map 为世界底图；有 foreground Quest 时，以不遮挡关键地图信息的 HUD 优先显示该 Tracked Quest、当前 Objective 和下一步行动，Key Clues 与 Companion 使用可展开层。没有 foreground Quest 时优先呈现 Map + World Pulse。移动端不复制固定纵向工作台。
+  - 窄屏层切换属于本地展示状态，不修改 TRACKS_QUEST、FOCUSES_ON、Objective 或位置。任务与线索只展开一层，关闭层仍保留地图；从任务定位地图实体时收起展开层。紧凑 HUD 只读同一 foregroundQuestId 及其 focused/recommended Objective，不取 queue 第一项替代。未展开层从键盘/读屏导航中隐藏；桌面分隔条同时支持键盘方向键与 Home/End。
 
 ## 8. 可访问性与文案
 

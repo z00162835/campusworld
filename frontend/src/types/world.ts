@@ -42,6 +42,7 @@ export interface AicoThread {
   messages: ConversationMessage[]
   updatedAt: string
   questContext?: QuestConversationContext
+  questCollaborationId?: string
 }
 
 export interface QuestConversationContext {
@@ -68,6 +69,7 @@ export interface DecisionOption {
   consequenceConfidence?: number
   riskLevel?: 'low' | 'normal' | 'high' | 'critical'
   gateStatus?: 'clear' | 'approval_required' | 'blocked' | 'evidence_required'
+  gateReasonCode?: string
   requiredEvidenceRefs?: string[]
   reversible?: boolean
   affectedEntityRefs?: string[]
@@ -143,7 +145,7 @@ export interface TaskCard {
     qualityRefs: string[]
     caseRefs: string[]
     progress?: number
-    companion?: { id: string; name: string; role: string; isPrimary: boolean } | null
+    companion?: { id: string; name: string; role: string; isPrimary: boolean; collaborationRelationshipId?: string } | null
     companionFallback?: 'aico' | null
   } | null
   progress: number | null
@@ -443,7 +445,7 @@ export interface TrackedQuestSummary {
     observedAt?: string | null
     pinned: boolean
   }>
-  companion?: { id: string; name: string; role: string; isPrimary: boolean } | null
+  companion?: { id: string; name: string; role: string; isPrimary: boolean; collaborationRelationshipId?: string } | null
   companionFallback?: 'aico' | null
   progress?: {
     total_objectives: number
@@ -495,6 +497,7 @@ export interface WorldPulseItem {
   assertion: string
   attention: 'new' | 'seen' | 'snoozed' | 'ui_dismissed'
   snoozedUntil?: string | null
+  escalation?: { reasonCode: string; objectiveId: string; correlationId: string }
 }
 
 export interface WorldFeedbackItem {
@@ -508,6 +511,7 @@ export interface WorldFeedbackItem {
   objectiveState?: string
   correlationId: string
   occurredAt: string
+  reasonCode?: string
 }
 
 export type QuestInteractionActionPayload =

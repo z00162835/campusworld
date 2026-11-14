@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.dependencies import AuthenticatedUser, get_current_http_user
 from app.core.database import get_db
+from app.game_engine.agent_runtime.conversation_stm_service import ConversationThreadBusyError
 from app.core.log import get_logger, LoggerNames
 from app.repositories.world_conversation_archive import WorldHistoryArchiveLimitError
 from app.services.task.errors import (
@@ -146,6 +147,11 @@ def execute_quest_interaction_action(
                 "latestProjectionRevision": latest.get("projectionRevision"),
                 "lastEventId": latest.get("lastEventId"),
             },
+        ) from exc
+    except ConversationThreadBusyError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "conversation_busy", "message": str(exc)},
         ) from exc
     except IdempotencyConflictError as exc:
         raise HTTPException(

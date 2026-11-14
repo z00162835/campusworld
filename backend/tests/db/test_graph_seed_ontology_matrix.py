@@ -47,6 +47,9 @@ def test_graph_seed_ontology_node_rows_matches_matrix_targets():
         "situation": "default_object",
         "goal": "default_object",
         "quest": "default_object",
+        "policy": "default_object",
+        "control": "default_object",
+        "process_pattern": "default_object",
     }
     got = {row[0]: row[1] for row in GRAPH_SEED_ONTOLOGY_NODE_ROWS}
     assert got == expected_parent

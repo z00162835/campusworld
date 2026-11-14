@@ -337,7 +337,9 @@ def create_task(*, title: str, actor: Principal, workflow_key: str='default_v1',
         if scoped_at_node_id is not None:
             _load_node_ref(session, node_id=int(scoped_at_node_id))
         if quest_id is not None:
-            _load_node_ref(session, node_id=int(quest_id), expected_type_code='quest')
+            quest_node = _load_node_ref(session, node_id=int(quest_id), expected_type_code='quest')
+            if actor.kind == 'agent' or quest_node['attributes'].get('governance_mode') == 'enforced':
+                raise PreconditionFailed('Governed Objective materialization requires an approved planning capability')
         attributes: Dict[str, Any] = {'current_state': initial_state, 'state_version': 1, 'workflow_ref': {'_schema_version': 1, 'key': workflow_key, 'version': version}, 'title': title, 'priority': priority, 'visibility': visibility, 'assignee_kind': assignee_kind, 'tags': list(tags or [])}
         if quest_id is not None:
             attributes['quest_id'] = int(quest_id)
@@ -381,7 +383,7 @@ def create_task(*, title: str, actor: Principal, workflow_key: str='default_v1',
         _insert_outbox(session, task_id=task_id, pool_key=pool_key, event_kind=_OUTBOX_EVENT_KIND['create'], payload={'task_id': task_id, 'from_state': '__init__', 'to_state': initial_state, 'event': 'create', 'workflow_ref': attributes['workflow_ref'], 'actor': {'id': actor.id, 'kind': actor.kind}}, correlation_id=correlation_id, trace_id=trace_id)
         return TransitionResult(task_id=task_id, from_state='__init__', to_state=initial_state, event='create', event_seq=event_seq, state_version=1, idempotent_replay=False, correlation_id=correlation_id, trace_id=trace_id)
 
-def transition(task_id: int, event: str, actor_principal: Principal, expected_version: int, *, idempotency_key: Optional[str]=None, correlation_id: Optional[str]=None, trace_id: Optional[str]=None, payload: Optional[Dict[str, Any]]=None, db_session: Optional[Session]=None) -> TransitionResult:
+def transition(task_id: int, event: str, actor_principal: Principal, expected_version: int, *, idempotency_key: Optional[str]=None, correlation_id: Optional[str]=None, trace_id: Optional[str]=None, payload: Optional[Dict[str, Any]]=None, db_session: Optional[Session]=None, quest_mutation_permit=None) -> TransitionResult:
     """Atomically apply ``event`` to ``task_id``.
 
     Phase B handles ``publish / claim / assign / start / complete``. ``create`` is
@@ -417,6 +419,10 @@ def transition(task_id: int, event: str, actor_principal: Principal, expected_ve
             required_role = event_def.get('required_role') or 'owner'
             if event != 'claim':
                 _check_required_role(session, task_id=task_id, actor=actor_principal, required_role=required_role)
+            if attrs.get('quest_id') is not None:
+                from app.services.task.quest_execution_permit import enforce_quest_mutation
+                enforce_quest_mutation(session, attrs=attrs, task_id=task_id, event=event,
+                    actor=actor_principal, state_version=state_version, permit=quest_mutation_permit)
             new_state = event_def['to']
             stage = _STAGE_BY_TO_STATE[new_state]
             handler = _EVENT_HANDLERS.get(event)

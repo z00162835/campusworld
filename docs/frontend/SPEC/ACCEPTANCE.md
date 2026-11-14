@@ -12,6 +12,71 @@ Active implementation plan: [`_generated/F03_QUEST_WORLD_INTERACTION_IMPLEMENTAT
 
 F03 is **approved for implementation** after G0 and remains non-Active until G1–G4 pass. Existing checked items below describe implemented UI slices and do not by themselves promote F03 to Active.
 
+### SPEC / code consistency follow-up — 2026-11-14
+
+- [Consistency review](./_generated/F03_QUEST_SPEC_CODE_CONSISTENCY_REVIEW_20261114.md) records implementation versus acceptance separately; it is not a second active plan.
+- Corrected four inconsistencies: locking preview before cursor/object locks; task-dependent rather than foreground-Quest dialogue/old thread reuse; unrestricted Python template formatting; semantic ownership checks incorrectly rejecting task-visible Objectives. Preview/compile is now nonlocking, while the default execution source freshly locks after the executor's scope lock. Only plain Quest/Objective ID substitutions are accepted.
+- Dialogue free input and help use current foreground Quest/Objective/revision. Quest/Agent/collaboration identity changes select a distinct thread; untracking no longer carries an old Quest into generic input. Companion remains available without an actionable task. The projected collaboration ID is only a local identity discriminator, never authorization.
+- Focused backend regression **197 passed**; frontend type-check, **201 tests**, and production build passed (tests use the documented Node runtime option). Unit SQL assertions establish lock-mode separation, not proof of actual PG concurrency safety.
+- Latest non-integration quick sweep: **1888 passed, 4 failed, 68 deselected**. Failures remain the three recorded NDJSON assertions and Streamlit temporary-path validation; the suite is not green. The autostop timing assertion also reproduced in an earlier sweep and one isolated run during this round, although it passed in the latest sweep; it must not be described as passing unconditionally. The stream implementation and timing test were not changed by these fixes. SPEC-layout validation still fails on the existing `ALIAS_GOVERNANCE.md` filename; whitespace checks pass.
+- Remaining implementation gaps are explicit in TODO: complete map-focus/pinned-rule/Evidence conversation reference pack, canonical Quest terminal lifecycle/archive hooks, actual Agent scheduler integration and governed source publication/version immutability. No production activation, PostgreSQL integration, authenticated UI acceptance, commit or push was performed.
+
+### Governed execution and compact world layers — 2026-11-14
+
+- G2 implementation: deterministic graph-source governance over exact published Policy/Control/Process versions; preview risk/evidence/approval hints; independent decision composition and final registry command authorization at execution. Agent identity cannot be substituted with a user; enforced Objective writes require a single-use transaction/scope/version-bound permit. Action labels and execution reasons use i18n keys with truthful fallback.
+- G3 implementation: explicit finite transactional command executor with scoped replay, domain-version conflict checks, savepoint rollback, SQL timeout and cooperative cancellation/kill switch. Decisions/outcomes use task run/event and Agent run records. Permission-filtered Feedback/Pulse expose real actors and correlation; a newer failure resurfaces after personal dismissal/snooze, and command success does not imply Quest acceptance.
+- G4 implementation: all six Quest components are independent and derive from one session projection. Compact view retains the Map canvas and one Quest/Clues overlay, shows the actual foreground Objective or real Pulse, closes the overlay on map location and does not mutate business state on layer changes. Desktop separators support keyboard arrows/Home/End; overlay close returns focus to Map navigation.
+- Verification: focused backend governance/execution/permit/memory/projection/command/API/ontology regression **186 passed**. Latest non-integration sweep **1877 passed, 4 failed, 66 deselected**; failures are the three recorded NDJSON event-position assertions and Streamlit macOS temporary-path validation. Sweep is not green. Configuration and diff whitespace validation passed; SPEC-layout validation still reports the existing `docs/command/SPEC/features/ALIAS_GOVERNANCE.md` naming violation.
+- Frontend type-check, **195 tests**, and production build passed using `NODE_OPTIONS=--no-experimental-webstorage` for tests. The Node option is a local-runtime workaround, not an auth implementation change.
+- PostgreSQL execution success/failure rollback, persisted audit, replay and projection scenarios have been added for later acceptance; collection only, **not executed**. No database migration, production rule publication, live automatic action or authenticated business mutation was performed.
+- Gates remain open: Quest completion/closure archive trigger; actual sensing/Agent scheduler entry and governed planning/lifecycle; customer rule publication/activation; PostgreSQL concurrency/transaction acceptance; authenticated mobile/keyboard/read-screen/zoom/contrast and measured experience review. Full asynchronous LearningProposal promotion/publication is a later learning gate, not a standalone blocker for UI activation. N03:B is respected; implementation/component tests do not close G1–G4 or mark the feature Active.
+
+### Foundation submission readiness recheck — 2026-11-14
+
+- Governance results are bound to their exact request context before composition: cross-Quest, cross-Objective, cross-principal, cross-Agent and changed-command reuse is blocked, even with matching rule versions/revision.
+- Focused backend memory/decision/projection/API/query regression: 104 passed. Frontend: type-check/build passed, all 181 tests passed with the documented Node option. Configuration validation passed and diff whitespace checks passed.
+- Backend quick sweep: 1806 passed, 5 failed, 66 deselected; failures remain the recorded NDJSON event-position assertions, Streamlit temporary-path check and autostop timing case. This is not a green full-suite result.
+- SPEC layout validation remains blocked by the unchanged `docs/command/SPEC/features/ALIAS_GOVERNANCE.md` filename. Alias validation reported static namespace/snapshot success, but initialization returned false after sandbox-denied DB access; it is not counted as full initialization validation and was not retried with live database access.
+- Eligible only as a partial foundation submission, not G2–G4 completion or release acceptance. Include all required new components, memory/decision tests and isolated fixtures. Production governance evaluation, persistent decision audit, automatic orchestration, PostgreSQL and authenticated UI/accessibility gates remain open.
+
+### Confirmed decisions implementation — 2026-11-14
+
+- N01:A: Explicit owned-thread deletion now replaces scoped episode plaintext with minimal redaction audit and deletes LTM directly derived from those episodes. It uses the same thread lock as archival/ticks; no live user data was deleted during implementation. Unrelated LTM keeps the existing unlink behavior.
+- N02:A: A pure decision-composition primitive and isolated read-only fixture scenario use the real Agent PolicyEngine and registered `look` capability. A composed pass only permits requesting command authorization; the isolated CommandRunner scenario confirms later authorization denial still prevents execution. Production governance rule evaluation, persisted decision audit and automatic orchestration remain pending, so G2/G3 are not closed.
+- N03:B: Continue component/offline testing. No authenticated browser acceptance or PostgreSQL integration was performed. Frontend type-check and 181 tests passed with the documented Node option. Backend quick sweep: 1799 passed, 5 failed, 66 deselected, matching the previously recorded NDJSON/Streamlit/autostop issues; the sweep remains non-green.
+- Final focused decision/memory regression and isolated autostop rerun: 37 passed, including malformed-version checks. The autostop case passed individually; this does not make the full sweep green.
+
+### Review fixes verification — 2026-11-14
+
+- Mission Card now honors `requiresConfirmation`, including cancellation and rejection of an action replaced while the confirmation dialog is open. Confirmation remains a UX safeguard, not policy approval or backend authorization.
+- Busy conversation archival has a typed exception and HTTP 409 `conversation_busy`; the client reports a localized retry hint without automatic mutation replay. Focused backend memory/API/query regression: 57 passed.
+- Frontend type-check/build passed; all 181 tests passed with the documented Node runtime option. Authenticated UI and PostgreSQL acceptance remain open.
+- Backend quick sweep: 1784 passed, 5 failed, 66 deselected. Four failures match the recorded NDJSON/Streamlit baseline; the additional cross-thread autostop timing failure passed on isolated rerun (1 passed). The full sweep remains non-green; no integration tests were run.
+
+### Journal interaction follow-up verification — 2026-11-14
+
+- QuestJournal is a standalone read-only component. Explicit node selection shows only edges whose endpoints remain in the authorized projection; unresolved refs stay non-interactive. Map location is offered only for current Quest map references and excludes business-semantic nodes. Map selection has both a visual and textual Journal marker; clearing Journal selection does not emit a location or business mutation.
+- Seven new Journal tests cover relation inspection, allowed-map targeting, missing endpoints, unresolved refs, map reflection, foreground journal change and local selection clearing. Frontend type-check/build passed and all 177 tests passed with the documented Node runtime option.
+- Authenticated browser/mobile/assistive-technology acceptance remains pending; the previously checked `/works` browser was redirected to login. This slice does not close G4.
+
+### Pulse and feedback follow-up verification — 2026-11-14
+
+- WorldPulse and WorldFeedback are standalone components. Pulse emits attention intents through the existing authoritative store; it does not resolve business Situations. Feedback shows recorded actor type/ID, Objective state, time and Quest/Objective/correlation references, with explicit missing-data fallbacks; human events are not implicitly attributed to the current user.
+- Frontend type-check/build passed; all 170 tests passed using the documented Node runtime option, including ten new Pulse/Feedback cases. Local `/works` browser navigation redirected to login; authenticated visual, keyboard and mobile acceptance was not completed. G3 automation and G4 acceptance remain open.
+
+### Conversation archive follow-up verification — 2026-11-14
+
+- Collaboration replacement/removal now archives bound threads and snapshots scoped historical/unverified raw episodes in the same caller-owned transaction. Account/Agent/thread/Quest references, creation revision, STM messages and rolling summaries are retained; no direct LTM publication or configuration change occurs.
+- Focused memory/Quest/query tests: 63 passed, including five new archive/isolation/idempotency/busy-thread tests. Backend non-integration sweep: 1784 passed, the same four previously recorded NDJSON/Streamlit failures, 66 deselected.
+- Frontend type-check and 160 tests passed with the documented Node runtime option. PostgreSQL coverage was extended but not executed. Quest completion/closure triggers and asynchronous promotion consumption remain pending; G2/G3 are not closed.
+
+### Choice consequence follow-up verification — 2026-11-14
+
+- Shared consequence rendering is used by Mission Card and decision event choices. It distinguishes confirmed/predicted/proposed summaries, exposes supplied risk/gate/evidence/source/impact metadata, and marks missing or invalid prediction confidence and missing prediction basis explicitly.
+- Supplied high/critical risk or irreversible metadata requires action confirmation. This is not approval and does not replace backend execution authorization or the pending policy decision facade.
+- Frontend type-check/build passed; 160 tests passed using `NODE_OPTIONS=--no-experimental-webstorage`. Backend option/query/API regression: 37 passed.
+- Visual, authenticated browser and accessibility acceptance were not performed; this does not close G2/G4.
+
 ### Foundation submission verification — 2026-11-14
 
 - Command mutations that already return a projection revision commit without recording a duplicate projection event; read-only and failed commands do not commit. Regression coverage is included.

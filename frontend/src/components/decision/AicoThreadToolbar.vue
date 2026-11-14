@@ -1,7 +1,7 @@
 <template>
   <div v-if="worldSession.queryMode === 'aico'" class="aico-toolbar">
     <span v-if="activeQuest" class="quest-guide-label">
-      {{ t('worldInteraction.decision.questGuide', { title: activeQuest.questTitle || activeQuest.title }) }}
+      {{ t('worldInteraction.decision.questGuide', { title: activeQuest.title }) }}
     </span>
     <el-button v-else size="small" :disabled="worldSession.streamInFlight" @click="worldSession.createAicoThread()">
       {{ t('worldInteraction.decision.newConversation') }}
@@ -37,13 +37,11 @@ import { computed } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { useWorldSessionStore } from '@/stores/worldSession'
-import { useDecisionCenterStore } from '@/stores/decisionCenter'
 import type { AicoThread } from '@/types/world'
 
 const { t } = useI18n()
 const worldSession = useWorldSessionStore()
-const decisionStore = useDecisionCenterStore()
-const activeQuest = computed(() => decisionStore.activeTask?.questId ? decisionStore.activeTask : null)
+const activeQuest = computed(() => worldSession.foregroundQuest)
 
 const getThreadTitle = (thread: AicoThread) => thread.title || (thread.titleKey ? t(thread.titleKey) : '')
 

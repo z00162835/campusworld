@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from app.game_engine.agent_runtime.conversation_stm_service import archive_quest_conversation_threads
 
 from app.services.task.errors import (
     IdempotencyConflictError,
@@ -803,15 +804,9 @@ def set_collaborator(
                         ),
                     },
                 )
-                session.execute(
-                    text("""
-                        UPDATE agent_conversation_thread
-                           SET archived_at = COALESCE(archived_at, now()),
-                               archive_reason = COALESCE(archive_reason, 'collaboration_replaced')
-                         WHERE collaboration_relationship_id = :relationship_id
-                           AND archived_at IS NULL
-                    """),
-                    {'relationship_id': existing},
+                archive_quest_conversation_threads(
+                    session, quest_node_id=quest_id,
+                    collaboration_relationship_id=existing, reason='collaboration_replaced',
                 )
             existing = insert_relationship(
                 session,
@@ -846,15 +841,9 @@ def set_collaborator(
                     ),
                 },
             )
-            session.execute(
-                text("""
-                    UPDATE agent_conversation_thread
-                       SET archived_at = COALESCE(archived_at, now()),
-                           archive_reason = COALESCE(archive_reason, 'collaboration_ended')
-                     WHERE collaboration_relationship_id = :relationship_id
-                       AND archived_at IS NULL
-                """),
-                {'relationship_id': existing},
+            archive_quest_conversation_threads(
+                session, quest_node_id=quest_id,
+                collaboration_relationship_id=existing, reason='collaboration_ended',
             )
         return _append_event(
             session,

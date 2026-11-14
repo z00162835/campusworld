@@ -21,6 +21,8 @@ from app.commands.game.task._helpers import (
     task_error_to_result,
 )
 from app.services.task.errors import UnauthenticatedActor
+from app.services.task.permissions import Principal
+from unittest.mock import MagicMock
 
 
 def _ctx(*, permissions=None, roles=None, user_id="42") -> CommandContext:
@@ -63,6 +65,42 @@ def test_principal_from_context_int_id():
     assert p.kind == "user"
     assert "task.create" in p.permissions
     assert "admin" in p.roles
+
+
+def test_internal_agent_task_identity_keeps_real_executor_kind(monkeypatch):
+    from app.services.task import task_state_machine
+
+    load = MagicMock(return_value={'id': 99, 'type_code': 'npc_agent'})
+    monkeypatch.setattr(task_state_machine, 'load_node_ref', load)
+    actor = Principal(id=99, kind='agent', permissions=frozenset({'task.update'}))
+    context = _ctx(user_id='99', permissions=['task.update'])
+    context.db_session = MagicMock()
+    context.internal_task_actor = actor
+    assert principal_from_context(context) is actor
+    load.assert_called_once_with(context.db_session, node_id=99, expected_type_code='npc_agent')
+
+
+@pytest.mark.parametrize('change', [
+    {'user_id': '1'}, {'permissions': ['task.*']}, {'roles': ['admin']},
+    {'internal_task_actor': {'id': 99, 'kind': 'agent'}},
+    {'internal_task_actor': Principal(id=99, kind='system')}, {'db_session': None},
+])
+def test_internal_agent_identity_cannot_widen_context_or_accept_client_data(change):
+    context = _ctx(user_id='99', permissions=['task.update'])
+    context.db_session = MagicMock()
+    context.internal_task_actor = Principal(id=99, kind='agent', permissions=frozenset({'task.update'}))
+    for key, value in change.items():
+        setattr(context, key, value)
+    with pytest.raises(UnauthenticatedActor):
+        principal_from_context(context)
+
+
+def test_transport_metadata_cannot_inject_an_agent_task_principal():
+    context = _ctx(user_id='1', permissions=['task.read'])
+    context.metadata = {'internal_task_actor': {'id': 99, 'kind': 'agent', 'permissions': ['task.*']}}
+    actor = principal_from_context(context)
+    assert actor.id == 1 and actor.kind == 'user'
+    assert actor.permissions == frozenset({'task.read'})
 
 
 @pytest.mark.unit

@@ -3,11 +3,15 @@
 基于单一职责原则，命令与协议无关
 """
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, ClassVar
+from typing import List, Dict, Any, Optional, ClassVar, TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 from app.core.log import get_logger, LoggerNames
 from app.commands.command_tool_semantics import CommandToolSemantics, DEFAULT_READ_SEMANTICS
+
+if TYPE_CHECKING:
+    from app.services.task.permissions import Principal
+    from app.services.task.quest_execution_permit import QuestMutationPermit
 
 class CommandType(Enum):
     """命令类型枚举"""
@@ -31,6 +35,10 @@ class CommandContext:
     supports_aico_stream: bool = False
     stream_emit: Optional[Any] = None
     aico_progress_emit: Optional[Any] = None
+    # Internal service handoff only; transport metadata is never an actor source.
+    internal_task_actor: Optional['Principal'] = None
+    managed_transaction: bool = False
+    quest_mutation_permit: Optional['QuestMutationPermit'] = None
 
     def get_caller(self):
         if self.caller is None and self.session:
@@ -91,6 +99,10 @@ class BaseCommand(ABC):
     def execute(self, context: CommandContext, args: List[str]) -> CommandResult:
         """执行命令 - 子类必须实现"""
         pass
+
+    def supports_managed_transaction(self, args: List[str]) -> bool:
+        """Whether this command branch keeps all writes in context.db_session."""
+        return False
 
     def validate_args(self, args: List[str]) -> bool:
         """验证参数 - 子类可重写"""

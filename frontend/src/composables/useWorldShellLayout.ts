@@ -93,6 +93,17 @@ export function useWorldShellLayout(mainRef: Ref<HTMLElement | null>, viewMode: 
     window.addEventListener('mouseup', stopResize)
   }
 
+  const resizeWithKeyboard = (target: ResizeTarget, event: KeyboardEvent) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+    event.preventDefault()
+    const width = target === 'map' ? mapWidth : contextWidth
+    const minimum = target === 'map' ? MAP_MIN_WIDTH : CONTEXT_MIN_WIDTH
+    const maximum = target === 'map' ? maxMapWidth() : maxContextWidth()
+    const direction = (event.key === 'ArrowRight' ? 1 : -1) * (target === 'map' ? 1 : -1)
+    width.value = event.key === 'Home' ? minimum : event.key === 'End' ? maximum
+      : clamp(width.value + direction * (event.shiftKey ? 48 : 16), minimum, maximum)
+  }
+
   const onResizeMove = (event: MouseEvent) => {
     if (!resizeTarget) return
     const delta = event.clientX - resizeStartX
@@ -158,6 +169,9 @@ export function useWorldShellLayout(mainRef: Ref<HTMLElement | null>, viewMode: 
     showMapResizer,
     showContextResizer,
     startResize,
+    resizeWithKeyboard,
+    maxMapWidth,
+    maxContextWidth,
     applyModeWidths,
     applyMapCollapsedForViewMode,
     MAP_MIN_WIDTH,

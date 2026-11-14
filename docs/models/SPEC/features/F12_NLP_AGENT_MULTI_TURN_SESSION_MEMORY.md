@@ -23,7 +23,7 @@
 | D14 | **Not done** | Prometheus 级指标未齐。 |
 | D18 | **Done** | `aico -nd/-l/-cd` + thread 元数据表；隐式 thread 懒创建。 |
 | D19 | **Partial** | NLP 链 `prompt_fingerprint` + provider 剥离；全局统一出口见 ADR 二阶段。 |
-| D26 | **Not done** | Quest/actual-Agent thread immutable metadata、协作关系引用、归档与 scoped episodic/LTM handoff 尚未落地。 |
+| D26 | **Partial** | Quest/actual-Agent thread 不可变绑定、协作关系引用及协作结束/替换的 scoped raw episode 归档已实现；Quest 完成/关闭触发与异步 LTM 消费仍待实现和验收。 |
 | Passthrough | **Locked** | HTTP 不可用时的 passthrough **不**触碰 Mode B 锁、**不**刷新 `last_successful_tick_at`（等同不设 `passthrough_counts_as_success_tick`）。 |
 | Transport release（全局） | **Done** | **`npc_agent.daemon_possession.possession_release_on_transport_close`**：与 **`agents.llm.by_service_id`**（如 AICO）分离，表示 **全体** Mode B daemon 在传输断开时的运行时策略。 |
 
@@ -115,6 +115,8 @@ Quest 对话复用本 SPEC 的 ConversationScope、STM、LTM 与 thread director
 - 同一 thread 不得静默切换 Quest 或实际会话 Agent；切换时新建 thread，旧 thread 保留在原 Quest Journal。
 - Quest 完成、关闭或用户明确结束协作时由后端归档 thread；Memory Thread + STM/LTM 链路是 transcript 真源，现有 `world_conversation_archive` 仅是兼容读取投影，前端 logout 不得成为 Quest 归档的唯一触发器。归档 transcript 可进入 raw/episodic 与异步 LTM 晋升路径。
 - 晋升载荷必须保留 `caller_account_node_id`、`agent_node_id`、`conversation_thread_id`、Quest 图引用和来源 revision；LTM 可用 `graph_node_id / relationship_id` 指回世界图。
+- 协作结束/替换的归档将 `quest_episode_input` 写入现有 raw memory 表，与 thread 归档共享事务及线程锁；载荷保留以上作用域、各 STM segment 的明文和滚动摘要，并标记为 historical/unverified。该输入不得被跨账户检索或直接当作已验证知识；未来晋升消费者必须按载荷中的 account+Agent 重新验证权限，保留 Quest/图引用，不得只按 raw 表的 Agent 字段消费。
+- 用户显式确认删除所属线程时，同步清理该 account+Agent+thread 的 episodic 明文及直接由这些 episode 派生的 LTM；raw 行仅保留 `quest_episode_redacted` 最小脱敏审计（主体/Agent/thread/Quest ID、动作与时间），不保留摘要、对话内容或任意 graph-ref 元数据。归档、删除与对话 tick 共享线程锁，忙碌时拒绝删除，不做后台自动重试。无关 LTM 沿用原线程删除的解绑行为；此规则不是 rewind/STM 截断语义。
 - 对话摘要、LTM 命中和模型建议不是世界事实，也不能直接更新 Agent 的正式 `skill_refs`、Policy、Process 或配置；需要形成 LearningProposal 并通过治理。
 - 默认 `user + agent` 跨 thread LTM 检索仍可召回历史 Quest episode，但必须标识为历史记忆，并在用于当前行动前重新解析图引用、权限和当前版本。
 

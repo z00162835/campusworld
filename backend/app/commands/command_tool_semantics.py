@@ -239,6 +239,8 @@ def _match_subcommand_rule(
 def resolve_command_tool_semantics(
     command_name: str,
     args: Optional[Sequence[str]] = None,
+    *,
+    registry: Any = None,
 ) -> CommandToolSemantics:
     """Resolve semantics from registry ClassVar only (no command-name frozensets).
 
@@ -247,10 +249,12 @@ def resolve_command_tool_semantics(
     guard so callers observe a concrete side-effect contract without having to
     invoke ``resolve_side_effect_level`` separately.
     """
-    from app.commands.registry import command_registry
+    if registry is None:
+        from app.commands.registry import command_registry
+        registry = command_registry
 
     name = str(command_name or '').strip().lower()
-    cmd = command_registry.get_command(name)
+    cmd = registry.get_command(name)
     if cmd is None:
         return CommandToolSemantics(interaction_profile='read', semantic_pending=True, tool_groups=('read',))
     base = getattr(type(cmd), 'tool_semantics', DEFAULT_READ_SEMANTICS)

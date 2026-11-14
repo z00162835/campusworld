@@ -6,9 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.commands.base import CommandContext
-from app.models.system.agent_memory_tables import AgentConversationStm, AgentConversationThread, AgentDaemonStmLock, AgentLongTermMemory
+from app.models.system.agent_memory_tables import AgentConversationStm, AgentConversationThread, AgentDaemonStmLock, AgentLongTermMemory, AgentMemoryEntry
 CONV_SCOPE_PER_USER = 'per_user_session'
 CONV_SCOPE_SYSTEM_SHARED_EXCLUSIVE = 'system_shared_exclusive'
+
+class ConversationThreadBusyError(RuntimeError):
+    """A conversation operation must be retried after the current tick ends."""
 
 def _conversation_thread_ephemeral_storage_key(agent_node_id: int) -> str:
     """Map key on ``command_ephemeral``: implicit conversation thread UUID per agent on this transport."""
@@ -109,6 +112,8 @@ def ensure_conversation_thread_id(session: Session, *, context: CommandContext, 
 
     row = None
     if requested is not None:
+        if not try_acquire_conversation_thread_tick_lock(session, requested):
+            raise ConversationThreadBusyError('Conversation is busy; retry the request')
         row = session.query(AgentConversationThread).filter(AgentConversationThread.id == requested).first()
         if row is not None:
             if row.owner_account_node_id != caller_account_node_id or row.agent_node_id != agent_node_id:
@@ -332,14 +337,98 @@ def aggregate_stm_messages_for_thread(session: Session, *, owner_account_node_id
     return merged
 
 def delete_conversation_thread_for_owner(session: Session, *, owner_account_node_id: int, agent_node_id: int, thread_id: uuid.UUID) -> bool:
-    """Delete thread row + all STM rows for thread; LTM conversation_thread_id SET NULL. Returns False if thread missing."""
-    thr = session.query(AgentConversationThread).filter(AgentConversationThread.id == thread_id, AgentConversationThread.owner_account_node_id == owner_account_node_id, AgentConversationThread.agent_node_id == agent_node_id).first()
+    """Delete owned transcript and learning plaintext, retaining only scoped redaction audit.
+
+    LTM derived from episode inputs is deleted; unrelated LTM keeps the existing
+    unlink behavior. Caller owns authorization confirmation and transaction commit.
+    """
+    thr = session.query(AgentConversationThread).filter(AgentConversationThread.id == thread_id, AgentConversationThread.owner_account_node_id == owner_account_node_id, AgentConversationThread.agent_node_id == agent_node_id).with_for_update().first()
     if thr is None:
         return False
+    if not try_acquire_conversation_thread_tick_lock(session, thread_id):
+        raise ConversationThreadBusyError('Conversation is busy; retry the deletion')
+    episodes = session.query(AgentMemoryEntry).filter(
+        AgentMemoryEntry.agent_node_id == agent_node_id,
+        AgentMemoryEntry.session_id == thread_id,
+        AgentMemoryEntry.kind == 'quest_episode_input',
+        AgentMemoryEntry.payload['caller_account_node_id'].astext == str(owner_account_node_id),
+    ).with_for_update().all()
+    if episodes:
+        session.query(AgentLongTermMemory).filter(
+            AgentLongTermMemory.agent_node_id == agent_node_id,
+            AgentLongTermMemory.caller_account_node_id == owner_account_node_id,
+            AgentLongTermMemory.source_memory_entry_id.in_([episode.id for episode in episodes]),
+        ).delete(synchronize_session=False)
+        redacted_at = datetime.now(timezone.utc).isoformat()
+        for episode in episodes:
+            episode.kind = 'quest_episode_redacted'
+            episode.payload = {
+                'caller_account_node_id': owner_account_node_id,
+                'agent_node_id': agent_node_id,
+                'conversation_thread_id': str(thread_id),
+                'quest_node_id': thr.quest_node_id,
+                'action': 'learning_plaintext_deleted',
+                'redacted_at': redacted_at,
+            }
     session.query(AgentConversationStm).filter(AgentConversationStm.caller_account_node_id == owner_account_node_id, AgentConversationStm.agent_node_id == agent_node_id, AgentConversationStm.conversation_thread_id == thread_id).delete(synchronize_session=False)
     session.delete(thr)
     session.query(AgentLongTermMemory).filter(AgentLongTermMemory.agent_node_id == agent_node_id, AgentLongTermMemory.caller_account_node_id == owner_account_node_id, AgentLongTermMemory.conversation_thread_id == thread_id).update({'conversation_thread_id': None}, synchronize_session=False)
     return True
+
+
+def archive_quest_conversation_threads(session: Session, *, quest_node_id: int,
+                                      collaboration_relationship_id: int, reason: str) -> int:
+    """Archive authorized lifecycle targets and retain scoped learning inputs atomically.
+
+    Caller owns lifecycle authorization and transaction commit. These raw episodes
+    are historical input, not verified facts or published organizational knowledge.
+    """
+    threads = session.query(AgentConversationThread).filter(
+        AgentConversationThread.quest_node_id == quest_node_id,
+        AgentConversationThread.collaboration_relationship_id == collaboration_relationship_id,
+        AgentConversationThread.archived_at.is_(None),
+    ).order_by(AgentConversationThread.id).with_for_update().all()
+    count = 0
+    for thread in threads:
+        if thread.archived_at is not None:
+            continue
+        if not try_acquire_conversation_thread_tick_lock(session, thread.id):
+            raise ConversationThreadBusyError('Conversation is busy; retry the lifecycle change')
+        segments = session.query(AgentConversationStm).filter(
+            AgentConversationStm.caller_account_node_id == thread.owner_account_node_id,
+            AgentConversationStm.agent_node_id == thread.agent_node_id,
+            AgentConversationStm.conversation_thread_id == thread.id,
+        ).order_by(AgentConversationStm.id).all()
+        archived_at = datetime.now(timezone.utc)
+        session.add(AgentMemoryEntry(
+            agent_node_id=thread.agent_node_id,
+            session_id=thread.id,
+            kind='quest_episode_input',
+            payload={
+                'caller_account_node_id': thread.owner_account_node_id,
+                'agent_node_id': thread.agent_node_id,
+                'conversation_thread_id': str(thread.id),
+                'quest_node_id': thread.quest_node_id,
+                'collaboration_relationship_id': thread.collaboration_relationship_id,
+                'created_projection_revision': thread.created_projection_revision,
+                'graph_refs': dict(thread.graph_ref_metadata or {}),
+                'archive_reason': reason,
+                'archived_at': archived_at.isoformat(),
+                'historical': True,
+                'verification_status': 'unverified',
+                'segments': [
+                    {'messages': normalize_messages(segment.messages),
+                     'rolling_summary': segment.rolling_summary or ''}
+                    for segment in segments
+                ],
+            },
+        ))
+        thread.archived_at = archived_at
+        thread.archive_reason = reason
+        count += 1
+    if count:
+        session.flush()
+    return count
 
 def try_acquire_conversation_thread_tick_lock(session: Session, thread_id: uuid.UUID) -> bool:
     """PostgreSQL advisory transaction lock per thread; non-PG dialects always succeed."""

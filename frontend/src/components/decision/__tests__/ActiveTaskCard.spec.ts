@@ -3,6 +3,10 @@ import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import ActiveTaskCard from '../ActiveTaskCard.vue'
 import type { TaskCard } from '@/types/world'
+import { ElMessageBox } from 'element-plus'
+
+// The installed library declares an input/action intersection; confirm resolves to an action.
+const confirmed = 'confirm' as Awaited<ReturnType<typeof ElMessageBox.confirm>>
 
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
@@ -40,6 +44,36 @@ const mountCard = (task: TaskCard) => mount(ActiveTaskCard, {
 })
 
 describe('ActiveTaskCard', () => {
+  it('asks for confirmation before emitting an irreversible action', async () => {
+    const confirm = vi.spyOn(ElMessageBox, 'confirm').mockResolvedValueOnce(confirmed)
+    const wrapper = mountCard({ ...baseTask, nextBestAction: {
+      ...baseTask.nextBestAction, requiresConfirmation: true, consequenceSummary: 'Only this Objective completes',
+    } })
+    await wrapper.get('.mission-actions button').trigger('click')
+    expect(confirm).toHaveBeenCalledWith('Only this Objective completes', expect.any(String), expect.any(Object))
+    expect(wrapper.emitted('execute')).toEqual([['start_7']])
+    confirm.mockRestore()
+  })
+
+  it('does not execute a cancelled confirmation', async () => {
+    const confirm = vi.spyOn(ElMessageBox, 'confirm').mockRejectedValueOnce('cancel')
+    const wrapper = mountCard({ ...baseTask, nextBestAction: { ...baseTask.nextBestAction, requiresConfirmation: true } })
+    await wrapper.get('.mission-actions button').trigger('click')
+    expect(wrapper.emitted('execute')).toBeUndefined()
+    confirm.mockRestore()
+  })
+
+  it('does not execute an action replaced while confirmation is open', async () => {
+    let resolveConfirmation!: (value: Awaited<ReturnType<typeof ElMessageBox.confirm>>) => void
+    const confirm = vi.spyOn(ElMessageBox, 'confirm').mockImplementationOnce(() => new Promise(resolve => { resolveConfirmation = resolve }))
+    const wrapper = mountCard({ ...baseTask, nextBestAction: { ...baseTask.nextBestAction, requiresConfirmation: true } })
+    await wrapper.get('.mission-actions button').trigger('click')
+    await wrapper.setProps({ task: { ...baseTask, id: 'task_8' } })
+    resolveConfirmation(confirmed)
+    await Promise.resolve()
+    expect(wrapper.emitted('execute')).toBeUndefined()
+    confirm.mockRestore()
+  })
   it('renders semantic mission context and exposes map location', async () => {
     const wrapper = mountCard({
       ...baseTask,

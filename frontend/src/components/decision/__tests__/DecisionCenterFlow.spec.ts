@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
+import QuestTracker from '../QuestTracker.vue'
 import { createPinia, setActivePinia } from 'pinia'
 import DecisionCenterFlow from '../DecisionCenterFlow.vue'
 import { useDecisionCenterStore } from '@/stores/decisionCenter'
@@ -12,11 +13,40 @@ vi.mock('vue-i18n', async (importOriginal) => {
     ...actual,
     useI18n: () => ({
       t: (key: string) => key,
+      te: () => false,
     }),
   }
 })
 
 describe('DecisionCenterFlow', () => {
+  it('opens foreground Quest dialogue even without an active task', async () => {
+    const session = useWorldSessionStore()
+    session.interactionState!.decision_center.activeTask = null
+    session.interactionState!.quest_interaction = {
+      contractVersion: 'quest-interaction.v1', capabilities: [], projectionRevision: '4', foregroundQuestId: '11',
+      trackedQuests: [{ id: '11', title: 'Investigate', state: 'draft', riskLevel: 'normal', tracking: 'explicit', objectives: [] }],
+    }
+    const submit = vi.spyOn(session, 'submitQuery').mockResolvedValue({ accepted: true, completion: Promise.resolve() })
+    const wrapper = mount(DecisionCenterFlow, mountOptions)
+    wrapper.findComponent(QuestTracker).vm.$emit('ask', 'explain_basis')
+    await flushPromises()
+    expect(submit).toHaveBeenCalledWith('worldInteraction.decision.questHelp.query.explain_basis', {
+      questContext: { quest_id: '11', objective_id: undefined, agent_node_id: undefined, projection_revision: '4' },
+    })
+    expect(wrapper.find('.conversation-zone .zone-title').text()).toBe('worldInteraction.decision.questConversationTitle')
+    wrapper.unmount()
+  })
+  it('uses a native disabled-capable button for the next-best action', () => {
+    const wrapper = mount(DecisionCenterFlow, mountOptions)
+    const action = wrapper.get('.next-action')
+    expect(action.element.tagName).toBe('BUTTON')
+    expect(action.attributes('type')).toBe('button')
+    const session = useWorldSessionStore()
+    session.sessionActionLoading = true
+    return wrapper.vm.$nextTick().then(() => {
+      expect(action.attributes()).toHaveProperty('disabled')
+    })
+  })
   beforeEach(() => {
     setActivePinia(createPinia())
     const worldSession = useWorldSessionStore()

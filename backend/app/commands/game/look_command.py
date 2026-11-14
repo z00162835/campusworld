@@ -89,6 +89,9 @@ class LookCommand(GameCommand):
         },
     )
 
+    def supports_managed_transaction(self, args: List[str]) -> bool:
+        return True
+
     def __init__(self):
         super().__init__(name='look', description='查看当前环境或特定物品', aliases=['l', 'lookat'], game_name='hicampus')
         self.logger = get_logger(LoggerNames.COMMAND)

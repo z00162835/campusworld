@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import os
+import json
 import uuid
+from pathlib import Path
+from types import SimpleNamespace
 from typing import Generator
 
 import pytest
@@ -27,6 +30,8 @@ from app.services.task.quest_semantic_service import (
     show_quest,
 )
 from app.services.task.task_state_machine import create_task
+from app.models.system.agent_memory_tables import AgentConversationThread, AgentConversationStm, AgentMemoryEntry, AgentLongTermMemory
+from app.game_engine.agent_runtime.conversation_stm_service import delete_conversation_thread_for_owner
 
 _DB_URL = os.environ.get('CAMPUSWORLD_TEST_DATABASE_URL', '').strip()
 pytestmark = pytest.mark.postgres_integration
@@ -108,6 +113,73 @@ def _quest(session, actor: Principal, suffix: str):
         db_session=session,
     )
     return quest, objective
+
+
+@pytest.mark.parametrize('command_success', [True, False])
+def test_governed_execution_persists_audit_replays_and_rolls_back_failed_effect(session, monkeypatch, command_success):
+    from app.commands.base import CommandResult
+    from app.commands.game.look_command import LookCommand
+    from app.commands.policy_store import CommandPolicyRepository
+    from app.commands.registry import CommandRegistry
+    from app.services.task.quest_decision import QuestDecisionContext
+    from app.services.task.quest_execution import QuestActionExecutor
+    from app.services.task.quest_governance import GraphQuestGovernance
+
+    account_id = _account(session)
+    actor = Principal(id=account_id, kind='user', permissions=frozenset({TASK_READ, TASK_UPDATE}))
+    quest, objective = _quest(session, actor, 'isolated-runtime')
+    fixture = json.loads((Path(__file__).parents[1] / 'fixtures/quest_runtime/readonly_inspection_v1.json').read_text())
+    unique = uuid.uuid4().hex
+    policy_ref, process_ref = f'test:policy-{unique}@1', f'test:process-{unique}@1'
+    policy = {**fixture['policy_definition'], 'allowed_process_refs': [process_ref]}
+    for type_code, ref, definition in [('policy', policy_ref, policy),
+                                      ('process_pattern', process_ref, fixture['process_definition'])]:
+        session.execute(text("""INSERT INTO nodes (type_id, type_code, name, attributes, is_active, is_public)
+            SELECT id, :type, :ref, CAST(:attrs AS jsonb), TRUE, TRUE FROM node_types WHERE type_code = :type"""),
+            {'type': type_code, 'ref': ref, 'attrs': json.dumps({'semantic_ref': ref, 'version': '1',
+             'publication_state': 'published', 'definition': definition})})
+    session.execute(text("UPDATE nodes SET attributes = attributes || CAST(:attrs AS jsonb) WHERE id = :id"),
+        {'id': quest.node_id, 'attrs': json.dumps({'governance_mode': 'enforced', 'execution_hold': False,
+         'current_state': 'executing', 'policy_refs': [policy_ref], 'process_refs': [process_ref]})})
+    session.execute(text("UPDATE nodes SET attributes = attributes || '{\"confidence\":0.95}'::jsonb WHERE id = :id"),
+        {'id': quest.attributes['situation_id']})
+    tracked = track_quest(account_node_id=account_id, quest_id=quest.node_id, actor=actor,
+        expected_revision='0', idempotency_key='runtime-track', db_session=session)
+    versions = dict(session.execute(text("SELECT id, (attributes->>'state_version')::int FROM nodes WHERE id = ANY(:ids)"),
+        {'ids': [quest.node_id, objective.task_id]}).all())
+    context = QuestDecisionContext(quest_id=quest.node_id, objective_id=objective.task_id, actor=actor,
+        agent_node_id=None, command_line='look', projection_revision=tracked.projection_revision,
+        pinned_rule_refs=(policy_ref, process_ref), correlation_id=f'test-run-{unique}',
+        quest_state_version=versions[quest.node_id], objective_state_version=versions[objective.task_id])
+    registry = CommandRegistry()
+    command = LookCommand()
+    calls = []
+    def execute(ctx, _args):
+        calls.append(1)
+        ctx.db_session.execute(text("UPDATE nodes SET attributes = attributes || '{\"runtime_probe\":true}'::jsonb WHERE id = :id"),
+            {'id': quest.attributes['goal_id']})
+        return CommandResult(success=command_success, message='test-only outcome')
+    monkeypatch.setattr(command, 'execute', execute)
+    monkeypatch.setattr(CommandPolicyRepository, 'get_policy', lambda *_args: SimpleNamespace(enabled=True,
+        policy_expr=None, required_permissions_any=[], required_permissions_all=[], required_roles_any=[]))
+    registry.register_command(command)
+    source = GraphQuestGovernance(lock_inputs=False)
+    capabilities = source.compile_capabilities(session, context, registry)
+    assert process_ref in capabilities
+    executor = QuestActionExecutor(capabilities=capabilities, commands=registry)
+    outcome = executor.execute(session, context=context, capability_ref=process_ref, idempotency_key='runtime-execute')
+    session.commit()
+    assert outcome['success'] is command_success
+    probe = session.execute(text("SELECT attributes->'runtime_probe' FROM nodes WHERE id = :id"),
+        {'id': quest.attributes['goal_id']}).scalar()
+    assert bool(probe) is command_success
+    replay = executor.execute(session, context=context, capability_ref=process_ref, idempotency_key='runtime-execute')
+    assert replay['idempotentReplay'] is True and len(calls) == 1
+    assert session.execute(text("SELECT count(*) FROM task_runs WHERE task_node_id = :id AND phase = 'quest_execute'"),
+        {'id': objective.task_id}).scalar() == 1
+    projected = build_quest_interaction_projection(session, account_node_id=account_id, actor=actor)
+    assert int(projected['projectionRevision']) > int(tracked.projection_revision)
+    assert any(item.get('correlationId') == context.correlation_id for item in projected['worldFeedback'])
 
 
 def test_multi_track_focus_pin_revision_and_selective_untrack(session):
@@ -329,6 +401,7 @@ def test_collaboration_records_validity_window(session):
     )
     assert active_projection['trackedQuests'][0]['companion'] == {
         'id': str(agent.id),
+        'collaborationRelationshipId': str(added.relationship_id),
         'name': str(agent.name),
         'role': 'advisor',
         'isPrimary': True,
@@ -344,6 +417,20 @@ def test_collaboration_records_validity_window(session):
         is_primary_companion=False,
         db_session=session,
     )
+    thread_id = uuid.uuid4()
+    session.add(AgentConversationThread(
+        id=thread_id, owner_account_node_id=account_id, agent_node_id=int(agent.id),
+        transport_session_id='archive-contract', quest_node_id=quest.node_id,
+        collaboration_relationship_id=added.relationship_id,
+        created_projection_revision=added.projection_revision,
+        graph_ref_metadata={'objective_node_id': _objective.task_id},
+    ))
+    session.add(AgentConversationStm(
+        caller_account_node_id=account_id, agent_node_id=int(agent.id),
+        transport_session_id='archive-contract', conversation_thread_id=thread_id,
+        messages=[{'role': 'user', 'content': 'Inspect bearing'}], rolling_summary='Prior checks',
+    ))
+    session.commit()
     removed = set_collaborator(
         account_node_id=account_id,
         quest_id=quest.node_id,
@@ -362,6 +449,26 @@ def test_collaboration_records_validity_window(session):
     assert row.attributes['valid_from']
     assert row.attributes['valid_to']
     assert row.attributes['status'] == 'ended'
+    thread = session.query(AgentConversationThread).filter_by(id=thread_id).one()
+    assert thread.archived_at is not None
+    episode = session.query(AgentMemoryEntry).filter_by(
+        agent_node_id=int(agent.id), session_id=thread_id, kind='quest_episode_input',
+    ).one()
+    assert episode.payload['caller_account_node_id'] == account_id
+    assert episode.payload['quest_node_id'] == quest.node_id
+    assert episode.payload['segments'][0]['rolling_summary'] == 'Prior checks'
+    session.add(AgentLongTermMemory(
+        agent_node_id=int(agent.id), caller_account_node_id=account_id,
+        conversation_thread_id=thread_id, source_memory_entry_id=episode.id,
+        summary='Private learned inspection summary', payload={},
+    ))
+    session.flush()
+    assert delete_conversation_thread_for_owner(session, owner_account_node_id=account_id,
+        agent_node_id=int(agent.id), thread_id=thread_id)
+    session.flush()
+    assert episode.kind == 'quest_episode_redacted'
+    assert 'segments' not in episode.payload
+    assert session.query(AgentLongTermMemory).filter_by(source_memory_entry_id=episode.id).count() == 0
 
     # Ended collaborators are not resolved as the current Companion.
     projection = build_quest_interaction_projection(

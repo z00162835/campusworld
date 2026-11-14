@@ -55,47 +55,26 @@
       <strong>{{ task.currentStep.title }}</strong>
       <p>{{ task.currentStep.shortInstruction }}</p>
     </div>
-    <div v-if="task.questId" class="companion-encounter">
-      <div class="companion-avatar" aria-hidden="true">AI</div>
-      <div class="companion-dialogue">
-        <span>{{ task.questContext?.companion?.name || t('worldInteraction.quest.aicoFallback') }}</span>
-        <p>{{ t('worldInteraction.decision.companionPrompt') }}</p>
-        <div class="dialogue-choices">
-          <button
-            type="button"
-            :disabled="worldSession.sessionActionBusy"
-            @click="$emit('ask', 'next_step')"
-          >
-            {{ t('worldInteraction.decision.questHelp.nextStep') }}
-          </button>
-          <button
-            type="button"
-            :disabled="worldSession.sessionActionBusy"
-            @click="$emit('ask', 'explain_basis')"
-          >
-            {{ t('worldInteraction.decision.questHelp.explainBasis') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <QuestCompanion
+      v-if="task.questId"
+      :companion-name="task.questContext?.companion?.name"
+      :busy="worldSession.sessionActionBusy"
+      @ask="$emit('ask', $event)"
+    />
     <div class="mission-actions">
       <el-button
         type="primary"
         size="small"
         :disabled="worldSession.sessionActionBusy"
-        :aria-describedby="task.nextBestAction.consequenceSummaryKey || task.nextBestAction.consequenceSummary ? 'mission-next-action-consequence' : undefined"
-        @click="$emit('execute', task.nextBestAction.id)"
+        aria-describedby="mission-next-action-consequence"
+        @click="executeNextAction"
       >
         {{ optionLabel(task.nextBestAction) }}
       </el-button>
-      <p
-        v-if="task.nextBestAction.consequenceSummaryKey || task.nextBestAction.consequenceSummary"
+      <ChoiceConsequence
         id="mission-next-action-consequence"
-        class="mission-action-consequence"
-      >
-        <span v-if="task.nextBestAction.consequenceKind">{{ t(`worldInteraction.decision.consequenceKind.${task.nextBestAction.consequenceKind}`) }} · </span>
-        {{ task.nextBestAction.consequenceSummaryKey ? t(task.nextBestAction.consequenceSummaryKey) : task.nextBestAction.consequenceSummary }}
-      </p>
+        :option="task.nextBestAction"
+      />
     </div>
   </article>
 </template>
@@ -103,15 +82,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessageBox } from 'element-plus'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import type { DecisionOption, TaskCard } from '@/types/world'
+import ChoiceConsequence from './ChoiceConsequence.vue'
+import QuestCompanion from './QuestCompanion.vue'
 
 const props = defineProps<{
   task: TaskCard
   mapRelated?: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   execute: [optionId: string]
   locate: [entityId: string]
   ask: [intent: 'next_step' | 'explain_basis']
@@ -121,6 +103,25 @@ const { t } = useI18n()
 const worldSession = useWorldSessionStore()
 const optionLabel = (option: DecisionOption) =>
   option.labelKey ? t(option.labelKey, option.labelParams || {}) : option.label
+const executeNextAction = async () => {
+  if (worldSession.sessionActionBusy) return
+  const taskId = props.task.id
+  const option = props.task.nextBestAction
+  if (option.requiresConfirmation) {
+    try {
+      await ElMessageBox.confirm(
+        option.consequenceSummaryKey ? t(option.consequenceSummaryKey)
+          : option.consequenceSummary || t('worldInteraction.decision.confirmAction'),
+        t('worldInteraction.decision.confirmTitle'),
+        { confirmButtonText: t('worldInteraction.decision.confirm'), cancelButtonText: t('worldInteraction.decision.cancel'), type: 'warning' },
+      )
+    } catch {
+      return
+    }
+  }
+  if (worldSession.sessionActionBusy || props.task.id !== taskId || props.task.nextBestAction !== option) return
+  emit('execute', option.id)
+}
 const confidencePercent = computed(() => Math.round((props.task.questContext?.situation?.confidence || 0) * 100))
 const mapRefs = computed(() => {
   const situation = props.task.questContext?.situation
@@ -288,56 +289,4 @@ p {
   font-size: 12px;
 }
 
-.companion-encounter {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  gap: var(--spacing-sm);
-  margin: var(--spacing-md) 0;
-  padding: var(--spacing-sm);
-  border: 1px solid rgba(64, 158, 255, 0.25);
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), transparent);
-}
-
-.companion-avatar {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(64, 158, 255, 0.5);
-  border-radius: 50%;
-  color: var(--color-primary);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-}
-
-.companion-dialogue > span {
-  color: var(--color-primary);
-  font-size: var(--font-size-xs);
-}
-
-.companion-dialogue p {
-  margin: 2px 0 var(--spacing-sm);
-}
-
-.dialogue-choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-}
-
-.dialogue-choices button {
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-secondary);
-  padding: 4px 10px;
-  cursor: pointer;
-}
-
-.dialogue-choices button:hover:not(:disabled),
-.dialogue-choices button:focus-visible {
-  border-color: var(--color-primary);
-  color: var(--text-primary);
-}
 </style>

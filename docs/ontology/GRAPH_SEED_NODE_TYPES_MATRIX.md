@@ -16,6 +16,9 @@
 | type_code | 目标 parent_type_code | Python 直接父类 | classname | module_path |
 |-----------|----------------------|-----------------|-----------|-------------|
 | `default_object` | — | — | （注册用，见 `GRAPH_SEED_ONTOLOGY_NODE_ROWS`） | `app.models.base` |
+| `policy` | `default_object` | 薄知识节点，复用 `DefaultObject` | `DefaultObject` | `app.models.base` |
+| `control` | `default_object` | 薄知识节点，复用 `DefaultObject` | `DefaultObject` | `app.models.base` |
+| `process_pattern` | `default_object` | 薄知识节点，复用 `DefaultObject` | `DefaultObject` | `app.models.base` |
 | `world_thing` | `default_object` | `DefaultObject` | `WorldThing` | `app.models.things.base` |
 | `world` | `default_object` | `DefaultObject` | `World` | `app.models.world` |
 | `world_object` | `default_object` | `DefaultObject` | `WorldObject` | `app.models.world` |

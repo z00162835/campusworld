@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from contextlib import nullcontext
 from typing import Any, Dict, List, Optional
 from sqlalchemy import text
 from app.commands.base import CommandContext, CommandResult, GameCommand
@@ -342,18 +343,24 @@ class TaskCommand(GameCommand):
             return usage_result(ctx, usage_key, usage_default)
         return self._run_transition(ctx, task_id=task_id, event=event, parsed=parsed, payload={}, sub_args=args)
 
+    def supports_managed_transaction(self, args: List[str]) -> bool:
+        return bool(args and args[0] in {'claim', 'start', 'complete'})
+
     def _run_transition(self, ctx: CommandContext, *, task_id: int, event: str, parsed, payload: Dict[str, Any], sub_args: List[str]) -> CommandResult:
         (actor, err) = resolve_principal_or_error(ctx)
         if err is not None:
             return err
-        idem = parsed.flags.get('idempotency-key') or derive_idempotency_key(actor=actor, command_name=f'task.{event}', args=sub_args, correlation_id=correlation_id_from_context(ctx))
-        with db_session_context() as session:
+        managed_key = (ctx.metadata or {}).get('quest_transition_idempotency_key') if ctx.managed_transaction else None
+        idem = parsed.flags.get('idempotency-key') or managed_key or derive_idempotency_key(actor=actor, command_name=f'task.{event}', args=sub_args, correlation_id=correlation_id_from_context(ctx))
+        if ctx.managed_transaction and ctx.db_session is None:
+            return CommandResult.error_result('Managed task execution requires a database session', error='task.session_required')
+        with (nullcontext(ctx.db_session) if ctx.managed_transaction else db_session_context()) as session:
             row = session.execute(text("SELECT (attributes->>'state_version')::int FROM nodes WHERE id = :id AND type_code='task'"), {'id': task_id}).first()
             if row is None:
                 return CommandResult.error_result(i18n(ctx, 'error.not_found', default=f'task {task_id} not found', task_id=task_id), error='commands.task.error.not_found')
             expected_version = int(row[0] or 0)
         try:
-            res = transition(task_id=task_id, event=event, actor_principal=actor, expected_version=expected_version, idempotency_key=idem, correlation_id=correlation_id_from_context(ctx), trace_id=trace_id_from_context(ctx), payload=payload)
+            res = transition(task_id=task_id, event=event, actor_principal=actor, expected_version=expected_version, idempotency_key=idem, correlation_id=correlation_id_from_context(ctx), trace_id=trace_id_from_context(ctx), payload=payload, db_session=ctx.db_session if ctx.managed_transaction else None, quest_mutation_permit=ctx.quest_mutation_permit if ctx.managed_transaction else None)
         except TaskSystemError as exc:
             return task_error_to_result(ctx, exc)
         return self._success(ctx, event, res, extra={'pool_key': payload.get('pool_key') if event == 'publish' else None})

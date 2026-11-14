@@ -1,12 +1,15 @@
 # F03 Quest World Interaction Implementation Plan
 
-**Status:** approved for implementation — G0 contract confirmed; G1 implementation complete with PostgreSQL acceptance pending; G2–G4 pending
+**Status:** approved for implementation — G0 confirmed; G1 PostgreSQL acceptance pending; G2–G4 implementation slices delivered, lifecycle/worker and authenticated acceptance pending
 **Generated:** 2026-10-11
+**Execution snapshot updated:** 2026-11-14 (N01:A / N02:A / N03:B)
 **Owner:** frontend + task runtime + world interaction + agent runtime
 **Stable contract:** [`../features/F03_AI_NATIVE_QUEST_INTERACTION.md`](../features/F03_AI_NATIVE_QUEST_INTERACTION.md)
 **Runtime dependency:** [`../../../task/SPEC/features/F06_AI_NATIVE_QUEST_RUNTIME_REFACTOR.md`](../../../task/SPEC/features/F06_AI_NATIVE_QUEST_RUNTIME_REFACTOR.md)
 
 ## 1. Objective
+
+Current execution status is tracked in [`../TODO.md`](../TODO.md) and [`../ACCEPTANCE.md`](../ACCEPTANCE.md). The governed source evaluator, explicit transactional executor, scoped audit/escalation, six UI components and compact Map-canvas layers are implemented slices, not full gate acceptance. Remaining work includes Quest completion/closure archive hooks, real Agent scheduler integration, published customer rule packages, PostgreSQL transaction/concurrency verification and authenticated accessibility/experience acceptance. No integration tests or live rule publication are authorized by this snapshot.
 
 Deliver the F03 experience as a world-native Quest loop rather than a traditional enterprise workbench:
 

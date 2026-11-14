@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from sqlalchemy import String, cast, or_, text
 from sqlalchemy.orm import Session
 
-from app.commands.base import CommandResult
+from app.commands.base import CommandContext, CommandResult
 from app.commands.command_tool_semantics import resolve_command_tool_semantics
 from app.commands.room_connects_to_query import connects_to_exits_from_room
 from app.commands.init_commands import ensure_commands_initialized
@@ -24,6 +24,7 @@ from app.game_engine.manager import game_engine_manager
 from app.models.graph import Node, Relationship
 from app.models.root_manager import root_manager
 from app.services.task.permissions import Principal
+from app.services.task.task_visibility_sql import visible_task_ids
 from app.services.task.quest_interaction_projection import build_quest_interaction_projection
 from app.services.task.quest_semantic_service import show_quest
 from app.services.task.errors import OptimisticLockError, PermissionDenied, PreconditionFailed, ReferenceNotFound
@@ -179,9 +180,105 @@ class WorldInteractionService:
                     command = option.get("command")
                     if not command:
                         return self._state_patch_after_result(session, actor, CommandResult.success_result(option.get("label") or "Action completed"))
+                    governed = self._execute_governed_task_choice(session, actor, option)
+                    if governed is not None:
+                        return governed
                     result = self.execute_command(session, actor, command)
                     return self._state_patch_after_result(session, actor, result, resolved_event_id=decision_event_id)
         return {"success": False, "result": {"summary": "Action is no longer available.", "status": "failed"}, "state_patch": {}}
+
+    def _prepare_governed_task_choice(self, session, principal, option):
+        from app.services.task.task_state_machine import load_node_ref
+        from app.services.task.quest_decision import QuestDecisionContext
+        from app.services.task.quest_governance import GraphQuestGovernance
+
+        tokens = split_command_line(str(option.get('command') or ''))
+        if len(tokens) < 3 or tokens[0] != 'task' or tokens[1] not in {'claim', 'start', 'complete'} or not tokens[2].isdigit():
+            return None
+        task = load_node_ref(session, node_id=int(tokens[2]), expected_type_code='task')
+        quest_id = task['attributes'].get('quest_id')
+        if quest_id is None or not can_read_semantic_node(session, node_id=int(quest_id), actor=principal):
+            return None
+        attrs = load_node_ref(session, node_id=int(quest_id), expected_type_code='quest')['attributes']
+        if attrs.get('governance_mode') != 'enforced':
+            return None
+        refs = tuple(attrs.get('policy_refs') or []) + tuple(attrs.get('process_refs') or [])
+        context = QuestDecisionContext(quest_id=int(quest_id), objective_id=int(task['id']), actor=principal,
+            agent_node_id=None, command_line=option['command'],
+            projection_revision=read_projection_cursor(session, account_node_id=principal.id)[0],
+            pinned_rule_refs=refs, correlation_id=new_correlation_id(),
+            quest_state_version=int(attrs.get('state_version') or 0),
+            objective_state_version=int(task['attributes'].get('state_version') or 0))
+        source = GraphQuestGovernance(lock_inputs=False)
+        return context, source, source.compile_capabilities(session, context, command_registry), attrs
+
+    def _execute_governed_task_choice(self, session, actor, option):
+        from app.services.task.errors import TaskSystemError
+        from app.services.task.quest_execution import QuestActionExecutor
+
+        principal = principal_from_actor(user_id=actor.user_id, roles=actor.roles, permissions=actor.permissions)
+        try:
+            prepared = self._prepare_governed_task_choice(session, principal, option)
+            if prepared is None:
+                return None
+            context, source, capabilities, attrs = prepared
+            ensure_commands_initialized()
+            capabilities = source.compile_capabilities(session, context, command_registry)
+            capability_ref = next(iter(sorted(capabilities)), next(iter(attrs.get('process_refs') or []), 'unavailable'))
+            outcome = QuestActionExecutor(capabilities=capabilities, commands=command_registry).execute(
+                session, context=context, capability_ref=capability_ref, idempotency_key=str(uuid.uuid4()))
+            session.commit()
+            result = CommandResult(success=outcome['success'],
+                message='Command completed; Quest verification is still required.' if outcome['success']
+                    else 'Quest action requires attention. Review the execution record.',
+                data={'quest_execution': outcome}, error=None if outcome['success'] else 'quest.execution_escalated')
+            reason = outcome['reasonCode']
+        except (TaskSystemError, ValueError):
+            reason = 'domain_state_changed'
+            result = CommandResult.error_result('Quest state changed or is no longer available', error='quest.action_unavailable')
+        response = self._state_patch_after_result(session, actor, result)
+        response['result']['summaryKey'] = f'worldInteraction.quest.executionReason.{reason}'
+        response['result']['reasonCode'] = reason
+        return response
+
+    def _decorate_governed_task_choices(self, session, principal, options):
+        from app.services.task.quest_decision import compose_quest_decisions
+        from app.services.task.errors import TaskSystemError
+
+        seen = set()
+        for option in options:
+            if id(option) in seen:
+                continue
+            seen.add(id(option))
+            try:
+                prepared = self._prepare_governed_task_choice(session, principal, option)
+                if prepared is None:
+                    continue
+                context, source, capabilities, attrs = prepared
+                decision = compose_quest_decisions(context=context, governance=source(session, context))
+                option['consequenceProvenanceRefs'] = list(context.pinned_rule_refs)
+                option['requiredEvidenceRefs'] = source.required_evidence_refs(session, context)
+                if attrs.get('risk_level') in {'low', 'normal', 'high', 'critical'}:
+                    option['riskLevel'] = attrs['risk_level']
+                reason = decision.reason_code
+                gate = 'approval_required' if decision.status == 'approval_required' else 'blocked'
+                if reason == 'missing_evidence':
+                    gate = 'evidence_required'
+                if decision.may_request_command_authorization and capabilities:
+                    tokens = split_command_line(context.command_line)
+                    command = command_registry.get_command(tokens[0])
+                    cmd_context = CommandContext(user_id=str(principal.id), username=f'user:{principal.id}',
+                        session_id=f'quest-preview:{context.quest_id}', permissions=list(principal.permissions),
+                        roles=list(principal.roles), db_session=session)
+                    authorized = command is not None and command_registry.authorize_command(command, cmd_context).allowed
+                    gate, reason = ('clear', '') if authorized else ('blocked', 'command_authorization_denied')
+                elif decision.may_request_command_authorization:
+                    reason = 'unregistered_or_unsupported_capability'
+                option['gateStatus'], option['gateReasonCode'] = gate, reason
+                option['requiresConfirmation'] = bool(option.get('requiresConfirmation')
+                    or option.get('riskLevel') in {'high', 'critical'} or option.get('reversible') is False)
+            except (TaskSystemError, ValueError):
+                option['gateStatus'], option['gateReasonCode'] = 'blocked', 'governance_source_unavailable'
 
     def execute_quest_interaction_action(
         self,
@@ -339,7 +436,7 @@ class WorldInteractionService:
         if tracked is None:
             raise PermissionDenied("Quest conversation requires an explicitly tracked Quest")
         if objective_id is not None:
-            if not can_read_semantic_node(session, node_id=objective_id, actor=principal):
+            if objective_id not in visible_task_ids(session, principal, [objective_id]):
                 raise ReferenceNotFound(f"Objective {objective_id} not found")
             objective = session.execute(
                 text("""
@@ -805,6 +902,8 @@ class WorldInteractionService:
                         "execute_command",
                         command=f"enter {target['world_id']}",
                         target=str(target["world_id"]),
+                        label_key="worldInteraction.decision.action.enterWorld",
+                        label_params={"name": target['name']},
                     )
                     events.append(
                         self._event(
@@ -822,7 +921,7 @@ class WorldInteractionService:
                 next_edge = next((edge for edge in focus_map["edges"] if edge.get("status") == "recommended"), None)
                 if next_edge:
                     command = f"go {next_edge.get('direction') or next_edge.get('label')}"
-                    primary_action = self._option("go_next", f"Go to {next_edge['targetLabel']}", "primary", "execute_command", command=command, target=str(next_edge["to"]))
+                    primary_action = self._option("go_next", f"Go to {next_edge['targetLabel']}", "primary", "execute_command", command=command, target=str(next_edge["to"]), label_key="worldInteraction.decision.action.goTo", label_params={"name": next_edge['targetLabel']})
                     events.append(
                         self._event(
                             "next_navigation",
@@ -831,7 +930,7 @@ class WorldInteractionService:
                             "navigation",
                             "Moving updates your authoritative account location.",
                             "Continue through the highlighted route.",
-                            [primary_action, self._option("show_route", "Show route", "secondary", "open_map", target=str(next_edge["to"]))],
+                            [primary_action, self._option("show_route", "Show route", "secondary", "open_map", target=str(next_edge["to"]), label_key="worldInteraction.decision.action.showRoute")],
                             [{"id": str(next_edge["to"]), "type": "space", "label": next_edge["targetLabel"]}],
                         )
                     )
@@ -852,6 +951,13 @@ class WorldInteractionService:
             principal=principal,
             quest_projection=foreground,
         )
+        quest_objectives = {str(row.id) for row in queue if row.quest_id is not None}
+        preview_options = [option for event in events[: DISPLAY_POLICY['maxDecisionEventsVisible']]
+                           for option in event.get('options') or []]
+        if active_task:
+            preview_options += [active_task['nextBestAction']] + list(active_task.get('alternativeActions') or [])
+        self._decorate_governed_task_choices(session, principal,
+            [option for option in preview_options if str(option.get('targetEntityId')) in quest_objectives])
         focus = {
             "title": self._display_name(location),
             "summary": self._focus_summary_text(location, current_world_id, events, queue),
@@ -894,7 +1000,7 @@ class WorldInteractionService:
             return [self._option(f"task_start_{task_id}", "Start task", "primary", "execute_command", command=f"task start {task_id}", target=str(task_id), label_key="worldInteraction.decision.action.start", consequence_kind="proposed", consequence_summary="If accepted, this Objective enters active work.", consequence_summary_key="worldInteraction.decision.actionConsequence.start", gate_status="clear", reversible=True, affected_entity_refs=[str(task_id)])]
         if state in {"in_progress", "approved"}:
             return [self._option(f"task_complete_{task_id}", "Complete task", "primary", "execute_command", command=f"task complete {task_id}", target=str(task_id), requires_confirmation=True, label_key="worldInteraction.decision.action.complete", consequence_kind="proposed", consequence_summary="If accepted, only this Objective is recorded complete; Quest acceptance still requires verification.", consequence_summary_key="worldInteraction.decision.actionConsequence.complete", gate_status="clear", reversible=False, affected_entity_refs=[str(task_id)])]
-        return [self._option(f"task_show_{task_id}", "View task", "secondary", "execute_command", command=f"task show {task_id}", target=str(task_id))]
+        return [self._option(f"task_show_{task_id}", "View task", "secondary", "execute_command", command=f"task show {task_id}", target=str(task_id), label_key="worldInteraction.decision.action.view")]
 
     def _active_task_from_queue(
         self,
@@ -1257,9 +1363,14 @@ class WorldInteractionService:
         target: Optional[str] = None,
         requires_confirmation: bool = False,
         label_key: Optional[str] = None,
+        label_params: Optional[Dict[str, Any]] = None,
         consequence_kind: Optional[str] = None,
         consequence_summary: Optional[str] = None,
         consequence_summary_key: Optional[str] = None,
+        consequence_provenance_refs: Optional[List[str]] = None,
+        consequence_confidence: Optional[float] = None,
+        risk_level: Optional[str] = None,
+        required_evidence_refs: Optional[List[str]] = None,
         gate_status: Optional[str] = None,
         reversible: Optional[bool] = None,
         affected_entity_refs: Optional[List[str]] = None,
@@ -1268,14 +1379,21 @@ class WorldInteractionService:
             "id": option_id,
             "label": label,
             "labelKey": label_key,
+            "labelParams": label_params or {},
             "style": style,
             "actionType": action_type,
             "command": command,
             "targetEntityId": target,
-            "requiresConfirmation": requires_confirmation,
+            "requiresConfirmation": bool(
+                requires_confirmation or risk_level in {'high', 'critical'} or reversible is False
+            ),
             "consequenceKind": consequence_kind,
             "consequenceSummary": consequence_summary,
             "consequenceSummaryKey": consequence_summary_key,
+            "consequenceProvenanceRefs": consequence_provenance_refs or [],
+            "consequenceConfidence": consequence_confidence,
+            "riskLevel": risk_level,
+            "requiredEvidenceRefs": required_evidence_refs or [],
             "gateStatus": gate_status,
             "reversible": reversible,
             "affectedEntityRefs": affected_entity_refs or ([target] if target else []),

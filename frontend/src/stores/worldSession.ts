@@ -112,6 +112,18 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   const focusMap = computed(() => interactionState.value?.focus_map || null)
   const contextSummary = computed(() => interactionState.value?.context_summary || null)
   const questInteraction = computed(() => interactionState.value?.quest_interaction || null)
+  const foregroundQuest = computed(() => questInteraction.value?.trackedQuests.find(
+    quest => quest.id === questInteraction.value?.foregroundQuestId,
+  ) || null)
+  const foregroundQuestContext = computed<QuestConversationContext | undefined>(() => {
+    const quest = foregroundQuest.value
+    return quest ? {
+      quest_id: quest.id,
+      objective_id: quest.focusedObjectiveId || quest.recommendedObjectiveId || undefined,
+      agent_node_id: quest.companion?.id,
+      projection_revision: questInteraction.value!.projectionRevision,
+    } : undefined
+  })
   const currentWorld = computed(() => availableWorlds.value.find(world => world.is_current) || null)
 
   const activeAicoThread = computed(() =>
@@ -355,12 +367,19 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
 
     if (queryMode.value === 'aico') {
       let activeThread = ensureActiveAicoThread()
-      if (options.questContext) {
-        if (activeThread.messages.length && activeThread.questContext?.quest_id !== options.questContext.quest_id) {
-          activeThread = createAicoThread()
-        }
-        activeThread.questContext = { ...options.questContext }
+      const questContext = options.questContext || foregroundQuestContext.value
+      const scopedQuest = questInteraction.value?.trackedQuests.find(quest => quest.id === questContext?.quest_id)
+      const collaborationId = scopedQuest?.companion?.collaborationRelationshipId
+      const sameScope = (thread: AicoThread) =>
+        thread.questContext?.quest_id === questContext?.quest_id
+        && thread.questContext?.agent_node_id === questContext?.agent_node_id
+        && thread.questCollaborationId === collaborationId
+      if (!sameScope(activeThread) && (activeThread.messages.length > 0 || activeThread.questContext)) {
+        activeThread = aicoThreads.value.find(sameScope) || createAicoThread()
+        activeAicoThreadId.value = activeThread.id
       }
+      activeThread.questContext = questContext ? { ...questContext } : undefined
+      activeThread.questCollaborationId = collaborationId
       appendAicoMessage({
         id: newId(),
         role: 'user',
@@ -671,10 +690,15 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
   }
 
   async function applyActionResponse(response: ActionResponse) {
+    const summary = response.result.summaryKey && i18n.global.te(response.result.summaryKey)
+      ? i18n.global.t(response.result.summaryKey, response.result.summaryParams || {})
+      : response.result.reasonCode
+        ? i18n.global.t('worldInteraction.quest.executionUnknownReason', { code: response.result.reasonCode })
+        : response.result.summary
     if (!response.success) {
-      ElMessage.warning(response.result.summary)
-    } else if (response.result.summary) {
-      ElMessage.success(response.result.summary)
+      ElMessage.warning(summary)
+    } else if (summary) {
+      ElMessage.success(summary)
     }
     await applyStatePatch(response.state_patch)
   }
@@ -692,6 +716,10 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
       )
       if (response) await applyActionResponse(response.data)
     } catch (err: any) {
+      if (err?.response?.status === 409 && err?.response?.data?.detail?.code === 'conversation_busy') {
+        ElMessage.warning(i18n.global.t('worldInteraction.quest.conversationBusy'))
+        return
+      }
       if (err?.response?.status === 409 && err?.response?.data?.detail?.code === 'stale_projection') {
         await refreshInteractionState()
         ElMessage.warning(i18n.global.t('worldInteraction.quest.staleProjection'))
@@ -793,6 +821,8 @@ export const useWorldSessionStore = defineStore('worldSession', () => {
     focusMap,
     contextSummary,
     questInteraction,
+    foregroundQuest,
+    foregroundQuestContext,
     currentWorld,
     loadCurrent,
     refreshInteractionState,

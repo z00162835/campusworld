@@ -239,7 +239,7 @@ def _quest_summary(
     collaborator_rows = session.execute(
         text(
             """
-            SELECT r.target_id, r.attributes, n.name, n.type_code
+            SELECT r.id AS collaboration_relationship_id, r.target_id, r.attributes, n.name, n.type_code
               FROM relationships r
               JOIN nodes n ON n.id = r.target_id
              WHERE r.source_id = :quest_id
@@ -264,6 +264,8 @@ def _quest_summary(
             'role': str(collaborator_attrs.get('role') or 'companion'),
             'isPrimary': True,
         }
+        if getattr(collaborator, 'collaboration_relationship_id', None) is not None:
+            companion['collaborationRelationshipId'] = str(collaborator.collaboration_relationship_id)
         break
     clue_context_ids = set(related_refs)
     if situation.get('id') is not None:
@@ -541,12 +543,45 @@ def _build_journal(
     }
 
 
+def _latest_execution_escalations(session: Session, *, situation_ids: List[int], actor: Principal) -> Dict[int, Any]:
+    if not situation_ids:
+        return {}
+    candidates = session.execute(text("""
+        SELECT task.id FROM nodes task JOIN nodes quest
+          ON quest.id::text = task.attributes->>'quest_id' AND quest.type_code = 'quest'
+        WHERE task.type_code = 'task' AND task.is_active = TRUE
+          AND quest.attributes->>'situation_id' = ANY(:situation_refs) LIMIT 500
+    """), {'situation_refs': [str(value) for value in situation_ids]}).fetchall()
+    visible_ids = sorted(visible_task_ids(session, actor, [int(row.id) for row in candidates]))
+    if not visible_ids:
+        return {}
+    rows = session.execute(text("""
+        SELECT DISTINCT ON (event.task_node_id) event.id, event.kind, event.payload, event.created_at,
+          event.task_node_id, event.correlation_id, quest.attributes->>'situation_id' AS situation_id
+        FROM task_events event JOIN nodes task ON task.id = event.task_node_id
+        JOIN nodes quest ON quest.id::text = task.attributes->>'quest_id' AND quest.type_code = 'quest'
+        WHERE event.task_node_id = ANY(:visible_task_ids)
+          AND event.kind IN ('quest.action.succeeded', 'quest.action.escalated')
+        ORDER BY event.task_node_id, event.created_at DESC, event.id DESC
+    """), {'visible_task_ids': visible_ids}).fetchall()
+    result = {}
+    for row in rows:
+        situation_id = int(row.situation_id)
+        if row.kind != 'quest.action.escalated' or situation_id not in situation_ids:
+            continue
+        previous = result.get(situation_id)
+        if previous is None or (row.created_at, row.id) > (previous.created_at, previous.id):
+            result[situation_id] = row
+    return result
+
+
 def _world_pulse(session: Session, *, account_node_id: int, actor: Principal, limit: int = 30) -> List[Dict[str, Any]]:
     rows = session.execute(
         text("""
             SELECT id, title, attributes
               FROM nodes
              WHERE type_code = 'situation'
+               AND is_active = TRUE
              ORDER BY updated_at DESC, id DESC
              LIMIT :limit
         """),
@@ -555,13 +590,15 @@ def _world_pulse(session: Session, *, account_node_id: int, actor: Principal, li
     pulse: List[Dict[str, Any]] = []
     attention_rows = session.execute(
         text("""
-            SELECT situation_node_id, seen_at, snoozed_until, ui_dismissed_at
+            SELECT situation_node_id, seen_at, snoozed_until, ui_dismissed_at, updated_at
               FROM situation_attention
              WHERE account_node_id = :account_id
         """),
         {'account_id': int(account_node_id)},
     ).fetchall()
     attention_by_id = {int(row.situation_node_id): row for row in attention_rows}
+    rows = [row for row in rows if can_read_semantic_node(session, node_id=int(row.id), actor=actor)]
+    escalations = _latest_execution_escalations(session, situation_ids=[int(row.id) for row in rows], actor=actor)
     now = datetime.now(tz=timezone.utc)
     for row in rows:
         situation_id = int(row.id)
@@ -571,6 +608,10 @@ def _world_pulse(session: Session, *, account_node_id: int, actor: Principal, li
         if str(attrs.get('current_state') or '').lower() in {'resolved', 'closed', 'cancelled'}:
             continue
         attention = attention_by_id.get(situation_id)
+        escalation = escalations.get(situation_id)
+        attention_updated_at = getattr(attention, 'updated_at', None) if attention is not None else None
+        if escalation is not None and (attention_updated_at is None or escalation.created_at > attention_updated_at):
+            attention = None
         snooze_until = getattr(attention, 'snoozed_until', None) if attention is not None else None
         dismissed_at = getattr(attention, 'ui_dismissed_at', None) if attention is not None else None
         seen_at = getattr(attention, 'seen_at', None) if attention is not None else None
@@ -590,6 +631,13 @@ def _world_pulse(session: Session, *, account_node_id: int, actor: Principal, li
             'attention': attention_state,
             'snoozedUntil': snooze_until.isoformat() if attention_state == 'snoozed' else None,
         })
+        if escalation is not None:
+            payload = _attributes(escalation.payload)
+            pulse[-1]['escalation'] = {
+                'reasonCode': str(payload.get('reasonCode') or 'execution_failed'),
+                'objectiveId': str(escalation.task_node_id),
+                'correlationId': str(escalation.correlation_id or ''),
+            }
     pulse.sort(key=lambda item: (
         {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}.get(item['severity'].lower(), 4),
         0 if item['attention'] == 'new' else 1,
@@ -622,7 +670,7 @@ def _world_feedback(
         return []
     rows = session.execute(
         text("""
-            SELECT transition.task_node_id, transition.to_state, transition.event,
+            SELECT transition.id AS transition_id, transition.task_node_id, transition.to_state, transition.event,
                    transition.actor_principal_id, transition.actor_principal_kind,
                    transition.correlation_id, transition.created_at,
                    task.attributes->>'quest_id' AS quest_id,
@@ -649,7 +697,7 @@ def _world_feedback(
         if actor_kind not in {'human', 'agent', 'system'}:
             actor_kind = 'system'
         feedback.append({
-            'id': f"transition:{row.task_node_id}:{row.created_at.isoformat()}",
+            'id': f"transition:{row.transition_id}",
             'questId': str(row.quest_id),
             'objectiveId': str(row.task_node_id),
             'actorKind': actor_kind,
@@ -660,7 +708,28 @@ def _world_feedback(
             'correlationId': str(row.correlation_id or ''),
             'occurredAt': row.created_at.isoformat(),
         })
-    return feedback
+    action_rows = session.execute(text("""
+        SELECT event.id, event.kind, event.task_node_id, event.payload,
+          event.actor_principal_id, event.actor_principal_kind, event.correlation_id, event.created_at,
+          task.attributes->>'quest_id' AS quest_id, task.title AS objective_title
+        FROM task_events event JOIN nodes task ON task.id = event.task_node_id
+        WHERE event.task_node_id = ANY(:visible_task_ids) AND task.attributes->>'quest_id' = ANY(:quest_ids)
+          AND event.kind IN ('quest.action.succeeded', 'quest.action.escalated')
+        ORDER BY event.created_at DESC, event.id DESC LIMIT :limit
+    """), {'visible_task_ids': visible_ids, 'quest_ids': [str(int(value)) for value in tracked_quest_ids],
+           'limit': max(1, min(int(limit), 100))}).fetchall()
+    for row in action_rows:
+        actor_kind = 'human' if row.actor_principal_kind in {'user', 'human'} else row.actor_principal_kind
+        feedback.append({
+            'id': f'quest-action:{row.id}', 'questId': str(row.quest_id), 'objectiveId': str(row.task_node_id),
+            'actorKind': actor_kind if actor_kind in {'human', 'agent', 'system'} else 'system',
+            'actorId': str(row.actor_principal_id) if row.actor_principal_id is not None else None,
+            'status': 'succeeded' if row.kind == 'quest.action.succeeded' else 'escalated',
+            'summary': str(row.objective_title or 'Objective'),
+            'reasonCode': str(_attributes(row.payload).get('reasonCode') or 'execution_failed'),
+            'correlationId': str(row.correlation_id or ''), 'occurredAt': row.created_at.isoformat(),
+        })
+    return sorted(feedback, key=lambda item: (item['occurredAt'], item['id']), reverse=True)[:max(1, min(int(limit), 100))]
 
 
 def build_quest_interaction_projection(

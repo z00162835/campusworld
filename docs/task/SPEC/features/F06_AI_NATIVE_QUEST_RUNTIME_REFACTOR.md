@@ -544,6 +544,18 @@ Quest 执行不新增一个覆盖全系统的 Policy 真相源。对象级 Quest
 
 R2 采用 Quest decision facade：输入 Quest/Objective、目标对象、actor/Agent、风险、pinned Policy/Process 版本、Evidence 要求和当前世界状态，显式组合 Quest governance decision 与适用的 F16 `PolicyDecision`，但不复制两个规则仓库。Planner 与 Agent 只消费结构化组合结果，不各自实现授权逻辑；command authorization 仍在执行点独立求值。每一层 decision 均记录输入对象引用、规则版本、结论、理由码、有效期/revision 与 correlation id。
 
+#### 有限确定性治理与事务执行契约
+
+- Quest 以 `governance_mode=enforced` 显式启用确定性执行；必须处于 `executing` 且 `execution_hold=false`。未启用的历史 Quest 保留人工命令兼容性，但 Agent 不得以 legacy 模式绕过治理。启用前必须完成全部写入方迁移；启用后，Objective 状态机拒绝没有执行器签发许可的直接写入。
+- `policy` / `control` / `process_pattern` 是图节点，不是旁路规则仓库。来源按完整 `semantic_ref` 精确解析，必须唯一、可读、`publication_state=published`，且 `version` 等于引用中的具体版本；`latest/head/current/*` 不可执行。已发布定义必须不可变；修订发布新版本，不能原地修改已 pin 的版本。本求值器不承担发布授权，也不自动安装企业规则。
+- 定义 `schema_version=1`：Process 仅含 `schema_version, command_templates`，模板为有限注册 command，参数仅替换当前 `quest_id/objective_id`。Policy/Control 仅含 `schema_version, allowed_process_refs, risk_ceiling, min_confidence, requires_approval, allow_automatic, required_evidence_refs`；布尔、风险和置信度严格校验，未知字段或未支持的 Goal constraints / quality_refs 必须 fail closed。一个请求必须唯一匹配一个 Process 版本，任何适用 Control 均不可被其他 allow 覆盖。审批要求只产生阻断/待审批，UI 确认不等于审批通过。
+- 单次求值最多 32 个 Policy、16 个 Process、每 Process 32 个模板、每 Policy 64 个证据引用；超限拒绝，不静默截断。证据必须是可读、已物化且 `verified/supported` 的 observation/fact/evidence，并以 `SUPPORTED_BY/BASED_ON_FACT` 关联当前 Quest、Objective 或 Situation。绑定关系存在不等于验证通过。
+- 执行输入同时携带 Quest/Objective `state_version` 和 UI `projectionRevision`；前者用于领域乐观锁，后者仅是投影/交互游标，不能相互替代。组合结果绑定原始 Quest、Objective、主体、Agent、命令、规则版本和 correlation，不能跨请求移用。
+- 只执行显式声明支持托管 DB 事务的已注册命令分支；当前支持 `look`、`task claim/start/complete`。最终仍调用 registry command authorization，Agent 使用真实 Agent Principal，不冒充人类。状态机写入要求执行点签发的一次性许可，绑定主体、Quest、Objective、命令事件、领域版本和同一事务；客户端 metadata 不能授予许可。受治理 Objective 的创建需后续已批准规划能力，不接受自由创建旁路。
+- 锁顺序为账户 projection cursor（按 ID）→ Quest/Objective 节点（按 ID）→ 成员关系；执行期间锁定已读取治理来源/证据。幂等 key 在同一主体和 Objective 范围内 replay，不重复命令或审计；复用 key 改变业务请求必须冲突。动作失败、取消、超时或 kill switch 先回滚动作 savepoint，再保存失败审计；外层调用方负责 commit。
+  - 选项预览与能力编译不得提前持有行锁；否则同一请求中先 SHARE 后 UPDATE 会破坏上述锁序。HTTP 预览只使用非加锁图源，执行器在完成账户/对象锁定后使用新的加锁治理源重新求值，不复用预览结论。模板仅允许普通 `{quest_id}` / `{objective_id}`，拒绝属性/下标访问、转换标记和格式规格；编译和执行共用同一渲染规则，非法模板稳定拒绝而不是返回服务器异常。
+- 复用 `task_runs` / `task_events` 保存三平面决策、实际主体、执行结果与 correlation；Agent 同时写 `AgentRunRecord`，向受影响账户推进投影。执行成功仅表示 command completed，不能据此标记 Quest accepted。SQL 超时和 cooperative cancellation 有界保护 DB 动作；外部 I/O 补偿、CPU 强制抢占和任意动态执行拓扑不在该执行器承诺范围内。
+
 ### 7.4 Agent Runtime
 
 Agent 可以：
@@ -981,6 +993,8 @@ Quest 可接受的条件：
 ## 14. Open Questions
 
 已定边界：Quest decision facade 组合 Quest governance 与适用的 F16 行为决策，实际命令继续由现有 command authorization 做最终强制检查；三者保留独立规则真源和审计记录。
+
+首个验证场景使用隔离的只读规则/流程 fixture 和已有注册能力，不向生产发布虚构企业规则。组合结果的通过仅表示 `ready_for_command_authorization`，不是执行授权。有限图源求值、UI choice 调用与持久化审计已进入实现；真实 Agent worker、完整规划/生命周期、发布治理和数据库验收仍以执行清单为准，不据此关闭 R2 整体验收。
 
 已定投影：Mission Feed 继续由现有 WorldInteraction state 聚合 Quest interaction projection，不新增并行的 Quest-specific 前端状态真源。
 

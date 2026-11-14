@@ -25,19 +25,15 @@
           size="small"
           :plain="option.style !== 'primary'"
           :disabled="worldSession.sessionActionBusy"
-          :aria-describedby="option.consequenceSummaryKey || option.consequenceSummary ? `consequence-${event.id}-${option.id}` : undefined"
+          :aria-describedby="`consequence-${event.id}-${option.id}`"
           @click="executeOption(option)"
         >
           {{ option.labelKey ? t(option.labelKey, option.labelParams || {}) : option.label }}
         </el-button>
-        <p
-          v-if="option.consequenceSummaryKey || option.consequenceSummary"
+        <ChoiceConsequence
           :id="`consequence-${event.id}-${option.id}`"
-          class="action-consequence"
-        >
-          <span v-if="option.consequenceKind" class="consequence-kind">{{ t(`worldInteraction.decision.consequenceKind.${option.consequenceKind}`) }}</span>
-          {{ option.consequenceSummaryKey ? t(option.consequenceSummaryKey) : option.consequenceSummary }}
-        </p>
+          :option="option"
+        />
       </div>
     </div>
   </article>
@@ -49,6 +45,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessageBox } from 'element-plus'
 import { useWorldSessionStore } from '@/stores/worldSession'
 import type { DecisionEvent, DecisionOption } from '@/types/world'
+import ChoiceConsequence from './ChoiceConsequence.vue'
 
 const props = defineProps<{
   event: DecisionEvent

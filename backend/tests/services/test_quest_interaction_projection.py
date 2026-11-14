@@ -132,6 +132,20 @@ def test_quest_summary_recommends_visible_objective_near_current_location(monkey
     ]
 
 
+def test_companion_projection_carries_immutable_collaboration_identity(monkeypatch):
+    monkeypatch.setattr(quest_interaction_projection, 'can_read_semantic_node', lambda *_args, **_kwargs: True)
+    class Session:
+        def execute(self, query, _params):
+            rows = [SimpleNamespace(collaboration_relationship_id=91, target_id=99, name='Guide',
+                attributes={'role': 'advisor'})] if "'ASSISTED_BY'" in str(query) else []
+            return SimpleNamespace(all=lambda: rows, first=lambda: None)
+    summary = quest_interaction_projection._quest_summary(Session(), {
+        'quest': {'id': 11, 'title': 'Quest', 'attributes': {}}, 'objectives': [],
+    }, account_node_id=1, current_location_id=None, actor=object(), focused_objective_id=None)
+    assert summary['companion']['collaborationRelationshipId'] == '91'
+    assert summary['companion']['id'] == '99'
+
+
 def test_world_pulse_projects_only_readable_situations_and_attention(monkeypatch):
     class Result:
         def __init__(self, rows):
@@ -142,6 +156,8 @@ def test_world_pulse_projects_only_readable_situations_and_attention(monkeypatch
 
     class Session:
         def execute(self, query, _params):
+            if 'SELECT task.id FROM nodes' in query.text:
+                return Result([])
             if 'FROM situation_attention' in query.text:
                 return Result([SimpleNamespace(
                     situation_node_id=7, seen_at=None,
@@ -174,8 +190,10 @@ def test_world_feedback_uses_visible_objective_transitions(monkeypatch):
             if 'SELECT id FROM nodes' in query.text:
                 return Result([SimpleNamespace(id=21), SimpleNamespace(id=22)])
             assert _args[0]['visible_task_ids'] == [21]
+            if 'FROM task_events' in query.text:
+                return Result([])
             return Result([SimpleNamespace(
-                task_node_id=21, to_state='failed', event='complete',
+                transition_id=101, task_node_id=21, to_state='failed', event='complete',
                 actor_principal_id=5, actor_principal_kind='user', correlation_id='corr-1',
                 created_at=datetime(2026, 10, 1, tzinfo=timezone.utc), quest_id='11',
                 objective_title='Inspect bearing',
@@ -193,3 +211,71 @@ def test_world_feedback_uses_visible_objective_transitions(monkeypatch):
     assert feedback[0]['actorKind'] == 'human'
     assert feedback[0]['status'] == 'failed'
     assert feedback[0]['questId'] == '11'
+
+
+def test_new_execution_escalation_resurfaces_an_older_ui_dismissal(monkeypatch):
+    old = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    recent = datetime(2026, 11, 14, tzinfo=timezone.utc)
+    escalation = SimpleNamespace(id=99, created_at=recent, task_node_id=21,
+        correlation_id='corr-99', payload={'reasonCode': 'low_confidence'})
+    monkeypatch.setattr(quest_interaction_projection, '_latest_execution_escalations', lambda *_args, **_kwargs: {7: escalation})
+    monkeypatch.setattr(quest_interaction_projection, 'can_read_semantic_node', lambda *_args, **_kwargs: True)
+    class Session:
+        def execute(self, query, _params):
+            rows = ([SimpleNamespace(situation_node_id=7, updated_at=old, ui_dismissed_at=old,
+                                    snoozed_until=None, seen_at=None)] if 'situation_attention' in query.text
+                    else [SimpleNamespace(id=7, title='Anomaly', attributes={'severity': 'high', 'assertion': 'Vibration'})])
+            return SimpleNamespace(fetchall=lambda: rows)
+    pulse = quest_interaction_projection._world_pulse(Session(), account_node_id=1, actor=object())
+    assert pulse[0]['attention'] == 'new'
+    assert pulse[0]['escalation'] == {'reasonCode': 'low_confidence', 'objectiveId': '21', 'correlationId': 'corr-99'}
+
+
+def test_latest_execution_filter_cannot_reveal_unreadable_objective_failures(monkeypatch):
+    calls = []
+    class Session:
+        def execute(self, query, params):
+            calls.append(query.text)
+            return SimpleNamespace(fetchall=lambda: [SimpleNamespace(id=21)])
+    monkeypatch.setattr(quest_interaction_projection, 'visible_task_ids', lambda *_args: set())
+    assert quest_interaction_projection._latest_execution_escalations(Session(), situation_ids=[7], actor=object()) == {}
+    assert len(calls) == 1
+    assert 'task_events' not in calls[0]
+
+
+def test_latest_success_removes_execution_escalation_without_resolving_situation(monkeypatch):
+    class Session:
+        def execute(self, query, params):
+            if 'SELECT task.id' in query.text:
+                rows = [SimpleNamespace(id=21)]
+            else:
+                assert 'DISTINCT ON (event.task_node_id)' in query.text
+                assert params['visible_task_ids'] == [21]
+                rows = [SimpleNamespace(kind='quest.action.succeeded', situation_id='7')]
+            return SimpleNamespace(fetchall=lambda: rows)
+    monkeypatch.setattr(quest_interaction_projection, 'visible_task_ids', lambda *_args: {21})
+    assert quest_interaction_projection._latest_execution_escalations(Session(), situation_ids=[7], actor=object()) == {}
+
+
+def test_feedback_merges_action_audit_and_same_timestamp_transitions_with_unique_ids(monkeypatch):
+    at = datetime(2026, 11, 14, tzinfo=timezone.utc)
+    shared = dict(task_node_id=21, actor_principal_id=99, actor_principal_kind='agent',
+                  correlation_id='corr-run', created_at=at, quest_id='11', objective_title='Inspect')
+    class Session:
+        def execute(self, query, params):
+            if 'SELECT id FROM nodes' in query.text:
+                rows = [SimpleNamespace(id=21)]
+            elif 'FROM task_events' in query.text:
+                assert params['visible_task_ids'] == [21]
+                rows = [SimpleNamespace(id=201, kind='quest.action.escalated', payload={'reasonCode': 'missing_evidence'}, **shared)]
+            else:
+                rows = [SimpleNamespace(transition_id=i, to_state='in_progress', event='start', **shared) for i in [101, 102]]
+            return SimpleNamespace(fetchall=lambda: rows)
+    monkeypatch.setattr(quest_interaction_projection, 'visible_task_ids', lambda *_args: {21})
+    feedback = quest_interaction_projection._world_feedback(Session(), tracked_quest_ids=[11], actor=object())
+    assert len({item['id'] for item in feedback}) == 3
+    action = next(item for item in feedback if item['id'] == 'quest-action:201')
+    assert action['status'] == 'escalated'
+    assert action['actorKind'] == 'agent'
+    assert action['reasonCode'] == 'missing_evidence'
+    assert 'objectiveState' not in action

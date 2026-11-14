@@ -1,5 +1,41 @@
 schema_revision: 3
 node_types:
+  policy:
+    trait_class: RULE
+    trait_mask: 1
+    tags: [graph_seed, governed_knowledge]
+    schema_definition:
+      type: object
+      title: Published policy knowledge
+      properties:
+        semantic_ref: {type: string, value_kind: static, mutability: package_seed}
+        version: {type: string, value_kind: static, mutability: package_seed}
+        publication_state: {type: string, enum: [draft, published, retired], value_kind: static, mutability: package_seed}
+        definition: {type: object, value_kind: static, mutability: package_seed}
+  control:
+    trait_class: RULE
+    trait_mask: 1
+    tags: [graph_seed, governed_knowledge]
+    schema_definition:
+      type: object
+      title: Published control knowledge
+      properties:
+        semantic_ref: {type: string, value_kind: static, mutability: package_seed}
+        version: {type: string, value_kind: static, mutability: package_seed}
+        publication_state: {type: string, enum: [draft, published, retired], value_kind: static, mutability: package_seed}
+        definition: {type: object, value_kind: static, mutability: package_seed}
+  process_pattern:
+    trait_class: PROCESS
+    trait_mask: 1
+    tags: [graph_seed, governed_knowledge]
+    schema_definition:
+      type: object
+      title: Published process capability knowledge
+      properties:
+        semantic_ref: {type: string, value_kind: static, mutability: package_seed}
+        version: {type: string, value_kind: static, mutability: package_seed}
+        publication_state: {type: string, enum: [draft, published, retired], value_kind: static, mutability: package_seed}
+        definition: {type: object, value_kind: static, mutability: package_seed}
   network_access_point:
     trait_class: DEVICE
     trait_mask: 58
@@ -955,6 +991,15 @@ node_types:
       type: object
       title: quest attributes (R1)
       properties:
+        governance_mode:
+          type: string
+          enum: [legacy, enforced]
+          value_kind: static
+          mutability: package_seed
+        execution_hold:
+          type: boolean
+          value_kind: dynamic_snapshot
+          mutability: runtime
         current_state:
           type: string
           enum:

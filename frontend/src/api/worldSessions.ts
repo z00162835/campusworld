@@ -18,6 +18,9 @@ export interface ActionResponse {
   success: boolean
   result: {
     summary: string
+    summaryKey?: string
+    summaryParams?: Record<string, string | number>
+    reasonCode?: string
     status: 'completed' | 'failed'
     error?: string | null
   }

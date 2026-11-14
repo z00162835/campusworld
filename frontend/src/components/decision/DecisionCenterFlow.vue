@@ -52,7 +52,7 @@
         </header>
 
         <div v-show="showTaskBody" class="task-zone-body">
-          <quest-tracker @locate="locateMissionSubject" />
+          <quest-tracker @locate="locateMissionSubject" @ask="askQuestGuide" />
 <section
             v-if="decisionStore.focus"
             class="focus-summary"
@@ -79,19 +79,17 @@
             @ask="askQuestGuide"
           />
 
-          <section
+          <button
             v-if="decisionStore.nextBestAction"
+            type="button"
             class="next-action clickable"
             :class="{ 'next-action--disabled': worldSession.sessionActionBusy }"
-            role="button"
-            :tabindex="worldSession.sessionActionBusy ? -1 : 0"
-            :aria-disabled="worldSession.sessionActionBusy"
+            :disabled="worldSession.sessionActionBusy"
             @click="runNextBestAction"
-            @keyup.enter="runNextBestAction"
           >
             <span>{{ t('worldInteraction.decision.nextBestAction') }}</span>
             <strong>{{ optionLabel(decisionStore.nextBestAction) }}</strong>
-          </section>
+          </button>
         </div>
       </section>
 
@@ -167,6 +165,7 @@ import { useWorldSessionStore } from '@/stores/worldSession'
 import { useWorldMapStore } from '@/stores/worldMap'
 
 const { t } = useI18n()
+const emit = defineEmits<{ mapLocate: [] }>()
 const decisionStore = useDecisionCenterStore()
 const worldSession = useWorldSessionStore()
 const worldMap = useWorldMapStore()
@@ -218,7 +217,7 @@ const conversationZoneSubtitle = computed(() =>
     : t('worldInteraction.decision.conversationZoneSubtitleCommand'),
 )
 const conversationZoneTitle = computed(() =>
-  decisionStore.activeTask?.questId
+  worldSession.foregroundQuest
     ? t('worldInteraction.decision.questConversationTitle')
     : t('worldInteraction.decision.conversationZoneTitle'),
 )
@@ -242,22 +241,22 @@ const executeTaskAction = async (optionId: string) => {
 }
 
 const locateMissionSubject = async (entityId: string) => {
+  emit('mapLocate')
   worldSession.viewMode = 'Map'
   await worldMap.selectEntity(entityId)
 }
 
 const askQuestGuide = async (intent: 'next_step' | 'explain_basis') => {
-  const task = decisionStore.activeTask
-  if (!task?.questId) return
-  const quest = worldSession.questInteraction?.trackedQuests.find(item => item.id === task.questId)
+  const quest = worldSession.foregroundQuest
   if (!quest) return
+  const focusedObjectiveId = quest.focusedObjectiveId || quest.recommendedObjectiveId
+  const objective = quest.objectives.find(item => item.id === focusedObjectiveId)
   worldSession.setQueryMode('aico')
   const query = t(`worldInteraction.decision.questHelp.query.${intent}`, {
-    questId: task.questId,
-    questTitle: task.questTitle || task.title,
-    objective: task.title,
+    questId: quest.id,
+    questTitle: quest.title,
+    objective: objective?.title || t('worldInteraction.quest.noObjective'),
   })
-  const focusedObjectiveId = quest.focusedObjectiveId || quest.recommendedObjectiveId
   const submission = await worldSession.submitQuery(query, {
     questContext: {
       quest_id: quest.id,
@@ -593,7 +592,16 @@ async function scrollConversationToBottom() {
 
 .focus-summary.severity-stripe--info,
 .next-action {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
   border-left-color: var(--decision-severity-info);
+}
+
+.next-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .focus-summary.severity-stripe--warning {

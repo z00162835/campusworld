@@ -20,6 +20,9 @@ from db.ontology.load import load_graph_seed_node_type_overrides, node_type_json
 # docs/ontology/GRAPH_SEED_NODE_TYPES_MATRIX.md (target table).
 GRAPH_SEED_ONTOLOGY_NODE_ROWS: Tuple[Tuple[str, Optional[str], str, str, str, str], ...] = (
     ("default_object", None, "默认对象", "app.models.base.DefaultObject", "DefaultObject", "app.models.base"),
+    ("policy", "default_object", "策略知识", "app.models.base.DefaultObject", "DefaultObject", "app.models.base"),
+    ("control", "default_object", "控制规则", "app.models.base.DefaultObject", "DefaultObject", "app.models.base"),
+    ("process_pattern", "default_object", "流程知识", "app.models.base.DefaultObject", "DefaultObject", "app.models.base"),
     ("world_thing", "default_object", "世界物（WorldThing）", "app.models.things.base.WorldThing", "WorldThing", "app.models.things.base"),
     ("world", "default_object", "世界", "app.models.world.World", "World", "app.models.world"),
     ("world_object", "default_object", "世界对象", "app.models.world.WorldObject", "WorldObject", "app.models.world"),

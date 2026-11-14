@@ -316,6 +316,88 @@ describe('session action gate', () => {
     expect(store.aicoThreads[0].questContext?.quest_id).toBe('44')
   })
 
+  it('binds free input to the foreground Quest without an active task and refreshes its Objective', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+    store.interactionState!.quest_interaction = {
+      contractVersion: 'quest-interaction.v1', capabilities: [], projectionRevision: '1', foregroundQuestId: '44',
+      trackedQuests: [{ id: '44', title: 'Quest', state: 'draft', riskLevel: 'normal', tracking: 'explicit', objectives: [] }],
+    }
+    vi.mocked(queryAicoStream).mockResolvedValue(undefined)
+    const first = await store.submitQuery('Why is this needed?')
+    if (first.accepted) await first.completion
+    const threadId = store.activeAicoThreadId
+    expect(vi.mocked(queryAicoStream).mock.calls[0][2].questContext?.quest_id).toBe('44')
+    store.interactionState!.quest_interaction!.trackedQuests[0].focusedObjectiveId = '55'
+    store.interactionState!.quest_interaction!.projectionRevision = '2'
+    const second = await store.submitQuery('Explain this step')
+    if (second.accepted) await second.completion
+    expect(store.activeAicoThreadId).toBe(threadId)
+    expect(vi.mocked(queryAicoStream).mock.calls[1][2].questContext).toMatchObject({
+      quest_id: '44', objective_id: '55', projection_revision: '2',
+    })
+  })
+
+  it('separates Quest, Agent and collaboration lifetimes while restoring matching local history', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+    store.interactionState!.quest_interaction = {
+      contractVersion: 'quest-interaction.v1', capabilities: [], projectionRevision: '1', foregroundQuestId: '44',
+      trackedQuests: [{ id: '44', title: 'Quest', state: 'draft', riskLevel: 'normal', tracking: 'explicit', objectives: [],
+        companion: { id: '9', name: 'Guide', role: 'advisor', isPrimary: true, collaborationRelationshipId: '90' } },
+        { id: '45', title: 'Other Quest', state: 'draft', riskLevel: 'normal', tracking: 'explicit', objectives: [] }],
+    }
+    vi.mocked(queryAicoStream).mockResolvedValue(undefined)
+    const send = async () => { const submission = await store.submitQuery('Explain'); if (submission.accepted) await submission.completion }
+    await send()
+    const original = store.activeAicoThreadId
+    store.interactionState!.quest_interaction!.foregroundQuestId = '45'
+    await send()
+    expect(store.activeAicoThreadId).not.toBe(original)
+    store.interactionState!.quest_interaction!.foregroundQuestId = '44'
+    await send()
+    expect(store.activeAicoThreadId).toBe(original)
+    const quest = store.interactionState!.quest_interaction!.trackedQuests[0]
+    quest.companion!.id = '10'
+    await send()
+    const replacement = store.activeAicoThreadId
+    expect(replacement).not.toBe(original)
+    quest.companion!.collaborationRelationshipId = '91'
+    await send()
+    expect(store.activeAicoThreadId).not.toBe(replacement)
+    expect(store.aicoThreads.find(thread => thread.id === original)?.questContext?.agent_node_id).toBe('9')
+  })
+
+  it('does not carry a previous Quest binding into generic input after untracking', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+    vi.mocked(queryAicoStream).mockResolvedValue(undefined)
+    const first = await store.submitQuery('Quest question', { questContext: { quest_id: '44', projection_revision: '1' } })
+    if (first.accepted) await first.completion
+    const questThread = store.activeAicoThreadId
+    const second = await store.submitQuery('General question')
+    if (second.accepted) await second.completion
+    expect(store.activeAicoThreadId).not.toBe(questThread)
+    expect(vi.mocked(queryAicoStream).mock.calls[1][2].questContext).toBeUndefined()
+    expect(store.aicoThreads.find(thread => thread.id === questThread)?.questContext?.quest_id).toBe('44')
+  })
+
+  it('handles a busy conversation without replaying a collaboration mutation', async () => {
+    const store = useWorldSessionStore()
+    seedSession(store)
+    store.interactionState!.quest_interaction = {
+      contractVersion: 'quest-interaction.v1', capabilities: [], projectionRevision: '1', trackedQuests: [],
+    }
+    vi.mocked(worldSessionsApi.questAction).mockRejectedValueOnce({
+      response: { status: 409, data: { detail: { code: 'conversation_busy' } } },
+    })
+    await expect(store.executeQuestInteractionAction({ action: 'remove_collaborator', questId: '9', agentNodeId: '3' })).resolves.toBeUndefined()
+    expect(worldSessionsApi.questAction).toHaveBeenCalledTimes(1)
+    expect(worldSessionsApi.getInteractionState).not.toHaveBeenCalled()
+    expect(store.questInteraction?.projectionRevision).toBe('1')
+    expect(store.sessionActionBusy).toBe(false)
+  })
+
   it('refreshes stale Quest state without replaying the mutation', async () => {
     const store = useWorldSessionStore()
     seedSession(store)

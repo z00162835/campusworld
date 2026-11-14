@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+import pytest
 from types import SimpleNamespace
 
 from app.commands.base import CommandResult
@@ -9,11 +10,44 @@ from app.services.world_interaction.types import WorldActor
 from app.services.task.user_task_queue import QueueTaskRow
 from app.services.world_interaction import world_interaction_service
 from app.services.world_interaction import service as world_interaction_module
-from app.services.task.errors import OptimisticLockError
+from app.services.task.errors import OptimisticLockError, ReferenceNotFound
 
 
 def _actor() -> WorldActor:
     return WorldActor(user_id="1", username="tester", permissions=["player.*"], roles=["player"])
+
+
+def test_choice_contract_preserves_governance_metadata_without_inventing_defaults():
+    option = WorldInteractionService._option(
+        'inspect', 'Inspect', 'primary', 'execute_command',
+        label_key='actions.inspect', label_params={'name': 'AHU'},
+        consequence_kind='predicted', consequence_confidence=0.7,
+        consequence_provenance_refs=['case:7'], risk_level='high',
+        required_evidence_refs=['observation:3'], gate_status='evidence_required',
+        reversible=False, affected_entity_refs=['device:9'],
+    )
+    assert option['labelParams'] == {'name': 'AHU'}
+    assert option['consequenceConfidence'] == 0.7
+    assert option['consequenceProvenanceRefs'] == ['case:7']
+    assert option['requiredEvidenceRefs'] == ['observation:3']
+    assert option['gateStatus'] == 'evidence_required'
+    assert option['riskLevel'] == 'high'
+    assert option['reversible'] is False
+    assert option['requiresConfirmation'] is True
+    assert option['affectedEntityRefs'] == ['device:9']
+    unknown = WorldInteractionService._option('look', 'Look', 'quiet', 'execute_command')
+    assert unknown['consequenceConfidence'] is None
+    assert unknown['riskLevel'] is None
+    assert unknown['gateStatus'] is None
+    assert unknown['requiresConfirmation'] is False
+
+
+def test_all_queue_task_options_supply_localized_label_keys():
+    for state, expected in [('open', 'claim'), ('claimed', 'start'), ('in_progress', 'complete'), ('done', 'view')]:
+        row = SimpleNamespace(id=21, state=state, visibility='pool_open', assignee_kind='pool')
+        option = world_interaction_service._options_for_queue_task(row)[0]
+        assert option['labelKey'] == f'worldInteraction.decision.action.{expected}'
+        assert option['labelParams'] == {}
 
 
 def test_command_query_slash_command_returns_state_patch():
@@ -108,6 +142,30 @@ def test_quest_conversation_context_requires_current_projection_revision(monkeyp
         pass
     else:
         raise AssertionError('stale Quest conversation context must be rejected')
+
+
+@pytest.mark.parametrize('task_visible', [True, False])
+def test_quest_dialogue_uses_task_visibility_not_semantic_ownership_for_objectives(monkeypatch, task_visible):
+    service = WorldInteractionService()
+    monkeypatch.setattr(service, '_get_user_node', lambda *_args, **_kwargs: SimpleNamespace(id=1))
+    monkeypatch.setattr(world_interaction_module, 'read_projection_cursor', lambda *_args, **_kwargs: ('9', '3'))
+    monkeypatch.setattr(world_interaction_module, 'can_read_semantic_node',
+        lambda _session, *, node_id, actor: node_id != 21)
+    monkeypatch.setattr(world_interaction_module, 'visible_task_ids',
+        lambda _session, _actor, _ids: {21} if task_visible else set())
+    monkeypatch.setattr(world_interaction_module, 'show_quest', lambda **_kwargs: {
+        'quest': {'title': 'Quest'}, 'objectives': [{'task_id': 21, 'title': 'Pool-visible task'}],
+    })
+    session = MagicMock()
+    session.execute.return_value.first.return_value = (1,)
+    payload = {'quest_id': 11, 'objective_id': 21, 'projection_revision': '9'}
+    if task_visible:
+        context = service.validate_quest_conversation_context(session, _actor(), payload)
+        assert context['objective_node_id'] == 21
+        assert context['objective_title'] == 'Pool-visible task'
+    else:
+        with pytest.raises(ReferenceNotFound):
+            service.validate_quest_conversation_context(session, _actor(), payload)
 
 
 def test_foreground_quest_hud_uses_aggregate_objective_progress():

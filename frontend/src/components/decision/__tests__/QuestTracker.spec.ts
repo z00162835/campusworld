@@ -7,7 +7,7 @@ import type { WorldInteractionState } from '@/types/world'
 
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
-  return { ...actual, useI18n: () => ({ t: (key: string) => key }) }
+  return { ...actual, useI18n: () => ({ t: (key: string) => key, te: () => false }) }
 })
 
 describe('QuestTracker', () => {
@@ -95,6 +95,14 @@ describe('QuestTracker', () => {
     await wrapper.find('summary').trigger('click')
     expect(wrapper.text()).toContain('policy:safety@2')
     expect(wrapper.text()).toContain('worldInteraction.quest.unresolved.not_materialized')
+  })
+
+  it('keeps Companion dialogue available when the foreground Quest has no actionable task', async () => {
+    const wrapper = mount(QuestTracker, { global: { stubs: { ElButton: { template: '<button><slot /></button>' } } } })
+    const companion = wrapper.findComponent({ name: 'QuestCompanion' })
+    expect(companion.exists()).toBe(true)
+    companion.vm.$emit('ask', 'explain_basis')
+    expect(wrapper.emitted('ask')).toEqual([['explain_basis']])
   })
 
   it('pins a materialized observation for the foreground Quest', async () => {

@@ -80,6 +80,21 @@ def test_quest_action_adapter_passes_versioned_envelope(monkeypatch):
     assert seen["payload"] == {"action": "track", "questId": "9"}
 
 
+def test_quest_action_reports_busy_conversation_as_retryable_conflict(monkeypatch):
+    from app.game_engine.agent_runtime.conversation_stm_service import ConversationThreadBusyError
+
+    def busy(*_args, **_kwargs):
+        raise ConversationThreadBusyError('Conversation is busy')
+
+    monkeypatch.setattr(world_interaction.world_interaction_service, 'execute_quest_interaction_action', busy)
+    response = TestClient(_app()).post('/api/v1/world-sessions/quest-actions', json={
+        'expectedProjectionRevision': '1', 'idempotencyKey': 'remove-3',
+        'payload': {'action': 'remove_collaborator', 'questId': '9', 'agentNodeId': '3'},
+    })
+    assert response.status_code == 409
+    assert response.json()['detail']['code'] == 'conversation_busy'
+
+
 def test_quest_action_requires_idempotency_key():
     client = TestClient(_app())
     response = client.post(

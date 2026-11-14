@@ -51,7 +51,7 @@ def parse_argv(args: List[str], *, bool_flags: Optional[set]=None) -> ParsedArgv
     return ParsedArgv(positional=positional, flags=flags, bools=bools)
 
 def principal_from_context(ctx: CommandContext) -> Principal:
-    """Resolve the calling user into a strict ``user`` principal.
+    """Resolve an authenticated user or a validated internal Agent principal.
 
     Production traffic always carries a stringified ``users.id`` integer in
     ``CommandContext.user_id`` (see ``app/ssh/console.py`` and
@@ -64,6 +64,18 @@ def principal_from_context(ctx: CommandContext) -> Principal:
     must construct :class:`Principal` (or use :data:`SYSTEM_PRINCIPAL`)
     explicitly; they never go through this helper.
     """
+    internal_actor = ctx.internal_task_actor
+    if internal_actor is not None:
+        if (not isinstance(internal_actor, Principal) or internal_actor.kind != 'agent'
+                or not isinstance(internal_actor.id, int) or isinstance(internal_actor.id, bool)
+                or internal_actor.id <= 0 or str(ctx.user_id) != str(internal_actor.id)
+                or frozenset(ctx.permissions or []) != internal_actor.permissions
+                or frozenset(ctx.roles or []) != internal_actor.roles or ctx.db_session is None):
+            raise UnauthenticatedActor('Invalid internal Agent task actor handoff')
+        from app.services.task.task_state_machine import load_node_ref
+
+        load_node_ref(ctx.db_session, node_id=internal_actor.id, expected_type_code='npc_agent')
+        return internal_actor
     raw_id = ctx.user_id
     if raw_id is None or raw_id == '' or str(raw_id).lower() == 'guest':
         raise UnauthenticatedActor(f'command actor is unauthenticated (user_id={raw_id!r}); cannot construct task principal')
